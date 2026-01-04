@@ -1,0 +1,133 @@
+# EditorConfig for IVSmoke Project
+# https://editorconfig.org
+
+root = true
+
+# =============================================================================
+# Default settings for all files
+# =============================================================================
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# =============================================================================
+# C++ files (Epic Games Coding Standard)
+# =============================================================================
+[*.{h,hpp,cpp,c,inl}]
+indent_style = tab
+indent_size = 4
+tab_width = 4
+
+# Braces on new line (Allman style)
+cpp_new_line_before_open_brace_in_types = new_line
+cpp_new_line_before_open_brace_in_functions = new_line
+cpp_new_line_before_open_brace_in_control_blocks = new_line
+cpp_new_line_before_open_brace_in_lambdas = new_line
+
+# Space settings
+cpp_space_before_function_open_parenthesis = false
+cpp_space_within_parameter_list_parentheses = false
+cpp_space_between_empty_parameter_list_parentheses = false
+cpp_space_after_keywords_in_control_flow_statements = true
+
+# Wrapping - align continuation with opening parenthesis
+cpp_wrap_parameters_style = wrap_if_long
+cpp_wrap_before_comma = false
+cpp_wrap_after_comma = true
+
+# =============================================================================
+# Rider/ReSharper C++ specific settings
+# =============================================================================
+[*.{h,hpp,cpp,c,inl}]
+
+# Braces layout (Allman/BSD style)
+resharper_csharp_braces_for_ifelse = required
+resharper_cpp_brace_style = next_line
+resharper_cpp_case_block_braces = next_line
+resharper_cpp_other_braces = next_line
+resharper_cpp_empty_block_style = together_same_line
+
+# Always use braces for control statements
+resharper_cpp_braces_for_ifelse = required
+resharper_cpp_braces_for_for = required
+resharper_cpp_braces_for_foreach = required
+resharper_cpp_braces_for_while = required
+resharper_cpp_braces_for_dowhile = required
+
+# Indentation
+resharper_cpp_indent_style = tab
+resharper_cpp_indent_size = 4
+resharper_cpp_continuous_indent_multiplier = 1
+
+# Wrapping and alignment
+resharper_cpp_wrap_parameters_style = chop_if_long
+resharper_cpp_wrap_arguments_style = chop_if_long
+resharper_cpp_wrap_before_declaration_rpar = true
+resharper_cpp_wrap_after_declaration_lpar = true
+resharper_cpp_wrap_before_invocation_rpar = true
+resharper_cpp_wrap_after_invocation_lpar = true
+
+# Closing parenthesis on new line when multi-line
+resharper_cpp_place_simple_initializer_on_single_line = true
+resharper_cpp_keep_existing_arrangement = false
+
+# Align multiline constructs
+resharper_cpp_align_multiline_parameter = true
+resharper_cpp_align_multiline_argument = true
+resharper_cpp_align_first_arg_by_paren = true
+
+# Blank lines
+resharper_cpp_blank_lines_around_function_definition = 1
+resharper_cpp_blank_lines_around_class_definition = 1
+
+# Spaces
+resharper_cpp_space_after_comma = true
+resharper_cpp_space_before_comma = false
+resharper_cpp_space_after_semicolon_in_for_statement = true
+resharper_cpp_space_before_semicolon_in_for_statement = false
+
+# =============================================================================
+# Unreal Engine Build files
+# =============================================================================
+[*.{Build.cs,Target.cs}]
+indent_style = tab
+indent_size = 4
+
+# =============================================================================
+# Shader files (HLSL/USF)
+# =============================================================================
+[*.{usf,ush,hlsl,hlsli}]
+indent_style = tab
+indent_size = 4
+
+# =============================================================================
+# Config files
+# =============================================================================
+[*.ini]
+indent_style = space
+indent_size = 4
+
+# =============================================================================
+# Markdown & Documentation
+# =============================================================================
+[*.md]
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = false
+
+# =============================================================================
+# JSON files
+# =============================================================================
+[*.json]
+indent_style = tab
+indent_size = 4
+
+[*.uplugin]
+indent_style = tab
+indent_size = 4
+
+[*.uproject]
+indent_style = tab
+indent_size = 4
