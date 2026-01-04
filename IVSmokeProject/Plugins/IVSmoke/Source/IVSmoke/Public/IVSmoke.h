@@ -4,6 +4,9 @@
 
 #include "Modules/ModuleManager.h"
 
+/** Log category for IVSmoke plugin */
+DECLARE_LOG_CATEGORY_EXTERN(LogIVSmoke, Log, All);
+
 class FIVSmokeModule : public IModuleInterface
 {
 public:

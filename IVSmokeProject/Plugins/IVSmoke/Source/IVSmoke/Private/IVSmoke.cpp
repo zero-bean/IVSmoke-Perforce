@@ -5,6 +5,8 @@
 #include "Interfaces/IPluginManager.h"
 #include "Misc/CoreDelegates.h"
 
+DEFINE_LOG_CATEGORY(LogIVSmoke);
+
 #define LOCTEXT_NAMESPACE "FIVSmokeModule"
 
 void FIVSmokeModule::StartupModule()
@@ -16,10 +18,10 @@ void FIVSmokeModule::StartupModule()
 	AddShaderSourceDirectoryMapping(TEXT("/Plugin/IVSmoke"), PluginShaderDir);
 
 	// SceneViewExtension requires GEngine, defer until engine is ready
-	UE_LOG(LogTemp, Warning, TEXT("IVSmoke: Registering OnPostEngineInit"));
+	UE_LOG(LogIVSmoke, Log, TEXT("[FIVSmokeModule::StartupModule] Registering OnPostEngineInit"));
 	FCoreDelegates::OnPostEngineInit.AddLambda([]()
 	{
-		UE_LOG(LogTemp, Warning, TEXT("IVSmoke: OnPostEngineInit fired"));
+		UE_LOG(LogIVSmoke, Log, TEXT("[FIVSmokeModule::StartupModule] OnPostEngineInit fired"));
 		FIVSmokeSceneViewExtension::Initialize();
 	});
 }
