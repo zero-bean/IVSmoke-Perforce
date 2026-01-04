@@ -1,7 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 using UnrealBuildTool;
-using System.IO;
 
 public class IVSmoke : ModuleRules
 {
@@ -9,11 +8,8 @@ public class IVSmoke : ModuleRules
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		// FPostProcessingInputs is required for PrePostProcessPass_RenderThread (ISceneViewExtension).
-		// Despite the function being public API, FPostProcessingInputs is defined in Renderer/Internal.
-		// No public alternative exists for accessing scene textures at this rendering stage.
-		// Usage is confined to cpp files only; not exposed in any public headers.
-		PrivateIncludePaths.Add(Path.Combine(EngineDirectory, "Source/Runtime/Renderer/Internal"));
+		// Public API only - no Internal/Private engine headers required
+		// Uses SubscribeToPostProcessingPass pattern with FPostProcessMaterialInputs
 
 		PublicDependencyModuleNames.AddRange(
 			new string[]

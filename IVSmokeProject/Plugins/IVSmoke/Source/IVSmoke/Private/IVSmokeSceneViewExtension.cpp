@@ -1,14 +1,14 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "IVSmokeSceneViewExtension.h"
-#include "IVSmokeRenderer.h"
 #include "IVSmokeShaders.h"
+#include "IVSmokeRenderer.h"
 
-// FPostProcessingInputs: Required for PrePostProcessPass_RenderThread scene texture access.
-// Defined in Renderer/Internal - no public alternative exists for this rendering hook.
-#include "PostProcess/PostProcessInputs.h"
-
+// Public API headers only
+#include "PostProcess/PostProcessMaterialInputs.h"
 #include "PixelShaderUtils.h"
+#include "ScreenPass.h"
+#include "SceneView.h"
 
 TSharedPtr<FIVSmokeSceneViewExtension, ESPMode::ThreadSafe> FIVSmokeSceneViewExtension::Instance;
 
@@ -35,51 +35,133 @@ bool FIVSmokeSceneViewExtension::IsActiveThisFrame_Internal(const FSceneViewExte
 	return FIVSmokeRenderer::Get().HasVolumes();
 }
 
-namespace
+void FIVSmokeSceneViewExtension::SubscribeToPostProcessingPass(
+	EPostProcessingPass Pass,
+	const FSceneView& InView,
+	FPostProcessingPassDelegateArray& InOutPassCallbacks,
+	bool bIsPassEnabled)
 {
-	void RenderSmokeVolume(FRDGBuilder& GraphBuilder, const FSceneView& View, const FPostProcessingInputs& Inputs, const FBox& Bounds)
+	if (Pass == EPostProcessingPass::BeforeDOF)
 	{
-		FRDGTextureRef SceneColor = Inputs.SceneTextures->GetContents()->SceneColorTexture;
-		if (!SceneColor)
-		{
-			return;
-		}
-
-		FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
-
-		FIVSmokeRayMarchPS::FParameters* Parameters = GraphBuilder.AllocParameters<FIVSmokeRayMarchPS::FParameters>();
-		Parameters->BoundsMin = FVector3f(Bounds.Min);
-		Parameters->BoundsMax = FVector3f(Bounds.Max);
-		Parameters->RenderTargets[0] = FRenderTargetBinding(SceneColor, ERenderTargetLoadAction::ELoad);
-
-		TShaderMapRef<FIVSmokeRayMarchPS> PixelShader(ShaderMap);
-
-		FPixelShaderUtils::AddFullscreenPass(
-			GraphBuilder,
-			ShaderMap,
-			RDG_EVENT_NAME("IVSmoke Test"),
-			PixelShader,
-			Parameters,
-			View.UnscaledViewRect,
-			TStaticBlendState<CW_RGBA, BO_Add, BF_SourceAlpha, BF_InverseSourceAlpha>::GetRHI());
+		InOutPassCallbacks.Add(
+			FPostProcessingPassDelegate::CreateRaw(
+				this,
+				&FIVSmokeSceneViewExtension::Render_RenderThread
+			)
+		);
 	}
 }
 
-void FIVSmokeSceneViewExtension::PrePostProcessPass_RenderThread(FRDGBuilder& GraphBuilder, const FSceneView& View, const FPostProcessingInputs& Inputs)
+void FIVSmokeSceneViewExtension::RenderWithPixelShader(
+	FRDGBuilder& GraphBuilder,
+	const FSceneView& View,
+	const FScreenPassRenderTarget& Output)
 {
-	TArray<FBox> VolumeBounds = FIVSmokeRenderer::Get().GatherVolumeBounds();
-	if (VolumeBounds.IsEmpty())
+	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
+	TShaderMapRef<FIVSmokeTestPS> PixelShader(ShaderMap);
+
+	FIVSmokeTestPS::FParameters* Parameters = GraphBuilder.AllocParameters<FIVSmokeTestPS::FParameters>();
+	Parameters->TintColor = FLinearColor(1.0f, 0.0f, 0.0f, 0.3f); // Red tint
+	Parameters->RenderTargets[0] = Output.GetRenderTargetBinding();
+
+	FIVSmokePassConfig Config;
+	Config.EventName = TEXT("IVSmokeTest");
+
+	FIVSmokePostProcessPass::AddPixelShaderPass(
+		GraphBuilder,
+		ShaderMap,
+		PixelShader,
+		Parameters,
+		Output,
+		Config
+	);
+}
+
+void FIVSmokeSceneViewExtension::RenderWithComputeShader(
+	FRDGBuilder& GraphBuilder,
+	const FSceneView& View,
+	FRDGTextureRef SceneColorTexture,
+	FRDGTextureRef OutputTexture)
+{
+	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
+	TShaderMapRef<FIVSmokeTestCS> ComputeShader(ShaderMap);
+
+	const FIntPoint ViewportSize(View.UnscaledViewRect.Width(), View.UnscaledViewRect.Height());
+
+	FIVSmokeTestCS::FParameters* Parameters = GraphBuilder.AllocParameters<FIVSmokeTestCS::FParameters>();
+	Parameters->TintColor = FLinearColor(0.0f, 0.0f, 1.0f, 0.3f); // Blue tint
+	Parameters->ViewportSize = FVector2f(ViewportSize);
+	Parameters->SceneColorTexture = GraphBuilder.CreateSRV(FRDGTextureSRVDesc(SceneColorTexture));
+	Parameters->OutputTexture = GraphBuilder.CreateUAV(FRDGTextureUAVDesc(OutputTexture));
+	Parameters->SceneColorSampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
+
+	FIVSmokePassConfig Config;
+	Config.EventName = TEXT("IVSmokeTest");
+	Config.ThreadGroupSizeX = FIVSmokeTestCS::ThreadGroupSizeX;
+	Config.ThreadGroupSizeY = FIVSmokeTestCS::ThreadGroupSizeY;
+
+	FIVSmokePostProcessPass::AddComputeShaderPass(
+		GraphBuilder,
+		ShaderMap,
+		ComputeShader,
+		Parameters,
+		ViewportSize,
+		Config
+	);
+}
+
+FScreenPassTexture FIVSmokeSceneViewExtension::Render_RenderThread(
+	FRDGBuilder& GraphBuilder,
+	const FSceneView& View,
+	const FPostProcessMaterialInputs& Inputs)
+{
+	// Get scene color from public API
+	FScreenPassTextureSlice SceneColorSlice = Inputs.GetInput(EPostProcessMaterialInput::SceneColor);
+	if (!SceneColorSlice.IsValid())
 	{
-		return;
+		return FScreenPassTexture();
 	}
 
-	if (!Inputs.SceneTextures)
-	{
-		return;
-	}
+	FScreenPassTexture SceneColor(SceneColorSlice);
 
-	for (const FBox& Bounds : VolumeBounds)
+	// Get render mode from console variable
+	const EIVSmokeRenderMode CurrentRenderMode = FIVSmokePostProcessPass::GetRenderModeFromCVar();
+
+	if (CurrentRenderMode == EIVSmokeRenderMode::ComputeShader)
 	{
-		RenderSmokeVolume(GraphBuilder, View, Inputs, Bounds);
+		// Compute Shader path
+		FRDGTextureRef OutputTexture = FIVSmokePostProcessPass::CreateUAVOutputTexture(
+			GraphBuilder,
+			SceneColor.Texture,
+			TEXT("IVSmokeOutput")
+		);
+
+		RenderWithComputeShader(GraphBuilder, View, SceneColor.Texture, OutputTexture);
+
+		// Copy result to override output if needed
+		if (Inputs.OverrideOutput.IsValid())
+		{
+			AddCopyTexturePass(GraphBuilder, OutputTexture, Inputs.OverrideOutput.Texture);
+			return FScreenPassTexture(Inputs.OverrideOutput);
+		}
+
+		return FScreenPassTexture(OutputTexture, SceneColor.ViewRect);
+	}
+	else
+	{
+		// Pixel Shader path
+		FScreenPassRenderTarget Output = Inputs.OverrideOutput;
+		if (!Output.IsValid())
+		{
+			Output = FScreenPassRenderTarget(
+				SceneColor.Texture,
+				SceneColor.ViewRect,
+				View.GetOverwriteLoadAction()
+			);
+		}
+
+		RenderWithPixelShader(GraphBuilder, View, Output);
+
+		return MoveTemp(Output);
 	}
 }
