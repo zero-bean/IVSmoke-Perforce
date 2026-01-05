@@ -6,21 +6,157 @@
 #include "GameFramework/Actor.h"
 #include "IVSmokeVoxelVolume.generated.h"
 
+/** @todo Documentation */
+struct FVoxelNode
+{
+	// @todo Documentation
+	int32 Index;
+
+	// @todo Documentation
+	float Cost;
+
+	/** @todo Documentation */
+	bool operator<(const FVoxelNode& Other) const { return Cost < Other.Cost; }
+};
+
+/** @todo Documentation */
+UENUM(BlueprintType)
+enum class EIVSmokeVoxelVolumeState : uint8
+{
+	// @todo Documentation
+	Idle,
+
+	// @todo Documentation
+	Expansion,
+
+	// @todo Documentation
+	Sustain,
+
+	// @todo Documentation
+	Dissipation,
+};
+
+/** @todo Documentation */
 UCLASS()
 class IVSMOKE_API AIVSmokeVoxelVolume : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
-	// Sets default values for this actor's properties
+
+public:
 	AIVSmokeVoxelVolume();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
+public:
 	virtual void Tick(float DeltaTime) override;
 
+	// --- public API ---
+public:
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config")
+	FIntVector VolumeExtent = FIntVector(16, 16, 16);
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config")
+	float VoxelSize = 50.0f;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config")
+	int32 MaxVoxelNum = 1000;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Collision")
+	TEnumAsByte<ECollisionChannel> VoxelCollisionChannel = ECC_WorldStatic;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Collision")
+	float CollisionExtentScale = 0.9f;
+
+	// --- public API (Flood Fill) ---
+public:
+	/** @todo Documentation */
+	UFUNCTION(BlueprintCallable, Category = "IVSmoke")
+	void StartFloodFill();
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
+	float CostBase = 1.0f;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
+	float CostUpModifier = 2.5f;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
+	float CostDownModifier = 0.5f;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
+	float CostDistanceModifier = 0.1f;
+
+	// @todo Documentation (progress)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
+	UCurveFloat* ExpansionCurve;
+
+	// @todo Documentation (seconds)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
+	float ExpansionDuration = 3.0f;
+
+	// @todo Documentation (seconds)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
+	float SustainDuration = 3.0f;
+
+	// @todo Documentation (seconds)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
+	float DissipationDuration = 1.0f;
+
+	// --- public API (Debug) ---
+public:
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Debug")
+	bool bDebugEnabled = false;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Debug")
+	bool bShowVolume = false;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Debug")
+	bool bShowVoxel = false;
+
+	// --- Internal Logic ---
+private:
+	/** @todo Documentation */
+	void ProcessFloodFill(int32 SpawnNum);
+
+	/** @todo Documentation */
+	bool IsVoxelBlocked(const FVector& WorldPos) const;
+
+	/** @todo Documentation */
+	void DrawDebugVisualization();
+
+	// @todo Documentation
+	EIVSmokeVoxelVolumeState CurrentState = EIVSmokeVoxelVolumeState::Idle;
+
+	// @todo Documentation
+	float ElapsedTime = 0.0f;
+
+	// @todo Documentation
+	FIntVector GridResolution = FIntVector::ZeroValue;
+
+	// @todo Documentation (Same as MaxDepth)
+	FIntVector CenterOffset = FIntVector::ZeroValue;
+
+	// @todo Documentation
+	TArray<FVoxelNode> PriorityQueue;
+
+	// @todo Documentation
+	TArray<int32> ActiveVoxelIndices;
+
+	// @todo Documentation
+	TArray<float> VoxelCostArray;
+
+	// @todo Documentation
+	TArray<int32> VoxelArray;
 };
