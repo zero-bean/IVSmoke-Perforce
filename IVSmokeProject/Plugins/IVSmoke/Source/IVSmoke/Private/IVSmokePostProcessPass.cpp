@@ -6,14 +6,26 @@
 FRDGTextureRef FIVSmokePostProcessPass::CreateUAVOutputTexture(
 	FRDGBuilder& GraphBuilder,
 	FRDGTextureRef SourceTexture,
-	const TCHAR* DebugName)
+	const TCHAR* DebugName,
+	EPixelFormat OverrideFormat,
+	FIntPoint OverrideExtent)
 {
 	FRDGTextureDesc OutputDesc = SourceTexture->Desc;
 	OutputDesc.Flags |= ETextureCreateFlags::UAV;
-	FRDGTextureRef OutputTexture = GraphBuilder.CreateTexture(OutputDesc, DebugName);
 
-	// Copy source content to output
-	AddCopyTexturePass(GraphBuilder, SourceTexture, OutputTexture);
+	// Override format if specified (e.g., PF_FloatRGBA for alpha support)
+	if (OverrideFormat != PF_Unknown)
+	{
+		OutputDesc.Format = OverrideFormat;
+	}
+
+	// Override extent if specified (for viewport-sized textures)
+	if (OverrideExtent != FIntPoint::ZeroValue)
+	{
+		OutputDesc.Extent = OverrideExtent;
+	}
+
+	FRDGTextureRef OutputTexture = GraphBuilder.CreateTexture(OutputDesc, DebugName);
 
 	return OutputTexture;
 }

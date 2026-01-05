@@ -1,0 +1,156 @@
+// Copyright Epic Games, Inc. All Rights Reserved.
+
+#include "/Engine/Private/Common.ush"
+#include "/Plugin/IVSmoke/IVSmokeCommon.ush"
+
+// ============================================================================
+// Thread Group Size
+// ============================================================================
+
+#ifndef THREADGROUP_SIZE_X
+#define THREADGROUP_SIZE_X 8
+#endif
+#ifndef THREADGROUP_SIZE_Y
+#define THREADGROUP_SIZE_Y 8
+#endif
+
+// ============================================================================
+// Ray Marching CS Parameters
+// ============================================================================
+
+// Output
+RWTexture2D<float4> OutputTexture;
+
+// Viewport
+float2 ViewportSize;
+
+// Camera (Ray reconstruction using vectors)
+float3 CameraPosition;
+float3 CameraForward;
+float3 CameraRight;
+float3 CameraUp;
+float TanHalfFOV;
+float AspectRatio;
+
+// Ray Marching Setup
+int MaxSteps;
+
+// Volume Data
+float3 VolumeMin;
+float3 VolumeMax;
+float VolumeDensity;
+float3 SmokeColor;
+float SmokeAbsorption;
+
+// ============================================================================
+// Ray Marching CS
+// ============================================================================
+
+[numthreads(THREADGROUP_SIZE_X, THREADGROUP_SIZE_Y, 1)]
+void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
+{
+	uint2 PixelCoord = DispatchThreadId.xy;
+
+	// Bounds check
+	if (PixelCoord.x >= (uint)ViewportSize.x || PixelCoord.y >= (uint)ViewportSize.y)
+	{
+		return;
+	}
+
+	// Calculate screen position in [-1, 1] range
+	float2 PixelUV = (float2(PixelCoord) + 0.5) / ViewportSize;
+	float2 ScreenPos = PixelUV * 2.0 - 1.0;
+	ScreenPos.y *= -1.0;  // Flip Y: UV has Y down, but we want Y up
+
+	// Reconstruct ray direction from camera vectors
+	// This is a standard pinhole camera model
+	float3 RayDir = normalize(
+		CameraForward
+		+ ScreenPos.x * CameraRight * TanHalfFOV * AspectRatio
+		+ ScreenPos.y * CameraUp * TanHalfFOV
+	);
+
+	float3 RayOrigin = CameraPosition;
+
+	// Ray-Box Intersection
+	float TMin, TMax;
+	bool bHit = RayBoxIntersection(RayOrigin, RayDir, VolumeMin, VolumeMax, TMin, TMax);
+
+	if (!bHit)
+	{
+		// No intersection - output transparent
+		OutputTexture[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		return;
+	}
+
+	// Calculate adaptive step size based on ray segment length
+	float RayLength = TMax - TMin;
+	float AdaptiveStepSize = RayLength / (float)MaxSteps;
+
+	// Jitter starting position to reduce banding artifacts
+	// Simple hash-based jitter using pixel coordinates
+	float Jitter = frac(sin(dot(float2(PixelCoord), float2(12.9898, 78.233))) * 43758.5453);
+	float T = TMin + Jitter * AdaptiveStepSize;
+
+	// Ray Marching
+	float Transmittance = 1.0;
+	float3 AccumulatedColor = float3(0.0, 0.0, 0.0);
+
+	for (int i = 0; i < MaxSteps && T < TMax; i++)
+	{
+		float3 SamplePos = RayOrigin + RayDir * T;
+
+		// Sample density at current position
+		float Density = SampleConstantDensity(SamplePos, VolumeMin, VolumeMax, VolumeDensity);
+
+		if (Density > 0.0)
+		{
+			// Beer-Lambert absorption (use adaptive step size for correct integration)
+			float SampleTransmittance = BeerLambert(Density, AdaptiveStepSize, SmokeAbsorption);
+
+			// Accumulate color (front-to-back compositing)
+			float3 SampleColor = SmokeColor * Density;
+			AccumulatedColor += SampleColor * Transmittance * (1.0 - SampleTransmittance);
+
+			// Update transmittance
+			Transmittance *= SampleTransmittance;
+
+			// Early exit if fully opaque
+			if (Transmittance < 0.01)
+			{
+				break;
+			}
+		}
+
+		T += AdaptiveStepSize;
+	}
+
+	// Output: color and alpha (1 - transmittance = opacity)
+	float Alpha = 1.0 - Transmittance;
+	OutputTexture[PixelCoord] = float4(AccumulatedColor, Alpha);
+}
+
+// ============================================================================
+// Composite PS Parameters
+// ============================================================================
+
+float2 ViewRectMin;
+
+Texture2D SmokeTexture;
+SamplerState TextureSampler;
+
+// ============================================================================
+// Composite PS
+// ============================================================================
+
+void CompositePS(
+	float4 SvPosition : SV_POSITION,
+	out float4 OutColor : SV_Target0)
+{
+	// SvPosition is in screen coordinates, offset by ViewRect.Min
+	// Convert to UV [0,1] for sampling SmokeTexture
+	float2 UV = (SvPosition.xy - ViewRectMin) / ViewportSize;
+
+	float4 SampledSmoke = SmokeTexture.Sample(TextureSampler, UV);
+	OutColor = SampledSmoke;
+}

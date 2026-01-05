@@ -79,17 +79,20 @@ public:
 
 	/**
 	 * Create an output texture suitable for UAV (compute shader).
-	 * Copies source texture content to the new texture.
 	 *
 	 * @param GraphBuilder    RDG builder
-	 * @param SourceTexture   Texture to copy from
+	 * @param SourceTexture   Texture to base dimensions on
 	 * @param DebugName       Debug name for the new texture
+	 * @param OverrideFormat  Override pixel format (PF_Unknown = use source format)
+	 * @param OverrideExtent  Override texture extent (zero = use source extent)
 	 * @return New texture with UAV flag
 	 */
 	static FRDGTextureRef CreateUAVOutputTexture(
 		FRDGBuilder& GraphBuilder,
 		FRDGTextureRef SourceTexture,
-		const TCHAR* DebugName = TEXT("IVSmokeOutput"));
+		const TCHAR* DebugName = TEXT("IVSmokeOutput"),
+		EPixelFormat OverrideFormat = PF_Unknown,
+		FIntPoint OverrideExtent = FIntPoint::ZeroValue);
 };
 
 //------------------------------------------------------------------------------

@@ -1,0 +1,87 @@
+// Copyright Epic Games, Inc. All Rights Reserved.
+
+#pragma once
+
+// ============================================================================
+// Ray-Box Intersection
+// ============================================================================
+
+/**
+ * Ray-AABB intersection using slab method.
+ *
+ * @param RayOrigin    Ray origin in world space
+ * @param RayDir       Normalized ray direction
+ * @param BoxMin       AABB minimum corner
+ * @param BoxMax       AABB maximum corner
+ * @param OutTMin      Entry distance (negative if inside box)
+ * @param OutTMax      Exit distance
+ * @return             True if ray intersects box
+ */
+bool RayBoxIntersection(
+	float3 RayOrigin,
+	float3 RayDir,
+	float3 BoxMin,
+	float3 BoxMax,
+	out float OutTMin,
+	out float OutTMax)
+{
+	float3 InvRayDir = 1.0 / RayDir;
+
+	float3 T0 = (BoxMin - RayOrigin) * InvRayDir;
+	float3 T1 = (BoxMax - RayOrigin) * InvRayDir;
+
+	float3 TMin = min(T0, T1);
+	float3 TMax = max(T0, T1);
+
+	OutTMin = max(max(TMin.x, TMin.y), TMin.z);
+	OutTMax = min(min(TMax.x, TMax.y), TMax.z);
+
+	// If TMin < 0, ray starts inside box
+	OutTMin = max(OutTMin, 0.0);
+
+	return OutTMax >= OutTMin;
+}
+
+// ============================================================================
+// Density Functions
+// ============================================================================
+
+/**
+ * Simple constant density within box.
+ */
+float SampleConstantDensity(float3 Position, float3 BoxMin, float3 BoxMax, float Density)
+{
+	// Check if position is inside box
+	if (all(Position >= BoxMin) && all(Position <= BoxMax))
+	{
+		return Density;
+	}
+	return 0.0;
+}
+
+/**
+ * Spherical falloff density.
+ */
+float SampleSphericalDensity(float3 Position, float3 Center, float Radius, float Density)
+{
+	float Dist = length(Position - Center);
+	float Falloff = saturate(1.0 - Dist / Radius);
+	return Falloff * Density;
+}
+
+// ============================================================================
+// Transmittance & Accumulation
+// ============================================================================
+
+/**
+ * Beer-Lambert law for light absorption.
+ *
+ * @param Density      Sampled density
+ * @param StepSize     Distance traveled
+ * @param Absorption   Absorption coefficient
+ * @return             Transmittance (0 = fully absorbed, 1 = fully transparent)
+ */
+float BeerLambert(float Density, float StepSize, float Absorption)
+{
+	return exp(-Density * StepSize * Absorption);
+}
