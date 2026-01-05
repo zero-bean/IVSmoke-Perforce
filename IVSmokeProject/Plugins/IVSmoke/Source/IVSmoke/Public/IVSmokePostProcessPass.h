@@ -11,15 +11,6 @@
 #include "PixelShaderUtils.h"
 
 /**
- * Render mode for post process passes.
- */
-enum class EIVSmokeRenderMode : uint8
-{
-	PixelShader,
-	ComputeShader
-};
-
-/**
  * Configuration for a post process pass.
  */
 struct IVSMOKE_API FIVSmokePassConfig
@@ -99,11 +90,6 @@ public:
 		FRDGBuilder& GraphBuilder,
 		FRDGTextureRef SourceTexture,
 		const TCHAR* DebugName = TEXT("IVSmokeOutput"));
-
-	/**
-	 * Get the current render mode from console variable.
-	 */
-	static EIVSmokeRenderMode GetRenderModeFromCVar();
 };
 
 //------------------------------------------------------------------------------

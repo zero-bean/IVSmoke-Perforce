@@ -3,16 +3,6 @@
 #include "IVSmokePostProcessPass.h"
 #include "RenderGraphUtils.h"
 
-// Console variable for runtime render mode switching
-static TAutoConsoleVariable<int32> CVarIVSmokeRenderMode(
-	TEXT("IVSmoke.RenderMode"),
-	0,
-	TEXT("IVSmoke rendering mode:\n")
-	TEXT("  0: Pixel Shader (default)\n")
-	TEXT("  1: Compute Shader"),
-	ECVF_RenderThreadSafe
-);
-
 FRDGTextureRef FIVSmokePostProcessPass::CreateUAVOutputTexture(
 	FRDGBuilder& GraphBuilder,
 	FRDGTextureRef SourceTexture,
@@ -26,9 +16,4 @@ FRDGTextureRef FIVSmokePostProcessPass::CreateUAVOutputTexture(
 	AddCopyTexturePass(GraphBuilder, SourceTexture, OutputTexture);
 
 	return OutputTexture;
-}
-
-EIVSmokeRenderMode FIVSmokePostProcessPass::GetRenderModeFromCVar()
-{
-	return static_cast<EIVSmokeRenderMode>(CVarIVSmokeRenderMode.GetValueOnRenderThread());
 }
