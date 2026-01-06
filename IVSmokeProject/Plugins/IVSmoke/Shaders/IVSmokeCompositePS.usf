@@ -1,0 +1,44 @@
+// SmokeSharpenComposite.usf
+#include "/Engine/Public/Platform.ush"
+#include "/Engine/Private/Common.ush"
+#include "/Engine/Private/ScreenPass.ush"
+
+Texture2D SceneTex;
+Texture2D SmokeTexture;
+Texture2D SmokeMaskTexture;
+Texture2D DepthTexture;
+SamplerState MainSampler;
+SamplerState PointClampSampler;
+
+float Sharpness;
+
+void MainPS(
+    in noperspective float4 UVAndScreenPos : TEXCOORD0,
+    out float4 OutColor : SV_Target0)
+{
+	float2 UV = UVAndScreenPos.xy;
+    
+    // Get texture dimensions
+	uint width, height;
+	SceneTex.GetDimensions(width, height);
+	float2 TexelSize = 1.0f / float2(width, height);
+    
+    // Sample textures
+	float4 col = SceneTex.Sample(MainSampler, UV);
+	float4 smokeAlbedo = SmokeTexture.Sample(MainSampler, UV);
+	float smokeMask = saturate(SmokeMaskTexture.Sample(MainSampler, UV).r);
+    
+    // Apply Sharpness (Laplacian filter)
+	float neighbor = Sharpness * -1.0f;
+	float center = Sharpness * 4.0f + 1.0f;
+    
+	float4 n = SmokeTexture.Sample(MainSampler, UV + TexelSize * float2(0, 1));
+	float4 e = SmokeTexture.Sample(MainSampler, UV + TexelSize * float2(1, 0));
+	float4 s = SmokeTexture.Sample(MainSampler, UV + TexelSize * float2(0, -1));
+	float4 w = SmokeTexture.Sample(MainSampler, UV + TexelSize * float2(-1, 0));
+    
+	float4 sharpenedSmoke = n * neighbor + e * neighbor + smokeAlbedo * center + s * neighbor + w * neighbor;
+    
+	OutColor = lerp(col, saturate(sharpenedSmoke), 1.0f - smokeMask);
+
+}
