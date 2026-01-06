@@ -71,26 +71,41 @@ float3 WindDirection; //new
 
 
 
+/**
+ * Samples binary voxel occupancy at a position.
+ *
+ * @param Position  World-space sample position
+ * @return          1 if voxel is occupied, 0 otherwise
+ */
 int GetVoxel(float3 Position)
 {
-	if (all(Position >= VolumeMin) && all(Position <= VolumeMax))
-	{
-		//Need voxel data
-		return 1;
-	}
-	return 0;
+	float Density = SampleVoxelDensityTrilinear(
+		Position,
+		WorldToLocal,
+		GridResolution,
+		CenterOffset,
+		VoxelSize,
+		VoxelBuffer
+	);
+	return (Density > 0.5) ? 1 : 0;
 }
 
+/**
+ * Samples voxel density with trilinear interpolation.
+ *
+ * @param Position  World-space sample position
+ * @return          Interpolated density [0, 1]: 1=fully inside smoke, 0=outside
+ */
 float GetTrilinearVoxel(float3 Position)
 {
-	float v = 0;
-
-	if (all(Position >= VolumeMin) && all(Position <= VolumeMax))
-	{
-		//Need voxel data
-		return 8;
-	}
-	return 0;
+	return SampleVoxelDensityTrilinear(
+		Position,
+		WorldToLocal,
+		GridResolution,
+		CenterOffset,
+		VoxelSize,
+		VoxelBuffer
+	);
 }
 
 float GetNoise(float3 Position)
@@ -100,18 +115,28 @@ float GetNoise(float3 Position)
 	return NoiseVolume.SampleLevel(LinearRepeat_Sampler, uvw, 0);
 }
 
+/**
+ * Calculates final smoke density at a position.
+ * Combines voxel occupancy, edge falloff, and noise for natural smoke appearance.
+ *
+ * @param Position  World-space sample position
+ * @return          Final density [0, 1] for ray marching
+ */
 float GetDensity(float3 Position)
 {
-	float VoxelDensity = GetTrilinearVoxel(Position); //center ~ out => 8 ~ 0
+	float VoxelDensity = GetTrilinearVoxel(Position); // [0, 1]: 1=center, 0=edge
 	float Noise = GetNoise(Position);
 
-	float v = min(1.0f, 1 - (VoxelDensity / 16.0f)); //center ~ out => 0.5 ~ 1
-	v = smoothstep(SmokeDensityFalloff, 1.0f, v);	 // center ~ out => falloff + (1 - falloff) * 0.5 ~ 1 and smoothstep
-													 //if falloff == 0.2 => 0.6 ~ 1 and smoothstep
+	// Edge falloff: creates soft edges at smoke boundaries
+	// VoxelDensity=1 (center) → EdgeFactor=0.5
+	// VoxelDensity=0 (edge)   → EdgeFactor=1.0
+	float EdgeFactor = 1.0 - VoxelDensity * 0.5;
+	EdgeFactor = smoothstep(SmokeDensityFalloff, 1.0, EdgeFactor);
 
-	float falloff = min(1.0f, v + Noise);
+	// Combine edge falloff with noise for natural variation
+	float Falloff = min(1.0, EdgeFactor + Noise);
 
-	return saturate(saturate(VoxelDensity) * (1 - falloff));
+	return VoxelDensity * (1.0 - Falloff);
 }
 
 
