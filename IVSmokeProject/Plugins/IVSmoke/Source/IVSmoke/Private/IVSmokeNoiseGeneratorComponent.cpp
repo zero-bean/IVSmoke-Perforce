@@ -2,7 +2,7 @@
 
 
 #include "IVSmokeNoiseGeneratorComponent.h"
-#include "IVSmokeNoiseGeneratorGlobalCS.h"
+#include "IVSmokeShaders.h"
 #include "GlobalShader.h"
 #include "ShaderParameterStruct.h"
 #include "RenderGraphUtils.h"
@@ -104,3 +104,5 @@ void UIVSmokeNoiseGeneratorComponent::RunComputeShader()
         }
         );
 }
+
+

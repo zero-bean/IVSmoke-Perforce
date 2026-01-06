@@ -60,4 +60,6 @@ private:
 
 	UPROPERTY(EditAnywhere, category = "NoiseGenerator")
 	UTextureRenderTargetVolume* NoiseVolume;
+
+
 };
