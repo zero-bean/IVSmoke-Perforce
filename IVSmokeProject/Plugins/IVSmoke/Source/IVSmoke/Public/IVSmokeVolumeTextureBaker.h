@@ -21,11 +21,17 @@ struct IVSMOKE_API FIVSmokeVolumeTextureBaker
 	/**
 	 * @brief Initialize volume texture
 	 * @param Outer UObject owner for texture lifetime management
-	 * @param Resolution 3D texture resolution (N x N x N)
+	 * @param Resolution 3D texture resolution (X x Y x Z)
 	 */
-	void Initialize(UObject* Outer, int32 Resolution);
+	void Initialize(UObject* Outer, const FIntVector& Resolution);
 
-	FORCEINLINE bool IsInitialized() const { return TextureResolution > 0 && HoleDataTexture != nullptr; }
+	FORCEINLINE bool IsInitialized() const
+	{
+		return TextureResolution.X > 0 &&
+			   TextureResolution.Y > 0 &&
+			   TextureResolution.Z > 0 &&
+			   HoleDataTexture != nullptr;
+	}
 
 	/**
 	 * @brief Bake curator data into texture
@@ -36,11 +42,11 @@ struct IVSMOKE_API FIVSmokeVolumeTextureBaker
 	/** Get hole data texture (RGBA32F: R=Density, G=CreationTime, BA=Reserved) */
 	FORCEINLINE UVolumeTexture* GetHoleDataTexture() const { return HoleDataTexture; }
 
-	FORCEINLINE int32 GetResolution() const { return TextureResolution; }
+	FORCEINLINE FIntVector GetResolution() const { return TextureResolution; }
 
 private:
-	/** Texture resolution (N x N x N) */
-	int32 TextureResolution = 0;
+	/** Texture resolution (X x Y x Z) */
+	FIntVector TextureResolution = FIntVector::ZeroValue;
 
 	/** Combined hole data volume texture (RGBA32F) */
 	UPROPERTY(Transient)

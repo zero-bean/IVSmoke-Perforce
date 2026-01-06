@@ -2,13 +2,21 @@
 
 #include "IVSmokeVoxelVolumeCurator.h"
 
-void FIVSmokeVoxelVolumeCurator::Initialize(int32 InResolution, const FVector& InVolumeExtent)
+void FIVSmokeVoxelVolumeCurator::Initialize(const FIntVector& InResolution, const FVector& InVolumeExtent)
 {
-	Resolution = FMath::Clamp(InResolution, 16, 256);
+	Resolution = FIntVector(
+		FMath::Clamp(InResolution.X, 16, 256),
+		FMath::Clamp(InResolution.Y, 16, 256),
+		FMath::Clamp(InResolution.Z, 16, 256)
+	);
 	VolumeExtent = InVolumeExtent;
-	VoxelSize = VolumeExtent / static_cast<float>(Resolution);
+	VoxelSize = FVector(
+		VolumeExtent.X / static_cast<float>(Resolution.X),
+		VolumeExtent.Y / static_cast<float>(Resolution.Y),
+		VolumeExtent.Z / static_cast<float>(Resolution.Z)
+	);
 
-	const int32 TotalVoxels = Resolution * Resolution * Resolution;
+	const int32 TotalVoxels = Resolution.X * Resolution.Y * Resolution.Z;
 	VoxelTextureData.SetNum(TotalVoxels * 4);  // RGBA per voxel
 
 	// Initialize all voxels to full smoke (Density=1, CreationTime=0)
@@ -31,9 +39,9 @@ FIntVector FIVSmokeVoxelVolumeCurator::LocalToVoxel(const FVector& LocalPosition
 	const FVector NormalizedPos = (LocalPosition + VolumeExtent * 0.5f) / VolumeExtent;
 
 	return FIntVector(
-		FMath::Clamp(static_cast<int32>(NormalizedPos.X * Resolution), 0, Resolution - 1),
-		FMath::Clamp(static_cast<int32>(NormalizedPos.Y * Resolution), 0, Resolution - 1),
-		FMath::Clamp(static_cast<int32>(NormalizedPos.Z * Resolution), 0, Resolution - 1)
+		FMath::Clamp(static_cast<int32>(NormalizedPos.X * Resolution.X), 0, Resolution.X - 1),
+		FMath::Clamp(static_cast<int32>(NormalizedPos.Y * Resolution.Y), 0, Resolution.Y - 1),
+		FMath::Clamp(static_cast<int32>(NormalizedPos.Z * Resolution.Z), 0, Resolution.Z - 1)
 	);
 }
 
@@ -52,7 +60,7 @@ void FIVSmokeVoxelVolumeCurator::ApplyHoleToVoxel(const FIntVector& Index, float
 		return;
 	}
 
-	const int32 BaseIndex = ToArrayIndex(Index) * 4;
+	const int32 BaseIndex = UIVSmokeGridLibrary::GridToIndex(Index, Resolution) * 4;
 	VoxelTextureData[BaseIndex + 0] = 0.0f;        // R: Density (hole)
 	VoxelTextureData[BaseIndex + 1] = CurrentTime; // G: CreationTime
 	bTextureDirty = true;
@@ -61,7 +69,7 @@ void FIVSmokeVoxelVolumeCurator::ApplyHoleToVoxel(const FIntVector& Index, float
 int32 FIVSmokeVoxelVolumeCurator::RemoveExpiredHoles(float CurrentTime, float HoleLifeTime)
 {
 	int32 RemovedCount = 0;
-	const int32 TotalVoxels = Resolution * Resolution * Resolution;
+	const int32 TotalVoxels = Resolution.X * Resolution.Y * Resolution.Z;
 
 	for (int32 i = 0; i < TotalVoxels; ++i)
 	{

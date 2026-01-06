@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "IVSmokeGridLibrary.h"
 #include "IVSmokeVoxelVolumeCurator.generated.h"
 
 /**
@@ -21,9 +22,9 @@ struct IVSMOKE_API FIVSmokeVoxelVolumeCurator
 	// ============================================================================
 
 	/** Initialize the voxel grid */
-	void Initialize(int32 InResolution, const FVector& InVolumeExtent);
+	void Initialize(const FIntVector& InResolution, const FVector& InVolumeExtent);
 
-	FORCEINLINE bool IsInitialized() const { return Resolution > 0; }
+	FORCEINLINE bool IsInitialized() const { return Resolution.X > 0 && Resolution.Y > 0 && Resolution.Z > 0; }
 
 	// ============================================================================
 	// Voxel Access
@@ -33,14 +34,14 @@ struct IVSMOKE_API FIVSmokeVoxelVolumeCurator
 	FORCEINLINE float GetDensity(const FIntVector& Index) const
 	{
 		if (!IsValidIndex(Index)) return 1.0f;
-		return VoxelTextureData[ToArrayIndex(Index) * 4 + 0];
+		return VoxelTextureData[UIVSmokeGridLibrary::GridToIndex(Index, Resolution) * 4 + 0];
 	}
 
 	/** Get creation time at voxel index */
 	FORCEINLINE float GetCreationTime(const FIntVector& Index) const
 	{
 		if (!IsValidIndex(Index)) return 0.0f;
-		return VoxelTextureData[ToArrayIndex(Index) * 4 + 1];
+		return VoxelTextureData[UIVSmokeGridLibrary::GridToIndex(Index, Resolution) * 4 + 1];
 	}
 
 	/** Check if voxel has an active hole */
@@ -49,7 +50,7 @@ struct IVSMOKE_API FIVSmokeVoxelVolumeCurator
 		return GetDensity(Index) < 1.0f;
 	}
 
-	FORCEINLINE int32 GetResolution() const { return Resolution; }
+	FORCEINLINE FIntVector GetResolution() const { return Resolution; }
 
 	FORCEINLINE FVector GetVolumeExtent() const { return VolumeExtent; }
 
@@ -74,15 +75,9 @@ struct IVSMOKE_API FIVSmokeVoxelVolumeCurator
 
 	FORCEINLINE bool IsValidIndex(const FIntVector& Index) const
 	{
-		return Index.X >= 0 && Index.X < Resolution &&
-			   Index.Y >= 0 && Index.Y < Resolution &&
-			   Index.Z >= 0 && Index.Z < Resolution;
-	}
-
-	/** Convert 3D index to flattened array index */
-	FORCEINLINE int32 ToArrayIndex(const FIntVector& Index) const
-	{
-		return Index.X + Index.Y * Resolution + Index.Z * Resolution * Resolution;
+		return Index.X >= 0 && Index.X < Resolution.X &&
+			   Index.Y >= 0 && Index.Y < Resolution.Y &&
+			   Index.Z >= 0 && Index.Z < Resolution.Z;
 	}
 
 	// ============================================================================
@@ -132,8 +127,8 @@ struct IVSMOKE_API FIVSmokeVoxelVolumeCurator
 	FORCEINLINE const TArray<float>& GetTextureData() const { return VoxelTextureData; }
 
 private:
-	/** Grid resolution (N x N x N) */
-	int32 Resolution = 0;
+	/** Grid resolution (X x Y x Z) */
+	FIntVector Resolution = FIntVector::ZeroValue;
 
 	/** Volume extent in world units */
 	FVector VolumeExtent = FVector::ZeroVector;

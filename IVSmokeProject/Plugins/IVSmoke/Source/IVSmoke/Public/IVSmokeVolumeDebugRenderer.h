@@ -16,7 +16,7 @@ struct FPostProcessMaterialInputs;
 struct FIVSmokeDebugRenderData
 {
 	FTextureRHIRef VolumeTextureRHI;
-	int32 Resolution = 0;
+	FIntVector Resolution = {};
 	int32 SliceIndex = 0;
 	int32 DebugMode = 0;
 	float CurrentTime = 0.0f;

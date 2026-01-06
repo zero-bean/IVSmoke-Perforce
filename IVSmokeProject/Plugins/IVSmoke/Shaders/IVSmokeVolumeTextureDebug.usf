@@ -5,7 +5,7 @@
 Texture3D<float4> SmokeVolumeTexture3D;
 SamplerState SmokeVolumeSampler;
 
-int Resolution;
+int3 Resolution;
 int SliceIndex;
 int DebugMode;
 float CurrentTime;
@@ -35,7 +35,7 @@ void MainPS(float4 SvPosition : SV_POSITION, out float4 OutColor : SV_Target0)
 	float3 VolumeUV;
 	VolumeUV.x = LocalUV.x;
 	VolumeUV.y = LocalUV.y;
-	VolumeUV.z = (SliceIndex + 0.5f) / float(Resolution);
+	VolumeUV.z = (SliceIndex + 0.5f) / float(Resolution.z);
 
 	// Sample volume texture
 	float4 VoxelData = SmokeVolumeTexture3D.SampleLevel(SmokeVolumeSampler, VolumeUV, 0);
@@ -83,7 +83,7 @@ void MainPS(float4 SvPosition : SV_POSITION, out float4 OutColor : SV_Target0)
 	}
 
 	// Add grid lines for voxel boundaries
-	float2 VoxelUV = LocalUV * float(Resolution);
+	float2 VoxelUV = LocalUV * float2(Resolution.xy);
 	float2 GridLine = abs(frac(VoxelUV) - 0.5f);
 	float GridIntensity = 1.0f - saturate(min(GridLine.x, GridLine.y) * 20.0f);
 	FinalColor.rgb = lerp(FinalColor.rgb, float3(0.3f, 0.3f, 0.5f), GridIntensity * 0.3f);

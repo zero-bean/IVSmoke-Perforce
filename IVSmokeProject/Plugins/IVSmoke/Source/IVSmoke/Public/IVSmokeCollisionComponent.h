@@ -73,6 +73,11 @@ protected:
 		meta = (EditCondition = "bAutoDetectProjectiles", ClampMin = "0.1", ClampMax = "10.0"))
 	double DefaultHoleRadius = 1.0;
 
+	/** Ratio of exit radius to entry radius (0.0 = point, 1.0 = cylinder) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Detection",
+		meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float EndRadiusRatio = 0.2f;
+
 	// ============================================================================
 	// Hole Data Configuration
 	// ============================================================================
@@ -91,10 +96,9 @@ protected:
 	// Voxel Volume Configuration
 	// ============================================================================
 
-	/** Voxel grid resolution (N x N x N). Higher = more detail, more memory */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Voxel",
-		meta = (ClampMin = "16", ClampMax = "128"))
-	int32 VoxelResolution = 64;
+	/** Voxel grid resolution (X x Y x Z). Higher = more detail, more memory */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Voxel")
+	FIntVector VoxelResolution = FIntVector(64, 64, 64);
 
 	// ============================================================================
 	// Voxel Data Access (for rendering)
@@ -118,7 +122,7 @@ public:
 
 	/** Get voxel grid resolution */
 	UFUNCTION(BlueprintPure, Category = "IVSmoke|Voxel")
-	int32 GetVoxelResolution() const { return VoxelResolution; }
+	FIntVector GetVoxelResolution() const { return VoxelResolution; }
 
 	/** Get hole lifetime in seconds */
 	UFUNCTION(BlueprintPure, Category = "IVSmoke|Holes")
@@ -162,8 +166,19 @@ private:
 	/** Removes expired holes based on lifetime */
 	void CleanupExpiredHoles(double CurrentTime);
 
-	/** Apply hole to voxel volume using Tracer */
-	void ApplyHoleToVoxelVolume(const FVector& WorldPosition, const FVector& Direction);
+	/**
+	 * Apply hole to voxel volume using Capped Cone SDF
+	 * @param WorldPosition Entry point in world space
+	 * @param Direction Normalized direction of the projectile
+	 * @param StartRadius Radius at entry point (larger, covers snapping error)
+	 * @param EndRadius Radius at exit point (smaller)
+	 */
+	void ApplyHoleToVoxelVolume(
+		const FVector& WorldPosition,
+		const FVector& Direction,
+		float StartRadius,
+		float EndRadius
+	);
 
 	/** Array of currently active holes (for debug visualization) */
 	UPROPERTY(VisibleAnywhere, Category = "IVSmoke|Debug")

@@ -88,11 +88,20 @@ void UIVSmokeCollisionComponent::CreateHole(const FVector& Position, const FVect
 	const double CurrentTime = GetWorld()->GetTimeSeconds();
 	ActiveHoles.Emplace(Position, Direction, Radius, CurrentTime);
 
-	// Apply to voxel volume
-	ApplyHoleToVoxelVolume(Position, Direction);
+	// Apply to voxel volume using cone shape
+	// StartRadius (entry) is larger to cover snapping error
+	// EndRadius (exit) is smaller for natural cone shape
+	const float StartRadius = static_cast<float>(Radius);
+	const float EndRadius = StartRadius * EndRadiusRatio;
+
+	ApplyHoleToVoxelVolume(Position, Direction, StartRadius, EndRadius);
 }
 
-void UIVSmokeCollisionComponent::ApplyHoleToVoxelVolume(const FVector& WorldPosition, const FVector& Direction)
+void UIVSmokeCollisionComponent::ApplyHoleToVoxelVolume(
+	const FVector& WorldPosition,
+	const FVector& Direction,
+	float StartRadius,
+	float EndRadius)
 {
 	if (!VoxelCurator.IsInitialized())
 	{
@@ -100,20 +109,24 @@ void UIVSmokeCollisionComponent::ApplyHoleToVoxelVolume(const FVector& WorldPosi
 	}
 
 	// Convert world position to local (relative to volume center)
-	const FVector LocalPosition = WorldPosition - GetComponentLocation();
+	const FVector StartLocalPos = WorldPosition - GetComponentLocation();
 
-	// Convert to voxel index
-	const FIntVector StartVoxel = VoxelCurator.LocalToVoxel(LocalPosition);
+	// Calculate end position by tracing through volume
+	const FVector VolumeExtent = VoxelCurator.GetVolumeExtent();
+	const float MaxTraceDistance = VolumeExtent.Size();
+	const FVector EndLocalPos = StartLocalPos + Direction.GetSafeNormal() * MaxTraceDistance;
 
-	// Calculate exit voxel using Tracer
-	const FIntVector EndVoxel = FIVSmokeVoxelVolumeTracer::CalculateExitVoxel(
-		StartVoxel,
-		Direction,
-		VoxelCurator.GetResolution());
-
-	// Trace path and collect voxel indices
+	// Collect voxels within cone using SDF
 	TArray<FIntVector> VoxelIndices;
-	FIVSmokeVoxelVolumeTracer::Trace(StartVoxel, EndVoxel, VoxelCurator.GetResolution(), VoxelIndices);
+	FIVSmokeVoxelVolumeTracer::CollectVoxelsInCone(
+		StartLocalPos,
+		EndLocalPos,
+		StartRadius,
+		EndRadius,
+		VoxelCurator.GetVoxelSize(),
+		VoxelCurator.GetResolution(),
+		VoxelIndices
+	);
 
 	// Apply holes to voxel volume
 	const float CurrentTime = GetWorld()->GetTimeSeconds();
@@ -167,18 +180,18 @@ void UIVSmokeCollisionComponent::DrawDebugVoxels() const
 		return;
 	}
 
-	const int32 Resolution = VoxelCurator.GetResolution();
+	const FIntVector Resolution = VoxelCurator.GetResolution();
 	const FVector VoxelSize = VoxelCurator.GetVoxelSize();
 	const FVector VoxelHalfSize = VoxelSize * 0.5f;
 	const FVector ComponentLocation = GetComponentLocation();
 	const float CurrentTime = World->GetTimeSeconds();
 
 	// Iterate all voxels and draw boxes for holes
-	for (int32 Z = 0; Z < Resolution; ++Z)
+	for (int32 Z = 0; Z < Resolution.Z; ++Z)
 	{
-		for (int32 Y = 0; Y < Resolution; ++Y)
+		for (int32 Y = 0; Y < Resolution.Y; ++Y)
 		{
-			for (int32 X = 0; X < Resolution; ++X)
+			for (int32 X = 0; X < Resolution.X; ++X)
 			{
 				const FIntVector VoxelIndex(X, Y, Z);
 

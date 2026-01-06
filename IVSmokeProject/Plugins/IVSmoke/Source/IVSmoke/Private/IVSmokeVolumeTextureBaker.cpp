@@ -6,9 +6,9 @@
 #include "IVSmokeVoxelVolumeCurator.h"
 #include "RenderingThread.h"
 
-void FIVSmokeVolumeTextureBaker::Initialize(UObject* Outer, int32 Resolution)
+void FIVSmokeVolumeTextureBaker::Initialize(UObject* Outer, const FIntVector& Resolution)
 {
-    if (!Outer || Resolution <= 0)
+    if (!Outer || Resolution.X <= 0 || Resolution.Y <= 0 || Resolution.Z <= 0)
     {
         return;
     }
@@ -29,19 +29,19 @@ void FIVSmokeVolumeTextureBaker::Initialize(UObject* Outer, int32 Resolution)
 
         // Self Generate PlatformData
         FTexturePlatformData* PlatformData = new FTexturePlatformData();
-        PlatformData->SizeX = Resolution;
-        PlatformData->SizeY = Resolution;
-        PlatformData->SetNumSlices(Resolution);
+        PlatformData->SizeX = Resolution.X;
+        PlatformData->SizeY = Resolution.Y;
+        PlatformData->SetNumSlices(Resolution.Z);
         PlatformData->PixelFormat = PF_A32B32G32R32F;
 
         // Generate Mip level
         FTexture2DMipMap* Mip = new FTexture2DMipMap();
-        Mip->SizeX = Resolution;
-        Mip->SizeY = Resolution;
-        Mip->SizeZ = Resolution;
+        Mip->SizeX = Resolution.X;
+        Mip->SizeY = Resolution.Y;
+        Mip->SizeZ = Resolution.Z;
 
         // Calculate and Assign Data Size (TSF_RGBA32F Format)
-        const int32 TotalVoxels = Resolution * Resolution * Resolution;
+        const int32 TotalVoxels = Resolution.X * Resolution.Y * Resolution.Z;
         const int32 DataSize = TotalVoxels * 4 * sizeof(float);
 
         Mip->BulkData.Lock(LOCK_READ_WRITE);
@@ -93,7 +93,7 @@ void FIVSmokeVolumeTextureBaker::Bake(FIVSmokeVoxelVolumeCurator& Curator) const
     TextureDataCopy.SetNumUninitialized(SourceData.Num() * sizeof(float));
     FMemory::Memcpy(TextureDataCopy.GetData(), SourceData.GetData(), TextureDataCopy.Num());
 
-    const int32 Resolution = TextureResolution;
+    const FIntVector Resolution = TextureResolution;
 
     ENQUEUE_RENDER_COMMAND(UpdateHoleDataTexture)(
         [Resource, Resolution, Data = MoveTemp(TextureDataCopy)](FRHICommandListImmediate& RHICmdList)
@@ -108,17 +108,17 @@ void FIVSmokeVolumeTextureBaker::Bake(FIVSmokeVoxelVolumeCurator& Curator) const
             const int32 ActualSizeY = RHITexture->GetSizeY();
             const int32 ActualSizeZ = RHITexture->GetSizeZ();
 
-            if (ActualSizeX != Resolution || ActualSizeY != Resolution || ActualSizeZ != Resolution)
+            if (ActualSizeX != Resolution.X || ActualSizeY != Resolution.Y || ActualSizeZ != Resolution.Z)
             {
-                UE_LOG(LogIVSmoke, Fatal, TEXT("Texture size mismatch! Expected=%d, Actual=%dx%dx%d"),
-                    Resolution, ActualSizeX, ActualSizeY, ActualSizeZ);
+                UE_LOG(LogIVSmoke, Fatal, TEXT("Texture size mismatch! Expected=%dx%dx%d, Actual=%dx%dx%d"),
+                    Resolution.X, Resolution.Y, Resolution.Z, ActualSizeX, ActualSizeY, ActualSizeZ);
                 return;
             }
 
             const FUpdateTextureRegion3D Region(0, 0, 0, 0, 0, 0,
-            	Resolution, Resolution, Resolution);
-            const uint32 SourceRowPitch = Resolution * 4 * sizeof(float);
-            const uint32 SourceDepthPitch = Resolution * Resolution * 4 * sizeof(float);
+            	Resolution.X, Resolution.Y, Resolution.Z);
+            const uint32 SourceRowPitch = Resolution.X * 4 * sizeof(float);
+            const uint32 SourceDepthPitch = Resolution.X * Resolution.Y * 4 * sizeof(float);
 
             RHIUpdateTexture3D(
                 RHITexture,

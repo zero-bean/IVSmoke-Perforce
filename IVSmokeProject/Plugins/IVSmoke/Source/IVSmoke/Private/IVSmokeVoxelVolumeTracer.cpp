@@ -5,13 +5,13 @@
 int32 FIVSmokeVoxelVolumeTracer::Trace(
 	const FIntVector& StartVoxel,
 	const FIntVector& EndVoxel,
-	const int32 Resolution,
+	const FIntVector& Resolution,
 	TArray<FIntVector>& OutVoxelIndices)
 {
 	OutVoxelIndices.Reset();
 
 	// Validate inputs
-	if (Resolution <= 0)
+	if (Resolution.X <= 0 || Resolution.Y <= 0 || Resolution.Z <= 0)
 	{
 		return 0;
 	}
@@ -133,10 +133,10 @@ int32 FIVSmokeVoxelVolumeTracer::Trace(
 FIntVector FIVSmokeVoxelVolumeTracer::CalculateExitVoxel(
 	const FIntVector& EntryVoxel,
 	const FVector& Direction,
-	const int32 Resolution,
+	const FIntVector& Resolution,
 	int32 MaxDistance)
 {
-	if (Resolution <= 0)
+	if (Resolution.X <= 0 || Resolution.Y <= 0 || Resolution.Z <= 0)
 	{
 		return EntryVoxel;
 	}
@@ -144,7 +144,7 @@ FIntVector FIVSmokeVoxelVolumeTracer::CalculateExitVoxel(
 	// Default max distance
 	if (MaxDistance <= 0)
 	{
-		MaxDistance = Resolution * 2;
+		MaxDistance = FMath::Max3(Resolution.X, Resolution.Y, Resolution.Z) * 2;
 	}
 
 	const FVector NormDir = Direction.GetSafeNormal();
@@ -171,4 +171,135 @@ FIntVector FIVSmokeVoxelVolumeTracer::CalculateExitVoxel(
 	}
 
 	return ExitVoxel;
+}
+
+/**
+ * Capped Cone SDF (Signed Distance Field)
+ * Based on Inigo Quilez's SDF functions: https://iquilezles.org/articles/distfunctions/
+ *
+ * @param P Point to test
+ * @param A Start point of cone (larger radius)
+ * @param B End point of cone (smaller radius)
+ * @param RA Radius at point A
+ * @param RB Radius at point B
+ * @return Signed distance (negative = inside, positive = outside)
+ */
+static float CappedConeSDF(const FVector& P, const FVector& A, const FVector& B, float RA, float RB)
+{
+	const float RBA = RB - RA;
+	const float BABA = FVector::DotProduct(B - A, B - A);
+	const float PAPA = FVector::DotProduct(P - A, P - A);
+	const float PABA = FVector::DotProduct(P - A, B - A) / BABA;
+
+	const float X = FMath::Sqrt(FMath::Max(0.0f, PAPA - PABA * PABA * BABA));
+	const float CAX = FMath::Max(0.0f, X - ((PABA < 0.5f) ? RA : RB));
+	const float CAY = FMath::Abs(PABA - 0.5f) - 0.5f;
+
+	const float K = RBA * RBA + BABA;
+	const float F = FMath::Clamp((RBA * (X - RA) + PABA * BABA) / K, 0.0f, 1.0f);
+
+	const float CBX = X - RA - F * RBA;
+	const float CBY = PABA - F;
+
+	const float S = (CBX < 0.0f && CAY < 0.0f) ? -1.0f : 1.0f;
+
+	return S * FMath::Sqrt(FMath::Min(CAX * CAX + CAY * CAY * BABA, CBX * CBX + CBY * CBY * BABA));
+}
+
+int32 FIVSmokeVoxelVolumeTracer::CollectVoxelsInCone(
+	const FVector& StartLocalPos,
+	const FVector& EndLocalPos,
+	float StartRadius,
+	float EndRadius,
+	const FVector& VoxelSize,
+	const FIntVector& Resolution,
+	TArray<FIntVector>& OutVoxelIndices)
+{
+	OutVoxelIndices.Reset();
+
+	// Validate inputs
+	if (Resolution.X <= 0 || Resolution.Y <= 0 || Resolution.Z <= 0)
+	{
+		return 0;
+	}
+
+	if (VoxelSize.X <= 0.0f || VoxelSize.Y <= 0.0f || VoxelSize.Z <= 0.0f)
+	{
+		return 0;
+	}
+
+	const FVector HalfExtent = FVector(Resolution) * VoxelSize * 0.5f;
+
+	// Lambda: Convert voxel index to local position (voxel center)
+	auto VoxelToLocal = [&](const FIntVector& Index) -> FVector
+	{
+		return FVector(
+			(static_cast<float>(Index.X) + 0.5f) * VoxelSize.X - HalfExtent.X,
+			(static_cast<float>(Index.Y) + 0.5f) * VoxelSize.Y - HalfExtent.Y,
+			(static_cast<float>(Index.Z) + 0.5f) * VoxelSize.Z - HalfExtent.Z
+		);
+	};
+
+	// Lambda: Convert local position to voxel float coordinates
+	auto LocalToVoxelFloat = [&](const FVector& LocalPos) -> FVector
+	{
+		return FVector(
+			(LocalPos.X + HalfExtent.X) / VoxelSize.X,
+			(LocalPos.Y + HalfExtent.Y) / VoxelSize.Y,
+			(LocalPos.Z + HalfExtent.Z) / VoxelSize.Z
+		);
+	};
+
+	// Calculate bounding box in local space (with max radius padding)
+	const float MaxRadius = FMath::Max(StartRadius, EndRadius);
+
+	const FVector MinBound(
+		FMath::Min(StartLocalPos.X, EndLocalPos.X) - MaxRadius,
+		FMath::Min(StartLocalPos.Y, EndLocalPos.Y) - MaxRadius,
+		FMath::Min(StartLocalPos.Z, EndLocalPos.Z) - MaxRadius
+	);
+
+	const FVector MaxBound(
+		FMath::Max(StartLocalPos.X, EndLocalPos.X) + MaxRadius,
+		FMath::Max(StartLocalPos.Y, EndLocalPos.Y) + MaxRadius,
+		FMath::Max(StartLocalPos.Z, EndLocalPos.Z) + MaxRadius
+	);
+
+	// Convert bounds to voxel indices
+	const FVector MinVoxelF = LocalToVoxelFloat(MinBound);
+	const FVector MaxVoxelF = LocalToVoxelFloat(MaxBound);
+
+	const int32 MinX = FMath::Clamp(FMath::FloorToInt(MinVoxelF.X), 0, Resolution.X - 1);
+	const int32 MaxX = FMath::Clamp(FMath::FloorToInt(MaxVoxelF.X), 0, Resolution.X - 1);
+	const int32 MinY = FMath::Clamp(FMath::FloorToInt(MinVoxelF.Y), 0, Resolution.Y - 1);
+	const int32 MaxY = FMath::Clamp(FMath::FloorToInt(MaxVoxelF.Y), 0, Resolution.Y - 1);
+	const int32 MinZ = FMath::Clamp(FMath::FloorToInt(MinVoxelF.Z), 0, Resolution.Z - 1);
+	const int32 MaxZ = FMath::Clamp(FMath::FloorToInt(MaxVoxelF.Z), 0, Resolution.Z - 1);
+
+	// Reserve approximate space
+	const int32 EstimatedCount = (MaxX - MinX + 1) * (MaxY - MinY + 1) * (MaxZ - MinZ + 1);
+	OutVoxelIndices.Reserve(FMath::Min(EstimatedCount, 4096));
+
+	// Iterate through bounding box and test each voxel using SDF
+	for (int32 Z = MinZ; Z <= MaxZ; ++Z)
+	{
+		for (int32 Y = MinY; Y <= MaxY; ++Y)
+		{
+			for (int32 X = MinX; X <= MaxX; ++X)
+			{
+				const FIntVector VoxelIndex(X, Y, Z);
+				const FVector VoxelCenter = VoxelToLocal(VoxelIndex);
+
+				// SDF test: negative distance means inside the cone
+				const float Distance = CappedConeSDF(VoxelCenter, StartLocalPos, EndLocalPos, StartRadius, EndRadius);
+
+				if (Distance <= 0.0f)
+				{
+					OutVoxelIndices.Add(VoxelIndex);
+				}
+			}
+		}
+	}
+
+	return OutVoxelIndices.Num();
 }

@@ -20,7 +20,7 @@ class IVSMOKE_API FIVSmokeVolumeTextureDebugPS : public FGlobalShader
 		SHADER_PARAMETER_STRUCT_REF(FViewUniformShaderParameters, View)
 		SHADER_PARAMETER_TEXTURE(Texture3D, SmokeVolumeTexture3D)
 		SHADER_PARAMETER_SAMPLER(SamplerState, SmokeVolumeSampler)
-		SHADER_PARAMETER(int32, Resolution)
+		SHADER_PARAMETER(FIntVector, Resolution)
 		SHADER_PARAMETER(int32, SliceIndex)
 		SHADER_PARAMETER(int32, DebugMode)
 		SHADER_PARAMETER(float, CurrentTime)
