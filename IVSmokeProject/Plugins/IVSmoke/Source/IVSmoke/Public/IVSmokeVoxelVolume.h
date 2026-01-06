@@ -9,7 +9,7 @@
 class UIVSmokeSmokePreset;
 
 /** @todo Documentation */
-struct FVoxelNode
+struct FIVSmokeVoxelNode
 {
 	// @todo Documentation
 	int32 Index;
@@ -18,7 +18,7 @@ struct FVoxelNode
 	float Cost;
 
 	/** @todo Documentation */
-	bool operator<(const FVoxelNode& Other) const { return Cost < Other.Cost; }
+	bool operator<(const FIVSmokeVoxelNode& Other) const { return Cost < Other.Cost; }
 };
 
 /** @todo Documentation */
@@ -36,6 +36,56 @@ enum class EIVSmokeVoxelVolumeState : uint8
 
 	// @todo Documentation
 	Dissipation,
+
+	// @todo Documentation
+	Finished
+};
+
+/** @todo Documentation */
+UENUM(BlueprintType)
+enum class EIVSmokeDebugViewMode : uint8
+{
+	// @todo Documentation
+	SolidColor,
+
+	// @todo Documentation
+	Heatmap
+};
+
+USTRUCT(BlueprintType)
+struct FIVSmokeDebugSettings
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
+	bool bDebugEnabled = true;
+
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
+	bool bShowVolumeBounds = true;
+
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
+	bool bShowVoxelMesh = false;
+
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
+	bool bShowVoxelWireframe = true;
+
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
+	EIVSmokeDebugViewMode ViewMode = EIVSmokeDebugViewMode::SolidColor;
+
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
+	FColor DebugWireframeColor = FColor(20, 20, 20);
+
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
+	float HeatmapMin = 0.0f;
+
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
+	float HeatmapMax = 50.0f;
+
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (UIMin=0.0, UIMax=1.0))
+	float SliceHeight = 1.0f;
+
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (ClampMin=0, ClampMax=100))
+	int32 VisibleStepCountPercent = 100;
 };
 
 /** @todo Documentation */
@@ -90,6 +140,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Appearance")
 	TObjectPtr<UIVSmokeSmokePreset> SmokePresetOverride;
 
+	virtual bool ShouldTickIfViewportsOnly() const override;
+
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
+
 	// --- public API ---
 public:
 	// @todo Documentation
@@ -111,6 +167,14 @@ public:
 	// @todo Documentation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Collision")
 	float CollisionExtentScale = 0.9f;
+
+	// @todo Documentation (progress)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Curve")
+	UCurveFloat* ExpansionCurve;
+
+	// @todo Documentation (progress)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Curve")
+	UCurveFloat* DissipationCurve;
 
 	// --- public API (Flood Fill) ---
 public:
@@ -134,10 +198,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
 	float CostDistanceModifier = 0.1f;
 
-	// @todo Documentation (progress)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
-	UCurveFloat* ExpansionCurve;
-
 	// @todo Documentation (seconds)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
 	float ExpansionDuration = 3.0f;
@@ -150,19 +210,32 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
 	float DissipationDuration = 1.0f;
 
+	// --- public API (Flood Fill) ---
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Dissipation")
+	float CostDissipationNoise = 3.0f;
+
 	// --- public API (Debug) ---
 public:
-	// @todo Documentation
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Debug")
-	bool bDebugEnabled = false;
+	/** @todo Documentation */
+	UFUNCTION(CallInEditor, Category = "IVSmoke | Debug")
+	void PreviewSimulation();
 
-	// @todo Documentation
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Debug")
-	bool bShowVolume = false;
+	/** @todo Documentation */
+	UFUNCTION(CallInEditor, Category = "IVSmoke | Debug")
+	void ResetSimulation();
 
-	// @todo Documentation
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Debug")
-	bool bShowVoxel = false;
+	// @todo Documentation (seconds)
+	UPROPERTY(EditDefaultsOnly, Category = "IVSmoke | Debug")
+	UStaticMesh* DebugVoxelMesh;
+
+	// @todo Documentation (seconds)
+	UPROPERTY(EditDefaultsOnly, Category = "IVSmoke | Debug")
+	UMaterialInterface* DebugVoxelMaterial;
+
+	// @todo Documentation (seconds)
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta=(ShowOnlyInnerProperties))
+	FIVSmokeDebugSettings DebugSettings;
 
 	// --- Internal Logic ---
 private:
@@ -173,7 +246,25 @@ private:
 	bool IsVoxelBlocked(const FVector& WorldPos) const;
 
 	/** @todo Documentation */
+	void PrepareDissipation(int32 VoxelNum);
+
+	/** @todo Documentation */
+	void ProcessDissipation(int32 RemoveNum);
+
+	/** @todo Documentation */
 	void DrawDebugVisualization();
+
+	/** @todo Documentation */
+	void DrawDebugBounds();
+
+	/** @todo Documentation */
+	void DrawDebugVoxelWireframes();
+
+	/** @todo Documentation */
+	void DrawDebugVoxelMeshes();
+
+	/** @todo Documentation */
+	void DrawDebugStatusText();
 
 	// @todo Documentation
 	EIVSmokeVoxelVolumeState CurrentState = EIVSmokeVoxelVolumeState::Idle;
@@ -188,17 +279,29 @@ private:
 	FIntVector CenterOffset = FIntVector::ZeroValue;
 
 	// @todo Documentation
-	TArray<FVoxelNode> PriorityQueue;
+	TArray<FIVSmokeVoxelNode> MinHeap;
 
 	// @todo Documentation
-	TArray<int32> ActiveVoxelIndices;
+	TArray<int32> GeneratedVoxelIndices;
 
 	// @todo Documentation
 	TArray<float> VoxelCostArray;
+
+	// @todo Documentation
+	int32 ActiveVoxelCount = 0;
 
 	// @todo Documentation
 	TArray<int32> VoxelArray;
 
 	/** Dirty flag for GPU buffer synchronization. */
 	bool bVoxelDataDirty = false;
+
+	// @todo Documentation
+	bool bIsEditorPreviewing = false;
+
+#if WITH_EDITORONLY_DATA
+	// @todo Documentation
+	UPROPERTY()
+	UInstancedStaticMeshComponent* DebugMeshComponent;
+#endif
 };
