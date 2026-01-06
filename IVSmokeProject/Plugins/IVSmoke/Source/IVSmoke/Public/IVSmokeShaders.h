@@ -6,6 +6,7 @@
 #include "GlobalShader.h"
 #include "ShaderParameterStruct.h"
 #include "RenderGraphUtils.h"
+#include "SceneTexturesConfig.h"
 
 /**
  * Ray Marching compute shader.
@@ -34,6 +35,7 @@ class IVSMOKE_API FIVSmokeRayMarchCS : public FGlobalShader
 
 		// Viewport
 		SHADER_PARAMETER(FVector2f, ViewportSize)
+		SHADER_PARAMETER(FVector2f, ViewRectMin)
 
 		// Camera (Ray reconstruction using vectors)
 		SHADER_PARAMETER(FVector3f, CameraPosition)
@@ -46,9 +48,22 @@ class IVSMOKE_API FIVSmokeRayMarchCS : public FGlobalShader
 		// Ray Marching Setup
 		SHADER_PARAMETER(int32, MaxSteps)
 
-		// Volume Data
+		// Volume Bounds (for ray-box intersection)
 		SHADER_PARAMETER(FVector3f, VolumeMin)
 		SHADER_PARAMETER(FVector3f, VolumeMax)
+
+		// Voxel Data
+		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<int>, VoxelBuffer)
+		SHADER_PARAMETER(FMatrix44f, WorldToLocal)
+		SHADER_PARAMETER(FIntVector3, GridResolution)
+		SHADER_PARAMETER(FIntVector3, CenterOffset)
+		SHADER_PARAMETER(float, VoxelSize)
+
+		// Scene Textures (uniform buffer - named SceneTexturesStruct for compatibility with UE helpers)
+		SHADER_PARAMETER_RDG_UNIFORM_BUFFER(FSceneTextureUniformParameters, SceneTexturesStruct)
+		SHADER_PARAMETER(FVector4f, InvDeviceZToWorldZTransform)
+
+		// Smoke Rendering
 		SHADER_PARAMETER(float, VolumeDensity)
 		SHADER_PARAMETER(FVector3f, SmokeColor)
 		SHADER_PARAMETER(float, SmokeAbsorption)

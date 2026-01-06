@@ -43,7 +43,95 @@ bool RayBoxIntersection(
 }
 
 // ============================================================================
-// Density Functions
+// Voxel Grid Utilities
+// ============================================================================
+
+/**
+ * Converts 3D grid position to linear index.
+ * Same formula as UIVSmokeGridLibrary::GridToIndex.
+ */
+int GridToIndex(int3 GridPos, int3 Resolution)
+{
+	return GridPos.x + GridPos.y * Resolution.x + GridPos.z * Resolution.x * Resolution.y;
+}
+
+/**
+ * Reads voxel occupancy with bounds checking.
+ *
+ * @param GridPos       Integer grid position
+ * @param Resolution    Grid dimensions
+ * @param VoxelBuffer   Structured buffer containing voxel data
+ * @return              1.0 if voxel is active, 0.0 otherwise
+ */
+float ReadVoxelOccupancy(int3 GridPos, int3 Resolution, StructuredBuffer<int> VoxelBuffer)
+{
+	// Bounds check
+	if (any(GridPos < 0) || any(GridPos >= Resolution))
+	{
+		return 0.0;
+	}
+
+	int Index = GridToIndex(GridPos, Resolution);
+	return (VoxelBuffer[Index] > 0) ? 1.0 : 0.0;
+}
+
+/**
+ * Samples voxel density with trilinear interpolation.
+ *
+ * @param WorldPos      Sample position in world space
+ * @param WorldToLocal  Transform matrix from world to local space
+ * @param Resolution    Grid dimensions
+ * @param CenterOffset  Center offset for grid coordinate conversion
+ * @param VoxelSz       World-space size of each voxel
+ * @param VoxelBuffer   Structured buffer containing voxel data
+ * @return              Interpolated density value [0, 1]
+ */
+float SampleVoxelDensityTrilinear(
+	float3 WorldPos,
+	float4x4 WorldToLocal,
+	int3 Resolution,
+	int3 CenterOffset,
+	float VoxelSz,
+	StructuredBuffer<int> VoxelBuffer
+)
+{
+	// World → Local transform
+	float3 LocalPos = mul(float4(WorldPos, 1.0), WorldToLocal).xyz;
+
+	// Local → Grid coordinate (continuous float)
+	float3 GridPosF = LocalPos / VoxelSz + float3(CenterOffset);
+
+	// 8 neighbor voxel integer coordinates
+	int3 P0 = int3(floor(GridPosF));
+	int3 P1 = P0 + int3(1, 1, 1);
+
+	// Interpolation weights
+	float3 F = frac(GridPosF);
+
+	// Sample 8 corners
+	float C000 = ReadVoxelOccupancy(int3(P0.x, P0.y, P0.z), Resolution, VoxelBuffer);
+	float C100 = ReadVoxelOccupancy(int3(P1.x, P0.y, P0.z), Resolution, VoxelBuffer);
+	float C010 = ReadVoxelOccupancy(int3(P0.x, P1.y, P0.z), Resolution, VoxelBuffer);
+	float C110 = ReadVoxelOccupancy(int3(P1.x, P1.y, P0.z), Resolution, VoxelBuffer);
+	float C001 = ReadVoxelOccupancy(int3(P0.x, P0.y, P1.z), Resolution, VoxelBuffer);
+	float C101 = ReadVoxelOccupancy(int3(P1.x, P0.y, P1.z), Resolution, VoxelBuffer);
+	float C011 = ReadVoxelOccupancy(int3(P0.x, P1.y, P1.z), Resolution, VoxelBuffer);
+	float C111 = ReadVoxelOccupancy(int3(P1.x, P1.y, P1.z), Resolution, VoxelBuffer);
+
+	// Trilinear interpolation
+	float C00 = lerp(C000, C100, F.x);
+	float C10 = lerp(C010, C110, F.x);
+	float C01 = lerp(C001, C101, F.x);
+	float C11 = lerp(C011, C111, F.x);
+
+	float C0 = lerp(C00, C10, F.y);
+	float C1 = lerp(C01, C11, F.y);
+
+	return lerp(C0, C1, F.z);
+}
+
+// ============================================================================
+// Legacy Density Functions
 // ============================================================================
 
 /**

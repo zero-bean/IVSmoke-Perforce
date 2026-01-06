@@ -44,9 +44,21 @@ float AspectRatio;
 // Ray Marching Setup
 int MaxSteps;
 
-// Volume Data
+// Volume Bounds (for ray-box intersection)
 float3 VolumeMin;
 float3 VolumeMax;
+
+// Voxel Data
+StructuredBuffer<int> VoxelBuffer;
+float4x4 WorldToLocal;
+int3 GridResolution;
+int3 CenterOffset;
+float VoxelSize;
+
+// Scene Depth Transform
+float4 InvDeviceZToWorldZTransform;
+
+// Smoke Rendering
 float VolumeDensity;
 float3 SmokeColor;
 float SmokeAbsorption;
@@ -133,13 +145,52 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 
 	float3 RayOrigin = CameraPosition;
 
+	// ============================================================================
+	// Scene Depth Sampling
+	// ============================================================================
+
+	// Sample scene depth and convert to world distance
+	// Access depth via uniform buffer (SceneTexturesStruct bound from C++)
+	// Offset by ViewRectMin since depth texture is full resolution but we dispatch at ViewRect size
+	float DeviceZ = SceneTexturesStruct.SceneDepthTexture.Load(int3(PixelCoord + int2(ViewRectMin), 0)).r;
+
+	// Convert DeviceZ to linear world distance using UE's full transform formula
+	// From Common.ush ConvertFromDeviceZ(): supports both perspective and orthographic
+	// SceneDepth = DeviceZ * T[0] + T[1] + 1.0 / (DeviceZ * T[2] - T[3])
+	float SceneDepthWorld = DeviceZ * InvDeviceZToWorldZTransform.x
+		+ InvDeviceZToWorldZTransform.y
+		+ 1.0 / (DeviceZ * InvDeviceZToWorldZTransform.z - InvDeviceZToWorldZTransform.w);
+
+	// Convert view-space depth to ray distance (accounting for ray direction)
+	// For non-orthographic projection, the ray length equals the view depth divided by the dot product
+	// of the ray direction and the forward vector
+	float ViewDirDot = dot(RayDir, CameraForward);
+	float SceneRayDistance = SceneDepthWorld / max(ViewDirDot, 0.001);
+
+	// Apply small depth bias to prevent edge artifacts from AA/TAA
+	// This stops ray marching slightly before the actual geometry surface
+	SceneRayDistance -= 5.0;
+
+	// ============================================================================
 	// Ray-Box Intersection
+	// ============================================================================
+
 	float TMin, TMax;
 	bool bHit = RayBoxIntersection(RayOrigin, RayDir, VolumeMin, VolumeMax, TMin, TMax);
 
 	if (!bHit)
 	{
 		// No intersection - output transparent
+		OutputTexture[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		return;
+	}
+
+	// Clamp TMax to scene depth (don't render smoke behind opaque geometry)
+	TMax = min(TMax, SceneRayDistance);
+
+	// Early exit if volume is completely behind scene geometry
+	if (TMin >= TMax)
+	{
 		OutputTexture[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
 		return;
 	}

@@ -47,9 +47,35 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
 	virtual void Tick(float DeltaTime) override;
+
+	// ============================================================================
+	// Rendering Data Access
+	// ============================================================================
+
+	/** Returns the voxel occupancy array for GPU upload. */
+	const TArray<int32>& GetVoxelArray() const { return VoxelArray; }
+
+	/** Returns the grid resolution (dimensions of the voxel grid). */
+	FIntVector GetGridResolution() const { return GridResolution; }
+
+	/** Returns the center offset for grid-to-local coordinate conversion. */
+	FIntVector GetCenterOffset() const { return CenterOffset; }
+
+	/** Returns the world-space size of each voxel. */
+	float GetVoxelSize() const { return VoxelSize; }
+
+	/** Returns true if voxel data has been modified since last GPU upload. */
+	bool IsVoxelDataDirty() const { return bVoxelDataDirty; }
+
+	/** Clears the dirty flag after GPU upload. Called by renderer. */
+	void ClearVoxelDataDirty() { bVoxelDataDirty = false; }
+
+	/** Returns the current buffer size (for detecting resize). */
+	int32 GetVoxelBufferSize() const { return VoxelArray.Num(); }
 
 	// --- public API ---
 public:
@@ -159,4 +185,7 @@ private:
 
 	// @todo Documentation
 	TArray<int32> VoxelArray;
+
+	/** Dirty flag for GPU buffer synchronization. */
+	bool bVoxelDataDirty = false;
 };

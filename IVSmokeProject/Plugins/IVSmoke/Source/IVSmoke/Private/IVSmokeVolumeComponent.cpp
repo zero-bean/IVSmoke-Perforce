@@ -1,7 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "IVSmokeVolumeComponent.h"
-#include "IVSmokeRenderer.h"
 
 UIVSmokeVolumeComponent::UIVSmokeVolumeComponent()
 {
@@ -18,16 +17,11 @@ FBox UIVSmokeVolumeComponent::GetWorldBounds() const
 void UIVSmokeVolumeComponent::OnRegister()
 {
 	Super::OnRegister();
-
-	UWorld* World = GetWorld();
-	if (World && World->IsGameWorld())
-	{
-		FIVSmokeRenderer::Get().AddVolume(this);
-	}
+	// Note: Renderer registration moved to AIVSmokeVoxelVolume
 }
 
 void UIVSmokeVolumeComponent::OnUnregister()
 {
-	FIVSmokeRenderer::Get().RemoveVolume(this);
 	Super::OnUnregister();
+	// Note: Renderer registration moved to AIVSmokeVoxelVolume
 }

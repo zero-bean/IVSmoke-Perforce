@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "ScreenPass.h"
 
-class UIVSmokeVolumeComponent;
+class AIVSmokeVoxelVolume;
 class FRDGBuilder;
 class FSceneView;
 struct FPostProcessMaterialInputs;
@@ -24,12 +24,12 @@ public:
 	// Volume Management
 	// ============================================================================
 
-	void AddVolume(UIVSmokeVolumeComponent* Volume);
-	void RemoveVolume(UIVSmokeVolumeComponent* Volume);
+
 	void SetNoiseVolume(UTextureRenderTargetVolume* InNoiseVolume);
+	void AddVolume(AIVSmokeVoxelVolume* Volume);
+	void RemoveVolume(AIVSmokeVoxelVolume* Volume);
 
 	bool HasVolumes() const;
-	TArray<FBox> GatherVolumeBounds() const;
 
 	// ============================================================================
 	// Rendering
@@ -59,17 +59,20 @@ private:
 	/**
 	 * Ray Marching CS Pass.
 	 * Calculates volumetric smoke and outputs to intermediate texture.
+	 * Scene depth is accessed via SceneTexturesStruct uniform buffer.
 	 *
-	 * @param GraphBuilder    RDG builder
-	 * @param View            Current scene view
-	 * @param OutputTexture   UAV texture to write ray marching result
-	 * @param ViewportSize    Size of the viewport for dispatch and UV calculation
+	 * @param GraphBuilder       RDG builder
+	 * @param View               Current scene view
+	 * @param OutputTexture      UAV texture to write ray marching result
+	 * @param ViewportSize       Size of the viewport for dispatch and UV calculation
+	 * @param ViewRectMin        Offset into full scene texture for depth sampling
 	 */
 	void AddRayMarchPass(
 		FRDGBuilder& GraphBuilder,
 		const FSceneView& View,
 		FRDGTextureRef OutputTexture,
-		const FIntPoint& ViewportSize
+		const FIntPoint& ViewportSize,
+		const FIntPoint& ViewRectMin
 	);
 
 	/**
@@ -90,7 +93,7 @@ private:
 		const FIntPoint& ViewportSize
 	);
 
-	TArray<TWeakObjectPtr<UIVSmokeVolumeComponent>> Volumes;
+	TArray<TWeakObjectPtr<AIVSmokeVoxelVolume>> Volumes;
 	mutable FCriticalSection VolumesMutex;
 	UTextureRenderTargetVolume* NoiseVolume = nullptr;
 

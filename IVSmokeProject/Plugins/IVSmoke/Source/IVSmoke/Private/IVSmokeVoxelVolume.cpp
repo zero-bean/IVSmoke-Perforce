@@ -3,6 +3,7 @@
 #include "IVSmokeVoxelVolume.h"
 
 #include "IVSmokeGridLibrary.h"
+#include "IVSmokeRenderer.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSmokeDebug, Log, All);
 
@@ -14,6 +15,13 @@ AIVSmokeVoxelVolume::AIVSmokeVoxelVolume()
 void AIVSmokeVoxelVolume::BeginPlay()
 {
 	Super::BeginPlay();
+	FIVSmokeRenderer::Get().AddVolume(this);
+}
+
+void AIVSmokeVoxelVolume::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	FIVSmokeRenderer::Get().RemoveVolume(this);
+	Super::EndPlay(EndPlayReason);
 }
 
 void AIVSmokeVoxelVolume::Tick(float DeltaTime)
@@ -96,6 +104,7 @@ void AIVSmokeVoxelVolume::StartFloodFill()
 
 	VoxelArray.Empty();
 	VoxelArray.Init(0, TotalGridSize);
+	bVoxelDataDirty = true;  // Buffer size changed, needs recreation
 
 	VoxelCostArray.Empty();
 	VoxelCostArray.Init(FLT_MAX, TotalGridSize);
@@ -135,6 +144,7 @@ void AIVSmokeVoxelVolume::ProcessFloodFill(int32 SpawnNum)
 		{
 			ActiveVoxelIndices.Add(CurrentNode.Index);
 			VoxelArray[CurrentNode.Index] = 1;
+			bVoxelDataDirty = true;  // Voxel data changed
 			++SpawnCount;
 
 			if (ActiveVoxelIndices.Num() >= MaxVoxelNum)

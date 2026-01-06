@@ -6,7 +6,9 @@
 #include "IVSmokeShaders.h"
 #include "IVSmokeVolumeComponent.h"
 #include "Engine/TextureRenderTargetVolume.h"
+#include "IVSmokeVoxelVolume.h"
 #include "PostProcess/PostProcessMaterialInputs.h"
+#include "SceneRenderTargetParameters.h"
 
 FIVSmokeRenderer& FIVSmokeRenderer::Get()
 {
@@ -41,6 +43,7 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 
 	// Use ViewRect size consistently for all passes
 	const FIntPoint ViewportSize = SceneColor.ViewRect.Size();
+	const FIntPoint ViewRectMin = SceneColor.ViewRect.Min;
 
 	// Create intermediate texture with ViewRect size for smoke compositing
 	FRDGTextureRef SmokeTexture = FIVSmokePostProcessPass::CreateUAVOutputTexture(
@@ -51,19 +54,19 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 		ViewportSize
 	);
 
-	AddRayMarchPass(GraphBuilder, View, SmokeTexture, ViewportSize);
+	AddRayMarchPass(GraphBuilder, View, SmokeTexture, ViewportSize, ViewRectMin);
 	AddCompositePass(GraphBuilder, View, SmokeTexture, Output, ViewportSize);
 
 	return Output;
 }
 
-void FIVSmokeRenderer::AddVolume(UIVSmokeVolumeComponent* Volume)
+void FIVSmokeRenderer::AddVolume(AIVSmokeVoxelVolume* Volume)
 {
 	FScopeLock Lock(&VolumesMutex);
 	Volumes.AddUnique(Volume);
 }
 
-void FIVSmokeRenderer::RemoveVolume(UIVSmokeVolumeComponent* Volume)
+void FIVSmokeRenderer::RemoveVolume(AIVSmokeVoxelVolume* Volume)
 {
 	FScopeLock Lock(&VolumesMutex);
 	Volumes.Remove(Volume);
@@ -79,24 +82,6 @@ bool FIVSmokeRenderer::HasVolumes() const
 	return Volumes.Num() > 0;
 }
 
-TArray<FBox> FIVSmokeRenderer::GatherVolumeBounds() const
-{
-	FScopeLock Lock(&VolumesMutex);
-
-	TArray<FBox> Result;
-	for (const auto& WeakVolume : Volumes)
-	{
-		if (auto* Volume = WeakVolume.Get())
-		{
-			if (Volume->IsVisible())
-			{
-				Result.Add(Volume->GetWorldBounds());
-			}
-		}
-	}
-	return Result;
-}
-
 // ============================================================================
 // Pass Functions
 // ============================================================================
@@ -105,8 +90,40 @@ void FIVSmokeRenderer::AddRayMarchPass(
 	FRDGBuilder& GraphBuilder,
 	const FSceneView& View,
 	FRDGTextureRef OutputTexture,
-	const FIntPoint& ViewportSize)
+	const FIntPoint& ViewportSize,
+	const FIntPoint& ViewRectMin)
 {
+	// Get first valid volume
+	AIVSmokeVoxelVolume* VoxelVolume = nullptr;
+	{
+		FScopeLock Lock(&VolumesMutex);
+		for (const auto& WeakVolume : Volumes)
+		{
+			if (auto* Volume = WeakVolume.Get())
+			{
+				VoxelVolume = Volume;
+				break;
+			}
+		}
+	}
+
+	if (!VoxelVolume)
+	{
+		return;
+	}
+
+	// Get voxel data from volume
+	const TArray<int32>& VoxelData = VoxelVolume->GetVoxelArray();
+	const FIntVector GridRes = VoxelVolume->GetGridResolution();
+	const FIntVector CenterOff = VoxelVolume->GetCenterOffset();
+	const float VoxelSz = VoxelVolume->GetVoxelSize();
+
+	// Skip if voxel data is not initialized
+	if (VoxelData.Num() == 0 || GridRes.X <= 0 || GridRes.Y <= 0 || GridRes.Z <= 0)
+	{
+		return;
+	}
+
 	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
 	TShaderMapRef<FIVSmokeRayMarchCS> ComputeShader(ShaderMap);
 
@@ -134,26 +151,17 @@ void FIVSmokeRenderer::AddRayMarchPass(
 
 	// Viewport
 	Parameters->ViewportSize = FVector2f(ViewportSize);
+	Parameters->ViewRectMin = FVector2f(ViewRectMin);
 
 	// Camera (Ray reconstruction using vectors)
 	const FViewMatrices& ViewMatrices = View.ViewMatrices;
 	Parameters->CameraPosition = FVector3f(ViewMatrices.GetViewOrigin());
-
-	// Get camera orientation vectors from view matrix
-	const FMatrix& ViewMatrix = ViewMatrices.GetViewMatrix();
-	// UE5 view matrix: X=Right, Y=Forward, Z=Up (in view space)
-	// The inverse of view matrix gives us world space directions
-	FVector CameraForward = ViewMatrix.GetColumn(2);  // View Z axis = Forward
-	FVector CameraRight = ViewMatrix.GetColumn(0);    // View X axis = Right
-	FVector CameraUp = ViewMatrix.GetColumn(1);       // View Y axis = Up
 
 	Parameters->CameraForward = FVector3f(View.GetViewDirection());
 	Parameters->CameraRight = FVector3f(View.GetViewRight());
 	Parameters->CameraUp = FVector3f(View.GetViewUp());
 
 	// Calculate FOV from projection matrix
-	// ProjectionMatrix[0][0] = 1 / (tan(HalfFOV) * AspectRatio)
-	// ProjectionMatrix[1][1] = 1 / tan(HalfFOV)
 	const FMatrix& ProjMatrix = ViewMatrices.GetProjectionMatrix();
 	float TanHalfFOV = 1.0f / ProjMatrix.M[1][1];
 	float AspectRatio = (float)ViewportSize.X / (float)ViewportSize.Y;
@@ -161,24 +169,48 @@ void FIVSmokeRenderer::AddRayMarchPass(
 	Parameters->TanHalfFOV = TanHalfFOV;
 	Parameters->AspectRatio = AspectRatio;
 
-	// Ray Marching Setup (TODO: Make configurable)
-	Parameters->MaxSteps = 32;
+	// Ray Marching Setup
+	Parameters->MaxSteps = 64;
 
-	// Volume Data (TODO: Get from registered volumes)
-	TArray<FBox> VolumeBounds = GatherVolumeBounds();
-	if (VolumeBounds.Num() > 0)
-	{
-		const FBox& Bounds = VolumeBounds[0];
-		Parameters->VolumeMin = FVector3f(Bounds.Min);
-		Parameters->VolumeMax = FVector3f(Bounds.Max);
-	}
-	else
-	{
-		// Default test volume
-		Parameters->VolumeMin = FVector3f(-300.0f, -300.0f, -300.0f);
-		Parameters->VolumeMax = FVector3f(300.0f, 300.0f, 300.0f);
-	}
-	Parameters->VolumeDensity = 0.3f;
+	// ============================================================================
+	// Voxel Volume Data
+	// ============================================================================
+
+	// Note: RDG buffers are transient, so we must upload every frame.
+	// For true persistent buffer optimization, use FRDGPooledBuffer (requires more complex setup).
+	// The dirty flag is kept for future optimization when persistent buffers are implemented.
+	FRDGBufferDesc BufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(int32), VoxelData.Num());
+	FRDGBufferRef VoxelBuffer = GraphBuilder.CreateBuffer(BufferDesc, TEXT("IVSmokeVoxelBuffer"));
+	GraphBuilder.QueueBufferUpload(VoxelBuffer, VoxelData.GetData(), VoxelData.Num() * sizeof(int32));
+	Parameters->VoxelBuffer = GraphBuilder.CreateSRV(VoxelBuffer);
+
+	// World to Local transform
+	FMatrix WorldToLocal = VoxelVolume->GetActorTransform().ToInverseMatrixWithScale();
+	Parameters->WorldToLocal = FMatrix44f(WorldToLocal);
+
+	// Grid parameters
+	Parameters->GridResolution = FIntVector3(GridRes.X, GridRes.Y, GridRes.Z);
+	Parameters->CenterOffset = FIntVector3(CenterOff.X, CenterOff.Y, CenterOff.Z);
+	Parameters->VoxelSize = VoxelSz;
+
+	// Calculate volume bounds in world space for ray-box intersection
+	FVector HalfExtent = FVector(CenterOff) * VoxelSz;
+	FVector LocalMin = -HalfExtent;
+	FVector LocalMax = FVector(GridRes - CenterOff - FIntVector(1, 1, 1)) * VoxelSz;
+
+	FTransform VolumeTransform = VoxelVolume->GetActorTransform();
+	FBox LocalBox(LocalMin, LocalMax);
+	FBox WorldBox = LocalBox.TransformBy(VolumeTransform);
+
+	Parameters->VolumeMin = FVector3f(WorldBox.Min);
+	Parameters->VolumeMax = FVector3f(WorldBox.Max);
+
+	// Scene Textures (uniform buffer - named SceneTexturesStruct for UE helper compatibility)
+	Parameters->SceneTexturesStruct = GetSceneTextureShaderParameters(View).SceneTextures;
+	Parameters->InvDeviceZToWorldZTransform = FVector4f(View.InvDeviceZToWorldZTransform);
+
+	// Smoke rendering parameters
+	Parameters->VolumeDensity = 1.0f;
 	Parameters->SmokeColor = FVector3f(0.8f, 0.8f, 0.8f);
 	Parameters->SmokeAbsorption = 0.1f;
 	Parameters->SmokeSize = 128.0f;
