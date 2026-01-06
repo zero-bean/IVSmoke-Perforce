@@ -4,6 +4,5 @@
 
 IMPLEMENT_GLOBAL_SHADER(FIVSmokeRayMarchCS, "/Plugin/IVSmoke/IVSmokeRayMarch.usf", "MainCS", SF_Compute);
 IMPLEMENT_GLOBAL_SHADER(FIVSmokeCompositePS, "/Plugin/IVSmoke/IVSmokeRayMarch.usf", "CompositePS", SF_Pixel);
-IMPLEMENT_GLOBAL_SHADER(FIVSmokeBicubicFilteringPS, "/Plugin/IVSmoke/IVSmokeBicubicFilteringPS.usf", "MainPS", SF_Pixel);
 IMPLEMENT_GLOBAL_SHADER(FIVSmokeNoiseGeneratorGlobalCS, "/Plugin/IVSmoke/IVSmokeNoiseGeneratorCS.usf", "GenerateNoise", SF_Compute);
 

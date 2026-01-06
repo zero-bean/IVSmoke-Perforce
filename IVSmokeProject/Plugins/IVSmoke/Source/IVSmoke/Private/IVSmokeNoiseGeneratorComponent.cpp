@@ -10,6 +10,8 @@
 #include "Engine/TextureRenderTargetVolume.h"
 #include "Engine/Texture2D.h"
 
+#include "IVSmokeRenderer.h"
+
 UIVSmokeNoiseGeneratorComponent::UIVSmokeNoiseGeneratorComponent()
 {
     PrimaryComponentTick.bCanEverTick = true;
@@ -23,6 +25,8 @@ void UIVSmokeNoiseGeneratorComponent::BeginPlay()
     {
         CreateVolume();
     }
+
+	FIVSmokeRenderer::Get().SetNoiseVolume(NoiseVolume);
 
     // 1 frame wait
     GetWorld()->GetTimerManager().SetTimerForNextTick([this]()

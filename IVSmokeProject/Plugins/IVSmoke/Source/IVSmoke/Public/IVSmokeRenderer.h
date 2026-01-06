@@ -10,6 +10,8 @@ class FRDGBuilder;
 class FSceneView;
 struct FPostProcessMaterialInputs;
 
+class UTextureRenderTargetVolume;
+
 /**
  * Manages registered smoke volumes and handles rendering.
  */
@@ -24,6 +26,7 @@ public:
 
 	void AddVolume(UIVSmokeVolumeComponent* Volume);
 	void RemoveVolume(UIVSmokeVolumeComponent* Volume);
+	void SetNoiseVolume(UTextureRenderTargetVolume* InNoiseVolume);
 
 	bool HasVolumes() const;
 	TArray<FBox> GatherVolumeBounds() const;
@@ -89,4 +92,6 @@ private:
 
 	TArray<TWeakObjectPtr<UIVSmokeVolumeComponent>> Volumes;
 	mutable FCriticalSection VolumesMutex;
+	UTextureRenderTargetVolume* NoiseVolume = nullptr;
+
 };

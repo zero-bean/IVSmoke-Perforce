@@ -21,8 +21,17 @@
 // Output
 RWTexture2D<float4> OutputTexture;
 
+//Input Texture
+Texture3D<half> NoiseVolume; //new
+
+//Sampler
+SamplerState LinearRepeat_Sampler; //new
+
 // Viewport
 float2 ViewportSize;
+
+// DeltaTime
+float ElapseTime; //new
 
 // Camera (Ray reconstruction using vectors)
 float3 CameraPosition;
@@ -41,6 +50,58 @@ float3 VolumeMax;
 float VolumeDensity;
 float3 SmokeColor;
 float SmokeAbsorption;
+float SmokeSize; //new
+float SmokeDensityFalloff; //new
+
+// Wind Animation
+float3 WindDirection; //new
+
+
+
+
+int GetVoxel(float3 Position)
+{
+	if (all(Position >= VolumeMin) && all(Position <= VolumeMax))
+	{
+		//Need voxel data
+		return 1;
+	}
+	return 0;
+}
+
+float GetTrilinearVoxel(float3 Position)
+{
+	float v = 0;
+
+	if (all(Position >= VolumeMin) && all(Position <= VolumeMax))
+	{
+		//Need voxel data
+		return 8;
+	}
+	return 0;
+}
+
+float GetNoise(float3 Position)
+{
+	float3 uvw = Position / SmokeSize;
+	uvw -= WindDirection * ElapseTime;
+	return NoiseVolume.SampleLevel(LinearRepeat_Sampler, uvw, 0);
+}
+
+float GetDensity(float3 Position)
+{
+	float VoxelDensity = GetTrilinearVoxel(Position); //center ~ out => 8 ~ 0
+	float Noise = GetNoise(Position);
+
+	float v = min(1.0f, 1 - (VoxelDensity / 16.0f)); //center ~ out => 0.5 ~ 1
+	v = smoothstep(SmokeDensityFalloff, 1.0f, v);	 // center ~ out => falloff + (1 - falloff) * 0.5 ~ 1 and smoothstep
+													 //if falloff == 0.2 => 0.6 ~ 1 and smoothstep
+
+	float falloff = min(1.0f, v + Noise);
+
+	return saturate(saturate(VoxelDensity) * (1 - falloff));
+}
+
 
 // ============================================================================
 // Ray Marching CS
@@ -101,7 +162,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 		float3 SamplePos = RayOrigin + RayDir * T;
 
 		// Sample density at current position
-		float Density = SampleConstantDensity(SamplePos, VolumeMin, VolumeMax, VolumeDensity);
+		//float Density = SampleConstantDensity(SamplePos, VolumeMin, VolumeMax, VolumeDensity);
+		float Density = GetDensity(SamplePos);
 
 		if (Density > 0.0)
 		{

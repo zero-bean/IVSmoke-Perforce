@@ -5,6 +5,7 @@
 #include "IVSmokePostProcessPass.h"
 #include "IVSmokeShaders.h"
 #include "IVSmokeVolumeComponent.h"
+#include "Engine/TextureRenderTargetVolume.h"
 #include "PostProcess/PostProcessMaterialInputs.h"
 
 FIVSmokeRenderer& FIVSmokeRenderer::Get()
@@ -67,6 +68,10 @@ void FIVSmokeRenderer::RemoveVolume(UIVSmokeVolumeComponent* Volume)
 	FScopeLock Lock(&VolumesMutex);
 	Volumes.Remove(Volume);
 }
+void FIVSmokeRenderer::SetNoiseVolume(UTextureRenderTargetVolume* InNoiseVolume)
+{
+	NoiseVolume = InNoiseVolume;
+}
 
 bool FIVSmokeRenderer::HasVolumes() const
 {
@@ -109,6 +114,23 @@ void FIVSmokeRenderer::AddRayMarchPass(
 
 	// Output
 	Parameters->OutputTexture = GraphBuilder.CreateUAV(FRDGTextureUAVDesc(OutputTexture));
+
+	// Input Texture
+	FTextureRHIRef TextureRHI =
+		NoiseVolume->GetRenderTargetResource()->GetRenderTargetTexture();
+	FRDGTextureRef NoiseVolumeRDG =
+		GraphBuilder.RegisterExternalTexture(
+			CreateRenderTarget(TextureRHI, TEXT("NoiseVolumeRTV"))
+		);
+	Parameters->NoiseVolume = NoiseVolumeRDG;
+
+	// Sampler
+	Parameters->LinearRepeat_Sampler = TStaticSamplerState<SF_Trilinear, AM_Wrap, AM_Wrap, AM_Wrap>::GetRHI();
+
+	// DeltaTime
+	static int FrameCount = 0;
+	Parameters->ElapseTime = FrameCount / 60.0f;
+	FrameCount++;
 
 	// Viewport
 	Parameters->ViewportSize = FVector2f(ViewportSize);
@@ -159,6 +181,11 @@ void FIVSmokeRenderer::AddRayMarchPass(
 	Parameters->VolumeDensity = 0.3f;
 	Parameters->SmokeColor = FVector3f(0.8f, 0.8f, 0.8f);
 	Parameters->SmokeAbsorption = 0.1f;
+	Parameters->SmokeSize = 128.0f;
+	Parameters->SmokeDensityFalloff = 0.2f;
+
+	// Wind Animation
+	Parameters->WindDirection = FVector3f(0.01f, 0.02f, 0.1f);
 
 	FIVSmokePassConfig Config;
 	Config.EventName = TEXT("IVSmokeRayMarch");

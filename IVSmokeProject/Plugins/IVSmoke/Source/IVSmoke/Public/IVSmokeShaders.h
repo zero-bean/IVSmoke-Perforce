@@ -23,6 +23,15 @@ class IVSMOKE_API FIVSmokeRayMarchCS : public FGlobalShader
 		// Output
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float4>, OutputTexture)
 
+		// Input Texture
+		SHADER_PARAMETER_RDG_TEXTURE(Texture3D, NoiseVolume)
+
+		// Sampler
+		SHADER_PARAMETER_SAMPLER(SamplerState, LinearRepeat_Sampler)
+
+		// DeltaTime
+		SHADER_PARAMETER(float, ElapseTime)
+
 		// Viewport
 		SHADER_PARAMETER(FVector2f, ViewportSize)
 
@@ -43,6 +52,12 @@ class IVSMOKE_API FIVSmokeRayMarchCS : public FGlobalShader
 		SHADER_PARAMETER(float, VolumeDensity)
 		SHADER_PARAMETER(FVector3f, SmokeColor)
 		SHADER_PARAMETER(float, SmokeAbsorption)
+		SHADER_PARAMETER(float, SmokeSize)
+		SHADER_PARAMETER(float, SmokeDensityFalloff)
+
+		// Wind Animation
+		SHADER_PARAMETER(FVector3f, WindDirection)
+
 	END_SHADER_PARAMETER_STRUCT()
 
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
@@ -101,24 +116,6 @@ class IVSMOKE_API FIVSmokeCompositePS : public FGlobalShader
 		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
 	}
 };
-class IVSMOKE_API FIVSmokeBicubicFilteringPS : public FGlobalShader
-{
-	DECLARE_GLOBAL_SHADER(FIVSmokeBicubicFilteringPS);
-	SHADER_USE_PARAMETER_STRUCT(FIVSmokeBicubicFilteringPS, FGlobalShader);
-
-	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-		SHADER_PARAMETER_TEXTURE(Texture2D, MainTexture)
-		SHADER_PARAMETER_SAMPLER(SamplerState, MainSampler)
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float4>, OutputTexture)
-	END_SHADER_PARAMETER_STRUCT()
-
-public:
-	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
-	{
-		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
-	}
-};
-
 class IVSMOKE_API FIVSmokeSharpenCompositePS : public FGlobalShader
 {
 	DECLARE_GLOBAL_SHADER(FIVSmokeSharpenCompositePS);
