@@ -3,10 +3,11 @@
 #include "IVSmokeRenderer.h"
 
 #include "IVSmokePostProcessPass.h"
+#include "IVSmokeSettings.h"
 #include "IVSmokeShaders.h"
-#include "IVSmokeVolumeComponent.h"
-#include "Engine/TextureRenderTargetVolume.h"
+#include "IVSmokeSmokePreset.h"
 #include "IVSmokeVoxelVolume.h"
+#include "Engine/TextureRenderTargetVolume.h"
 #include "PostProcess/PostProcessMaterialInputs.h"
 #include "SceneRenderTargetParameters.h"
 
@@ -16,11 +17,160 @@ FIVSmokeRenderer& FIVSmokeRenderer::Get()
 	return Instance;
 }
 
+// ============================================================================
+// Lifecycle
+// ============================================================================
+
+void FIVSmokeRenderer::Initialize()
+{
+	if (NoiseVolume)
+	{
+		return; // Already initialized
+	}
+
+	CreateNoiseVolume();
+}
+
+void FIVSmokeRenderer::Shutdown()
+{
+	if (NoiseVolume)
+	{
+		NoiseVolume->RemoveFromRoot();
+		NoiseVolume = nullptr;
+	}
+	ElapsedTime = 0.0f;
+}
+
+void FIVSmokeRenderer::CreateNoiseVolume()
+{
+	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
+	const FIVSmokeNoiseSettings& NoiseSettings = Settings->NoiseSettings;
+
+	// Create volume texture
+	NoiseVolume = NewObject<UTextureRenderTargetVolume>();
+	NoiseVolume->AddToRoot(); // Prevent GC
+	NoiseVolume->Init(NoiseSettings.TexSize, NoiseSettings.TexSize, NoiseSettings.TexSize, EPixelFormat::PF_R16F);
+	NoiseVolume->bCanCreateUAV = true;
+	NoiseVolume->ClearColor = FLinearColor::Black;
+	NoiseVolume->SRGB = false;
+	NoiseVolume->UpdateResourceImmediate(true);
+
+	// Run compute shader to generate noise
+	FTextureRenderTargetResource* RenderTargetResource = NoiseVolume->GameThread_GetRenderTargetResource();
+	if (!RenderTargetResource)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[FIVSmokeRenderer::CreateNoiseVolume] Failed to get render target resource"));
+		return;
+	}
+
+	ENQUEUE_RENDER_COMMAND(IVSmokeGenerateNoise)(
+		[RenderTargetResource, NoiseSettings](FRHICommandListImmediate& RHICmdList)
+		{
+			FRDGBuilder GraphBuilder(RHICmdList);
+			FRDGTextureRef NoiseTexture = GraphBuilder.RegisterExternalTexture(
+				CreateRenderTarget(RenderTargetResource->TextureRHI, TEXT("IVSmokeNoiseVolume"))
+			);
+
+			FRDGTextureUAVRef OutputUAV = GraphBuilder.CreateUAV(NoiseTexture);
+
+			auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeNoiseGeneratorGlobalCS::FParameters>();
+			Parameters->RWNoiseTex = OutputUAV;
+			Parameters->TexSize = FUintVector3(NoiseSettings.TexSize, NoiseSettings.TexSize, NoiseSettings.TexSize);
+			Parameters->Octaves = NoiseSettings.Octaves;
+			Parameters->Wrap = NoiseSettings.Wrap;
+			Parameters->AxisCellCount = NoiseSettings.AxisCellCount;
+			Parameters->Amplitude = NoiseSettings.Amplitude;
+			Parameters->CellSize = NoiseSettings.CellSize;
+			Parameters->Seed = NoiseSettings.Seed;
+
+			TShaderMapRef<FIVSmokeNoiseGeneratorGlobalCS> ComputeShader(GetGlobalShaderMap(GMaxRHIFeatureLevel));
+
+			FIntVector GroupCount(
+				FMath::DivideAndRoundUp(NoiseSettings.TexSize, 8),
+				FMath::DivideAndRoundUp(NoiseSettings.TexSize, 8),
+				FMath::DivideAndRoundUp(NoiseSettings.TexSize, 8)
+			);
+
+			GraphBuilder.AddPass(
+				RDG_EVENT_NAME("IVSmokeNoiseGeneration"),
+				Parameters,
+				ERDGPassFlags::Compute,
+				[Parameters, ComputeShader, GroupCount](FRHIComputeCommandList& RHICmdList)
+				{
+					FComputeShaderUtils::Dispatch(RHICmdList, ComputeShader, *Parameters, GroupCount);
+				}
+			);
+			GraphBuilder.Execute();
+		}
+	);
+}
+
+const UIVSmokeSmokePreset* FIVSmokeRenderer::GetEffectivePreset(const AIVSmokeVoxelVolume* Volume) const
+{
+	// Check for volume-specific override first
+	if (Volume)
+	{
+		const UIVSmokeSmokePreset* Override = Volume->GetSmokePresetOverride();
+		if (Override)
+		{
+			return Override;
+		}
+	}
+
+	// Fall back to default preset from settings
+	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
+	if (Settings->DefaultSmokePreset.IsValid())
+	{
+		return Settings->DefaultSmokePreset.LoadSynchronous();
+	}
+
+	return nullptr;
+}
+
+// ============================================================================
+// Volume Management
+// ============================================================================
+
+void FIVSmokeRenderer::AddVolume(AIVSmokeVoxelVolume* Volume)
+{
+	FScopeLock Lock(&VolumesMutex);
+	Volumes.AddUnique(Volume);
+
+	// Auto-initialize on first volume
+	if (!IsInitialized())
+	{
+		Initialize();
+	}
+}
+
+void FIVSmokeRenderer::RemoveVolume(AIVSmokeVoxelVolume* Volume)
+{
+	FScopeLock Lock(&VolumesMutex);
+	Volumes.Remove(Volume);
+}
+
+bool FIVSmokeRenderer::HasVolumes() const
+{
+	FScopeLock Lock(&VolumesMutex);
+	return Volumes.Num() > 0;
+}
+
+// ============================================================================
+// Rendering
+// ============================================================================
+
 FScreenPassTexture FIVSmokeRenderer::Render(
 	FRDGBuilder& GraphBuilder,
 	const FSceneView& View,
 	const FPostProcessMaterialInputs& Inputs)
 {
+	// Check if rendering is enabled
+	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
+	if (!Settings->bEnableSmokeRendering)
+	{
+		return FScreenPassTexture();
+	}
+
 	// Get scene color from inputs
 	FScreenPassTextureSlice SceneColorSlice = Inputs.GetInput(EPostProcessMaterialInput::SceneColor);
 	if (!SceneColorSlice.IsValid())
@@ -60,28 +210,6 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	return Output;
 }
 
-void FIVSmokeRenderer::AddVolume(AIVSmokeVoxelVolume* Volume)
-{
-	FScopeLock Lock(&VolumesMutex);
-	Volumes.AddUnique(Volume);
-}
-
-void FIVSmokeRenderer::RemoveVolume(AIVSmokeVoxelVolume* Volume)
-{
-	FScopeLock Lock(&VolumesMutex);
-	Volumes.Remove(Volume);
-}
-void FIVSmokeRenderer::SetNoiseVolume(UTextureRenderTargetVolume* InNoiseVolume)
-{
-	NoiseVolume = InNoiseVolume;
-}
-
-bool FIVSmokeRenderer::HasVolumes() const
-{
-	FScopeLock Lock(&VolumesMutex);
-	return Volumes.Num() > 0;
-}
-
 // ============================================================================
 // Pass Functions
 // ============================================================================
@@ -112,6 +240,12 @@ void FIVSmokeRenderer::AddRayMarchPass(
 		return;
 	}
 
+	// Ensure noise volume is initialized
+	if (!NoiseVolume)
+	{
+		return;
+	}
+
 	// Get voxel data from volume
 	const TArray<int32>& VoxelData = VoxelVolume->GetVoxelArray();
 	const FIntVector GridRes = VoxelVolume->GetGridResolution();
@@ -124,6 +258,9 @@ void FIVSmokeRenderer::AddRayMarchPass(
 		return;
 	}
 
+	// Get effective preset for this volume
+	const UIVSmokeSmokePreset* Preset = GetEffectivePreset(VoxelVolume);
+
 	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
 	TShaderMapRef<FIVSmokeRayMarchCS> ComputeShader(ShaderMap);
 
@@ -132,22 +269,19 @@ void FIVSmokeRenderer::AddRayMarchPass(
 	// Output
 	Parameters->OutputTexture = GraphBuilder.CreateUAV(FRDGTextureUAVDesc(OutputTexture));
 
-	// Input Texture
-	FTextureRHIRef TextureRHI =
-		NoiseVolume->GetRenderTargetResource()->GetRenderTargetTexture();
-	FRDGTextureRef NoiseVolumeRDG =
-		GraphBuilder.RegisterExternalTexture(
-			CreateRenderTarget(TextureRHI, TEXT("NoiseVolumeRTV"))
-		);
+	// Input Texture (Noise Volume)
+	FTextureRHIRef TextureRHI = NoiseVolume->GetRenderTargetResource()->GetRenderTargetTexture();
+	FRDGTextureRef NoiseVolumeRDG = GraphBuilder.RegisterExternalTexture(
+		CreateRenderTarget(TextureRHI, TEXT("IVSmokeNoiseVolume"))
+	);
 	Parameters->NoiseVolume = NoiseVolumeRDG;
 
 	// Sampler
 	Parameters->LinearRepeat_Sampler = TStaticSamplerState<SF_Trilinear, AM_Wrap, AM_Wrap, AM_Wrap>::GetRHI();
 
-	// DeltaTime
-	static int FrameCount = 0;
-	Parameters->ElapseTime = FrameCount / 60.0f;
-	FrameCount++;
+	// Time - use real delta time accumulation
+	ElapsedTime += View.Family->Time.GetDeltaWorldTimeSeconds();
+	Parameters->ElapseTime = ElapsedTime;
 
 	// Viewport
 	Parameters->ViewportSize = FVector2f(ViewportSize);
@@ -156,7 +290,6 @@ void FIVSmokeRenderer::AddRayMarchPass(
 	// Camera (Ray reconstruction using vectors)
 	const FViewMatrices& ViewMatrices = View.ViewMatrices;
 	Parameters->CameraPosition = FVector3f(ViewMatrices.GetViewOrigin());
-
 	Parameters->CameraForward = FVector3f(View.GetViewDirection());
 	Parameters->CameraRight = FVector3f(View.GetViewRight());
 	Parameters->CameraUp = FVector3f(View.GetViewUp());
@@ -169,16 +302,10 @@ void FIVSmokeRenderer::AddRayMarchPass(
 	Parameters->TanHalfFOV = TanHalfFOV;
 	Parameters->AspectRatio = AspectRatio;
 
-	// Ray Marching Setup
-	Parameters->MaxSteps = 64;
-
 	// ============================================================================
 	// Voxel Volume Data
 	// ============================================================================
 
-	// Note: RDG buffers are transient, so we must upload every frame.
-	// For true persistent buffer optimization, use FRDGPooledBuffer (requires more complex setup).
-	// The dirty flag is kept for future optimization when persistent buffers are implemented.
 	FRDGBufferDesc BufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(int32), VoxelData.Num());
 	FRDGBufferRef VoxelBuffer = GraphBuilder.CreateBuffer(BufferDesc, TEXT("IVSmokeVoxelBuffer"));
 	GraphBuilder.QueueBufferUpload(VoxelBuffer, VoxelData.GetData(), VoxelData.Num() * sizeof(int32));
@@ -205,19 +332,35 @@ void FIVSmokeRenderer::AddRayMarchPass(
 	Parameters->VolumeMin = FVector3f(WorldBox.Min);
 	Parameters->VolumeMax = FVector3f(WorldBox.Max);
 
-	// Scene Textures (uniform buffer - named SceneTexturesStruct for UE helper compatibility)
+	// Scene Textures
 	Parameters->SceneTexturesStruct = GetSceneTextureShaderParameters(View).SceneTextures;
 	Parameters->InvDeviceZToWorldZTransform = FVector4f(View.InvDeviceZToWorldZTransform);
 
-	// Smoke rendering parameters
-	Parameters->VolumeDensity = 1.0f;
-	Parameters->SmokeColor = FVector3f(0.8f, 0.8f, 0.8f);
-	Parameters->SmokeAbsorption = 0.1f;
-	Parameters->SmokeSize = 128.0f;
-	Parameters->SmokeDensityFalloff = 0.2f;
+	// ============================================================================
+	// Smoke Rendering Parameters (from Preset or defaults)
+	// ============================================================================
 
-	// Wind Animation
-	Parameters->WindDirection = FVector3f(0.01f, 0.02f, 0.1f);
+	if (Preset)
+	{
+		Parameters->VolumeDensity = Preset->VolumeDensity;
+		Parameters->SmokeColor = FVector3f(Preset->SmokeColor.R, Preset->SmokeColor.G, Preset->SmokeColor.B);
+		Parameters->SmokeAbsorption = Preset->SmokeAbsorption;
+		Parameters->SmokeSize = Preset->SmokeSize;
+		Parameters->SmokeDensityFalloff = Preset->SmokeDensityFalloff;
+		Parameters->WindDirection = FVector3f(Preset->WindDirection);
+		Parameters->MaxSteps = Preset->MaxSteps;
+	}
+	else
+	{
+		// Fallback defaults
+		Parameters->VolumeDensity = 1.0f;
+		Parameters->SmokeColor = FVector3f(0.8f, 0.8f, 0.8f);
+		Parameters->SmokeAbsorption = 0.1f;
+		Parameters->SmokeSize = 128.0f;
+		Parameters->SmokeDensityFalloff = 0.2f;
+		Parameters->WindDirection = FVector3f(0.01f, 0.02f, 0.1f);
+		Parameters->MaxSteps = 64;
+	}
 
 	FIVSmokePassConfig Config;
 	Config.EventName = TEXT("IVSmokeRayMarch");

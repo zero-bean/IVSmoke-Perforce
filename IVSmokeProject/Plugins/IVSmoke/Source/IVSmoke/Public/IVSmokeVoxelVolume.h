@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "IVSmokeVoxelVolume.generated.h"
 
+class UIVSmokeSmokePreset;
+
 /** @todo Documentation */
 struct FVoxelNode
 {
@@ -76,6 +78,17 @@ public:
 
 	/** Returns the current buffer size (for detecting resize). */
 	int32 GetVoxelBufferSize() const { return VoxelArray.Num(); }
+
+	/** Returns the smoke preset override for this volume, or nullptr to use default. */
+	const UIVSmokeSmokePreset* GetSmokePresetOverride() const { return SmokePresetOverride; }
+
+	// ============================================================================
+	// Smoke Appearance Override
+	// ============================================================================
+
+	/** Optional preset override for this volume. If null, uses default from IVSmoke Settings. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Appearance")
+	TObjectPtr<UIVSmokeSmokePreset> SmokePresetOverride;
 
 	// --- public API ---
 public:

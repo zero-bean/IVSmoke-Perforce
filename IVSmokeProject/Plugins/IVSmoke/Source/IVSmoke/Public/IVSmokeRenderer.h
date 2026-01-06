@@ -8,12 +8,13 @@
 class AIVSmokeVoxelVolume;
 class FRDGBuilder;
 class FSceneView;
-struct FPostProcessMaterialInputs;
-
+class UIVSmokeSmokePreset;
 class UTextureRenderTargetVolume;
+struct FPostProcessMaterialInputs;
 
 /**
  * Manages registered smoke volumes and handles rendering.
+ * Owns shared rendering resources (noise volume) and reads settings from UIVSmokeSettings.
  */
 class IVSMOKE_API FIVSmokeRenderer
 {
@@ -21,11 +22,22 @@ public:
 	static FIVSmokeRenderer& Get();
 
 	// ============================================================================
+	// Lifecycle
+	// ============================================================================
+
+	/** Initialize renderer resources. Called on first use or settings change. */
+	void Initialize();
+
+	/** Release renderer resources. */
+	void Shutdown();
+
+	/** Check if renderer is initialized with valid resources. */
+	bool IsInitialized() const { return NoiseVolume != nullptr; }
+
+	// ============================================================================
 	// Volume Management
 	// ============================================================================
 
-
-	void SetNoiseVolume(UTextureRenderTargetVolume* InNoiseVolume);
 	void AddVolume(AIVSmokeVoxelVolume* Volume);
 	void RemoveVolume(AIVSmokeVoxelVolume* Volume);
 
@@ -51,6 +63,16 @@ public:
 
 private:
 	FIVSmokeRenderer() = default;
+
+	// ============================================================================
+	// Resource Management
+	// ============================================================================
+
+	/** Create noise volume texture using settings from UIVSmokeSettings. */
+	void CreateNoiseVolume();
+
+	/** Get the effective preset for a volume (override or default). */
+	const UIVSmokeSmokePreset* GetEffectivePreset(const AIVSmokeVoxelVolume* Volume) const;
 
 	// ============================================================================
 	// Pass Functions
@@ -93,8 +115,16 @@ private:
 		const FIntPoint& ViewportSize
 	);
 
+	// ============================================================================
+	// State
+	// ============================================================================
+
 	TArray<TWeakObjectPtr<AIVSmokeVoxelVolume>> Volumes;
 	mutable FCriticalSection VolumesMutex;
+
+	/** Shared noise volume texture for all smoke rendering. Prevent GC via AddToRoot. */
 	UTextureRenderTargetVolume* NoiseVolume = nullptr;
 
+	/** Elapsed time for animation. */
+	float ElapsedTime = 0.0f;
 };

@@ -97,7 +97,7 @@ float GetDensity(float3 Position)
 	// Combine edge falloff with noise for natural variation
 	float Falloff = min(1.0, EdgeFactor + Noise);
 
-	return VoxelDensity * (1.0 - Falloff);
+	return VoxelDensity * (1.0 - Falloff) * VolumeDensity;
 }
 
 
@@ -186,8 +186,9 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	float AdaptiveStepSize = RayLength / (float)MaxSteps;
 
 	// Jitter starting position to reduce banding artifacts
-	// Simple hash-based jitter using pixel coordinates
-	float Jitter = frac(sin(dot(float2(PixelCoord), float2(12.9898, 78.233))) * 43758.5453);
+	// Time-based jitter: different pattern each frame, TAA will converge
+	float2 JitterSeed = float2(PixelCoord) + frac(ElapseTime * 60.0) * 100.0;
+	float Jitter = frac(sin(dot(JitterSeed, float2(12.9898, 78.233))) * 43758.5453);
 	float T = TMin + Jitter * AdaptiveStepSize;
 
 	// Ray Marching
@@ -204,7 +205,7 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 
 		if (Density > 0.0)
 		{
-			// Beer-Lambert absorption (use adaptive step size for correct integration)
+			// Beer-Lambert absorption
 			float SampleTransmittance = BeerLambert(Density, AdaptiveStepSize, SmokeAbsorption);
 
 			// Accumulate color (front-to-back compositing)

@@ -26,7 +26,8 @@ public class IVSmoke : ModuleRules
 			new string[]
 			{
 				"CoreUObject",
-				"Engine"
+				"Engine",
+				"DeveloperSettings"
 			}
 		);
 	}
