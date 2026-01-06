@@ -69,45 +69,6 @@ float SmokeDensityFalloff; //new
 float3 WindDirection; //new
 
 
-
-
-/**
- * Samples binary voxel occupancy at a position.
- *
- * @param Position  World-space sample position
- * @return          1 if voxel is occupied, 0 otherwise
- */
-int GetVoxel(float3 Position)
-{
-	float Density = SampleVoxelDensityTrilinear(
-		Position,
-		WorldToLocal,
-		GridResolution,
-		CenterOffset,
-		VoxelSize,
-		VoxelBuffer
-	);
-	return (Density > 0.5) ? 1 : 0;
-}
-
-/**
- * Samples voxel density with trilinear interpolation.
- *
- * @param Position  World-space sample position
- * @return          Interpolated density [0, 1]: 1=fully inside smoke, 0=outside
- */
-float GetTrilinearVoxel(float3 Position)
-{
-	return SampleVoxelDensityTrilinear(
-		Position,
-		WorldToLocal,
-		GridResolution,
-		CenterOffset,
-		VoxelSize,
-		VoxelBuffer
-	);
-}
-
 float GetNoise(float3 Position)
 {
 	float3 uvw = Position / SmokeSize;
@@ -124,7 +85,7 @@ float GetNoise(float3 Position)
  */
 float GetDensity(float3 Position)
 {
-	float VoxelDensity = GetTrilinearVoxel(Position); // [0, 1]: 1=center, 0=edge
+	float VoxelDensity = SampleVoxelDensityTrilinear(Position, WorldToLocal, GridResolution, CenterOffset, VoxelSize, VoxelBuffer); // [0, 1]: 1=center, 0=edge
 	float Noise = GetNoise(Position);
 
 	// Edge falloff: creates soft edges at smoke boundaries
