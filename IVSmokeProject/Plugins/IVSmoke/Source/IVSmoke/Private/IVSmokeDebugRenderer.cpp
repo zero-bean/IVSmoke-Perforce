@@ -261,12 +261,23 @@ void FIVSmokeDebugRenderer::RenderVolumeCube(
 		3, 7, 6, 3, 6, 2,
 	};
 
+	const FIntRect ViewRect = Output.ViewRect;
+
 	GraphBuilder.AddPass(
 		RDG_EVENT_NAME("IVSmokeVolumeCube"),
 		Parameters,
 		ERDGPassFlags::Raster,
-		[VertexShader, PixelShader, Parameters](FRHICommandList& RHICmdList)
+		[VertexShader, PixelShader, Parameters, ViewRect](FRHICommandList& RHICmdList)
 		{
+			RHICmdList.SetViewport(
+				 ViewRect.Min.X,
+				 ViewRect.Min.Y,
+				 0.0f,
+				 ViewRect.Max.X,
+				 ViewRect.Max.Y,
+				 1.0f
+			 );
+
 			FRHIResourceCreateInfo CreateInfoVB(TEXT("IVSmokeCubeVB"));
 			FBufferRHIRef VertexBuffer = RHICmdList.CreateVertexBuffer(
 				sizeof(CubeVertices),
