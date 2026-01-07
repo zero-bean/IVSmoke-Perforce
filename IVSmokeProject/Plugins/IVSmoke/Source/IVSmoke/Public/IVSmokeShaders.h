@@ -8,31 +8,90 @@
 #include "RenderGraphUtils.h"
 #include "SceneTexturesConfig.h"
 
+// ============================================================================
+// GPU Data Structures for Multi-Volume Rendering
+// ============================================================================
+
 /**
- * Ray Marching compute shader.
- * Calculates volumetric smoke and outputs to intermediate texture.
+ * GPU-side volume metadata for single-pass multi-volume ray marching.
+ * Each volume has its own transform, bounds, and rendering parameters.
+ * This struct is uploaded to a StructuredBuffer for GPU access.
+ *
+ * Memory layout: 256 bytes (aligned to 16-byte boundary)
  */
-class IVSMOKE_API FIVSmokeRayMarchCS : public FGlobalShader
+struct FIVSmokeVolumeGPUData
 {
-	DECLARE_GLOBAL_SHADER(FIVSmokeRayMarchCS);
-	SHADER_USE_PARAMETER_STRUCT(FIVSmokeRayMarchCS, FGlobalShader);
+	/** World-to-local transform for this volume. */
+	FMatrix44f WorldToLocal;        // 64 bytes
+
+	/** Local-to-world transform for this volume. */
+	FMatrix44f LocalToWorld;        // 64 bytes
+
+	/** Local-space AABB minimum corner. */
+	FVector3f AABBMin;              // 12 bytes
+	/** World-space size of each voxel. */
+	float VoxelSize;                // 4 bytes
+
+	/** Local-space AABB maximum corner. */
+	FVector3f AABBMax;              // 12 bytes
+	/** Offset into packed voxel buffer. */
+	uint32 VoxelBufferOffset;       // 4 bytes
+
+	/** Grid resolution (voxel count per axis). */
+	FIntVector3 GridResolution;     // 12 bytes
+	/** Total voxel count for this volume. */
+	uint32 VoxelCount;              // 4 bytes
+
+	/** Smoke color for this volume. */
+	FVector3f SmokeColor;           // 12 bytes
+	/** Absorption coefficient. */
+	float Absorption;               // 4 bytes
+
+	/** Center offset for grid-to-local coordinate conversion. */
+	FVector3f CenterOffset;         // 12 bytes
+	/** Per-volume density multiplier (default 1.0). */
+	float DensityScale;             // 4 bytes
+
+	/** World-space AABB minimum (for fast ray-box intersection). */
+	FVector3f WorldAABBMin;         // 12 bytes
+	float Pad1;                     // 4 bytes (padding)
+
+	/** World-space AABB maximum (for fast ray-box intersection). */
+	FVector3f WorldAABBMax;         // 12 bytes
+	float Pad2;                     // 4 bytes (padding)
+
+	// Total: 240 bytes, padded to 256 bytes for GPU alignment
+	float Reserved[4];              // 16 bytes (future use / alignment)
+};
+
+// Ensure structure is 256 bytes for efficient GPU access
+static_assert(sizeof(FIVSmokeVolumeGPUData) == 256, "FIVSmokeVolumeGPUData must be 256 bytes");
+
+/**
+ * Multi-Volume Ray Marching compute shader.
+ * Processes all smoke volumes in a single pass with correct Beer-Lambert integration.
+ */
+class IVSMOKE_API FIVSmokeMultiVolumeRayMarchCS : public FGlobalShader
+{
+	DECLARE_GLOBAL_SHADER(FIVSmokeMultiVolumeRayMarchCS);
+	SHADER_USE_PARAMETER_STRUCT(FIVSmokeMultiVolumeRayMarchCS, FGlobalShader);
 
 	static constexpr uint32 ThreadGroupSizeX = 8;
 	static constexpr uint32 ThreadGroupSizeY = 8;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-		// Output
+		// Output (Dual Render Target)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float4>, SmokeAlbedoTex)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float4>, SmokeMaskTex)
 
-		// Input Texture
+		// Input Textures
 		SHADER_PARAMETER_RDG_TEXTURE(Texture3D, NoiseVolume)
 
-		// Sampler
+		// Samplers
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearRepeat_Sampler)
 
-		// DeltaTime
-		SHADER_PARAMETER(float, ElapseTime)
+		// Time
+		SHADER_PARAMETER(float, ElapsedTime)
 
 		// Viewport
 		SHADER_PARAMETER(FIntPoint, TexSize)
@@ -50,30 +109,27 @@ class IVSMOKE_API FIVSmokeRayMarchCS : public FGlobalShader
 		// Ray Marching Setup
 		SHADER_PARAMETER(int32, MaxSteps)
 
-		// Volume Bounds (for ray-box intersection)
-		SHADER_PARAMETER(FVector3f, VolumeMin)
-		SHADER_PARAMETER(FVector3f, VolumeMax)
+		// Multi-Volume Data
+		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<FIVSmokeVolumeGPUData>, VolumeDataBuffer)
+		SHADER_PARAMETER(uint32, NumActiveVolumes)
 
-		// Voxel Data
-		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<int>, VoxelBuffer)
-		SHADER_PARAMETER(FMatrix44f, WorldToLocal)
-		SHADER_PARAMETER(FIntVector3, GridResolution)
-		SHADER_PARAMETER(FIntVector3, CenterOffset)
-		SHADER_PARAMETER(float, VoxelSize)
+		// Packed Voxel Data (all volumes concatenated)
+		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<float>, PackedVoxelBuffer)
 
-		// Scene Textures (uniform buffer - named SceneTexturesStruct for compatibility with UE helpers)
+		// Scene Textures
 		SHADER_PARAMETER_RDG_UNIFORM_BUFFER(FSceneTextureUniformParameters, SceneTexturesStruct)
 		SHADER_PARAMETER(FVector4f, InvDeviceZToWorldZTransform)
 
-		// Smoke Rendering
-		SHADER_PARAMETER(float, VolumeDensity)
-		SHADER_PARAMETER(FVector3f, SmokeColor)
-		SHADER_PARAMETER(float, SmokeAbsorption)
+		// Global Smoke Parameters
+		SHADER_PARAMETER(float, GlobalAbsorption)
 		SHADER_PARAMETER(float, SmokeSize)
 		SHADER_PARAMETER(float, SmokeDensityFalloff)
-
-		// Wind Animation
 		SHADER_PARAMETER(FVector3f, WindDirection)
+
+		// Rayleigh Scattering
+		SHADER_PARAMETER(FVector3f, LightDirection)
+		SHADER_PARAMETER(FVector3f, LightColor)
+		SHADER_PARAMETER(float, ScatterScale)
 
 	END_SHADER_PARAMETER_STRUCT()
 
@@ -87,8 +143,10 @@ class IVSMOKE_API FIVSmokeRayMarchCS : public FGlobalShader
 		FGlobalShader::ModifyCompilationEnvironment(Parameters, OutEnvironment);
 		OutEnvironment.SetDefine(TEXT("THREADGROUP_SIZE_X"), ThreadGroupSizeX);
 		OutEnvironment.SetDefine(TEXT("THREADGROUP_SIZE_Y"), ThreadGroupSizeY);
+		OutEnvironment.SetDefine(TEXT("MULTI_VOLUME_RAY_MARCH"), 1);
 	}
 };
+
 class IVSMOKE_API FIVSmokeNoiseGeneratorGlobalCS : public FGlobalShader
 {
 	DECLARE_GLOBAL_SHADER(FIVSmokeNoiseGeneratorGlobalCS);

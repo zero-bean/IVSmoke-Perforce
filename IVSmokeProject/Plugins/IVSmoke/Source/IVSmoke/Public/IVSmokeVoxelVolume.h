@@ -41,6 +41,19 @@ enum class EIVSmokeVoxelVolumeState : uint8
 	Finished
 };
 
+/**
+ * Dirty level for GPU texture synchronization.
+ */
+UENUM(BlueprintType)
+enum class EIVSmokeDirtyLevel : uint8
+{
+	/** No changes since last GPU upload. Texture can be reused. */
+	Clean,
+
+	/** Voxel data changed. Full texture upload required. */
+	Dirty
+};
+
 /** @todo Documentation */
 UENUM(BlueprintType)
 enum class EIVSmokeDebugViewMode : uint8
@@ -108,8 +121,8 @@ public:
 	// Rendering Data Access
 	// ============================================================================
 
-	/** Returns the voxel occupancy array for GPU upload. */
-	const TArray<int32>& GetVoxelArray() const { return VoxelArray; }
+	/** Returns the voxel density array for GPU upload. Values are continuous (0.0~N). */
+	const TArray<float>& GetVoxelArray() const { return VoxelArray; }
 
 	/** Returns the grid resolution (dimensions of the voxel grid). */
 	FIntVector GetGridResolution() const { return GridResolution; }
@@ -120,17 +133,23 @@ public:
 	/** Returns the world-space size of each voxel. */
 	float GetVoxelSize() const { return VoxelSize; }
 
+	/** Returns the current dirty level for GPU buffer synchronization. */
+	EIVSmokeDirtyLevel GetDirtyLevel() const { return DirtyLevel; }
+
 	/** Returns true if voxel data has been modified since last GPU upload. */
-	bool IsVoxelDataDirty() const { return bVoxelDataDirty; }
+	bool IsVoxelDataDirty() const { return DirtyLevel != EIVSmokeDirtyLevel::Clean; }
 
 	/** Clears the dirty flag after GPU upload. Called by renderer. */
-	void ClearVoxelDataDirty() { bVoxelDataDirty = false; }
+	void ClearVoxelDataDirty() { DirtyLevel = EIVSmokeDirtyLevel::Clean; }
 
 	/** Returns the current buffer size (for detecting resize). */
 	int32 GetVoxelBufferSize() const { return VoxelArray.Num(); }
 
 	/** Returns the smoke preset override for this volume, or nullptr to use default. */
 	const UIVSmokeSmokePreset* GetSmokePresetOverride() const { return SmokePresetOverride; }
+
+	/** Returns the number of active (non-zero density) voxels. */
+	int32 GetActiveVoxelCount() const { return ActiveVoxelCount; }
 
 	// ============================================================================
 	// Smoke Appearance Override
@@ -251,6 +270,26 @@ private:
 	/** @todo Documentation */
 	void ProcessDissipation(int32 RemoveNum);
 
+	// ============================================================================
+	// Voxel Data Management (Internal)
+	// ============================================================================
+
+	/**
+	 * Sets voxel density at the given grid position.
+	 *
+	 * @param GridPos   Grid position to set
+	 * @param Density   Density value (0.0 = remove, >0 = active)
+	 */
+	void SetVoxelDensity(const FIntVector& GridPos, float Density);
+
+	/**
+	 * Sets voxel density at the given linear index.
+	 *
+	 * @param LinearIndex   Linear index in dense array
+	 * @param Density       Density value (0.0 = remove, >0 = active)
+	 */
+	void SetVoxelDensityByIndex(int32 LinearIndex, float Density);
+
 	/** @todo Documentation */
 	void DrawDebugVisualization();
 
@@ -290,11 +329,11 @@ private:
 	// @todo Documentation
 	int32 ActiveVoxelCount = 0;
 
-	// @todo Documentation
-	TArray<int32> VoxelArray;
+	/** Voxel density array. Values are continuous (0.0 = empty, 1.0 = full density). */
+	TArray<float> VoxelArray;
 
 	/** Dirty flag for GPU buffer synchronization. */
-	bool bVoxelDataDirty = false;
+	EIVSmokeDirtyLevel DirtyLevel = EIVSmokeDirtyLevel::Clean;
 
 	// @todo Documentation
 	bool bIsEditorPreviewing = false;

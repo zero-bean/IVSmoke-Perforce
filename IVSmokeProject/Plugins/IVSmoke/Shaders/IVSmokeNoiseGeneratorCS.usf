@@ -18,35 +18,58 @@ float hash(uint n)
     return float(n & uint(0x7fffffffU)) / float(0x7fffffff);
 }
 
-
-float Worley(float3 coord, int axisCellCount)
+/**
+ * Seamless tileable Worley noise.
+ * Works in normalized [0, cellCount) space for proper periodicity.
+ *
+ * @param normalizedCoord  Position in [0, cellCount) space
+ * @param cellCount        Number of cells (must match for seamless tiling)
+ * @param seedOffset       Seed offset for this octave
+ */
+float SeamlessWorley(float3 normalizedCoord, int cellCount, int seedOffset)
 {
-    int3 cellPos = floor(coord / CellSize);
-    float3 fracPos = float3(coord / CellSize - cellPos);
-    float dist = 1.0f;
+    // Cell position and fractional position within cell
+    int3 cellPos = int3(floor(normalizedCoord));
+    float3 fracPos = normalizedCoord - float3(cellPos);
+
+    float minDist = 1.0f;
+
+    // Check 3x3x3 neighborhood
     for (int z = -1; z <= 1; ++z)
     {
         for (int y = -1; y <= 1; ++y)
         {
             for (int x = -1; x <= 1; ++x)
             {
-                int3 curCellPos = cellPos + int3(x, y, z);
-                int cellIndex = curCellPos.x + axisCellCount * (curCellPos.y + curCellPos.z * axisCellCount);
-                if (any(curCellPos == -1) || any(curCellPos == axisCellCount))
-                {
-                    int3 wrappedCellPos = fmod(curCellPos + axisCellCount, (int3) axisCellCount);
-                    cellIndex = wrappedCellPos.x + axisCellCount * (wrappedCellPos.y + wrappedCellPos.z * axisCellCount);
-                }
-             
-                float3 pointPos = curCellPos + float3(hash(Seed + cellIndex), hash(Seed + cellIndex * 2), hash(Seed + cellIndex * 3));
-                dist = min(dist, distance(cellPos + fracPos, pointPos));
+                int3 offset = int3(x, y, z);
+                int3 neighborCell = cellPos + offset;
+
+                // Wrap cell position for seamless tiling (handles negative values)
+                int3 wrappedCell = ((neighborCell % cellCount) + cellCount) % cellCount;
+
+                // Generate consistent random point for this cell
+                int cellIndex = wrappedCell.x + cellCount * (wrappedCell.y + wrappedCell.z * cellCount);
+
+                float3 randomPoint = float3(
+                    hash(seedOffset + cellIndex),
+                    hash(seedOffset + cellIndex * 2),
+                    hash(seedOffset + cellIndex * 3)
+                );
+
+                // Point position relative to current cell
+                float3 pointPos = float3(offset) + randomPoint;
+
+                // Distance from sample position to this point
+                float dist = distance(fracPos, pointPos);
+                minDist = min(minDist, dist);
             }
         }
     }
-    
-    dist = sqrt(1.0f - dist * dist);
-    dist *= dist * dist * dist * dist * dist;
-    return dist;
+
+    // Smooth falloff - original formula
+    float result = sqrt(1.0f - minDist * minDist);
+    result = result * result * result * result * result * result;
+    return result;
 }
 
 [numthreads(8, 8, 8)]
@@ -55,21 +78,36 @@ void GenerateNoise(uint3 DTid : SV_DispatchThreadID)
     if (DTid.x >= TexSize.x || DTid.y >= TexSize.y || DTid.z >= TexSize.z)
         return;
 
-    float3 pos = float3(DTid.xyz);
+    // Normalize position to [0, 1) range
+    float3 normalizedPos = float3(DTid.xyz) / float3(TexSize);
+
     float n = 0;
-    float g = exp2(-1);
-    float f = 1.0f;
-    float a = 1.0f;
-    
+    float amplitude = 1.0f;
+    float frequency = 1.0f;
+    float amplitudeSum = 0.0f;
+
     for (int i = 0; i < Octaves; ++i)
     {
-        float noise = Worley(pos * f + i * Wrap, AxisCellCount * f) * a;
-        n += noise;
-        f *= 2;
-        a *= g;
+        // Scale to cell space: [0, 1) -> [0, cellCount)
+        // Each octave doubles the cell count for more detail
+        int cellCount = AxisCellCount * (int)frequency;
+        float3 coord = normalizedPos * float(cellCount);
+
+        // Use different seed for each octave
+        int octaveSeed = Seed + i * 1000;
+
+        float noise = SeamlessWorley(coord, cellCount, octaveSeed);
+        n += noise * amplitude;
+        amplitudeSum += amplitude;
+
+        frequency *= 2.0f;
+        amplitude *= 0.5f;
     }
+
+    // Normalize and apply amplitude
+    n = n / amplitudeSum;
     n = saturate(n) * Amplitude;
-    n = Amplitude - n;
-    
-    RWNoiseTex[DTid.xyz] = n ;
+    n = Amplitude - n;  // Invert for smoke-like appearance
+
+    RWNoiseTex[DTid.xyz] = n;
 }

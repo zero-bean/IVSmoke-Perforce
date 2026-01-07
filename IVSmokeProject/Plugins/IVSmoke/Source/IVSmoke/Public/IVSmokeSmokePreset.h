@@ -98,6 +98,34 @@ public:
 	int32 MaxSteps = 64;
 
 	// ============================================================================
+	// Rayleigh Scattering
+	// ============================================================================
+
+	/** Enable Rayleigh scattering for atmospheric light effects. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Scattering")
+	bool bEnableScattering = true;
+
+	/** Scattering intensity multiplier. Higher = more light scattered through smoke. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Scattering", meta = (ClampMin = "0.0", ClampMax = "10.0"))
+	float ScatterScale = 0.5f;
+
+	/** Override light direction instead of using scene directional light. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Scattering")
+	bool bOverrideLightDirection = false;
+
+	/** Custom light direction (normalized). Used when bOverrideLightDirection is true. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Scattering", meta = (EditCondition = "bOverrideLightDirection"))
+	FVector LightDirectionOverride = FVector(0.0f, 0.0f, 1.0f);
+
+	/** Override light color instead of using scene directional light. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Scattering")
+	bool bOverrideLightColor = false;
+
+	/** Custom light color. Used when bOverrideLightColor is true. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Scattering", meta = (EditCondition = "bOverrideLightColor"))
+	FLinearColor LightColorOverride = FLinearColor::White;
+
+	// ============================================================================
 	// UPrimaryDataAsset Interface
 	// ============================================================================
 

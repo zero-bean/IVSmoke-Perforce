@@ -31,6 +31,9 @@ public:
 	/** Release renderer resources. */
 	void Shutdown();
 
+	/** Refresh cached preset from settings. Called when settings change in editor. */
+	void RefreshCachedPreset();
+
 	/** Check if renderer is initialized with valid resources. */
 	bool IsInitialized() const { return NoiseVolume != nullptr; }
 
@@ -60,6 +63,7 @@ public:
 		const FSceneView& View,
 		const FPostProcessMaterialInputs& Inputs
 	);
+
 private:
 	FIVSmokeRenderer() = default;
 
@@ -78,36 +82,43 @@ private:
 	// ============================================================================
 
 	/**
-	 * Ray Marching CS Pass.
-	 * Calculates volumetric smoke and outputs to intermediate texture.
-	 * Scene depth is accessed via SceneTexturesStruct uniform buffer.
+	 * Multi-Volume Ray Marching CS Pass (Single-Pass).
+	 * Processes all volumes in a single pass with correct Beer-Lambert integration.
+	 * Outputs to Dual Render Targets (Albedo + Mask) at reduced resolution.
 	 *
 	 * @param GraphBuilder       RDG builder
 	 * @param View               Current scene view
-	 * @param OutputTexture      UAV texture to write ray marching result
-	 * @param ViewportSize       Size of the viewport for dispatch and UV calculation
+	 * @param SortedVolumes      Sorted array of volumes to render
+	 * @param SmokeAlbedoTex     UAV texture for smoke color output
+	 * @param SmokeMaskTex       UAV texture for smoke opacity mask
+	 * @param TexSize            Size of output textures (may be reduced resolution)
+	 * @param ViewportSize       Size of the full viewport for depth sampling
 	 * @param ViewRectMin        Offset into full scene texture for depth sampling
 	 */
-	void AddRayMarchPass(
+	void AddMultiVolumeRayMarchPass(
 		FRDGBuilder& GraphBuilder,
 		const FSceneView& View,
+		const TArray<AIVSmokeVoxelVolume*>& SortedVolumes,
 		FRDGTextureRef SmokeAlbedoTex,
 		FRDGTextureRef SmokeMaskTex,
+		const FIntPoint& TexSize,
 		const FIntPoint& ViewportSize,
 		const FIntPoint& ViewRectMin
 	);
 
 	/**
-	 * Composite PS Pass.
-	 * Blends ray marching result with scene color.
+	 * Sharpen Composite PS Pass.
+	 * Blends ray marching result (Dual RT) with scene color and applies sharpening.
 	 *
-	 * @param GraphBuilder    RDG builder
-	 * @param View            Current scene view
-	 * @param SmokeTexture    Ray marching result texture
-	 * @param Output          Final render target
-	 * @param ViewportSize    Size of the viewport for UV calculation
+	 * @param GraphBuilder       RDG builder
+	 * @param View               Current scene view
+	 * @param SceneTex           Scene color texture
+	 * @param SmokeAlbedoTex     Smoke color texture from ray marching
+	 * @param SmokeMaskTex       Smoke opacity mask from ray marching
+	 * @param Output             Final render target
+	 * @param ViewportSize       Size of the viewport for UV calculation
 	 */
-	void AddCompositePass(
+	void AddSharpenCompositePass(
 		FRDGBuilder& GraphBuilder,
 		const FSceneView& View,
 		FRDGTextureRef SceneTex,
@@ -116,9 +127,6 @@ private:
 		const FScreenPassRenderTarget& Output,
 		const FIntPoint& ViewportSize
 	);
-
-	FRDGTextureRef AddCopyPass(FRDGBuilder& GraphBuilder, const FSceneView& View, FRDGTextureRef SourceTex, const FIntPoint& DestiSize = FIntPoint::ZeroValue, const TCHAR* TexName = L"CopyTex");
-	void AddCopyPass(FRDGBuilder& GraphBuilder, const FSceneView& View, FRDGTextureRef SourceTex, FRDGTextureRef DestiTex);
 
 	// ============================================================================
 	// State
@@ -129,6 +137,9 @@ private:
 
 	/** Shared noise volume texture for all smoke rendering. Prevent GC via AddToRoot. */
 	UTextureRenderTargetVolume* NoiseVolume = nullptr;
+
+	/** Cached default smoke preset. Loaded on Initialize() to avoid Render Thread access. */
+	TObjectPtr<const UIVSmokeSmokePreset> CachedDefaultPreset = nullptr;
 
 	/** Elapsed time for animation. */
 	float ElapsedTime = 0.0f;

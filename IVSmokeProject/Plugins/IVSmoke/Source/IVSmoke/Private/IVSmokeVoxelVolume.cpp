@@ -109,7 +109,9 @@ void AIVSmokeVoxelVolume::Tick(float DeltaTime)
 			CurrentState = EIVSmokeVoxelVolumeState::Finished;
 			GeneratedVoxelIndices.Empty();
 			MinHeap.Empty();
-			VoxelArray.Init(0, VoxelArray.Num());
+			VoxelArray.Init(0.0f, VoxelArray.Num());
+			ActiveVoxelCount = 0;
+			DirtyLevel = EIVSmokeDirtyLevel::Dirty;
 		}
 		break;
 	}
@@ -173,13 +175,13 @@ void AIVSmokeVoxelVolume::StartFloodFill()
 	GeneratedVoxelIndices.Reserve(MaxVoxelNum);
 
 	VoxelArray.Empty();
-	VoxelArray.Init(0, TotalGridSize);
-	bVoxelDataDirty = true;
+	VoxelArray.Init(0.0f, TotalGridSize);
+
+	ActiveVoxelCount = 0;
+	DirtyLevel = EIVSmokeDirtyLevel::Dirty;
 
 	VoxelCostArray.Empty();
 	VoxelCostArray.Init(FLT_MAX, TotalGridSize);
-
-	ActiveVoxelCount = 0;
 
 	int32 CenterIndex = UIVSmokeGridLibrary::GridToIndex(CenterOffset, GridResolution);
 	if (VoxelCostArray.IsValidIndex(CenterIndex))
@@ -234,12 +236,10 @@ void AIVSmokeVoxelVolume::ProcessFloodFill(int32 SpawnNum)
 			continue;
 		}
 
-		if (VoxelArray[CurrentNode.Index] == 0)
+		if (VoxelArray[CurrentNode.Index] <= 0.0f)
 		{
 			GeneratedVoxelIndices.Add(CurrentNode.Index);
-			VoxelArray[CurrentNode.Index] = 1;
-			bVoxelDataDirty = true;
-			++ActiveVoxelCount;
+			SetVoxelDensityByIndex(CurrentNode.Index, 1.0f);  // Full density (continuous: 0.0~N)
 			++SpawnCount;
 
 			if (GeneratedVoxelIndices.Num() >= MaxVoxelNum)
@@ -356,13 +356,49 @@ void AIVSmokeVoxelVolume::ProcessDissipation(int32 RemoveNum)
 
 		if (VoxelArray.IsValidIndex(NodeToRemove.Index))
 		{
-			VoxelArray[NodeToRemove.Index] = 0;
-			bVoxelDataDirty = true;
-			--ActiveVoxelCount;
+			SetVoxelDensityByIndex(NodeToRemove.Index, 0.0f);
 		}
 
 		++Count;
 	}
+}
+
+// ============================================================================
+// Voxel Data Management
+// ============================================================================
+
+void AIVSmokeVoxelVolume::SetVoxelDensity(const FIntVector& GridPos, float Density)
+{
+	int32 LinearIndex = UIVSmokeGridLibrary::GridToIndex(GridPos, GridResolution);
+	SetVoxelDensityByIndex(LinearIndex, Density);
+}
+
+void AIVSmokeVoxelVolume::SetVoxelDensityByIndex(int32 LinearIndex, float Density)
+{
+	if (!VoxelArray.IsValidIndex(LinearIndex))
+	{
+		return;
+	}
+
+	const float OldDensity = VoxelArray[LinearIndex];
+	const bool bWasActive = OldDensity > 0.0f;
+	const bool bIsActive = Density > 0.0f;
+
+	// Update dense array
+	VoxelArray[LinearIndex] = Density;
+
+	// Update active voxel count
+	if (bIsActive && !bWasActive)
+	{
+		++ActiveVoxelCount;
+	}
+	else if (!bIsActive && bWasActive)
+	{
+		--ActiveVoxelCount;
+	}
+
+	// Mark dirty for GPU upload
+	DirtyLevel = EIVSmokeDirtyLevel::Dirty;
 }
 
 void AIVSmokeVoxelVolume::DrawDebugVisualization()
@@ -436,7 +472,7 @@ void AIVSmokeVoxelVolume::DrawDebugVoxelWireframes()
 	for (int32 i = 0; i < MaxVisibleIndex; ++i)
 	{
 		int32 VoxelIndex = GeneratedVoxelIndices[i];
-		if (!VoxelArray.IsValidIndex(VoxelIndex) || VoxelArray[VoxelIndex] == 0)
+		if (!VoxelArray.IsValidIndex(VoxelIndex) || VoxelArray[VoxelIndex] <= 0.0f)
 		{
 			continue;
 		}
@@ -502,7 +538,7 @@ void AIVSmokeVoxelVolume::DrawDebugVoxelMeshes()
 	for (int32 i = 0; i < MaxVisibleIndex; ++i)
 	{
 		int32 VoxelIndex = GeneratedVoxelIndices[i];
-		if (!VoxelArray.IsValidIndex(VoxelIndex) || VoxelArray[VoxelIndex] == 0)
+		if (!VoxelArray.IsValidIndex(VoxelIndex) || VoxelArray[VoxelIndex] <= 0.0f)
 		{
 			continue;
 		}

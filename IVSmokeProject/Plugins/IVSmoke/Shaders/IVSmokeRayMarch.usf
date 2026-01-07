@@ -33,7 +33,7 @@ uint2 TexSize;
 float2 ViewportSize;
 
 // DeltaTime
-float ElapseTime; //new
+float ElapsedTime; //new
 
 // Camera (Ray reconstruction using vectors)
 float3 CameraPosition;
@@ -74,7 +74,7 @@ float3 WindDirection; //new
 float GetNoise(float3 Position)
 {
 	float3 uvw = Position / SmokeSize;
-	uvw -= WindDirection * ElapseTime;
+	uvw -= WindDirection * ElapsedTime;
 	return NoiseVolume.SampleLevel(LinearRepeat_Sampler, uvw, 0);
 }
 
@@ -194,7 +194,7 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 
 	// Jitter starting position to reduce banding artifacts
 	// Time-based jitter: different pattern each frame, TAA will converge
-	float2 JitterSeed = float2(PixelCoord) + frac(ElapseTime * 60.0) * 100.0;
+	float2 JitterSeed = float2(PixelCoord) + frac(ElapsedTime * 60.0) * 100.0;
 	float Jitter = frac(sin(dot(JitterSeed, float2(12.9898, 78.233))) * 43758.5453);
 	float T = TMin + Jitter * AdaptiveStepSize;
 

@@ -56,14 +56,15 @@ int GridToIndex(int3 GridPos, int3 Resolution)
 }
 
 /**
- * Reads voxel occupancy with bounds checking.
+ * Reads voxel density with bounds checking.
+ * Returns continuous density value instead of binary occupancy.
  *
  * @param GridPos       Integer grid position
  * @param Resolution    Grid dimensions
- * @param VoxelBuffer   Structured buffer containing voxel data
- * @return              1.0 if voxel is active, 0.0 otherwise
+ * @param VoxelBuffer   Structured buffer containing voxel density data (continuous 0.0~N)
+ * @return              Density value at grid position (0.0 if out of bounds)
  */
-float ReadVoxelOccupancy(int3 GridPos, int3 Resolution, StructuredBuffer<int> VoxelBuffer)
+float ReadVoxelDensity(int3 GridPos, int3 Resolution, StructuredBuffer<float> VoxelBuffer)
 {
 	// Bounds check
 	if (any(GridPos < 0) || any(GridPos >= Resolution))
@@ -72,19 +73,20 @@ float ReadVoxelOccupancy(int3 GridPos, int3 Resolution, StructuredBuffer<int> Vo
 	}
 
 	int Index = GridToIndex(GridPos, Resolution);
-	return (VoxelBuffer[Index] > 0) ? 1.0 : 0.0;
+	return VoxelBuffer[Index];
 }
 
 /**
  * Samples voxel density with trilinear interpolation.
+ * Supports continuous density values (0.0~N) for natural smoke appearance.
  *
  * @param WorldPos      Sample position in world space
  * @param WorldToLocal  Transform matrix from world to local space
  * @param Resolution    Grid dimensions
  * @param CenterOffset  Center offset for grid coordinate conversion
  * @param VoxelSz       World-space size of each voxel
- * @param VoxelBuffer   Structured buffer containing voxel data
- * @return              Interpolated density value [0, 1]
+ * @param VoxelBuffer   Structured buffer containing continuous voxel density data
+ * @return              Interpolated density value (0.0~N)
  */
 float SampleVoxelDensityTrilinear(
 	float3 WorldPos,
@@ -92,7 +94,7 @@ float SampleVoxelDensityTrilinear(
 	int3 Resolution,
 	int3 CenterOffset,
 	float VoxelSz,
-	StructuredBuffer<int> VoxelBuffer
+	StructuredBuffer<float> VoxelBuffer
 )
 {
 	// World → Local transform
@@ -108,15 +110,15 @@ float SampleVoxelDensityTrilinear(
 	// Interpolation weights
 	float3 F = frac(GridPosF);
 
-	// Sample 8 corners
-	float C000 = ReadVoxelOccupancy(int3(P0.x, P0.y, P0.z), Resolution, VoxelBuffer);
-	float C100 = ReadVoxelOccupancy(int3(P1.x, P0.y, P0.z), Resolution, VoxelBuffer);
-	float C010 = ReadVoxelOccupancy(int3(P0.x, P1.y, P0.z), Resolution, VoxelBuffer);
-	float C110 = ReadVoxelOccupancy(int3(P1.x, P1.y, P0.z), Resolution, VoxelBuffer);
-	float C001 = ReadVoxelOccupancy(int3(P0.x, P0.y, P1.z), Resolution, VoxelBuffer);
-	float C101 = ReadVoxelOccupancy(int3(P1.x, P0.y, P1.z), Resolution, VoxelBuffer);
-	float C011 = ReadVoxelOccupancy(int3(P0.x, P1.y, P1.z), Resolution, VoxelBuffer);
-	float C111 = ReadVoxelOccupancy(int3(P1.x, P1.y, P1.z), Resolution, VoxelBuffer);
+	// Sample 8 corners (continuous density values)
+	float C000 = ReadVoxelDensity(int3(P0.x, P0.y, P0.z), Resolution, VoxelBuffer);
+	float C100 = ReadVoxelDensity(int3(P1.x, P0.y, P0.z), Resolution, VoxelBuffer);
+	float C010 = ReadVoxelDensity(int3(P0.x, P1.y, P0.z), Resolution, VoxelBuffer);
+	float C110 = ReadVoxelDensity(int3(P1.x, P1.y, P0.z), Resolution, VoxelBuffer);
+	float C001 = ReadVoxelDensity(int3(P0.x, P0.y, P1.z), Resolution, VoxelBuffer);
+	float C101 = ReadVoxelDensity(int3(P1.x, P0.y, P1.z), Resolution, VoxelBuffer);
+	float C011 = ReadVoxelDensity(int3(P0.x, P1.y, P1.z), Resolution, VoxelBuffer);
+	float C111 = ReadVoxelDensity(int3(P1.x, P1.y, P1.z), Resolution, VoxelBuffer);
 
 	// Trilinear interpolation
 	float C00 = lerp(C000, C100, F.x);
@@ -172,4 +174,97 @@ float SampleSphericalDensity(float3 Position, float3 Center, float Radius, float
 float BeerLambert(float Density, float StepSize, float Absorption)
 {
 	return exp(-Density * StepSize * Absorption);
+}
+
+// ============================================================================
+// Rayleigh Scattering
+// ============================================================================
+
+/** PI constant for scattering calculations. */
+#ifndef PI
+#define PI 3.14159265359
+#endif
+
+/**
+ * Rayleigh phase function.
+ * Describes angular distribution of scattered light.
+ * P(theta) = (3/16pi) * (1 + cos^2(theta))
+ *
+ * @param CosTheta     Cosine of angle between light direction and view direction
+ * @return             Phase function value [0, 3/8pi]
+ */
+float RayleighPhase(float CosTheta)
+{
+	return (3.0 / (16.0 * PI)) * (1.0 + CosTheta * CosTheta);
+}
+
+/**
+ * Rayleigh scattering coefficients for RGB wavelengths.
+ * Based on lambda^-4 wavelength dependency.
+ * Normalized so that green channel = 1.0 for easier artistic control.
+ *
+ * Red:   ~650nm → (550/650)^4 ~= 0.51
+ * Green: ~550nm → 1.0 (reference)
+ * Blue:  ~450nm → (550/450)^4 ~= 2.23
+ *
+ * @return RGB scattering coefficients
+ */
+float3 RayleighCoefficients()
+{
+	return float3(0.51, 1.0, 2.23);
+}
+
+/**
+ * Calculates Rayleigh in-scattering contribution.
+ * Light scattered from the sun/main light toward the camera.
+ *
+ * @param ViewDir       Normalized view direction (camera to sample point)
+ * @param LightDir      Normalized light direction (sample point to light)
+ * @param LightColor    Light color and intensity
+ * @param Density       Local density at sample point
+ * @param ScatterScale  Artistic scattering intensity multiplier
+ * @return              RGB in-scattered light contribution
+ */
+float3 RayleighInScattering(
+	float3 ViewDir,
+	float3 LightDir,
+	float3 LightColor,
+	float Density,
+	float ScatterScale)
+{
+	// Angle between view and light
+	float CosTheta = dot(ViewDir, LightDir);
+
+	// Phase function
+	float Phase = RayleighPhase(CosTheta);
+
+	// Wavelength-dependent scattering
+	float3 ScatterCoeff = RayleighCoefficients();
+
+	// In-scattering = LightColor * Phase * ScatterCoeff * Density * Scale
+	return LightColor * Phase * ScatterCoeff * Density * ScatterScale;
+}
+
+/**
+ * Simplified Rayleigh scattering for performance.
+ * Uses single scalar coefficient instead of wavelength-dependent RGB.
+ *
+ * @param ViewDir       Normalized view direction
+ * @param LightDir      Normalized light direction
+ * @param LightColor    Light color and intensity
+ * @param Density       Local density
+ * @param ScatterScale  Scattering intensity multiplier
+ * @return              In-scattered light contribution
+ */
+float3 RayleighInScatteringSimple(
+	float3 ViewDir,
+	float3 LightDir,
+	float3 LightColor,
+	float Density,
+	float ScatterScale)
+{
+	float CosTheta = dot(ViewDir, LightDir);
+	float Phase = RayleighPhase(CosTheta);
+
+	return LightColor * Phase * Density * ScatterScale;
 }

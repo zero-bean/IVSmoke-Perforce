@@ -1,0 +1,394 @@
+// Copyright Epic Games, Inc. All Rights Reserved.
+
+#include "/Engine/Private/Common.ush"
+#include "/Plugin/IVSmoke/IVSmokeCommon.ush"
+
+// ============================================================================
+// Thread Group Size
+// ============================================================================
+
+#ifndef THREADGROUP_SIZE_X
+#define THREADGROUP_SIZE_X 8
+#endif
+#ifndef THREADGROUP_SIZE_Y
+#define THREADGROUP_SIZE_Y 8
+#endif
+
+// Maximum volumes to process per pixel (stack array limit)
+#define MAX_VOLUME_INTERSECTIONS 64
+
+// ============================================================================
+// GPU Data Structures
+// ============================================================================
+
+/**
+ * Per-volume metadata. Must match FIVSmokeVolumeGPUData in C++.
+ * Total: 256 bytes
+ */
+struct FVolumeGPUData
+{
+	float4x4 WorldToLocal;      // 64 bytes
+	float4x4 LocalToWorld;      // 64 bytes
+
+	float3 AABBMin;
+	float VoxelSize;
+
+	float3 AABBMax;
+	uint VoxelBufferOffset;     // Offset into PackedVoxelBuffer
+
+	int3 GridResolution;
+	uint VoxelCount;            // Total voxel count for this volume
+
+	float3 SmokeColor;
+	float Absorption;
+
+	float3 CenterOffset;
+	float DensityScale;
+
+	float3 WorldAABBMin;
+	float Pad1;
+
+	float3 WorldAABBMax;
+	float Pad2;
+
+	float Reserved[4];          // 16 bytes padding (total 256 bytes)
+};
+
+/**
+ * Cached intersection data for a single volume.
+ */
+struct FVolumeIntersection
+{
+	uint VolumeIndex;
+	float tNear;
+	float tFar;
+};
+
+// ============================================================================
+// Shader Parameters
+// ============================================================================
+
+// Output (Dual Render Target)
+RWTexture2D<float4> SmokeAlbedoTex;
+RWTexture2D<float4> SmokeMaskTex;
+
+// Input Textures
+Texture3D<half> NoiseVolume;
+
+// Samplers
+SamplerState LinearRepeat_Sampler;
+
+// Time
+float ElapsedTime;
+
+// Viewport
+uint2 TexSize;
+float2 ViewportSize;
+float2 ViewRectMin;
+
+// Camera
+float3 CameraPosition;
+float3 CameraForward;
+float3 CameraRight;
+float3 CameraUp;
+float TanHalfFOV;
+float AspectRatio;
+
+// Ray Marching
+int MaxSteps;
+
+// Multi-Volume Data
+StructuredBuffer<FVolumeGPUData> VolumeDataBuffer;
+uint NumActiveVolumes;
+
+// Packed Voxel Data (all volumes concatenated)
+StructuredBuffer<float> PackedVoxelBuffer;
+
+// Scene Depth
+float4 InvDeviceZToWorldZTransform;
+
+// Global Smoke Parameters
+float GlobalAbsorption;
+float SmokeSize;
+float SmokeDensityFalloff;
+float3 WindDirection;
+
+// Rayleigh Scattering
+float3 LightDirection;
+float3 LightColor;
+float ScatterScale;
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Sample noise at a world position.
+ */
+float GetNoise(float3 Position)
+{
+	float3 uvw = Position / SmokeSize;
+	uvw -= WindDirection * ElapsedTime;
+	return NoiseVolume.SampleLevel(LinearRepeat_Sampler, uvw, 0);
+}
+
+/**
+ * Convert 3D grid position to linear index within a volume.
+ */
+int VolumeGridToIndex(int3 GridPos, int3 Resolution)
+{
+	return GridPos.x + GridPos.y * Resolution.x + GridPos.z * Resolution.x * Resolution.y;
+}
+
+/**
+ * Read voxel density from packed buffer with bounds checking.
+ */
+float ReadPackedVoxelDensity(int3 GridPos, FVolumeGPUData Vol)
+{
+	// Bounds check
+	if (any(GridPos < 0) || any(GridPos >= Vol.GridResolution))
+	{
+		return 0.0;
+	}
+
+	int LocalIndex = VolumeGridToIndex(GridPos, Vol.GridResolution);
+	uint GlobalIndex = Vol.VoxelBufferOffset + LocalIndex;
+
+	return PackedVoxelBuffer[GlobalIndex];
+}
+
+/**
+ * Sample voxel density with trilinear interpolation from packed buffer.
+ */
+float SampleVolumeDensityTrilinear(float3 WorldPos, FVolumeGPUData Vol)
+{
+	// World to local transform
+	float3 LocalPos = mul(float4(WorldPos, 1.0), Vol.WorldToLocal).xyz;
+
+	// Local to grid coordinate (continuous)
+	float3 GridPosF = LocalPos / Vol.VoxelSize + Vol.CenterOffset;
+
+	// 8 neighbor voxel integer coordinates
+	int3 P0 = int3(floor(GridPosF));
+	int3 P1 = P0 + int3(1, 1, 1);
+
+	// Interpolation weights
+	float3 F = frac(GridPosF);
+
+	// Sample 8 corners from packed buffer
+	float C000 = ReadPackedVoxelDensity(int3(P0.x, P0.y, P0.z), Vol);
+	float C100 = ReadPackedVoxelDensity(int3(P1.x, P0.y, P0.z), Vol);
+	float C010 = ReadPackedVoxelDensity(int3(P0.x, P1.y, P0.z), Vol);
+	float C110 = ReadPackedVoxelDensity(int3(P1.x, P1.y, P0.z), Vol);
+	float C001 = ReadPackedVoxelDensity(int3(P0.x, P0.y, P1.z), Vol);
+	float C101 = ReadPackedVoxelDensity(int3(P1.x, P0.y, P1.z), Vol);
+	float C011 = ReadPackedVoxelDensity(int3(P0.x, P1.y, P1.z), Vol);
+	float C111 = ReadPackedVoxelDensity(int3(P1.x, P1.y, P1.z), Vol);
+
+	// Trilinear interpolation
+	float C00 = lerp(C000, C100, F.x);
+	float C10 = lerp(C010, C110, F.x);
+	float C01 = lerp(C001, C101, F.x);
+	float C11 = lerp(C011, C111, F.x);
+
+	float C0 = lerp(C00, C10, F.y);
+	float C1 = lerp(C01, C11, F.y);
+
+	return lerp(C0, C1, F.z);
+}
+
+/**
+ * Calculate final smoke density at a position for a specific volume.
+ * Combines voxel density, edge falloff, and noise.
+ */
+float GetDensityForVolume(float3 Position, uint VolumeIdx)
+{
+	FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
+
+	float VoxelDensity = SampleVolumeDensityTrilinear(Position, Vol);
+	if (VoxelDensity <= 0.0)
+	{
+		return 0.0;
+	}
+
+	float Noise = GetNoise(Position);
+
+	// Edge falloff: creates soft edges at smoke boundaries
+	// VoxelDensity=1 (center) → EdgeFactor=0.5
+	// VoxelDensity=0 (edge)   → EdgeFactor=1.0
+	float EdgeFactor = 1.0 - VoxelDensity * 0.5;
+	EdgeFactor = smoothstep(SmokeDensityFalloff, 1.0, EdgeFactor);
+
+	// Combine edge falloff with noise for natural variation
+	// High noise areas become more transparent, creating mottled appearance
+	float Falloff = min(1.0, EdgeFactor + Noise);
+
+	return VoxelDensity * (1.0 - Falloff) * Vol.DensityScale;
+}
+
+// ============================================================================
+// Multi-Volume Ray Marching CS
+// ============================================================================
+
+[numthreads(THREADGROUP_SIZE_X, THREADGROUP_SIZE_Y, 1)]
+void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
+{
+	uint2 PixelCoord = DispatchThreadId.xy;
+
+	// Bounds check (use TexSize for reduced resolution rendering)
+	if (PixelCoord.x >= TexSize.x || PixelCoord.y >= TexSize.y)
+	{
+		return;
+	}
+
+	// Calculate screen position (use TexSize for UV calculation)
+	float2 PixelUV = (float2(PixelCoord) + 0.5) / TexSize;
+	float2 ScreenPos = PixelUV * 2.0 - 1.0;
+	ScreenPos.y *= -1.0;
+
+	// Reconstruct ray direction
+	float3 RayDir = normalize(
+		CameraForward
+		+ ScreenPos.x * CameraRight * TanHalfFOV * AspectRatio
+		+ ScreenPos.y * CameraUp * TanHalfFOV
+	);
+	float3 RayOrigin = CameraPosition;
+
+	// ============================================================================
+	// Scene Depth (ratio-based coordinate for reduced resolution)
+	// ============================================================================
+
+	int3 ScenePixelCoord = int3(0, 0, 0);
+	ScenePixelCoord.x = ceil((float)PixelCoord.x / TexSize.x * ViewportSize.x + ViewRectMin.x);
+	ScenePixelCoord.y = ceil((float)PixelCoord.y / TexSize.y * ViewportSize.y + ViewRectMin.y);
+	float DeviceZ = SceneTexturesStruct.SceneDepthTexture.Load(ScenePixelCoord).r;
+	float SceneDepthWorld = DeviceZ * InvDeviceZToWorldZTransform.x
+		+ InvDeviceZToWorldZTransform.y
+		+ 1.0 / (DeviceZ * InvDeviceZToWorldZTransform.z - InvDeviceZToWorldZTransform.w);
+
+	float ViewDirDot = dot(RayDir, CameraForward);
+	float SceneRayDistance = SceneDepthWorld / max(ViewDirDot, 0.001);
+	SceneRayDistance -= 5.0; // Depth bias
+
+	// ============================================================================
+	// Collect Volume Intersections
+	// ============================================================================
+
+	FVolumeIntersection intersections[MAX_VOLUME_INTERSECTIONS];
+	uint numIntersections = 0;
+	float globalTMin = 1e10;
+	float globalTMax = 0;
+
+	for (uint v = 0; v < NumActiveVolumes && numIntersections < MAX_VOLUME_INTERSECTIONS; v++)
+	{
+		FVolumeGPUData Vol = VolumeDataBuffer[v];
+
+		float tNear, tFar;
+		if (RayBoxIntersection(RayOrigin, RayDir, Vol.WorldAABBMin, Vol.WorldAABBMax, tNear, tFar))
+		{
+			tNear = max(0.0, tNear);
+			tFar = min(SceneRayDistance, tFar);
+
+			if (tFar > tNear)
+			{
+				intersections[numIntersections].VolumeIndex = v;
+				intersections[numIntersections].tNear = tNear;
+				intersections[numIntersections].tFar = tFar;
+				numIntersections++;
+
+				globalTMin = min(globalTMin, tNear);
+				globalTMax = max(globalTMax, tFar);
+			}
+		}
+	}
+
+	// Early exit if no intersections
+	if (numIntersections == 0)
+	{
+		SmokeAlbedoTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		SmokeMaskTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		return;
+	}
+
+	// ============================================================================
+	// Unified Ray March
+	// ============================================================================
+
+	float3 AccumulatedColor = float3(0.0, 0.0, 0.0);
+	float Transmittance = 1.0;
+	float RayLength = globalTMax - globalTMin;
+
+	// Ensure minimum step size to prevent flickering when camera is at volume boundary
+	const float MinStepSize = 1.0; // 1 unit minimum step
+	float StepSize = max(MinStepSize, RayLength / (float)MaxSteps);
+
+	// Interleaved Gradient Noise for per-pixel jitter (spatial only, no temporal to avoid flickering)
+	float IGN = frac(52.9829189 * frac(0.06711056 * PixelCoord.x + 0.00583715 * PixelCoord.y));
+
+	// Initial jitter (spatial only)
+	float T = globalTMin + IGN * StepSize;
+
+	for (int step = 0; step < MaxSteps && Transmittance > 0.01; step++)
+	{
+		// Per-step jitter to break up regular sampling pattern
+		float StepJitter = frac(IGN + step * 0.618033988749); // Golden ratio for good distribution
+		float JitteredStepSize = StepSize * (0.75 + 0.5 * StepJitter); // 0.75x ~ 1.25x variation
+
+		float3 WorldPos = RayOrigin + RayDir * T;
+
+		// Sum density from all intersecting volumes at this position
+		float TotalDensity = 0.0;
+		float3 WeightedColor = float3(0.0, 0.0, 0.0);
+
+		for (uint i = 0; i < numIntersections; i++)
+		{
+			// Check if current T is within this volume's range
+			if (T >= intersections[i].tNear && T <= intersections[i].tFar)
+			{
+				uint VolumeIdx = intersections[i].VolumeIndex;
+				float Density = GetDensityForVolume(WorldPos, VolumeIdx);
+
+				if (Density > 0.0001)
+				{
+					FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
+					TotalDensity += Density;
+					WeightedColor += Vol.SmokeColor * Density;
+				}
+			}
+		}
+
+		// Beer-Lambert integration (use jittered step size for correct integration)
+		if (TotalDensity > 0.0001)
+		{
+			float Extinction = TotalDensity * GlobalAbsorption * JitteredStepSize;
+			float SampleTransmittance = exp(-Extinction);
+			float3 SampleColor = WeightedColor / TotalDensity;
+
+			// Rayleigh in-scattering: light scattered toward camera
+			float3 InScatter = float3(0, 0, 0);
+			if (ScatterScale > 0.0)
+			{
+				InScatter = RayleighInScattering(
+					RayDir,
+					LightDirection,
+					LightColor,
+					TotalDensity,
+					ScatterScale
+				);
+			}
+
+			// Combine volume color with in-scattered light
+			float3 TotalSampleColor = SampleColor + InScatter * JitteredStepSize;
+
+			AccumulatedColor += Transmittance * (1.0 - SampleTransmittance) * TotalSampleColor;
+			Transmittance *= SampleTransmittance;
+		}
+
+		T += JitteredStepSize;
+	}
+
+	// Output: Dual Render Target (Albedo + Mask separated)
+	float Alpha = 1.0 - Transmittance;
+	SmokeAlbedoTex[PixelCoord] = float4(AccumulatedColor, 1.0);
+	SmokeMaskTex[PixelCoord] = float4(Alpha, 0.0, 0.0, 0.0);
+}
