@@ -11,6 +11,7 @@
 #include "Engine/TextureRenderTargetVolume.h"
 #include "PostProcess/PostProcessMaterialInputs.h"
 #include "SceneRenderTargetParameters.h"
+#include "IVSmokeHoleGeneratorComponent.h"
 
 FIVSmokeRenderer& FIVSmokeRenderer::Get()
 {
@@ -344,6 +345,39 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	TArray<float> PackedVoxelData;
 	PackedVoxelData.Reserve(TotalVoxelCount);
 
+	// Create packed sdf buffer
+	FIntVector HoleSDFTexSize = SortedVolumes[0]->GetHoleGeneratorComponent()->GetVoxelResolution();
+	int32 VolumeCount = SortedVolumes.Num();
+	FIntVector AtlasSize = FIntVector(HoleSDFTexSize.X, HoleSDFTexSize.Y, HoleSDFTexSize.Z * VolumeCount);
+	FRDGTextureDesc AtlasDesc = FRDGTextureDesc::Create3D(
+		AtlasSize,
+		PF_A32B32G32R32F,
+		FClearValueBinding::None,
+		TexCreate_ShaderResource | TexCreate_UAV);
+	FRDGTextureRef PackedHoleSDFBuffer = GraphBuilder.CreateTexture(AtlasDesc, TEXT("PackedHoleSDFBuffer"));
+	for (int32 i = 0; i < VolumeCount; ++i)
+	{
+		FTextureRHIRef SourceRHI = SortedVolumes[i]->GetHoleGeneratorComponent()->GetHoleTexture();
+		if (SourceRHI == nullptr)
+		{
+			continue;
+		}
+		FRDGTextureRef SourceTexture = GraphBuilder.RegisterExternalTexture(
+			CreateRenderTarget(SourceRHI, TEXT("Source"))
+		);
+
+		AddCopyTexturePass(
+			GraphBuilder,
+			SourceTexture,
+			PackedHoleSDFBuffer,
+			FRHICopyTextureInfo(
+				FIntVector::ZeroValue,              // Source pos
+				FIntVector(0, 0, i * HoleSDFTexSize.Z), // Dest pos
+				HoleSDFTexSize                          // Size
+			)
+		);
+	}
+
 	uint32 CurrentOffset = 0;
 	for (int32 i = 0; i < SortedVolumes.Num(); ++i)
 	{
@@ -475,6 +509,11 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	FRDGBufferRef VoxelBuffer = GraphBuilder.CreateBuffer(VoxelBufferDesc, TEXT("IVSmokePackedVoxelBuffer"));
 	GraphBuilder.QueueBufferUpload(VoxelBuffer, PackedVoxelData.GetData(), PackedVoxelData.Num() * sizeof(float));
 	Parameters->PackedVoxelBuffer = GraphBuilder.CreateSRV(VoxelBuffer);
+
+	// Packed SDF Buffer
+	Parameters->PackedHoleSDFBuffer = GraphBuilder.CreateSRV(PackedHoleSDFBuffer);
+	Parameters->HoleSDFTexCount = VolumeCount;
+	Parameters->HoleSDFTexSize = HoleSDFTexSize;
 
 	// Scene Textures
 	Parameters->SceneTexturesStruct = GetSceneTextureShaderParameters(View).SceneTextures;

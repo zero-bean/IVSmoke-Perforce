@@ -103,6 +103,9 @@ uint NumActiveVolumes;
 
 // Packed Voxel Data (all volumes concatenated)
 StructuredBuffer<float> PackedVoxelBuffer;
+Texture3D<float4> PackedHoleSDFBuffer;
+int HoleSDFTexCount;
+int3 HoleSDFTexSize;
 
 // Scene Depth
 float4 InvDeviceZToWorldZTransform;
@@ -197,6 +200,16 @@ float SampleVolumeDensityTrilinear(float3 WorldPos, FVolumeGPUData Vol)
 	return lerp(C0, C1, F.z);
 }
 
+float GetHoleSDFDensity(float3 Position, uint VolumeIdx)
+{
+	FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
+	float3 uvw = (Position - Vol.WorldAABBMin) / (Vol.WorldAABBMax - Vol.WorldAABBMin);
+	float wmin = (float)VolumeIdx / HoleSDFTexCount;
+	float wmax = (float) (VolumeIdx + 1) / HoleSDFTexCount;
+	uvw.z = lerp(wmin, wmax, uvw.z);
+	float4 HoleSDFBuffer = PackedHoleSDFBuffer.Sample(LinearRepeat_Sampler, uvw);
+	return HoleSDFBuffer.r;
+}
 /**
  * Calculate final smoke density at a position for a specific volume.
  * Combines voxel density, edge falloff, and noise.
@@ -344,9 +357,17 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 		{
 			// Check if current T is within this volume's range
 			if (T >= intersections[i].tNear && T <= intersections[i].tFar)
-			{
+			{	
 				uint VolumeIdx = intersections[i].VolumeIndex;
-				float Density = GetDensityForVolume(WorldPos, VolumeIdx);
+				
+				float HoleDensity = GetHoleSDFDensity(WorldPos, VolumeIdx);
+				float Density = GetDensityForVolume(WorldPos, VolumeIdx) * HoleDensity;
+				//if (HoleDensity <= 0.1f)
+				//{
+				//	SmokeAlbedoTex[PixelCoord] = float4(HoleDensity, 0, 0, 1.0);
+				//	SmokeMaskTex[PixelCoord] = float4(HoleDensity, 0.0, 0.0, 0.0);
+				//	return;
+				//}
 
 				if (Density > 0.0001)
 				{

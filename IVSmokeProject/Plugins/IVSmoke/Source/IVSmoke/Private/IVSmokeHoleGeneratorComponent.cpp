@@ -17,7 +17,7 @@ UIVSmokeHoleGeneratorComponent::UIVSmokeHoleGeneratorComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	SetGenerateOverlapEvents(true);
-	InitBoxExtent(FVector(200.0, 200.0, 200.0));
+	InitBoxExtent(FVector(775, 775, 775));
 }
 
 void UIVSmokeHoleGeneratorComponent::BeginPlay()

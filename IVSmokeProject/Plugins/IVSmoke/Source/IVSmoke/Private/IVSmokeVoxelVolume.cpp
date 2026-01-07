@@ -5,6 +5,7 @@
 #include "IVSmokeGridLibrary.h"
 #include "IVSmokeRenderer.h"
 #include "Components/InstancedStaticMeshComponent.h"
+#include "IVSmokeHoleGeneratorComponent.h"
 
 AIVSmokeVoxelVolume::AIVSmokeVoxelVolume()
 {
@@ -24,6 +25,7 @@ void AIVSmokeVoxelVolume::BeginPlay()
 {
 	Super::BeginPlay();
 	FIVSmokeRenderer::Get().AddVolume(this);
+	HoleGeneratorComponent = FindComponentByClass<UIVSmokeHoleGeneratorComponent>();
 }
 
 void AIVSmokeVoxelVolume::EndPlay(const EEndPlayReason::Type EndPlayReason)

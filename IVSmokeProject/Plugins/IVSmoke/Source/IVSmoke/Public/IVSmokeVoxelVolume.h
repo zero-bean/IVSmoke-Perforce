@@ -101,6 +101,7 @@ struct FIVSmokeDebugSettings
 	int32 VisibleStepCountPercent = 100;
 };
 
+class UIVSmokeHoleGeneratorComponent;
 /** @todo Documentation */
 UCLASS()
 class IVSMOKE_API AIVSmokeVoxelVolume : public AActor
@@ -150,6 +151,8 @@ public:
 
 	/** Returns the number of active (non-zero density) voxels. */
 	int32 GetActiveVoxelCount() const { return ActiveVoxelCount; }
+
+	UIVSmokeHoleGeneratorComponent* GetHoleGeneratorComponent() { return HoleGeneratorComponent; }
 
 	// ============================================================================
 	// Smoke Appearance Override
@@ -337,6 +340,9 @@ private:
 
 	// @todo Documentation
 	bool bIsEditorPreviewing = false;
+
+	UPROPERTY(EditAnywhere, Category = "IVSmoke")
+	UIVSmokeHoleGeneratorComponent* HoleGeneratorComponent;
 
 #if WITH_EDITORONLY_DATA
 	// @todo Documentation

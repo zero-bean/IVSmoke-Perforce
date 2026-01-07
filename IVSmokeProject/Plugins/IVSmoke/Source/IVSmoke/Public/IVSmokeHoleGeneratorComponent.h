@@ -62,6 +62,8 @@ public:
 	UFUNCTION(BlueprintPure, Category = "IVSmoke|Voxel")
 	FIntVector GetVoxelResolution() const { return VoxelResolution; }
 
+	int32 GetTotalVoxelNum() const { return VoxelResolution.X * VoxelResolution.Y * VoxelResolution.Z; }
+
 	/** Get hole lifetime in seconds */
 	UFUNCTION(BlueprintPure, Category = "IVSmoke|Holes")
 	float GetHoleLifeTime() const { return HoleLifeTime; }
@@ -134,7 +136,7 @@ protected:
 public:
 	/** Enable volume texture debug visualization */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Debug")
-	bool bShowVolumeDebug = false;
+	bool bShowVolumeDebug = true;
 
 private:
 	// ============================================================================
