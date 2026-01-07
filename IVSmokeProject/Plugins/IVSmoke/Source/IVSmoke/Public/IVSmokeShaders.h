@@ -203,6 +203,7 @@ class IVSMOKE_API FIVSmokeSharpenCompositePS : public FGlobalShader
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearRepeat_Sampler)
 		SHADER_PARAMETER(float, Sharpness)
 		SHADER_PARAMETER(FVector2f, ViewportSize)
+		SHADER_PARAMETER(FVector2f, ViewRectMin)
 		RENDER_TARGET_BINDING_SLOTS()
 	END_SHADER_PARAMETER_STRUCT()
 

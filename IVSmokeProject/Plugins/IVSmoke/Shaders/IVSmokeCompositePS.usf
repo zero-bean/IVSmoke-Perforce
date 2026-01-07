@@ -9,32 +9,38 @@ Texture2D SmokeMaskTex;
 SamplerState LinearRepeat_Sampler;
 float Sharpness;
 float2 ViewportSize;
+float2 ViewRectMin;
 
 void MainPS(
  	float4 SvPosition : SV_POSITION,
 	out float4 OutColor : SV_Target0)
 {
-	float2 UV = SvPosition.xy / ViewportSize;
-    
-    // Get texture dimensions
+	// UV for our smoke textures (0~1 mapping to TexSize)
+	float2 SmokeUV = (SvPosition.xy - ViewRectMin) / ViewportSize;
+
+	// UV for scene texture (direct pixel mapping)
+	uint sceneWidth, sceneHeight;
+	SceneTex.GetDimensions(sceneWidth, sceneHeight);
+	float2 SceneUV = SvPosition.xy / float2(sceneWidth, sceneHeight);
+
+	// Get SmokeAlbedoTex dimensions for sharpening (reduced resolution)
 	uint width, height;
-	SceneTex.GetDimensions(width, height);
+	SmokeAlbedoTex.GetDimensions(width, height);
 	float2 TexelSize = 1.0f / float2(width, height);
-    
-    // Sample textures
-	float4 col = SceneTex.Sample(LinearRepeat_Sampler, UV);
-	float4 smokeAlbedo = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, UV);
-	float smokeMask = 1 - saturate(SmokeMaskTex.Sample(LinearRepeat_Sampler, UV).r);
-	//float smokeMask = 0.5f;
-    
-    // Apply Sharpness (Laplacian filter)
+
+	// Sample textures
+	float4 col = SceneTex.Sample(LinearRepeat_Sampler, SceneUV);
+	float4 smokeAlbedo = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV);
+	float smokeMask = 1.0 - saturate(SmokeMaskTex.Sample(LinearRepeat_Sampler, SmokeUV).r);
+
+	// Apply Sharpness (Laplacian filter)
 	float neighbor = Sharpness * -1.0f;
 	float center = Sharpness * 4.0f + 1.0f;
-    
-	float4 n = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, UV + TexelSize * float2(0, 1));
-	float4 e = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, UV + TexelSize * float2(1, 0));
-	float4 s = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, UV + TexelSize * float2(0, -1));
-	float4 w = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, UV + TexelSize * float2(-1, 0));
+
+	float4 n = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(0, 1));
+	float4 e = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(1, 0));
+	float4 s = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(0, -1));
+	float4 w = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(-1, 0));
     
 	float4 sharpenedSmoke = n * neighbor + e * neighbor + smokeAlbedo * center + s * neighbor + w * neighbor;
     

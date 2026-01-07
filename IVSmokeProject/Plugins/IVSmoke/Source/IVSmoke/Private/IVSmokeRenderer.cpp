@@ -435,8 +435,8 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	// Sampler
 	Parameters->LinearRepeat_Sampler = TStaticSamplerState<SF_Trilinear, AM_Wrap, AM_Wrap, AM_Wrap>::GetRHI();
 
-	// Time
-	ElapsedTime += View.Family->Time.GetDeltaWorldTimeSeconds();
+	// Time (use RealTimeSeconds to keep jitter working during pause)
+	ElapsedTime = View.Family->Time.GetRealTimeSeconds();
 	Parameters->ElapsedTime = ElapsedTime;
 
 	// Viewport (TexSize = reduced resolution, ViewportSize = full resolution for depth)
@@ -547,6 +547,7 @@ void FIVSmokeRenderer::AddSharpenCompositePass(
 	Parameters->LinearRepeat_Sampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
 	Parameters->Sharpness = 0.5f;  // TODO: Make configurable via preset
 	Parameters->ViewportSize = FVector2f(ViewportSize);
+	Parameters->ViewRectMin = FVector2f(Output.ViewRect.Min);
 	Parameters->RenderTargets[0] = Output.GetRenderTargetBinding();
 
 	FIVSmokePassConfig Config;
