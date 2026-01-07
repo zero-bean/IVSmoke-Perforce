@@ -115,6 +115,9 @@ class IVSMOKE_API FIVSmokeMultiVolumeRayMarchCS : public FGlobalShader
 
 		// Packed Voxel Data (all volumes concatenated)
 		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<float>, PackedVoxelBuffer)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D, PackedHoleSDFBuffer)
+		SHADER_PARAMETER(int, HoleSDFTexCount)
+		SHADER_PARAMETER(FIntVector, HoleSDFTexSize)
 
 		// Scene Textures
 		SHADER_PARAMETER_RDG_UNIFORM_BUFFER(FSceneTextureUniformParameters, SceneTexturesStruct)
