@@ -461,7 +461,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 
 	// Ray Marching
 	const UIVSmokeSmokePreset* DefaultPreset = CachedDefaultPreset.Get();
-	Parameters->MaxSteps = DefaultPreset ? DefaultPreset->MaxSteps : 64;
+	Parameters->MaxSteps = DefaultPreset ? DefaultPreset->MaxSteps : 128;
 
 	// Volume Data Buffer
 	FRDGBufferDesc VolumeBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FIVSmokeVolumeGPUData), VolumeDataArray.Num());
