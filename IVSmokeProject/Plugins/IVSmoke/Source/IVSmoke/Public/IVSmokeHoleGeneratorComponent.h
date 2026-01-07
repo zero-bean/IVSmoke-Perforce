@@ -6,18 +6,13 @@
 #include "Components/BoxComponent.h"
 #include "RHIResources.h"
 #include "IVSmokeHoleData.h"
+#include "IVSmokeHoleCarveCS.h"
 #include "IVSmokeHoleGeneratorComponent.generated.h"
 
 /**
  * @class UIVSmokeHoleGeneratorComponent
  * @brief Component that generates hole texture for volumetric smoke.
  *        Detects projectile penetration and creates GPU-rendered holes.
- *
- * @usage
- * - Attach to any smoke grenade actor
- * - Projectiles: Automatically detected via OnComponentBeginOverlap
- * - Hitscan: Call CreateHole() manually from weapon code
- * - Access hole texture via GetHoleTexture() for smoke rendering
  */
 UCLASS(ClassGroup = (IVSmoke), meta = (BlueprintSpawnableComponent))
 class IVSMOKE_API UIVSmokeHoleGeneratorComponent : public UBoxComponent
@@ -26,7 +21,6 @@ class IVSMOKE_API UIVSmokeHoleGeneratorComponent : public UBoxComponent
 
 public:
 	UIVSmokeHoleGeneratorComponent();
-	virtual ~UIVSmokeHoleGeneratorComponent() override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -39,9 +33,12 @@ public:
 	// Public API
 	// ============================================================================
 
-	/** @brief Create a hole at specified position and direction */
+	/**
+	 * @brief Create a hole with full parameter control
+	 *        CreationTime is automatically filled by the component
+	 */
 	UFUNCTION(BlueprintCallable, Category = "IVSmoke")
-	void CreateHole(const FVector& Position, const FVector& Direction, const double Radius);
+	void CreateHole(UPARAM(ref) const FIVSmokeHoleData& HoleData);
 
 	/** Returns the array of currently active holes */
 	UFUNCTION(BlueprintPure, Category = "IVSmoke")
@@ -74,32 +71,14 @@ protected:
 	// Collision Detection
 	// ============================================================================
 
-	// @todo this function will be removed after changed into a detection based on hit event
+	// @todo this function will be removed after changing detection system based on API
 	UFUNCTION()
 	void OnVolumeBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 		bool bFromSweep, const FHitResult& SweepResult);
 
 	// ============================================================================
-	// Detection Settings
-	// ============================================================================
-
-	/** Enable detection of projectiles via overlap */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Detection")
-	bool bAutoDetectProjectiles = true;
-
-	/** Default radius for auto-detected projectile holes */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Detection",
-		meta = (EditCondition = "bAutoDetectProjectiles", ClampMin = "1.0", ClampMax = "100.0"))
-	double DefaultHoleRadius = 50.0;
-
-	/** Ratio of exit radius to entry radius */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Detection",
-		meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float EndRadiusRatio = 0.5f;
-
-	// ============================================================================
-	// Hole Configuration
+	// Hole Configuration (@todo must be removed after changing detection system based on API)
 	// ============================================================================
 
 	/** Lifetime of each hole in seconds */
@@ -112,16 +91,40 @@ protected:
 		meta = (ClampMin = "1", ClampMax = "256"))
 	int32 MaxHoles = 128;
 
+	/** Shape type for hole carving (Sphere or Box SDF) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Holes")
+	EIVSmokeHoleShape HoleShapeType = EIVSmokeHoleShape::Sphere;
+
+	/** Default radius for auto-detected projectile holes */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Holes",
+		meta = (ClampMin = "1.0", ClampMax = "100.0"))
+	double DefaultHoleRadius = 50.0;
+
+	/** Ratio of exit radius to entry radius */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Holes",
+		meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float EndRadiusRatio = 0.5f;
+
+	/** Edge softness for hole boundaries (0=hard edge, 1=soft gradient) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Holes",
+		meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float EdgeSoftness = 0.3f;
+
+	/** Density multiplier for holes (0=transparent, 1=full hole) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Holes",
+		meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float DensityMultiplier = 1.0f;
+
 	// ============================================================================
 	// Texture Configuration
 	// ============================================================================
 
 	/** Voxel grid resolution (X x Y x Z) */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Texture")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Optimization")
 	FIntVector VoxelResolution = FIntVector(64, 64, 64);
 
 	/** Number of spheres to place along each trajectory */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Texture",
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Optimization",
 		meta = (ClampMin = "2", ClampMax = "100"))
 	int32 NumSpheresPerTrajectory = 10;
 
@@ -140,9 +143,6 @@ private:
 
 	/** Initialize hole texture (UAV-capable 3D texture) */
 	void InitializeHoleTexture();
-
-	/** Release hole texture */
-	void ReleaseHoleTexture();
 
 	/** Removes expired holes based on lifetime */
 	void CleanupExpiredHoles(double CurrentTime);

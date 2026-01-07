@@ -8,7 +8,6 @@
 #include "RenderingThread.h"
 #include "RHICommandList.h"
 #include "GlobalShader.h"
-#include "IVSmoke.h"
 
 #if ENABLE_DRAW_DEBUG
 #include "DrawDebugHelpers.h"
@@ -21,11 +20,6 @@ UIVSmokeHoleGeneratorComponent::UIVSmokeHoleGeneratorComponent()
 	InitBoxExtent(FVector(200.0, 200.0, 200.0));
 }
 
-UIVSmokeHoleGeneratorComponent::~UIVSmokeHoleGeneratorComponent()
-{
-	ReleaseHoleTexture();
-}
-
 void UIVSmokeHoleGeneratorComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -33,10 +27,7 @@ void UIVSmokeHoleGeneratorComponent::BeginPlay()
 	ActiveHoles.Reserve(MaxHoles);
 	InitializeHoleTexture();
 
-	if (bAutoDetectProjectiles)
-	{
-		OnComponentBeginOverlap.AddDynamic(this, &UIVSmokeHoleGeneratorComponent::OnVolumeBeginOverlap);
-	}
+	OnComponentBeginOverlap.AddDynamic(this, &UIVSmokeHoleGeneratorComponent::OnVolumeBeginOverlap);
 
 	FIVSmokeDebugRenderer::Get().Register(this);
 }
@@ -67,29 +58,39 @@ void UIVSmokeHoleGeneratorComponent::TickComponent(float DeltaTime, ELevelTick T
 	}
 }
 
-void UIVSmokeHoleGeneratorComponent::CreateHole(const FVector& Position, const FVector& Direction, const double Radius)
+void UIVSmokeHoleGeneratorComponent::CreateHole(const FIVSmokeHoleData& HoleData)
 {
 	if (ActiveHoles.Num() >= MaxHoles)
 	{
 		ActiveHoles.RemoveAt(0);
 	}
 
-	ActiveHoles.Emplace(Position, Direction, Radius, GetWorld()->GetTimeSeconds());
+	FIVSmokeHoleData NewHole = HoleData;
+	NewHole.Direction = HoleData.Direction.GetSafeNormal();
+	NewHole.CreationTime = GetWorld()->GetTimeSeconds();
+	ActiveHoles.Add(NewHole);
 }
 
 void UIVSmokeHoleGeneratorComponent::OnVolumeBeginOverlap(UPrimitiveComponent* OverlappedComponent,
 	AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 	bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (!bAutoDetectProjectiles || !OtherActor)
+	if (!OtherActor)
 	{
 		return;
 	}
 
 	if (const FVector Velocity = OtherActor->GetVelocity(); Velocity.SizeSquared() > KINDA_SMALL_NUMBER)
 	{
-		const FVector HitPosition = bFromSweep ? FVector(SweepResult.Location) : OtherActor->GetActorLocation();
-		CreateHole(HitPosition, Velocity.GetSafeNormal(), DefaultHoleRadius);
+		FIVSmokeHoleData HoleData;
+		HoleData.Position = bFromSweep ? FVector(SweepResult.Location) : OtherActor->GetActorLocation();
+		HoleData.Direction = Velocity.GetSafeNormal();
+		HoleData.Radius = DefaultHoleRadius;
+		HoleData.EndRadiusRatio = EndRadiusRatio;
+		HoleData.ShapeType = HoleShapeType;
+		HoleData.EdgeSoftness = EdgeSoftness;
+		HoleData.DensityMultiplier = DensityMultiplier;
+		CreateHole(HoleData);
 	}
 }
 
@@ -144,21 +145,6 @@ void UIVSmokeHoleGeneratorComponent::InitializeHoleTexture()
 	FlushRenderingCommands();
 }
 
-void UIVSmokeHoleGeneratorComponent::ReleaseHoleTexture()
-{
-	if (HoleTexture.IsValid())
-	{
-		FTextureRHIRef TextureToRelease = HoleTexture;
-		ENQUEUE_RENDER_COMMAND(ReleaseHoleTexture)(
-			[TextureToRelease](FRHICommandListImmediate& RHICmdList)
-			{
-				// TextureToRelease released when lambda exits
-			}
-		);
-		HoleTexture = nullptr;
-	}
-}
-
 void UIVSmokeHoleGeneratorComponent::CleanupExpiredHoles(double CurrentTime)
 {
 	ActiveHoles.RemoveAll([this, CurrentTime](const FIVSmokeHoleData& Hole)
@@ -200,8 +186,8 @@ void UIVSmokeHoleGeneratorComponent::DispatchHoleCarveCS(double CurrentTime)
 		const FVector LocalDirection = ComponentTransform.InverseTransformVectorNoScale(Hole.Direction.GetSafeNormal());
 		const FVector EndLocalPos = StartLocalPos + LocalDirection * MaxTraceDistance;
 
-		const float StartRadius = static_cast<float>(Hole.Radius);
-		const float EndRadius = StartRadius * EndRadiusRatio;
+		const float StartRadius = Hole.Radius;
+		const float EndRadius = StartRadius * Hole.EndRadiusRatio;
 		const int32 ControlPointStartIndex = ControlPoints.Num();
 
 		ControlPoints.Add({ FVector3f(StartLocalPos), StartRadius });
@@ -213,9 +199,9 @@ void UIVSmokeHoleGeneratorComponent::DispatchHoleCarveCS(double CurrentTime)
 		Trajectory.StartRadius = StartRadius;
 		Trajectory.EndRadius = EndRadius;
 		Trajectory.CreationTime = static_cast<float>(Hole.CreationTime);
-		Trajectory.ShapeType = static_cast<int32>(EIVSmokeHoleShape::Sphere);
-		Trajectory.EdgeSoftness = 0.3f;
-		Trajectory.DensityMultiplier = 1.0f;
+		Trajectory.ShapeType = static_cast<int32>(Hole.ShapeType);
+		Trajectory.EdgeSoftness = Hole.EdgeSoftness;
+		Trajectory.DensityMultiplier = Hole.DensityMultiplier;
 		Trajectories.Add(Trajectory);
 	}
 

@@ -6,6 +6,7 @@
 #include "GlobalShader.h"
 #include "ShaderParameterStruct.h"
 #include "RenderGraphUtils.h"
+#include "IVSmokeHoleCarveCS.generated.h"
 
 // ============================================================================
 // GPU Data Structures
@@ -36,7 +37,8 @@ struct FIVSmokeControlPointGPU
 };  // Total: 16 bytes
 
 /** @brief Primitive shape types for SDF calculation. */
-enum class EIVSmokeHoleShape : int32
+UENUM(BlueprintType)
+enum class EIVSmokeHoleShape : uint8
 {
 	Sphere = 0,
 	Box = 1
