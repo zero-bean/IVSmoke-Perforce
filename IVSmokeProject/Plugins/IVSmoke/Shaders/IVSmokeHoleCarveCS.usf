@@ -1,0 +1,227 @@
+// Copyright SDB. All Rights Reserved.
+// IVSmokeHoleCarveCS.usf - Compute shader for carving holes into smoke volume
+
+#include "/Engine/Public/Platform.ush"
+
+// ============================================================================
+// Output
+// ============================================================================
+
+RWTexture3D<float4> VolumeTexture;
+
+// ============================================================================
+// Input Buffers
+// ============================================================================
+
+struct FTrajectory
+{
+	int ControlPointStartIndex;
+	int NumControlPoints;
+	float StartRadius;
+	float EndRadius;
+
+	float CreationTime;
+	int ShapeType;
+	float EdgeSoftness;
+	float DensityMultiplier;
+};
+
+struct FControlPoint
+{
+	float3 Position;
+	float Radius;
+};
+
+StructuredBuffer<FTrajectory> TrajectoryBuffer;
+StructuredBuffer<FControlPoint> ControlPointBuffer;
+
+// ============================================================================
+// Uniforms
+// ============================================================================
+
+float3 VolumeMin;
+float3 VolumeMax;
+int3 Resolution;
+
+int NumTrajectories;
+int NumSpheresPerTrajectory;
+float CurrentTime;
+float HoleLifetime;
+
+// ============================================================================
+// SDF Functions
+// ============================================================================
+
+float SphereSDF(float3 P, float3 Center, float Radius)
+{
+	return length(P - Center) - Radius;
+}
+
+float BoxSDF(float3 P, float3 Center, float3 HalfExtent)
+{
+	float3 D = abs(P - Center) - HalfExtent;
+	return length(max(D, 0.0)) + min(max(D.x, max(D.y, D.z)), 0.0);
+}
+
+// ============================================================================
+// Curve Interpolation Functions
+// ============================================================================
+
+/** Linear interpolation between two points */
+float3 EvaluateLinear(float3 P0, float3 P1, float Progress)
+{
+	return lerp(P0, P1, Progress);
+}
+
+/** Quadratic Bezier curve (3 control points) */
+float3 EvaluateQuadraticBezier(float3 P0, float3 P1, float3 P2, float Progress)
+{
+	float Inv = 1.0 - Progress;
+	return (Inv * Inv * P0) + (2.0 * Inv * Progress * P1) + (Progress * Progress * P2);
+}
+
+/** Catmull-Rom spline segment */
+float3 EvaluateCatmullRom(float3 P0, float3 P1, float3 P2, float3 P3, float Progress)
+{
+	float Progress2 = Progress * Progress;
+	float Progress3 = Progress2 * Progress;
+
+	return 0.5 * (
+		(2.0 * P1) +
+		(-P0 + P2) * Progress +
+		(2.0 * P0 - 5.0 * P1 + 4.0 * P2 - P3) * Progress2 +
+		(-P0 + 3.0 * P1 - 3.0 * P2 + P3) * Progress3
+	);
+}
+
+/** Evaluate position along trajectory at Progress [0, 1] */
+float3 EvaluateTrajectoryPosition(FTrajectory Traj, float Progress)
+{
+	int StartIdx = Traj.ControlPointStartIndex;
+	int NumPoints = Traj.NumControlPoints;
+
+	if (NumPoints == 2)
+	{
+		float3 P0 = ControlPointBuffer[StartIdx].Position;
+		float3 P1 = ControlPointBuffer[StartIdx + 1].Position;
+		return EvaluateLinear(P0, P1, Progress);
+	}
+	else if (NumPoints == 3)
+	{
+		float3 P0 = ControlPointBuffer[StartIdx].Position;
+		float3 P1 = ControlPointBuffer[StartIdx + 1].Position;
+		float3 P2 = ControlPointBuffer[StartIdx + 2].Position;
+		return EvaluateQuadraticBezier(P0, P1, P2, Progress);
+	}
+	else if (NumPoints >= 4)
+	{
+		float Segment = Progress * (NumPoints - 1);
+		int SegmentIdx = clamp((int)Segment, 0, NumPoints - 2);
+		float SegmentProgress = frac(Segment);
+
+		int i0 = max(SegmentIdx - 1, 0);
+		int i1 = SegmentIdx;
+		int i2 = min(SegmentIdx + 1, NumPoints - 1);
+		int i3 = min(SegmentIdx + 2, NumPoints - 1);
+
+		float3 P0 = ControlPointBuffer[StartIdx + i0].Position;
+		float3 P1 = ControlPointBuffer[StartIdx + i1].Position;
+		float3 P2 = ControlPointBuffer[StartIdx + i2].Position;
+		float3 P3 = ControlPointBuffer[StartIdx + i3].Position;
+
+		return EvaluateCatmullRom(P0, P1, P2, P3, SegmentProgress);
+	}
+
+	return ControlPointBuffer[StartIdx].Position;
+}
+
+/** Evaluate radius along trajectory at Progress [0, 1] */
+float EvaluateTrajectoryRadius(FTrajectory Traj, float Progress)
+{
+	int StartIdx = Traj.ControlPointStartIndex;
+	int NumPoints = Traj.NumControlPoints;
+
+	if (NumPoints == 1)
+	{
+		return ControlPointBuffer[StartIdx].Radius;
+	}
+
+	float Segment = Progress * (NumPoints - 1);
+	int SegmentIdx = clamp((int)Segment, 0, NumPoints - 2);
+	float SegmentProgress = frac(Segment);
+
+	float R0 = ControlPointBuffer[StartIdx + SegmentIdx].Radius;
+	float R1 = ControlPointBuffer[StartIdx + SegmentIdx + 1].Radius;
+
+	return lerp(R0, R1, SegmentProgress);
+}
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+float3 VoxelToWorld(int3 VoxelCoord)
+{
+	float3 NormalizedPos = (float3(VoxelCoord) + 0.5) / float3(Resolution);
+	return VolumeMin + NormalizedPos * (VolumeMax - VolumeMin);
+}
+
+// ============================================================================
+// Main Compute Shader
+// ============================================================================
+
+[numthreads(THREADGROUP_SIZE, THREADGROUP_SIZE, THREADGROUP_SIZE)]
+void MainCS(uint3 DTid : SV_DispatchThreadID)
+{
+	if (any(DTid >= (uint3)Resolution))
+	{
+		return;
+	}
+
+	float3 WorldPos = VoxelToWorld(DTid);
+	float Density = 1.0;
+	float LatestHoleTime = 0.0;
+
+	for (int TrajIdx = 0; TrajIdx < NumTrajectories; TrajIdx++)
+	{
+		FTrajectory Traj = TrajectoryBuffer[TrajIdx];
+
+		float Age = CurrentTime - Traj.CreationTime;
+		if (Age > HoleLifetime)
+		{
+			continue;
+		}
+
+		for (int SphereIdx = 0; SphereIdx < NumSpheresPerTrajectory; SphereIdx++)
+		{
+			float Progress = (float)SphereIdx / max(NumSpheresPerTrajectory - 1, 1);
+
+			float3 SphereCenter = EvaluateTrajectoryPosition(Traj, Progress);
+			float SphereRadius = EvaluateTrajectoryRadius(Traj, Progress);
+
+			float Dist;
+			if (Traj.ShapeType == 0)
+			{
+				Dist = SphereSDF(WorldPos, SphereCenter, SphereRadius);
+			}
+			else
+			{
+				float3 HalfExtent = float3(SphereRadius, SphereRadius, SphereRadius);
+				Dist = BoxSDF(WorldPos, SphereCenter, HalfExtent);
+			}
+
+			if (Dist < 0.0)
+			{
+				float EdgeWidth = SphereRadius * saturate(Traj.EdgeSoftness + 0.1);
+				float Falloff = saturate(-Dist / EdgeWidth);
+				float HoleDensity = Falloff * Traj.DensityMultiplier;
+
+				Density *= (1.0 - HoleDensity);
+				LatestHoleTime = max(LatestHoleTime, Traj.CreationTime);
+			}
+		}
+	}
+
+	Density = saturate(Density);
+	VolumeTexture[DTid] = float4(Density, LatestHoleTime, 0.0, 1.0);
+}
