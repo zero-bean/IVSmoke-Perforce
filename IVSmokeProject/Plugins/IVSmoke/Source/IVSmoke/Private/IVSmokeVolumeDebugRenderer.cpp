@@ -2,11 +2,47 @@
 
 #include "IVSmokeVolumeDebugRenderer.h"
 
-#include "IVSmokeCollisionComponent.h"
+#include "IVSmokeHoleGeneratorComponent.h"
 #include "IVSmokeDebugShaders.h"
-#include "IVSmokePostProcessPass.h"
-#include "PixelShaderUtils.h"
+#include "PipelineStateCache.h"
 #include "RenderGraphBuilder.h"
+
+// ============================================================================
+// Cube Vertex Declaration
+// ============================================================================
+
+/**
+ * Vertex structure for volume cube.
+ * Only Position is needed - ray marching handles the rest.
+ */
+struct FIVSmokeCubeVertex
+{
+	FVector3f Position;  // Normalized cube position (-1 to 1)
+};
+
+/**
+ * Global vertex declaration for cube rendering.
+ */
+class FIVSmokeCubeVertexDeclaration : public FRenderResource
+{
+public:
+	FVertexDeclarationRHIRef VertexDeclarationRHI;
+
+	virtual void InitRHI(FRHICommandListBase& RHICmdList) override
+	{
+		FVertexDeclarationElementList Elements;
+		uint32 Stride = sizeof(FIVSmokeCubeVertex);
+		Elements.Add(FVertexElement(0, STRUCT_OFFSET(FIVSmokeCubeVertex, Position), VET_Float3, 0, Stride));
+		VertexDeclarationRHI = PipelineStateCache::GetOrCreateVertexDeclaration(Elements);
+	}
+
+	virtual void ReleaseRHI() override
+	{
+		VertexDeclarationRHI.SafeRelease();
+	}
+};
+
+static TGlobalResource<FIVSmokeCubeVertexDeclaration> GIVSmokeCubeVertexDeclaration;
 
 FIVSmokeVolumeDebugRenderer& FIVSmokeVolumeDebugRenderer::Get()
 {
@@ -14,7 +50,7 @@ FIVSmokeVolumeDebugRenderer& FIVSmokeVolumeDebugRenderer::Get()
 	return Instance;
 }
 
-void FIVSmokeVolumeDebugRenderer::Register(UIVSmokeCollisionComponent* Component)
+void FIVSmokeVolumeDebugRenderer::Register(UIVSmokeHoleGeneratorComponent* Component)
 {
 	if (!Component)
 	{
@@ -25,7 +61,7 @@ void FIVSmokeVolumeDebugRenderer::Register(UIVSmokeCollisionComponent* Component
 	DebugComponents.AddUnique(Component);
 }
 
-void FIVSmokeVolumeDebugRenderer::Unregister(UIVSmokeCollisionComponent* Component)
+void FIVSmokeVolumeDebugRenderer::Unregister(UIVSmokeHoleGeneratorComponent* Component)
 {
 	if (!Component)
 	{
@@ -57,7 +93,7 @@ bool FIVSmokeVolumeDebugRenderer::HasAnyComponents() const
 	return false;
 }
 
-void FIVSmokeVolumeDebugRenderer::UpdateRenderData(UIVSmokeCollisionComponent* Component)
+void FIVSmokeVolumeDebugRenderer::UpdateRenderData(UIVSmokeHoleGeneratorComponent* Component)
 {
 	if (!Component)
 	{
@@ -67,27 +103,15 @@ void FIVSmokeVolumeDebugRenderer::UpdateRenderData(UIVSmokeCollisionComponent* C
 	const uint32 ComponentID = Component->GetUniqueID();
 
 	// If debug visualization is disabled, remove from cache
-	if (!Component->bShowVolumeSlice)
+	if (!Component->bShowVolumeDebug)
 	{
 		FScopeLock Lock(&RenderDataMutex);
 		CachedRenderData.Remove(ComponentID);
 		return;
 	}
 
-	// Get texture and resource
-	UVolumeTexture* VolumeTexture = Component->GetHoleDataTexture();
-	if (!VolumeTexture)
-	{
-		return;
-	}
-
-	FTextureResource* TextureResource = VolumeTexture->GetResource();
-	if (!TextureResource)
-	{
-		return;
-	}
-
-	FTextureRHIRef TextureRHI = TextureResource->TextureRHI;
+	// Get hole texture (GPU compute shader output)
+	FTextureRHIRef TextureRHI = Component->GetHoleTexture();
 	if (!TextureRHI.IsValid())
 	{
 		return;
@@ -99,11 +123,16 @@ void FIVSmokeVolumeDebugRenderer::UpdateRenderData(UIVSmokeCollisionComponent* C
 	FIVSmokeDebugRenderData& Data = CachedRenderData.FindOrAdd(ComponentID);
 	Data.VolumeTextureRHI = TextureRHI;
 	Data.Resolution = Component->GetVoxelResolution();
-	Data.SliceIndex = Component->DebugSliceIndex;
-	Data.DebugMode = Component->DebugMode;
-	Data.CurrentTime = Component->GetWorld()->GetTimeSeconds();
-	Data.HoleLifeTime = Component->GetHoleLifeTime();
 	Data.bIsValid = true;
+
+	// World-space rendering data
+	// Use unscaled extent since LocalToWorld already includes scale
+	const FTransform& Transform = Component->GetComponentTransform();
+	Data.LocalToWorld = Transform.ToMatrixWithScale();
+	Data.WorldToLocal = Transform.ToInverseMatrixWithScale();
+	Data.VolumeExtent = Component->GetUnscaledBoxExtent();
+	Data.NumSteps = FMath::Clamp(Component->GetVoxelResolution().Z, 32, 128);
+	Data.StepOpacity = 1.0f;
 }
 
 FScreenPassTexture FIVSmokeVolumeDebugRenderer::Render(
@@ -128,14 +157,14 @@ FScreenPassTexture FIVSmokeVolumeDebugRenderer::Render(
 	{
 		if (Pair.Value.bIsValid)
 		{
-			RenderDebugSlice(GraphBuilder, View, Output, Pair.Value);
+			RenderVolumeCube(GraphBuilder, View, Output, Pair.Value);
 		}
 	}
 
 	return MoveTemp(Output);
 }
 
-void FIVSmokeVolumeDebugRenderer::RenderDebugSlice(
+void FIVSmokeVolumeDebugRenderer::RenderVolumeCube(
 	FRDGBuilder& GraphBuilder,
 	const FSceneView& View,
 	FScreenPassRenderTarget& Output,
@@ -147,53 +176,109 @@ void FIVSmokeVolumeDebugRenderer::RenderDebugSlice(
 	}
 
 	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
-	TShaderMapRef<FIVSmokeVolumeTextureDebugPS> PixelShader(ShaderMap);
+	TShaderMapRef<FIVSmokeVolumeSliceDebugVS> VertexShader(ShaderMap);
+	TShaderMapRef<FIVSmokeVolumeSliceDebugPS> PixelShader(ShaderMap);
 
-	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeVolumeTextureDebugPS::FParameters>();
-
-	// View uniform buffer (required for View.ViewSizeAndInvSize in shader)
-	Parameters->View = View.ViewUniformBuffer;
-
-	// Texture parameters (from cached data)
-	Parameters->SmokeVolumeTexture3D = RenderData.VolumeTextureRHI;
-	Parameters->SmokeVolumeSampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
-
-	// Debug parameters (from cached data)
-	Parameters->Resolution = RenderData.Resolution;
-	Parameters->SliceIndex = RenderData.SliceIndex;
-	Parameters->DebugMode = RenderData.DebugMode;
-	Parameters->CurrentTime = RenderData.CurrentTime;
-	Parameters->HoleLifeTime = RenderData.HoleLifeTime;
-
-	// Display area (bottom-right corner, fixed square regardless of aspect ratio)
-	const float ScreenWidth = View.UnscaledViewRect.Width();
-	const float ScreenHeight = View.UnscaledViewRect.Height();
-	const float AspectRatio = ScreenWidth / ScreenHeight;
-
-	const float MarginPixels = 20.0f;
-	const float MarginX = MarginPixels / ScreenWidth;
-	const float MarginY = MarginPixels / ScreenHeight;
-
-	const float SizeY = 0.25f;
-	const float SizeX = SizeY / AspectRatio;
-
-	Parameters->DisplayOffset = FVector2f(1.0f - SizeX - MarginX, 1.0f - SizeY - MarginY);
-	Parameters->DisplaySize = FVector2f(SizeX, SizeY);
-
-	// Render target
+	// Set up shader parameters
+	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeVolumeSliceParameters>();
+	Parameters->VolumeTexture = RenderData.VolumeTextureRHI;
+	Parameters->VolumeSampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
+	Parameters->LocalToWorld = FMatrix44f(RenderData.LocalToWorld);
+	Parameters->WorldToLocal = FMatrix44f(RenderData.WorldToLocal);
+	Parameters->WorldToClip = FMatrix44f(View.ViewMatrices.GetViewProjectionMatrix());
+	Parameters->VolumeExtent = FVector3f(RenderData.VolumeExtent);
+	Parameters->CameraWorldPos = FVector3f(View.ViewMatrices.GetViewOrigin());
+	Parameters->NumSteps = RenderData.NumSteps;
+	Parameters->StepOpacity = RenderData.StepOpacity;
 	Parameters->RenderTargets[0] = Output.GetRenderTargetBinding();
 
-	// Dispatch
-	FIVSmokePassConfig Config;
-	Config.EventName = TEXT("IVSmokeVolumeDebug");
-	Config.BlendState = TStaticBlendState<CW_RGBA, BO_Add, BF_SourceAlpha, BF_InverseSourceAlpha>::GetRHI();
+	// Cube geometry: 8 vertices, 36 indices (12 triangles)
+	static const FIVSmokeCubeVertex CubeVertices[8] = {
+		{ FVector3f(-1.0f, -1.0f, -1.0f) },  // 0: back-bottom-left
+		{ FVector3f( 1.0f, -1.0f, -1.0f) },  // 1: back-bottom-right
+		{ FVector3f( 1.0f,  1.0f, -1.0f) },  // 2: back-top-right
+		{ FVector3f(-1.0f,  1.0f, -1.0f) },  // 3: back-top-left
+		{ FVector3f(-1.0f, -1.0f,  1.0f) },  // 4: front-bottom-left
+		{ FVector3f( 1.0f, -1.0f,  1.0f) },  // 5: front-bottom-right
+		{ FVector3f( 1.0f,  1.0f,  1.0f) },  // 6: front-top-right
+		{ FVector3f(-1.0f,  1.0f,  1.0f) },  // 7: front-top-left
+	};
 
-	FIVSmokePostProcessPass::AddPixelShaderPass(
-		GraphBuilder,
-		ShaderMap,
-		PixelShader,
+	// Indices for 12 triangles (6 faces, 2 triangles each)
+	static const uint16 CubeIndices[36] = {
+		// Back face (-Z)
+		0, 2, 1, 0, 3, 2,
+		// Front face (+Z)
+		4, 5, 6, 4, 6, 7,
+		// Left face (-X)
+		0, 4, 7, 0, 7, 3,
+		// Right face (+X)
+		1, 2, 6, 1, 6, 5,
+		// Bottom face (-Y)
+		0, 1, 5, 0, 5, 4,
+		// Top face (+Y)
+		3, 7, 6, 3, 6, 2,
+	};
+
+	// Add render pass
+	GraphBuilder.AddPass(
+		RDG_EVENT_NAME("IVSmokeVolumeCube"),
 		Parameters,
-		Output,
-		Config
+		ERDGPassFlags::Raster,
+		[VertexShader, PixelShader, Parameters](FRHICommandList& RHICmdList)
+		{
+			// Create transient vertex buffer
+			FRHIResourceCreateInfo CreateInfoVB(TEXT("IVSmokeCubeVB"));
+			FBufferRHIRef VertexBuffer = RHICmdList.CreateVertexBuffer(
+				sizeof(CubeVertices),
+				BUF_Volatile,
+				CreateInfoVB
+			);
+			void* VBData = RHICmdList.LockBuffer(VertexBuffer, 0, sizeof(CubeVertices), RLM_WriteOnly);
+			FMemory::Memcpy(VBData, CubeVertices, sizeof(CubeVertices));
+			RHICmdList.UnlockBuffer(VertexBuffer);
+
+			// Create transient index buffer
+			FRHIResourceCreateInfo CreateInfoIB(TEXT("IVSmokeCubeIB"));
+			FBufferRHIRef IndexBuffer = RHICmdList.CreateIndexBuffer(
+				sizeof(uint16),
+				sizeof(CubeIndices),
+				BUF_Volatile,
+				CreateInfoIB
+			);
+			void* IBData = RHICmdList.LockBuffer(IndexBuffer, 0, sizeof(CubeIndices), RLM_WriteOnly);
+			FMemory::Memcpy(IBData, CubeIndices, sizeof(CubeIndices));
+			RHICmdList.UnlockBuffer(IndexBuffer);
+
+			// Set up graphics pipeline state
+			FGraphicsPipelineStateInitializer GraphicsPSOInit;
+			RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+
+			GraphicsPSOInit.BlendState = TStaticBlendState<CW_RGBA, BO_Add, BF_SourceAlpha, BF_InverseSourceAlpha>::GetRHI();
+			GraphicsPSOInit.RasterizerState = TStaticRasterizerState<FM_Solid, CM_None>::GetRHI();
+			GraphicsPSOInit.DepthStencilState = TStaticDepthStencilState<false, CF_Always>::GetRHI();
+			GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GIVSmokeCubeVertexDeclaration.VertexDeclarationRHI;
+			GraphicsPSOInit.BoundShaderState.VertexShaderRHI = VertexShader.GetVertexShader();
+			GraphicsPSOInit.BoundShaderState.PixelShaderRHI = PixelShader.GetPixelShader();
+			GraphicsPSOInit.PrimitiveType = PT_TriangleList;
+
+			SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit, 0);
+
+			// Set shader parameters
+			SetShaderParameters(RHICmdList, VertexShader, VertexShader.GetVertexShader(), *Parameters);
+			SetShaderParameters(RHICmdList, PixelShader, PixelShader.GetPixelShader(), *Parameters);
+
+			// Draw cube
+			RHICmdList.SetStreamSource(0, VertexBuffer, 0);
+			RHICmdList.DrawIndexedPrimitive(
+				IndexBuffer,
+				0,   // BaseVertexIndex
+				0,   // FirstInstance
+				8,   // NumVertices
+				0,   // StartIndex
+				12,  // NumPrimitives (triangles)
+				1    // NumInstances
+			);
+		}
 	);
 }

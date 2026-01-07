@@ -3,8 +3,15 @@
 #include "IVSmokeDebugShaders.h"
 
 IMPLEMENT_GLOBAL_SHADER(
-	FIVSmokeVolumeTextureDebugPS,
-	"/Plugin/IVSmoke/IVSmokeVolumeTextureDebug.usf",
+	FIVSmokeVolumeSliceDebugVS,
+	"/Plugin/IVSmoke/IVSmokeVolumeSliceDebug.usf",
+	"MainVS",
+	SF_Vertex
+);
+
+IMPLEMENT_GLOBAL_SHADER(
+	FIVSmokeVolumeSliceDebugPS,
+	"/Plugin/IVSmoke/IVSmokeVolumeSliceDebug.usf",
 	"MainPS",
 	SF_Pixel
 );

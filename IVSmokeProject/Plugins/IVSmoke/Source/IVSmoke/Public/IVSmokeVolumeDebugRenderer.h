@@ -5,10 +5,9 @@
 #include "CoreMinimal.h"
 #include "ScreenPass.h"
 
-class UIVSmokeCollisionComponent;
+class UIVSmokeHoleGeneratorComponent;
 class FRDGBuilder;
 class FSceneView;
-struct FPostProcessMaterialInputs;
 
 /**
  * Cached debug render data (thread-safe, copied from game thread)
@@ -17,16 +16,19 @@ struct FIVSmokeDebugRenderData
 {
 	FTextureRHIRef VolumeTextureRHI;
 	FIntVector Resolution = {};
-	int32 SliceIndex = 0;
-	int32 DebugMode = 0;
-	float CurrentTime = 0.0f;
-	float HoleLifeTime = 0.0f;
 	bool bIsValid = false;
+
+	// World-space rendering data
+	FMatrix LocalToWorld = FMatrix::Identity;
+	FMatrix WorldToLocal = FMatrix::Identity;
+	FVector VolumeExtent = FVector::ZeroVector;
+	int32 NumSteps = 64;
+	float StepOpacity = 1.0f;
 };
 
 /**
  * Debug renderer for volume texture visualization.
- * Renders Z-slices of registered collision components' volume textures.
+ * Renders volume as a cube with ray marching.
  */
 class IVSMOKE_API FIVSmokeVolumeDebugRenderer
 {
@@ -37,14 +39,14 @@ public:
 	// Component Registration
 	// ============================================================================
 
-	void Register(UIVSmokeCollisionComponent* Component);
-	void Unregister(UIVSmokeCollisionComponent* Component);
+	void Register(UIVSmokeHoleGeneratorComponent* Component);
+	void Unregister(UIVSmokeHoleGeneratorComponent* Component);
 
 	/** Check if any debug components are registered (thread-safe, no game object access) */
 	bool HasAnyComponents() const;
 
 	/** Update cached render data from game thread (call from Tick) */
-	void UpdateRenderData(UIVSmokeCollisionComponent* Component);
+	void UpdateRenderData(UIVSmokeHoleGeneratorComponent* Component);
 
 	// ============================================================================
 	// Rendering
@@ -69,16 +71,16 @@ private:
 	FIVSmokeVolumeDebugRenderer() = default;
 
 	/**
-	 * Render debug slice using cached data.
+	 * Render volume cube with ray marching.
 	 */
-	void RenderDebugSlice(
+	void RenderVolumeCube(
 		FRDGBuilder& GraphBuilder,
 		const FSceneView& View,
 		FScreenPassRenderTarget& Output,
 		const FIVSmokeDebugRenderData& RenderData
 	);
 
-	TArray<TWeakObjectPtr<UIVSmokeCollisionComponent>> DebugComponents;
+	TArray<TWeakObjectPtr<UIVSmokeHoleGeneratorComponent>> DebugComponents;
 	TMap<uint32, FIVSmokeDebugRenderData> CachedRenderData;  // Key: Component ID
 	mutable FCriticalSection ComponentsMutex;
 	mutable FCriticalSection RenderDataMutex;
