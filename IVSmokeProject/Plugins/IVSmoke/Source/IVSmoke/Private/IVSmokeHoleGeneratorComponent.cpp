@@ -1,8 +1,7 @@
 // Copyright SDB. All Rights Reserved.
 
 #include "IVSmokeHoleGeneratorComponent.h"
-#include "IVSmokeDebugSceneViewExtension.h"
-#include "IVSmokeVolumeDebugRenderer.h"
+#include "IVSmokeDebugRenderer.h"
 #include "IVSmokeHoleCarveCS.h"
 #include "RenderGraphBuilder.h"
 #include "RenderGraphUtils.h"
@@ -39,13 +38,12 @@ void UIVSmokeHoleGeneratorComponent::BeginPlay()
 		OnComponentBeginOverlap.AddDynamic(this, &UIVSmokeHoleGeneratorComponent::OnVolumeBeginOverlap);
 	}
 
-	FIVSmokeVolumeDebugRenderer::Get().Register(this);
-	FIVSmokeDebugSceneViewExtension::Initialize();
+	FIVSmokeDebugRenderer::Get().Register(this);
 }
 
 void UIVSmokeHoleGeneratorComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	FIVSmokeVolumeDebugRenderer::Get().Unregister(this);
+	FIVSmokeDebugRenderer::Get().Unregister(this);
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -61,7 +59,7 @@ void UIVSmokeHoleGeneratorComponent::TickComponent(float DeltaTime, ELevelTick T
 
 	if (bShowVolumeDebug)
 	{
-		FIVSmokeVolumeDebugRenderer::Get().UpdateRenderData(this);
+		FIVSmokeDebugRenderer::Get().UpdateRenderData(this);
 
 #if ENABLE_DRAW_DEBUG
 		DrawDebugBox(GetWorld(), GetComponentLocation(), GetScaledBoxExtent(), FColor::Cyan, false, -1.0f, 0, 2.0f);
