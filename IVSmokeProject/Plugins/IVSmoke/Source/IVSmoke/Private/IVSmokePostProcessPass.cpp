@@ -3,15 +3,16 @@
 #include "IVSmokePostProcessPass.h"
 #include "RenderGraphUtils.h"
 
-FRDGTextureRef FIVSmokePostProcessPass::CreateUAVOutputTexture(
+FRDGTextureRef FIVSmokePostProcessPass::CreateOutputTexture(
 	FRDGBuilder& GraphBuilder,
 	FRDGTextureRef SourceTexture,
 	const TCHAR* DebugName,
 	EPixelFormat OverrideFormat,
-	FIntPoint OverrideExtent)
+	FIntPoint OverrideExtent,
+	ETextureCreateFlags Flags)
 {
 	FRDGTextureDesc OutputDesc = SourceTexture->Desc;
-	OutputDesc.Flags |= ETextureCreateFlags::UAV;
+	OutputDesc.Flags |= Flags;
 
 	// Override format if specified (e.g., PF_FloatRGBA for alpha support)
 	if (OverrideFormat != PF_Unknown)
@@ -24,6 +25,7 @@ FRDGTextureRef FIVSmokePostProcessPass::CreateUAVOutputTexture(
 	{
 		OutputDesc.Extent = OverrideExtent;
 	}
+
 
 	FRDGTextureRef OutputTexture = GraphBuilder.CreateTexture(OutputDesc, DebugName);
 

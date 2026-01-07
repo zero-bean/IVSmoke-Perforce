@@ -74,7 +74,7 @@ public:
 		FGlobalShaderMap* ShaderMap,
 		TShaderMapRef<TShaderClass> ComputeShader,
 		typename TShaderClass::FParameters* Parameters,
-		const FIntPoint& ViewportSize,
+		const FIntPoint& TotalThreadSize,
 		const FIVSmokePassConfig& Config = FIVSmokePassConfig());
 
 	/**
@@ -87,14 +87,14 @@ public:
 	 * @param OverrideExtent  Override texture extent (zero = use source extent)
 	 * @return New texture with UAV flag
 	 */
-	static FRDGTextureRef CreateUAVOutputTexture(
+	static FRDGTextureRef CreateOutputTexture(
 		FRDGBuilder& GraphBuilder,
 		FRDGTextureRef SourceTexture,
 		const TCHAR* DebugName = TEXT("IVSmokeOutput"),
 		EPixelFormat OverrideFormat = PF_Unknown,
-		FIntPoint OverrideExtent = FIntPoint::ZeroValue);
+		FIntPoint OverrideExtent = FIntPoint::ZeroValue,
+		ETextureCreateFlags Flags = ETextureCreateFlags::UAV);
 };
-
 //------------------------------------------------------------------------------
 // Template implementations
 //------------------------------------------------------------------------------
@@ -125,11 +125,11 @@ void FIVSmokePostProcessPass::AddComputeShaderPass(
 	FGlobalShaderMap* ShaderMap,
 	TShaderMapRef<TShaderClass> ComputeShader,
 	typename TShaderClass::FParameters* Parameters,
-	const FIntPoint& ViewportSize,
+	const FIntPoint& TotalThreadSize,
 	const FIVSmokePassConfig& Config)
 {
-	const uint32 GroupCountX = FMath::DivideAndRoundUp((uint32)ViewportSize.X, Config.ThreadGroupSizeX);
-	const uint32 GroupCountY = FMath::DivideAndRoundUp((uint32)ViewportSize.Y, Config.ThreadGroupSizeY);
+	const uint32 GroupCountX = FMath::DivideAndRoundUp((uint32)TotalThreadSize.X, Config.ThreadGroupSizeX);
+	const uint32 GroupCountY = FMath::DivideAndRoundUp((uint32)TotalThreadSize.Y, Config.ThreadGroupSizeY);
 
 	FComputeShaderUtils::AddPass(
 		GraphBuilder,

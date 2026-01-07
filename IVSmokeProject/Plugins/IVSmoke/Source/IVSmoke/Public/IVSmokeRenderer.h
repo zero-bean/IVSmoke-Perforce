@@ -60,7 +60,6 @@ public:
 		const FSceneView& View,
 		const FPostProcessMaterialInputs& Inputs
 	);
-
 private:
 	FIVSmokeRenderer() = default;
 
@@ -92,7 +91,8 @@ private:
 	void AddRayMarchPass(
 		FRDGBuilder& GraphBuilder,
 		const FSceneView& View,
-		FRDGTextureRef OutputTexture,
+		FRDGTextureRef SmokeAlbedoTex,
+		FRDGTextureRef SmokeMaskTex,
 		const FIntPoint& ViewportSize,
 		const FIntPoint& ViewRectMin
 	);
@@ -110,10 +110,15 @@ private:
 	void AddCompositePass(
 		FRDGBuilder& GraphBuilder,
 		const FSceneView& View,
-		FRDGTextureRef SmokeTexture,
+		FRDGTextureRef SceneTex,
+		FRDGTextureRef SmokeAlbedoTex,
+		FRDGTextureRef SmokeMaskTex,
 		const FScreenPassRenderTarget& Output,
 		const FIntPoint& ViewportSize
 	);
+
+	FRDGTextureRef AddCopyPass(FRDGBuilder& GraphBuilder, const FSceneView& View, FRDGTextureRef SourceTex, const FIntPoint& DestiSize = FIntPoint::ZeroValue, const TCHAR* TexName = L"CopyTex");
+	void AddCopyPass(FRDGBuilder& GraphBuilder, const FSceneView& View, FRDGTextureRef SourceTex, FRDGTextureRef DestiTex);
 
 	// ============================================================================
 	// State

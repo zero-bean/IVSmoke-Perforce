@@ -4,19 +4,17 @@
 #include "/Engine/Private/ScreenPass.ush"
 
 Texture2D SceneTex;
-Texture2D SmokeTexture;
-Texture2D SmokeMaskTexture;
-Texture2D DepthTexture;
-SamplerState MainSampler;
-SamplerState PointClampSampler;
-
+Texture2D SmokeAlbedoTex;
+Texture2D SmokeMaskTex;
+SamplerState LinearRepeat_Sampler;
 float Sharpness;
+float2 ViewportSize;
 
 void MainPS(
-    in noperspective float4 UVAndScreenPos : TEXCOORD0,
-    out float4 OutColor : SV_Target0)
+ 	float4 SvPosition : SV_POSITION,
+	out float4 OutColor : SV_Target0)
 {
-	float2 UV = UVAndScreenPos.xy;
+	float2 UV = SvPosition.xy / ViewportSize;
     
     // Get texture dimensions
 	uint width, height;
@@ -24,21 +22,21 @@ void MainPS(
 	float2 TexelSize = 1.0f / float2(width, height);
     
     // Sample textures
-	float4 col = SceneTex.Sample(MainSampler, UV);
-	float4 smokeAlbedo = SmokeTexture.Sample(MainSampler, UV);
-	float smokeMask = saturate(SmokeMaskTexture.Sample(MainSampler, UV).r);
+	float4 col = SceneTex.Sample(LinearRepeat_Sampler, UV);
+	float4 smokeAlbedo = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, UV);
+	float smokeMask = 1 - saturate(SmokeMaskTex.Sample(LinearRepeat_Sampler, UV).r);
+	//float smokeMask = 0.5f;
     
     // Apply Sharpness (Laplacian filter)
 	float neighbor = Sharpness * -1.0f;
 	float center = Sharpness * 4.0f + 1.0f;
     
-	float4 n = SmokeTexture.Sample(MainSampler, UV + TexelSize * float2(0, 1));
-	float4 e = SmokeTexture.Sample(MainSampler, UV + TexelSize * float2(1, 0));
-	float4 s = SmokeTexture.Sample(MainSampler, UV + TexelSize * float2(0, -1));
-	float4 w = SmokeTexture.Sample(MainSampler, UV + TexelSize * float2(-1, 0));
+	float4 n = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, UV + TexelSize * float2(0, 1));
+	float4 e = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, UV + TexelSize * float2(1, 0));
+	float4 s = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, UV + TexelSize * float2(0, -1));
+	float4 w = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, UV + TexelSize * float2(-1, 0));
     
 	float4 sharpenedSmoke = n * neighbor + e * neighbor + smokeAlbedo * center + s * neighbor + w * neighbor;
     
 	OutColor = lerp(col, saturate(sharpenedSmoke), 1.0f - smokeMask);
-
 }

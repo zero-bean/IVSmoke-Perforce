@@ -196,16 +196,25 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	const FIntPoint ViewRectMin = SceneColor.ViewRect.Min;
 
 	// Create intermediate texture with ViewRect size for smoke compositing
-	FRDGTextureRef SmokeTexture = FIVSmokePostProcessPass::CreateUAVOutputTexture(
+	const FIntPoint QuaterTexSize = FIntPoint(FMath::CeilToInt(ViewportSize.X * 0.25f), FMath::CeilToInt(ViewportSize.Y * 0.25f));
+	FRDGTextureRef SmokeAlbedoTex = FIVSmokePostProcessPass::CreateOutputTexture(
 		GraphBuilder,
 		SceneColor.Texture,
-		TEXT("IVSmokeResultTexture"),
+		TEXT("IVSmokeAlbedoTexture"),
 		PF_FloatRGBA,
-		ViewportSize
+		QuaterTexSize,
+		TexCreate_RenderTargetable | TexCreate_ShaderResource | ETextureCreateFlags::UAV
 	);
-
-	AddRayMarchPass(GraphBuilder, View, SmokeTexture, ViewportSize, ViewRectMin);
-	AddCompositePass(GraphBuilder, View, SmokeTexture, Output, ViewportSize);
+	FRDGTextureRef SmokeMaskTex = FIVSmokePostProcessPass::CreateOutputTexture(
+		GraphBuilder,
+		SceneColor.Texture,
+		TEXT("IVSmokeMaskTexture"),
+		PF_FloatRGBA,
+		QuaterTexSize,
+		TexCreate_RenderTargetable | TexCreate_ShaderResource | ETextureCreateFlags::UAV
+	);
+	AddRayMarchPass(GraphBuilder, View, SmokeAlbedoTex, SmokeMaskTex, ViewportSize, ViewRectMin);
+	AddCompositePass(GraphBuilder, View, SceneColor.Texture, SmokeAlbedoTex, SmokeMaskTex, Output, ViewportSize);
 
 	return Output;
 }
@@ -217,7 +226,8 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 void FIVSmokeRenderer::AddRayMarchPass(
 	FRDGBuilder& GraphBuilder,
 	const FSceneView& View,
-	FRDGTextureRef OutputTexture,
+	FRDGTextureRef SmokeAlbedoTex,
+	FRDGTextureRef SmokeMaskTex,
 	const FIntPoint& ViewportSize,
 	const FIntPoint& ViewRectMin)
 {
@@ -267,7 +277,8 @@ void FIVSmokeRenderer::AddRayMarchPass(
 	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeRayMarchCS::FParameters>();
 
 	// Output
-	Parameters->OutputTexture = GraphBuilder.CreateUAV(FRDGTextureUAVDesc(OutputTexture));
+	Parameters->SmokeAlbedoTex = GraphBuilder.CreateUAV(FRDGTextureUAVDesc(SmokeAlbedoTex));
+	Parameters->SmokeMaskTex = GraphBuilder.CreateUAV(FRDGTextureUAVDesc(SmokeMaskTex));
 
 	// Input Texture (Noise Volume)
 	FTextureRHIRef TextureRHI = NoiseVolume->GetRenderTargetResource()->GetRenderTargetTexture();
@@ -283,7 +294,10 @@ void FIVSmokeRenderer::AddRayMarchPass(
 	ElapsedTime += View.Family->Time.GetDeltaWorldTimeSeconds();
 	Parameters->ElapseTime = ElapsedTime;
 
+
 	// Viewport
+	const FIntPoint TexSize = FIntPoint(SmokeAlbedoTex->Desc.GetSize().X, SmokeAlbedoTex->Desc.GetSize().Y);
+	Parameters->TexSize = TexSize;
 	Parameters->ViewportSize = FVector2f(ViewportSize);
 	Parameters->ViewRectMin = FVector2f(ViewRectMin);
 
@@ -367,12 +381,14 @@ void FIVSmokeRenderer::AddRayMarchPass(
 	Config.ThreadGroupSizeX = FIVSmokeRayMarchCS::ThreadGroupSizeX;
 	Config.ThreadGroupSizeY = FIVSmokeRayMarchCS::ThreadGroupSizeY;
 
+	const FIntPoint& TotalThreadSize = FIntPoint(TexSize.X, TexSize.Y);
+
 	FIVSmokePostProcessPass::AddComputeShaderPass(
 		GraphBuilder,
 		ShaderMap,
 		ComputeShader,
 		Parameters,
-		ViewportSize,
+		TotalThreadSize,
 		Config
 	);
 }
@@ -380,30 +396,119 @@ void FIVSmokeRenderer::AddRayMarchPass(
 void FIVSmokeRenderer::AddCompositePass(
 	FRDGBuilder& GraphBuilder,
 	const FSceneView& View,
-	FRDGTextureRef SmokeTexture,
+	FRDGTextureRef SceneTex,
+	FRDGTextureRef SmokeAlbedoTex,
+	FRDGTextureRef SmokeMaskTex,
 	const FScreenPassRenderTarget& Output,
 	const FIntPoint& ViewportSize)
 {
-	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
-	TShaderMapRef<FIVSmokeCompositePS> PixelShader(ShaderMap);
+	const FIntPoint QuaterTexSize = FIntPoint(FMath::CeilToInt(ViewportSize.X * 0.25f), FMath::CeilToInt(ViewportSize.Y * 0.25f));
+	const FIntPoint HalfTexSize = FIntPoint(FMath::CeilToInt(ViewportSize.X * 0.5f), FMath::CeilToInt(ViewportSize.Y * 0.5f));
+	const FIntPoint FullTexSize = ViewportSize;
 
-	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeCompositePS::FParameters>();
-	Parameters->ViewportSize = FVector2f(ViewportSize);
-	Parameters->ViewRectMin = FVector2f(Output.ViewRect.Min);
-	Parameters->SmokeTexture = GraphBuilder.CreateSRV(FRDGTextureSRVDesc(SmokeTexture));
-	Parameters->TextureSampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
+	FScreenPassViewInfo ViewInfo(View);
+	FRDGTextureRef HalfMaskTex = AddCopyPass(GraphBuilder, View, SmokeMaskTex, HalfTexSize, TEXT("HalfMaskTex"));
+	FRDGTextureRef FullMaskTex = AddCopyPass(GraphBuilder, View, HalfMaskTex, FullTexSize, TEXT("FullMaskTex"));
+	AddCopyPass(GraphBuilder, View, FullMaskTex, HalfMaskTex);
+	AddCopyPass(GraphBuilder, View, HalfMaskTex, SmokeMaskTex);
+
+
+	FRDGTextureRef HalfAlbedoTex = AddCopyPass(GraphBuilder, View, SmokeAlbedoTex, HalfTexSize, TEXT("HalfAlbedoTex"));
+	FRDGTextureRef FullAlbedoTex = AddCopyPass(GraphBuilder, View, HalfAlbedoTex, FullTexSize, TEXT("FullAlbedoTex"));
+
+	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
+	TShaderMapRef<FIVSmokeSharpenCompositePS> SharpenCompositePS(ShaderMap);
+	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeSharpenCompositePS::FParameters>();
+	Parameters->SceneTex = SceneTex;
+	Parameters->SmokeAlbedoTex = FullAlbedoTex;
+	Parameters->SmokeMaskTex = SmokeMaskTex;
+	Parameters->LinearRepeat_Sampler = TStaticSamplerState<SF_Trilinear, AM_Wrap, AM_Wrap, AM_Wrap>::GetRHI();
+	Parameters->Sharpness = 0.1f;
+	Parameters->ViewportSize = ViewportSize;
 	Parameters->RenderTargets[0] = Output.GetRenderTargetBinding();
+	FIVSmokePassConfig Config;
+	Config.EventName = TEXT("IVSmokeSharpenComposite");
+	Config.BlendState = TStaticBlendState<CW_RGBA, BO_Add, BF_SourceAlpha, BF_InverseSourceAlpha>::GetRHI();
+	FIVSmokePostProcessPass::AddPixelShaderPass(
+		GraphBuilder,
+		ShaderMap,
+		SharpenCompositePS,
+		Parameters,
+		Output,
+		Config);
+}
+
+void FIVSmokeRenderer::AddCopyPass(FRDGBuilder& GraphBuilder, const FSceneView& View, FRDGTextureRef SourceTex, FRDGTextureRef DestiTex)
+{
+	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
+	TShaderMapRef<FIVSmokeCopyPS> CopyPS(ShaderMap);
+
+	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeCopyPS::FParameters>();
+	Parameters->MainTex = SourceTex;
+	Parameters->LinearRepeat_Sampler = TStaticSamplerState<SF_Bilinear, AM_Wrap, AM_Wrap, AM_Wrap>::GetRHI();
+	Parameters->ViewportSize = DestiTex->Desc.Extent;
+	Parameters->RenderTargets[0] = FRenderTargetBinding(DestiTex, ERenderTargetLoadAction::ENoAction);
+	FScreenPassRenderTarget Output(
+		DestiTex,
+		FIntRect(0, 0, DestiTex->Desc.Extent.X, DestiTex->Desc.Extent.Y),
+		ERenderTargetLoadAction::ENoAction
+	);
 
 	FIVSmokePassConfig Config;
-	Config.EventName = TEXT("IVSmokeComposite");
-	Config.BlendState = TStaticBlendState<CW_RGBA, BO_Add, BF_SourceAlpha, BF_InverseSourceAlpha>::GetRHI();
+	Config.EventName = TEXT("IVSmokeCopy");
+	Config.BlendState = TStaticBlendState<>::GetRHI();
 
 	FIVSmokePostProcessPass::AddPixelShaderPass(
 		GraphBuilder,
 		ShaderMap,
-		PixelShader,
+		CopyPS,
 		Parameters,
 		Output,
 		Config
 	);
+}
+FRDGTextureRef FIVSmokeRenderer::AddCopyPass(FRDGBuilder& GraphBuilder, const FSceneView& View, FRDGTextureRef SourceTex, const FIntPoint& DestiSize, const TCHAR* TexName )
+{
+	FIntPoint TexSize = DestiSize;
+	if (DestiSize == FIntPoint::ZeroValue)
+	{
+		FIntPoint TextureSize = SourceTex->Desc.Extent;
+		TexSize = FIntPoint(TextureSize.X, TextureSize.Y);
+	}
+	FRDGTextureRef DestiTex = FIVSmokePostProcessPass::CreateOutputTexture(
+		GraphBuilder,
+		SourceTex,
+		TexName,
+		PF_FloatRGBA,
+		TexSize,
+		TexCreate_RenderTargetable | TexCreate_ShaderResource);
+	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
+	TShaderMapRef<FIVSmokeCopyPS> CopyPS(ShaderMap);
+
+	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeCopyPS::FParameters>();
+	Parameters->MainTex = SourceTex;
+	Parameters->LinearRepeat_Sampler = TStaticSamplerState<SF_Bilinear, AM_Wrap, AM_Wrap, AM_Wrap>::GetRHI();
+	Parameters->ViewportSize = TexSize;
+	Parameters->RenderTargets[0] = FRenderTargetBinding(DestiTex, ERenderTargetLoadAction::ENoAction);
+
+	FScreenPassRenderTarget Output(
+		DestiTex,
+		FIntRect(0, 0, TexSize.X, TexSize.Y),
+		ERenderTargetLoadAction::ENoAction
+	);
+
+	FIVSmokePassConfig Config;
+	Config.EventName = TEXT("IVSmokeCopy");
+	Config.BlendState = TStaticBlendState<>::GetRHI();
+
+	FIVSmokePostProcessPass::AddPixelShaderPass(
+		GraphBuilder,
+		ShaderMap,
+		CopyPS,
+		Parameters,
+		Output,
+		Config
+	);
+
+	return DestiTex;
 }

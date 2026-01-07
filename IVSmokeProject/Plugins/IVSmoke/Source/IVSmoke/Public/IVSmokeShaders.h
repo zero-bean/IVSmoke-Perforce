@@ -22,7 +22,8 @@ class IVSMOKE_API FIVSmokeRayMarchCS : public FGlobalShader
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 		// Output
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float4>, OutputTexture)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float4>, SmokeAlbedoTex)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float4>, SmokeMaskTex)
 
 		// Input Texture
 		SHADER_PARAMETER_RDG_TEXTURE(Texture3D, NoiseVolume)
@@ -34,6 +35,7 @@ class IVSMOKE_API FIVSmokeRayMarchCS : public FGlobalShader
 		SHADER_PARAMETER(float, ElapseTime)
 
 		// Viewport
+		SHADER_PARAMETER(FIntPoint, TexSize)
 		SHADER_PARAMETER(FVector2f, ViewportSize)
 		SHADER_PARAMETER(FVector2f, ViewRectMin)
 
@@ -113,37 +115,55 @@ public:
  * Composite pixel shader.
  * Blends ray marching result with scene color.
  */
-class IVSMOKE_API FIVSmokeCompositePS : public FGlobalShader
-{
-	DECLARE_GLOBAL_SHADER(FIVSmokeCompositePS);
-	SHADER_USE_PARAMETER_STRUCT(FIVSmokeCompositePS, FGlobalShader);
-
-	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-		SHADER_PARAMETER(FVector2f, ViewportSize)
-		SHADER_PARAMETER(FVector2f, ViewRectMin)
-		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture2D, SmokeTexture)
-		SHADER_PARAMETER_SAMPLER(SamplerState, TextureSampler)
-		RENDER_TARGET_BINDING_SLOTS()
-	END_SHADER_PARAMETER_STRUCT()
-
-	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
-	{
-		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
-	}
-};
+//class IVSMOKE_API FIVSmokeCompositePS : public FGlobalShader
+//{
+//	DECLARE_GLOBAL_SHADER(FIVSmokeCompositePS);
+//	SHADER_USE_PARAMETER_STRUCT(FIVSmokeCompositePS, FGlobalShader);
+//
+//	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+//		SHADER_PARAMETER(FVector2f, ViewportSize)
+//		SHADER_PARAMETER(FVector2f, ViewRectMin)
+//		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture2D, SmokeTexture)
+//		SHADER_PARAMETER_SAMPLER(SamplerState, TextureSampler)
+//		RENDER_TARGET_BINDING_SLOTS()
+//	END_SHADER_PARAMETER_STRUCT()
+//
+//	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
+//	{
+//		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
+//	}
+//};
 class IVSMOKE_API FIVSmokeSharpenCompositePS : public FGlobalShader
 {
 	DECLARE_GLOBAL_SHADER(FIVSmokeSharpenCompositePS);
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeSharpenCompositePS, FGlobalShader);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture2D, MainTexture)
-		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture2D, SmokeTexture)
-		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture2D, SmokeMaskTexture)
-		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture2D, DepthTexture)
-		SHADER_PARAMETER_SAMPLER(SamplerState, MainSampler)
-		SHADER_PARAMETER_SAMPLER(SamplerState, PointClampSampler)
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SceneTex)
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeAlbedoTex)
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeMaskTex)
+		SHADER_PARAMETER_SAMPLER(SamplerState, LinearRepeat_Sampler)
 		SHADER_PARAMETER(float, Sharpness)
+		SHADER_PARAMETER(FVector2f, ViewportSize)
+		RENDER_TARGET_BINDING_SLOTS()
+	END_SHADER_PARAMETER_STRUCT()
+
+public:
+	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
+	{
+		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
+	}
+};
+class IVSMOKE_API FIVSmokeCopyPS : public FGlobalShader
+{
+	DECLARE_GLOBAL_SHADER(FIVSmokeCopyPS);
+	SHADER_USE_PARAMETER_STRUCT(FIVSmokeCopyPS, FGlobalShader);
+
+	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, MainTex)
+		SHADER_PARAMETER_SAMPLER(SamplerState, LinearRepeat_Sampler)
+		SHADER_PARAMETER(FVector2f, ViewportSize)
+		RENDER_TARGET_BINDING_SLOTS()
 	END_SHADER_PARAMETER_STRUCT()
 
 public:

@@ -19,7 +19,8 @@
 // ============================================================================
 
 // Output
-RWTexture2D<float4> OutputTexture;
+RWTexture2D<float4> SmokeAlbedoTex;
+RWTexture2D<float4> SmokeMaskTex;
 
 //Input Texture
 Texture3D<half> NoiseVolume; //new
@@ -28,6 +29,7 @@ Texture3D<half> NoiseVolume; //new
 SamplerState LinearRepeat_Sampler; //new
 
 // Viewport
+uint2 TexSize;
 float2 ViewportSize;
 
 // DeltaTime
@@ -111,13 +113,13 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	uint2 PixelCoord = DispatchThreadId.xy;
 
 	// Bounds check
-	if (PixelCoord.x >= (uint)ViewportSize.x || PixelCoord.y >= (uint)ViewportSize.y)
+	if (PixelCoord.x >= TexSize.x || PixelCoord.y >= TexSize.y)
 	{
 		return;
 	}
 
 	// Calculate screen position in [-1, 1] range
-	float2 PixelUV = (float2(PixelCoord) + 0.5) / ViewportSize;
+	float2 PixelUV = (float2(PixelCoord) + 0.5) / TexSize;
 	float2 ScreenPos = PixelUV * 2.0 - 1.0;
 	ScreenPos.y *= -1.0;  // Flip Y: UV has Y down, but we want Y up
 
@@ -128,7 +130,7 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 		+ ScreenPos.x * CameraRight * TanHalfFOV * AspectRatio
 		+ ScreenPos.y * CameraUp * TanHalfFOV
 	);
-
+	
 	float3 RayOrigin = CameraPosition;
 
 	// ============================================================================
@@ -138,7 +140,10 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	// Sample scene depth and convert to world distance
 	// Access depth via uniform buffer (SceneTexturesStruct bound from C++)
 	// Offset by ViewRectMin since depth texture is full resolution but we dispatch at ViewRect size
-	float DeviceZ = SceneTexturesStruct.SceneDepthTexture.Load(int3(PixelCoord + int2(ViewRectMin), 0)).r;
+	int3 ScenePixelCoord = int3(0, 0, 0);
+	ScenePixelCoord.x = ceil((float) PixelCoord.x / TexSize.x * ViewportSize.x + ViewRectMin.x);
+	ScenePixelCoord.y = ceil((float) PixelCoord.y / TexSize.y * ViewportSize.y + ViewRectMin.y);
+	float DeviceZ = SceneTexturesStruct.SceneDepthTexture.Load(ScenePixelCoord).r;
 
 	// Convert DeviceZ to linear world distance using UE's full transform formula
 	// From Common.ush ConvertFromDeviceZ(): supports both perspective and orthographic
@@ -167,7 +172,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	if (!bHit)
 	{
 		// No intersection - output transparent
-		OutputTexture[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		SmokeAlbedoTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		SmokeMaskTex[PixelCoord] = float4(0, 0, 0, 0);
 		return;
 	}
 
@@ -177,7 +183,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	// Early exit if volume is completely behind scene geometry
 	if (TMin >= TMax)
 	{
-		OutputTexture[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		SmokeAlbedoTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		SmokeMaskTex[PixelCoord] = float4(0, 0, 0, 0);
 		return;
 	}
 
@@ -227,7 +234,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 
 	// Output: color and alpha (1 - transmittance = opacity)
 	float Alpha = 1.0 - Transmittance;
-	OutputTexture[PixelCoord] = float4(AccumulatedColor, Alpha);
+	SmokeAlbedoTex[PixelCoord] = float4(AccumulatedColor, 1.0f);
+	SmokeMaskTex[PixelCoord] = float4(Alpha, 0, 0, 0);
 }
 
 // ============================================================================
