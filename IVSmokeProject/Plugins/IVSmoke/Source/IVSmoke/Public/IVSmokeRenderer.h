@@ -108,7 +108,7 @@ private:
 
 	/**
 	 * Sharpen Composite PS Pass.
-	 * Blends ray marching result (Dual RT) with scene color and applies sharpening.
+	 * Blends ray marching result (Dual RT) with scene color and applies sharpening/blurring.
 	 *
 	 * @param GraphBuilder       RDG builder
 	 * @param View               Current scene view
@@ -117,6 +117,7 @@ private:
 	 * @param SmokeMaskTex       Smoke opacity mask from ray marching
 	 * @param Output             Final render target
 	 * @param ViewportSize       Size of the viewport for UV calculation
+	 * @param Sharpness          Sharpen/blur amount (-1 to 1, 0 = no filter)
 	 */
 	void AddSharpenCompositePass(
 		FRDGBuilder& GraphBuilder,
@@ -125,7 +126,43 @@ private:
 		FRDGTextureRef SmokeAlbedoTex,
 		FRDGTextureRef SmokeMaskTex,
 		const FScreenPassRenderTarget& Output,
-		const FIntPoint& ViewportSize
+		const FIntPoint& ViewportSize,
+		float Sharpness
+	);
+
+	/**
+	 * Copy/Resize Pass using bilinear sampling.
+	 * Used for progressive upscaling (1/4 → 1/2 → Full) to improve quality.
+	 *
+	 * @param GraphBuilder       RDG builder
+	 * @param View               Current scene view
+	 * @param SourceTex          Source texture to copy from
+	 * @param DestSize           Destination texture size (resizes via bilinear)
+	 * @param TexName            Debug name for the created texture
+	 * @return                   New texture at DestSize with copied content
+	 */
+	FRDGTextureRef AddCopyPass(
+		FRDGBuilder& GraphBuilder,
+		const FSceneView& View,
+		FRDGTextureRef SourceTex,
+		const FIntPoint& DestSize,
+		const TCHAR* TexName
+	);
+
+	/**
+	 * Copy Pass to existing texture.
+	 * Copies SourceTex to DestTex using bilinear sampling.
+	 *
+	 * @param GraphBuilder       RDG builder
+	 * @param View               Current scene view
+	 * @param SourceTex          Source texture to copy from
+	 * @param DestTex            Destination texture to copy to
+	 */
+	void AddCopyPass(
+		FRDGBuilder& GraphBuilder,
+		const FSceneView& View,
+		FRDGTextureRef SourceTex,
+		FRDGTextureRef DestTex
 	);
 
 	// ============================================================================

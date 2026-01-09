@@ -94,8 +94,21 @@ public:
 	// ============================================================================
 
 	/** Maximum ray marching steps. Higher = better quality, lower performance. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|RayMarching", meta = (ClampMin = "16", ClampMax = "256"))
-	int32 MaxSteps = 64;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|RayMarching", meta = (ClampMin = "16", ClampMax = "512"))
+	int32 MaxSteps = 256;
+
+	// ============================================================================
+	// Post Processing
+	// ============================================================================
+
+	/**
+	 * Controls sharpening/blurring of the smoke composite.
+	 * Positive = sharpen (enhances detail but may show grain)
+	 * Zero = no filter (default)
+	 * Negative = blur (reduces grain but softens edges)
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|PostProcessing", meta = (ClampMin = "-1.0", ClampMax = "1.0"))
+	float Sharpness = 0.0f;
 
 	// ============================================================================
 	// Rayleigh Scattering

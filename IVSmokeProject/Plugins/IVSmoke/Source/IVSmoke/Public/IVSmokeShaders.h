@@ -7,6 +7,7 @@
 #include "ShaderParameterStruct.h"
 #include "RenderGraphUtils.h"
 #include "SceneTexturesConfig.h"
+#include "SceneView.h"
 
 // ============================================================================
 // GPU Data Structures for Multi-Volume Rendering
@@ -119,9 +120,13 @@ class IVSMOKE_API FIVSmokeMultiVolumeRayMarchCS : public FGlobalShader
 		SHADER_PARAMETER(int, HoleSDFTexCount)
 		SHADER_PARAMETER(FIntVector, HoleSDFTexSize)
 
+
 		// Scene Textures
 		SHADER_PARAMETER_RDG_UNIFORM_BUFFER(FSceneTextureUniformParameters, SceneTexturesStruct)
 		SHADER_PARAMETER(FVector4f, InvDeviceZToWorldZTransform)
+
+		// View (for BlueNoise access)
+		SHADER_PARAMETER_STRUCT_REF(FViewUniformShaderParameters, View)
 
 		// Global Smoke Parameters
 		SHADER_PARAMETER(float, GlobalAbsorption)
@@ -133,6 +138,9 @@ class IVSMOKE_API FIVSmokeMultiVolumeRayMarchCS : public FGlobalShader
 		SHADER_PARAMETER(FVector3f, LightDirection)
 		SHADER_PARAMETER(FVector3f, LightColor)
 		SHADER_PARAMETER(float, ScatterScale)
+
+		// Temporal (for TAA integration)
+		SHADER_PARAMETER(uint32, FrameNumber)
 
 	END_SHADER_PARAMETER_STRUCT()
 

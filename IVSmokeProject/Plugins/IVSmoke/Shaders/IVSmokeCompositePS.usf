@@ -1,4 +1,4 @@
-// SmokeSharpenComposite.usf
+// IVSmokeCompositePS.usf
 #include "/Engine/Public/Platform.ush"
 #include "/Engine/Private/Common.ush"
 #include "/Engine/Private/ScreenPass.ush"
@@ -12,7 +12,7 @@ float2 ViewportSize;
 float2 ViewRectMin;
 
 void MainPS(
- 	float4 SvPosition : SV_POSITION,
+	float4 SvPosition : SV_POSITION,
 	out float4 OutColor : SV_Target0)
 {
 	// UV for our smoke textures (0~1 mapping to TexSize)
@@ -23,26 +23,72 @@ void MainPS(
 	SceneTex.GetDimensions(sceneWidth, sceneHeight);
 	float2 SceneUV = SvPosition.xy / float2(sceneWidth, sceneHeight);
 
-	// Get SmokeAlbedoTex dimensions for sharpening (reduced resolution)
+	// Get SmokeAlbedoTex dimensions for filtering
+	// Note: Smoke textures are upscaled from 1/2 resolution, so grain patterns
+	// are 2x2 pixels. We use 2x TexelSize for blur to cover the expanded grain.
 	uint width, height;
 	SmokeAlbedoTex.GetDimensions(width, height);
-	float2 TexelSize = 1.0f / float2(width, height);
+	float2 TexelSize = 2.0f / float2(width, height);  // 2x for upscaled grain coverage
 
 	// Sample textures
 	float4 col = SceneTex.Sample(LinearRepeat_Sampler, SceneUV);
 	float4 smokeAlbedo = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV);
-	float smokeMask = 1.0 - saturate(SmokeMaskTex.Sample(LinearRepeat_Sampler, SmokeUV).r);
+	float smokeMaskCenter = SmokeMaskTex.Sample(LinearRepeat_Sampler, SmokeUV).r;
 
-	// Apply Sharpness (Laplacian filter)
-	float neighbor = Sharpness * -1.0f;
-	float center = Sharpness * 4.0f + 1.0f;
+	float4 filteredSmoke;
+	float filteredMask;
 
-	float4 n = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(0, 1));
-	float4 e = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(1, 0));
-	float4 s = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(0, -1));
-	float4 w = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(-1, 0));
-    
-	float4 sharpenedSmoke = n * neighbor + e * neighbor + smokeAlbedo * center + s * neighbor + w * neighbor;
-    
-	OutColor = lerp(col, saturate(sharpenedSmoke), 1.0f - smokeMask);
+	if (Sharpness >= 0.0)
+	{
+		// Laplacian sharpening
+		float4 albedo_n = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(0, 1));
+		float4 albedo_e = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(1, 0));
+		float4 albedo_s = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(0, -1));
+		float4 albedo_w = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(-1, 0));
+
+		float neighbor = Sharpness * -1.0f;
+		float center = Sharpness * 4.0f + 1.0f;
+		filteredSmoke = albedo_n * neighbor + albedo_e * neighbor + smokeAlbedo * center + albedo_s * neighbor + albedo_w * neighbor;
+		filteredMask = smokeMaskCenter;
+	}
+	else
+	{
+		// 3x3 Gaussian-like blur with 8 neighbors + center
+		// Wider coverage for upscaled grain patterns
+		float4 a0 = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(-1, -1));
+		float4 a1 = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2( 0, -1));
+		float4 a2 = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2( 1, -1));
+		float4 a3 = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(-1,  0));
+		float4 a4 = smokeAlbedo;  // center
+		float4 a5 = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2( 1,  0));
+		float4 a6 = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(-1,  1));
+		float4 a7 = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2( 0,  1));
+		float4 a8 = SmokeAlbedoTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2( 1,  1));
+
+		float m0 = SmokeMaskTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(-1, -1)).r;
+		float m1 = SmokeMaskTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2( 0, -1)).r;
+		float m2 = SmokeMaskTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2( 1, -1)).r;
+		float m3 = SmokeMaskTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(-1,  0)).r;
+		float m4 = smokeMaskCenter;  // center
+		float m5 = SmokeMaskTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2( 1,  0)).r;
+		float m6 = SmokeMaskTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2(-1,  1)).r;
+		float m7 = SmokeMaskTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2( 0,  1)).r;
+		float m8 = SmokeMaskTex.Sample(LinearRepeat_Sampler, SmokeUV + TexelSize * float2( 1,  1)).r;
+
+		// Gaussian weights (approximate): corners=1, edges=2, center=4, total=16
+		float4 blurredAlbedo = (a0 + a2 + a6 + a8) + (a1 + a3 + a5 + a7) * 2.0 + a4 * 4.0;
+		blurredAlbedo /= 16.0;
+
+		float blurredMask = (m0 + m2 + m6 + m8) + (m1 + m3 + m5 + m7) * 2.0 + m4 * 4.0;
+		blurredMask /= 16.0;
+
+		float blurAmount = saturate(-Sharpness);
+		filteredSmoke = lerp(smokeAlbedo, blurredAlbedo, blurAmount);
+		filteredMask = lerp(smokeMaskCenter, blurredMask, blurAmount);
+	}
+
+	float smokeMask = 1.0 - saturate(filteredMask);
+
+	// Composite: blend scene with filtered smoke based on mask
+	OutColor = lerp(col, saturate(filteredSmoke), 1.0f - smokeMask);
 }

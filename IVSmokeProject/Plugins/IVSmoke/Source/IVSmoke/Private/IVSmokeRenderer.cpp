@@ -242,27 +242,34 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	const FIntPoint ViewportSize = SceneColor.ViewRect.Size();
 	const FIntPoint ViewRectMin = SceneColor.ViewRect.Min;
 
-	// Calculate reduced resolution (1/4 = half width * half height)
-	const FIntPoint TexSize = FIntPoint(
+	// ============================================================================
+	// Upscaling Pipeline (1/2 → Full)
+	// ============================================================================
+	//
+	// Ray March at 1/2 resolution for quality/performance balance.
+	// Single-step upscaling with bilinear filtering smooths IGN grain.
+	// Note: 1/4 resolution causes excessive grain when camera is inside smoke.
+	//
+	const FIntPoint HalfSize = FIntPoint(
 		FMath::Max(1, ViewportSize.X / 2),
 		FMath::Max(1, ViewportSize.Y / 2)
 	);
 
-	// Create Dual Render Target textures at reduced resolution
+	// Create Dual Render Target textures at 1/2 resolution
 	FRDGTextureRef SmokeAlbedoTex = FIVSmokePostProcessPass::CreateOutputTexture(
 		GraphBuilder,
 		SceneColor.Texture,
-		TEXT("IVSmokeSmokeAlbedoTex"),
+		TEXT("IVSmokeAlbedoTex_Half"),
 		PF_FloatRGBA,
-		TexSize
+		HalfSize
 	);
 
 	FRDGTextureRef SmokeMaskTex = FIVSmokePostProcessPass::CreateOutputTexture(
 		GraphBuilder,
 		SceneColor.Texture,
-		TEXT("IVSmokeSmokeMaskTex"),
+		TEXT("IVSmokeMaskTex_Half"),
 		PF_FloatRGBA,
-		TexSize
+		HalfSize
 	);
 
 	// Collect valid volumes
@@ -283,21 +290,48 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 		return FScreenPassTexture();
 	}
 
-	// Single-pass multi-volume rendering (correct Beer-Lambert integration)
-	// Outputs to Dual RT (SmokeAlbedoTex + SmokeMaskTex) at reduced resolution
+	// ============================================================================
+	// Ray March Pass (1/2 Resolution)
+	// ============================================================================
 	AddMultiVolumeRayMarchPass(
 		GraphBuilder,
 		View,
 		SortedVolumes,
 		SmokeAlbedoTex,
 		SmokeMaskTex,
-		TexSize,
+		HalfSize,
 		ViewportSize,
 		ViewRectMin
 	);
 
-	// Composite with sharpening (upscales from reduced resolution)
-	AddSharpenCompositePass(GraphBuilder, View, SceneColor.Texture, SmokeAlbedoTex, SmokeMaskTex, Output, ViewportSize);
+	// ============================================================================
+	// Upscaling (1/2 → Full)
+	// ============================================================================
+	// Single-step bilinear upscaling smooths IGN grain patterns.
+
+	// Albedo: 1/2 → Full
+	FRDGTextureRef SmokeAlbedoFull = AddCopyPass(
+		GraphBuilder,
+		View,
+		SmokeAlbedoTex,
+		ViewportSize,
+		TEXT("IVSmokeAlbedoTex_Full")
+	);
+
+	// Mask: 1/2 → Full
+	FRDGTextureRef SmokeMaskFull = AddCopyPass(
+		GraphBuilder,
+		View,
+		SmokeMaskTex,
+		ViewportSize,
+		TEXT("IVSmokeMaskTex_Full")
+	);
+
+	// ============================================================================
+	// Composite Pass
+	// ============================================================================
+	const float Sharpness = CachedDefaultPreset ? CachedDefaultPreset->Sharpness : 0.0f;
+	AddSharpenCompositePass(GraphBuilder, View, SceneColor.Texture, SmokeAlbedoFull, SmokeMaskFull, Output, ViewportSize, Sharpness);
 
 	return Output;
 }
@@ -345,9 +379,29 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	TArray<float> PackedVoxelData;
 	PackedVoxelData.Reserve(TotalVoxelCount);
 
-	// Create packed sdf buffer
-	FIntVector HoleSDFTexSize = SortedVolumes[0]->GetHoleGeneratorComponent()->GetVoxelResolution();
+	// Create packed SDF buffer (atlas of all hole textures)
+	// Use actual texture dimensions instead of VoxelResolution to avoid size mismatch
 	int32 VolumeCount = SortedVolumes.Num();
+	FIntVector HoleSDFTexSize = FIntVector::ZeroValue;
+
+	// Get texture size from first valid hole texture
+	for (int32 i = 0; i < VolumeCount; ++i)
+	{
+		UIVSmokeHoleGeneratorComponent* HoleComp = SortedVolumes[i]->GetHoleGeneratorComponent();
+		if (HoleComp && HoleComp->GetHoleTexture())
+		{
+			FIntVector TexSize = HoleComp->GetHoleTexture()->GetSizeXYZ();
+			HoleSDFTexSize = TexSize;
+			break;
+		}
+	}
+
+	// If no valid hole texture found, use default size
+	if (HoleSDFTexSize == FIntVector::ZeroValue)
+	{
+		HoleSDFTexSize = FIntVector(64, 64, 64);
+	}
+
 	FIntVector AtlasSize = FIntVector(HoleSDFTexSize.X, HoleSDFTexSize.Y, HoleSDFTexSize.Z * VolumeCount);
 	FRDGTextureDesc AtlasDesc = FRDGTextureDesc::Create3D(
 		AtlasSize,
@@ -355,26 +409,36 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 		FClearValueBinding::None,
 		TexCreate_ShaderResource | TexCreate_UAV);
 	FRDGTextureRef PackedHoleSDFBuffer = GraphBuilder.CreateTexture(AtlasDesc, TEXT("PackedHoleSDFBuffer"));
+
 	for (int32 i = 0; i < VolumeCount; ++i)
 	{
-		FTextureRHIRef SourceRHI = SortedVolumes[i]->GetHoleGeneratorComponent()->GetHoleTexture();
-		if (SourceRHI == nullptr)
+		UIVSmokeHoleGeneratorComponent* HoleComp = SortedVolumes[i]->GetHoleGeneratorComponent();
+		if (!HoleComp)
 		{
 			continue;
 		}
+
+		FTextureRHIRef SourceRHI = HoleComp->GetHoleTexture();
+		if (!SourceRHI)
+		{
+			continue;
+		}
+
+		FIntVector SourceSize = SourceRHI->GetSizeXYZ();
 		FRDGTextureRef SourceTexture = GraphBuilder.RegisterExternalTexture(
 			CreateRenderTarget(SourceRHI, TEXT("Source"))
 		);
+
+		FRHICopyTextureInfo CopyInfo;
+		CopyInfo.Size = SourceSize;
+		CopyInfo.SourcePosition = FIntVector::ZeroValue;
+		CopyInfo.DestPosition = FIntVector(0, 0, i * HoleSDFTexSize.Z);
 
 		AddCopyTexturePass(
 			GraphBuilder,
 			SourceTexture,
 			PackedHoleSDFBuffer,
-			FRHICopyTextureInfo(
-				FIntVector::ZeroValue,              // Source pos
-				FIntVector(0, 0, i * HoleSDFTexSize.Z), // Dest pos
-				HoleSDFTexSize                          // Size
-			)
+			CopyInfo
 		);
 	}
 
@@ -519,6 +583,9 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->SceneTexturesStruct = GetSceneTextureShaderParameters(View).SceneTextures;
 	Parameters->InvDeviceZToWorldZTransform = FVector4f(View.InvDeviceZToWorldZTransform);
 
+	// View (for BlueNoise access)
+	Parameters->View = View.ViewUniformBuffer;
+
 	// Global Smoke Parameters
 	Parameters->GlobalAbsorption = DefaultPreset ? DefaultPreset->SmokeAbsorption : 0.1f;
 	Parameters->SmokeSize = DefaultPreset ? DefaultPreset->SmokeSize : 128.0f;
@@ -551,6 +618,9 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->LightColor = LightColorValue;
 	Parameters->ScatterScale = bEnableScatter ? ScatterScaleValue : 0.0f;
 
+	// Temporal (for TAA integration)
+	Parameters->FrameNumber = View.Family->FrameNumber;
+
 	// Dispatch at reduced resolution (TexSize)
 	FIVSmokePassConfig Config;
 	Config.EventName = TEXT("IVSmokeMultiVolumeRayMarch");
@@ -574,7 +644,8 @@ void FIVSmokeRenderer::AddSharpenCompositePass(
 	FRDGTextureRef SmokeAlbedoTex,
 	FRDGTextureRef SmokeMaskTex,
 	const FScreenPassRenderTarget& Output,
-	const FIntPoint& ViewportSize)
+	const FIntPoint& ViewportSize,
+	float Sharpness)
 {
 	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
 	TShaderMapRef<FIVSmokeSharpenCompositePS> PixelShader(ShaderMap);
@@ -584,7 +655,7 @@ void FIVSmokeRenderer::AddSharpenCompositePass(
 	Parameters->SmokeAlbedoTex = SmokeAlbedoTex;
 	Parameters->SmokeMaskTex = SmokeMaskTex;
 	Parameters->LinearRepeat_Sampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
-	Parameters->Sharpness = 0.5f;  // TODO: Make configurable via preset
+	Parameters->Sharpness = Sharpness;
 	Parameters->ViewportSize = FVector2f(ViewportSize);
 	Parameters->ViewRectMin = FVector2f(Output.ViewRect.Min);
 	Parameters->RenderTargets[0] = Output.GetRenderTargetBinding();
@@ -598,6 +669,70 @@ void FIVSmokeRenderer::AddSharpenCompositePass(
 		GraphBuilder,
 		ShaderMap,
 		PixelShader,
+		Parameters,
+		Output,
+		Config
+	);
+}
+
+// ============================================================================
+// Copy Pass (Progressive Upscaling)
+// ============================================================================
+
+FRDGTextureRef FIVSmokeRenderer::AddCopyPass(
+	FRDGBuilder& GraphBuilder,
+	const FSceneView& View,
+	FRDGTextureRef SourceTex,
+	const FIntPoint& DestSize,
+	const TCHAR* TexName)
+{
+	// Create destination texture at specified size
+	FRDGTextureRef DestTex = FIVSmokePostProcessPass::CreateOutputTexture(
+		GraphBuilder,
+		SourceTex,
+		TexName,
+		PF_FloatRGBA,
+		DestSize,
+		TexCreate_RenderTargetable | TexCreate_ShaderResource
+	);
+
+	// Perform copy
+	AddCopyPass(GraphBuilder, View, SourceTex, DestTex);
+
+	return DestTex;
+}
+
+void FIVSmokeRenderer::AddCopyPass(
+	FRDGBuilder& GraphBuilder,
+	const FSceneView& View,
+	FRDGTextureRef SourceTex,
+	FRDGTextureRef DestTex)
+{
+	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
+	TShaderMapRef<FIVSmokeCopyPS> CopyShader(ShaderMap);
+
+	const FIntPoint DestSize = DestTex->Desc.Extent;
+
+	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeCopyPS::FParameters>();
+	Parameters->MainTex = SourceTex;
+	Parameters->LinearRepeat_Sampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
+	Parameters->ViewportSize = FVector2f(DestSize);
+	Parameters->RenderTargets[0] = FRenderTargetBinding(DestTex, ERenderTargetLoadAction::ENoAction);
+
+	FScreenPassRenderTarget Output(
+		DestTex,
+		FIntRect(0, 0, DestSize.X, DestSize.Y),
+		ERenderTargetLoadAction::ENoAction
+	);
+
+	FIVSmokePassConfig Config;
+	Config.EventName = TEXT("IVSmokeCopy");
+	Config.BlendState = TStaticBlendState<>::GetRHI();
+
+	FIVSmokePostProcessPass::AddPixelShaderPass(
+		GraphBuilder,
+		ShaderMap,
+		CopyShader,
 		Parameters,
 		Output,
 		Config

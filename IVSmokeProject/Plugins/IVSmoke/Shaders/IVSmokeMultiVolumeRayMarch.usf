@@ -121,17 +121,36 @@ float3 LightDirection;
 float3 LightColor;
 float ScatterScale;
 
+// Temporal (for TAA integration)
+uint FrameNumber;
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
 
 /**
+ * Spatiotemporal Blue Noise lookup (from View Uniform Buffer).
+ * Returns uniformly distributed value in [0, 1) with blue noise distribution.
+ * Blue noise is visually superior to white noise - same variance but less perceptible.
+ */
+float BlueNoiseScalar(uint2 ScreenCoord, uint FrameIndex)
+{
+	uint3 WrappedCoordinate = uint3(ScreenCoord, FrameIndex) & View.BlueNoiseModuloMasks;
+	uint3 TextureCoordinate = uint3(WrappedCoordinate.x, WrappedCoordinate.z * View.BlueNoiseDimensions.y + WrappedCoordinate.y, 0);
+	return View.BlueNoiseScalarTexture.Load(TextureCoordinate, 0).x;
+}
+
+/**
  * Sample noise at a world position.
+ *
+ * @param Position   World space position to sample
+ * @return           Noise value [0, 1]
  */
 float GetNoise(float3 Position)
 {
 	float3 uvw = Position / SmokeSize;
-	uvw -= WindDirection * ElapsedTime;
+	// [DEMO] Time-based noise animation disabled
+	// uvw -= WindDirection * ElapsedTime;
 	return NoiseVolume.SampleLevel(LinearRepeat_Sampler, uvw, 0);
 }
 
@@ -213,6 +232,10 @@ float GetHoleSDFDensity(float3 Position, uint VolumeIdx)
 /**
  * Calculate final smoke density at a position for a specific volume.
  * Combines voxel density, edge falloff, and noise.
+ *
+ * @param Position    World space sample position
+ * @param VolumeIdx   Index into VolumeDataBuffer
+ * @return            Final density value
  */
 float GetDensityForVolume(float3 Position, uint VolumeIdx)
 {
@@ -284,17 +307,55 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	SceneRayDistance -= 5.0; // Depth bias
 
 	// ============================================================================
-	// Collect Volume Intersections
+	// Compute Global AABB (union of all volumes)
+	// ============================================================================
+
+	float3 GlobalAABBMin = float3(1e10, 1e10, 1e10);
+	float3 GlobalAABBMax = float3(-1e10, -1e10, -1e10);
+
+	for (uint v = 0; v < NumActiveVolumes; v++)
+	{
+		FVolumeGPUData Vol = VolumeDataBuffer[v];
+		GlobalAABBMin = min(GlobalAABBMin, Vol.WorldAABBMin);
+		GlobalAABBMax = max(GlobalAABBMax, Vol.WorldAABBMax);
+	}
+
+	// Global AABB diagonal length for fixed step size calculation
+	float3 GlobalAABBSize = GlobalAABBMax - GlobalAABBMin;
+	float GlobalDiagonal = length(GlobalAABBSize);
+
+	// ============================================================================
+	// Ray-GlobalAABB Intersection for consistent ray bounds
+	// ============================================================================
+
+	float globalTMin, globalTMax;
+	if (!RayBoxIntersection(RayOrigin, RayDir, GlobalAABBMin, GlobalAABBMax, globalTMin, globalTMax))
+	{
+		SmokeAlbedoTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		SmokeMaskTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		return;
+	}
+
+	globalTMin = max(0.0, globalTMin);
+	globalTMax = min(SceneRayDistance, globalTMax);
+
+	if (globalTMax <= globalTMin)
+	{
+		SmokeAlbedoTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		SmokeMaskTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		return;
+	}
+
+	// ============================================================================
+	// Collect Individual Volume Intersections (for per-sample volume checks)
 	// ============================================================================
 
 	FVolumeIntersection intersections[MAX_VOLUME_INTERSECTIONS];
 	uint numIntersections = 0;
-	float globalTMin = 1e10;
-	float globalTMax = 0;
 
-	for (uint v = 0; v < NumActiveVolumes && numIntersections < MAX_VOLUME_INTERSECTIONS; v++)
+	for (uint vi = 0; vi < NumActiveVolumes && numIntersections < MAX_VOLUME_INTERSECTIONS; vi++)
 	{
-		FVolumeGPUData Vol = VolumeDataBuffer[v];
+		FVolumeGPUData Vol = VolumeDataBuffer[vi];
 
 		float tNear, tFar;
 		if (RayBoxIntersection(RayOrigin, RayDir, Vol.WorldAABBMin, Vol.WorldAABBMax, tNear, tFar))
@@ -304,13 +365,10 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 
 			if (tFar > tNear)
 			{
-				intersections[numIntersections].VolumeIndex = v;
+				intersections[numIntersections].VolumeIndex = vi;
 				intersections[numIntersections].tNear = tNear;
 				intersections[numIntersections].tFar = tFar;
 				numIntersections++;
-
-				globalTMin = min(globalTMin, tNear);
-				globalTMax = max(globalTMax, tFar);
 			}
 		}
 	}
@@ -326,26 +384,35 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	// ============================================================================
 	// Unified Ray March
 	// ============================================================================
+	//
+	// Front-to-back ray marching with pre-multiplied alpha accumulation.
+	// Output is pre-multiplied: AccumulatedColor already contains transmittance weighting.
+	// Composite formula: FinalColor = SceneColor * Transmittance + AccumulatedColor
+	//
+	// ============================================================================
 
 	float3 AccumulatedColor = float3(0.0, 0.0, 0.0);
 	float Transmittance = 1.0;
 	float RayLength = globalTMax - globalTMin;
 
-	// Ensure minimum step size to prevent flickering when camera is at volume boundary
-	const float MinStepSize = 1.0; // 1 unit minimum step
-	float StepSize = max(MinStepSize, RayLength / (float)MaxSteps);
+	// Step size calculation:
+	// Use FIXED step size based on GlobalAABB diagonal, not RayLength.
+	// This ensures StepSize is independent of camera position, preventing flickering.
+	const float MinStepSize = 1.0;
+	float StepSize = max(MinStepSize, GlobalDiagonal / (float)MaxSteps);
 
-	// Interleaved Gradient Noise for per-pixel jitter (spatial only, no temporal to avoid flickering)
-	float IGN = frac(52.9829189 * frac(0.06711056 * PixelCoord.x + 0.00583715 * PixelCoord.y));
-
-	// Initial jitter (spatial only)
-	float T = globalTMin + IGN * StepSize;
+	// Blue Noise Jitter:
+	// - Spatiotemporal blue noise from View UB (128x128x64 texture)
+	// - Blue noise is visually superior to white noise (less perceptible grain)
+	// - Temporal variation: different slice each frame for TAA accumulation
+	// - Blue noise texture has 64 temporal slices, so we use FrameNumber % 64
+	float Jitter = BlueNoiseScalar(PixelCoord, FrameNumber % 64);
+	float T = globalTMin + Jitter * StepSize;
 
 	for (int step = 0; step < MaxSteps && Transmittance > 0.01; step++)
 	{
-		// Per-step jitter to break up regular sampling pattern
-		float StepJitter = frac(IGN + step * 0.618033988749); // Golden ratio for good distribution
-		float JitteredStepSize = StepSize * (0.75 + 0.5 * StepJitter); // 0.75x ~ 1.25x variation
+		// Fixed step size (no per-step jitter to avoid grain)
+		float JitteredStepSize = StepSize;
 
 		float3 WorldPos = RayOrigin + RayDir * T;
 
@@ -386,6 +453,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 			float3 SampleColor = WeightedColor / TotalDensity;
 
 			// Rayleigh in-scattering: light scattered toward camera
+			// Dark smoke absorbs more light, reducing visible scattering.
+			// AlbedoLuminance modulates InScatter so black smoke shows no blue tint.
 			float3 InScatter = float3(0, 0, 0);
 			if (ScatterScale > 0.0)
 			{
@@ -396,10 +465,15 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 					TotalDensity,
 					ScatterScale
 				);
+
+				// Dark smoke absorbs scattered light (black smoke → no blue tint)
+				float AlbedoLuminance = dot(SampleColor, float3(0.2126, 0.7152, 0.0722));
+				InScatter *= saturate(AlbedoLuminance * 2.0);
 			}
 
 			// Combine volume color with in-scattered light
-			float3 TotalSampleColor = SampleColor + InScatter * JitteredStepSize;
+			// Use fixed StepSize for InScatter to avoid grain amplification from jitter
+			float3 TotalSampleColor = SampleColor + InScatter * StepSize;
 
 			AccumulatedColor += Transmittance * (1.0 - SampleTransmittance) * TotalSampleColor;
 			Transmittance *= SampleTransmittance;
