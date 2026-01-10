@@ -39,6 +39,10 @@ void AIVSmokeVoxelVolume::BeginPlay()
 
 	FIVSmokeRenderer::Get().AddVolume(this);
 	HoleGeneratorComponent = FindComponentByClass<UIVSmokeHoleGeneratorComponent>();
+	if (HoleGeneratorComponent)
+	{
+		HoleGeneratorComponent->SyncWithVoxelVolume(VolumeExtent, VoxelSize);
+	}
 }
 
 void AIVSmokeVoxelVolume::EndPlay(const EEndPlayReason::Type EndPlayReason)

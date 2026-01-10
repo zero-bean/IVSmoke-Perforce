@@ -405,7 +405,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	FIntVector AtlasSize = FIntVector(HoleSDFTexSize.X, HoleSDFTexSize.Y, HoleSDFTexSize.Z * VolumeCount);
 	FRDGTextureDesc AtlasDesc = FRDGTextureDesc::Create3D(
 		AtlasSize,
-		PF_A32B32G32R32F,
+		PF_R16F,
 		FClearValueBinding::None,
 		TexCreate_ShaderResource | TexCreate_UAV);
 	FRDGTextureRef PackedHoleSDFBuffer = GraphBuilder.CreateTexture(AtlasDesc, TEXT("PackedHoleSDFBuffer"));

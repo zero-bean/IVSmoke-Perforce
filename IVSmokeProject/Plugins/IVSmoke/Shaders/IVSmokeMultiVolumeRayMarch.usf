@@ -103,7 +103,7 @@ uint NumActiveVolumes;
 
 // Packed Voxel Data (all volumes concatenated)
 StructuredBuffer<float> PackedVoxelBuffer;
-Texture3D<float4> PackedHoleSDFBuffer;
+Texture3D<float> PackedHoleSDFBuffer;
 int HoleSDFTexCount;
 int3 HoleSDFTexSize;
 
@@ -232,8 +232,7 @@ float GetHoleSDFDensity(float3 Position, uint VolumeIdx)
 	float wmin = (float)VolumeIdx / HoleSDFTexCount;
 	float wmax = (float) (VolumeIdx + 1) / HoleSDFTexCount;
 	uvw.z = lerp(wmin, wmax, uvw.z);
-	float4 HoleSDFBuffer = PackedHoleSDFBuffer.Sample(LinearRepeat_Sampler, uvw);
-	return HoleSDFBuffer.r;
+	return PackedHoleSDFBuffer.Sample(LinearRepeat_Sampler, uvw);
 }
 /**
  * Calculate final smoke density at a position for a specific volume.
