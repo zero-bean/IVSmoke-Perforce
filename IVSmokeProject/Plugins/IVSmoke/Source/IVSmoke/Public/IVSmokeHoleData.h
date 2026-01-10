@@ -3,15 +3,93 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "IVSmokeHoleCarveCS.h"
 #include "IVSmokeHoleData.generated.h"
+
+// ============================================================================
+// Hole Type Constants
+// ============================================================================
+
+namespace IVSmokeHoleType
+{
+	constexpr int32 Penetration = 0;
+	constexpr int32 Explosion = 1;
+}
+
+// ============================================================================
+// Request Structures (Public API - User Input)
+// ============================================================================
+
+/**
+ * @struct FIVSmokePenetrationRequest
+ * @brief Request data for creating a penetration hole (bullet, projectile, etc.)
+ *        The plugin will raycast internally to calculate Entry/Exit points.
+ */
+USTRUCT(BlueprintType)
+struct IVSMOKE_API FIVSmokePenetrationRequest
+{
+	GENERATED_BODY()
+
+	/** Origin position of the shot (world space) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke")
+	FVector Origin = FVector::ZeroVector;
+
+	/** Direction of the shot (normalized) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke")
+	FVector Direction = FVector::ForwardVector;
+
+	/** Radius at entry point */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke",
+		meta = (ClampMin = "1.0", ClampMax = "500.0"))
+	float StartRadius = 50.0f;
+
+	/** Radius at exit point */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke",
+		meta = (ClampMin = "0.0", ClampMax = "500.0"))
+	float EndRadius = 25.0f;
+
+	/** Lifetime of the hole in seconds */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke",
+		meta = (ClampMin = "0.1", ClampMax = "30.0"))
+	float LifeTime = 3.0f;
+};
+
+/**
+ * @struct FIVSmokeExplosionRequest
+ * @brief Request data for creating an explosion hole (grenade, rocket, etc.)
+ */
+USTRUCT(BlueprintType)
+struct IVSMOKE_API FIVSmokeExplosionRequest
+{
+	GENERATED_BODY()
+
+	/** Center position of the explosion (world space) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke")
+	FVector Origin = FVector::ZeroVector;
+
+	/** Radius of the explosion */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke",
+		meta = (ClampMin = "1.0", ClampMax = "500.0"))
+	float Radius = 100.0f;
+
+	/** Lifetime of the hole in seconds */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke",
+		meta = (ClampMin = "0.1", ClampMax = "30.0"))
+	float LifeTime = 3.0f;
+};
+
+// ============================================================================
+// Internal Data Structure
+// ============================================================================
 
 /**
  * @struct FIVSmokeHoleData
- * @brief Data structure for a smoke hole created by bullet penetration.
- *        Used for both network replication and GPU buffer transmission.
- * @todo  In prototype, uses local time (GetWorld()->GetTimeSeconds()) 
- * @todo  but production Should be replaced with server time. (GetWorld()->GetGameState()->GetServerWorldTimeSeconds())
+ * @brief Internal data structure for a smoke hole.
+ *        Created by processing Request structures.
+ *        Designed for network replication and GPU rendering.
+ *
+ * @note Replication strategy:
+ *       - Replicated: HoleType, Position, Radius, EndPosition, EndRadius, InitialLifetime
+ *       - NotReplicated: LocalCreationTime (set on each client when received)
  */
 USTRUCT(BlueprintType)
 struct IVSMOKE_API FIVSmokeHoleData
@@ -20,39 +98,113 @@ struct IVSMOKE_API FIVSmokeHoleData
 
 	FIVSmokeHoleData() = default;
 
-	/** World position where the hole was created */
+	// ============================================================================
+	// Common Properties
+	// ============================================================================
+
+	/** Type of hole (0=Penetration/Cone, 1=Explosion/Sphere, 2+=Reserved) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke")
+	int32 HoleType = IVSmokeHoleType::Penetration;
+
+	/** World position where the hole starts (Penetration) or center (Explosion) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke")
 	FVector Position = FVector::ZeroVector;
 
-	/** NORMALIZED Direction of penetration */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke")
-	FVector Direction = FVector::ForwardVector;
-
-	/** Radius of the hole at entry point */
+	/** Radius at start point (Penetration) or explosion radius (Explosion) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke",
-		meta = (ClampMin = "1.0", ClampMax = "200.0"))
+		meta = (ClampMin = "1.0", ClampMax = "500.0"))
 	float Radius = 50.0f;
 
-	/** Ratio of exit radius to entry radius */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke",
-		meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float EndRadiusRatio = 0.5f;
+	// ============================================================================
+	// Penetration-Only Properties
+	// ============================================================================
 
-	/** Shape type for hole carving (Sphere or Box SDF) */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke")
-	EIVSmokeHoleShape ShapeType = EIVSmokeHoleShape::Sphere;
+	/** World position where the penetration exits the smoke volume */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Penetration")
+	FVector EndPosition = FVector::ZeroVector;
 
-	/** Edge softness for hole boundaries (0=hard edge, 1=soft gradient) */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke",
-		meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float EdgeSoftness = 0.3f;
+	/** Radius at exit point */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Penetration",
+		meta = (ClampMin = "0.0", ClampMax = "500.0"))
+	float EndRadius = 25.0f;
 
-	/** Density multiplier for holes (0=transparent, 1=full hole) */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke",
-		meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float DensityMultiplier = 1.0f;
+	// ============================================================================
+	// Lifetime Properties (Network-Sync Ready)
+	// ============================================================================
 
-	/** Time when this hole was created (auto-filled by component) */
-	UPROPERTY(BlueprintReadOnly, Category = "IVSmoke")
-	double CreationTime = 0.0f;
+	/** Total lifetime of the hole in seconds (set by server/authority) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Lifetime",
+		meta = (ClampMin = "0.1", ClampMax = "30.0"))
+	float InitialLifetime = 3.0f;
+
+	/** Local creation time (NOT replicated, set when hole is received) */
+	double LocalCreationTime = 0.0;
+
+	// ============================================================================
+	// Helper Methods
+	// ============================================================================
+
+	/** Calculate normalized age (0.0 = just created, 1.0 = about to expire) */
+	float GetNormalizedAge(const double CurrentTime) const
+	{
+		const float Elapsed = static_cast<float>(CurrentTime - LocalCreationTime);
+		return FMath::Clamp(Elapsed / InitialLifetime, 0.0f, 1.0f);
+	}
+
+	/** Check if this hole has expired */
+	bool IsExpired(const double CurrentTime) const
+	{
+		return (CurrentTime - LocalCreationTime) > InitialLifetime;
+	}
+
+	/** Calculate AABB for this hole in local space */
+	FBox CalculateLocalAABB(const FTransform& VolumeTransform) const
+	{
+		if (HoleType == IVSmokeHoleType::Explosion)
+		{
+			const FVector LocalCenter = VolumeTransform.InverseTransformPosition(Position);
+			const FVector Extent(Radius);
+			return FBox(LocalCenter - Extent, LocalCenter + Extent);
+		}
+		else // Penetration (Cone)
+		{
+			const FVector LocalStart = VolumeTransform.InverseTransformPosition(Position);
+			const FVector LocalEnd = VolumeTransform.InverseTransformPosition(EndPosition);
+			const float MaxRadius = FMath::Max(Radius, EndRadius);
+
+			FBox PenetrationBox(ForceInit);
+			PenetrationBox += LocalStart - FVector(MaxRadius);
+			PenetrationBox += LocalStart + FVector(MaxRadius);
+			PenetrationBox += LocalEnd - FVector(MaxRadius);
+			PenetrationBox += LocalEnd + FVector(MaxRadius);
+			return PenetrationBox;
+		}
+	}
 };
+
+// ============================================================================
+// GPU Data Structure
+// ============================================================================
+
+/**
+ * @struct FIVSmokeHoleGPU
+ * @brief GPU-friendly structure for hole data.
+ *        EdgeSoftness and DensityMultiplier are provided by HoleGeneratorComponent.
+ */
+struct FIVSmokeHoleGPU
+{
+	// Common (16 bytes)
+	FVector3f Position;
+	float Radius;
+
+	// Penetration-only, ignored for Explosion (16 bytes)
+	FVector3f EndPosition;
+	float EndRadius;
+
+	// Parameters (16 bytes)
+	float EdgeSoftness;
+	float DensityMultiplier;
+	float NormalizedAge;      // 0.0 = just created, 1.0 = about to expire
+	int32 HoleType;           // 0 = Penetration, 1 = Explosion
+
+};  // Total: 48 bytes
