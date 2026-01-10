@@ -138,6 +138,35 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Scattering", meta = (EditCondition = "bOverrideLightColor"))
 	FLinearColor LightColorOverride = FLinearColor::White;
 
+	/** Anisotropy parameter for Henyey-Greenstein phase function.
+	 *  0 = isotropic, positive = forward scattering, negative = backward scattering */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Scattering", meta = (ClampMin = "-0.99", ClampMax = "0.99", UIMin = "-0.99", UIMax = "0.99"))
+	float ScatteringAnisotropy = 0.5f;
+
+	// ============================================================================
+	// Self-Shadowing (Light Marching)
+	// ============================================================================
+
+	/** Enable self-shadowing (light marching) for more realistic smoke appearance. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|SelfShadowing")
+	bool bEnableSelfShadowing = true;
+
+	/** Number of steps for light marching. Higher = better quality, lower performance.
+	 *  Recommended: 4-8 for real-time rendering. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|SelfShadowing", meta = (ClampMin = "1", ClampMax = "16", UIMin = "1", UIMax = "16", EditCondition = "bEnableSelfShadowing"))
+	int32 LightMarchingSteps = 4;
+
+	/** Maximum distance to march toward light source (in world units).
+	 *  Limits the light marching range for performance.
+	 *  0 = No limit (march to volume boundary). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|SelfShadowing", meta = (ClampMin = "0.0", ClampMax = "500.0", EditCondition = "bEnableSelfShadowing"))
+	float LightMarchingDistance = 100.0f;
+
+	/** Minimum brightness in fully shadowed areas.
+	 *  0 = completely dark, 1 = no shadow effect. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|SelfShadowing", meta = (ClampMin = "0.0", ClampMax = "1.0", EditCondition = "bEnableSelfShadowing"))
+	float ShadowAmbient = 0.2f;
+
 	// ============================================================================
 	// UPrimaryDataAsset Interface
 	// ============================================================================

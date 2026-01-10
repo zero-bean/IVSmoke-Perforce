@@ -268,3 +268,50 @@ float3 RayleighInScatteringSimple(
 
 	return LightColor * Phase * Density * ScatterScale;
 }
+
+// ============================================================================
+// Henyey-Greenstein Phase Function
+// ============================================================================
+
+/**
+ * Henyey-Greenstein phase function.
+ * More versatile than Rayleigh - can model forward/backward scattering.
+ * P(theta) = (1 - g^2) / (4pi * (1 + g^2 - 2*g*cos(theta))^1.5)
+ *
+ * @param CosTheta     Cosine of angle between light and view direction
+ * @param G            Anisotropy parameter [-1, 1]
+ *                     G=0: isotropic (similar to Rayleigh)
+ *                     G>0: forward scattering (bright when looking toward light)
+ *                     G<0: backward scattering
+ * @return             Phase function value
+ */
+float HenyeyGreensteinPhase(float CosTheta, float G)
+{
+	float G2 = G * G;
+	float Denom = 1.0 + G2 - 2.0 * G * CosTheta;
+	return (1.0 - G2) / (4.0 * PI * pow(max(Denom, 0.0001), 1.5));
+}
+
+/**
+ * In-scattering using Henyey-Greenstein phase function.
+ *
+ * @param ViewDir       Normalized view direction (camera to sample)
+ * @param LightDir      Normalized light direction (sample to light)
+ * @param LightColor    Light color and intensity
+ * @param Density       Local density at sample point
+ * @param ScatterScale  Scattering intensity multiplier
+ * @param Anisotropy    HG anisotropy parameter (G)
+ * @return              RGB in-scattered light contribution
+ */
+float3 HenyeyGreensteinInScattering(
+	float3 ViewDir,
+	float3 LightDir,
+	float3 LightColor,
+	float Density,
+	float ScatterScale,
+	float Anisotropy)
+{
+	float CosTheta = dot(ViewDir, LightDir);
+	float Phase = HenyeyGreensteinPhase(CosTheta, Anisotropy);
+	return LightColor * Phase * Density * ScatterScale;
+}

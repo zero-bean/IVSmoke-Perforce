@@ -618,6 +618,19 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->LightColor = LightColorValue;
 	Parameters->ScatterScale = bEnableScatter ? ScatterScaleValue : 0.0f;
 
+	// Henyey-Greenstein Anisotropy
+	float AnisotropyValue = DefaultPreset ? DefaultPreset->ScatteringAnisotropy : 0.5f;
+	Parameters->ScatteringAnisotropy = AnisotropyValue;
+
+	// Self-Shadowing (Light Marching)
+	bool bSelfShadow = DefaultPreset ? DefaultPreset->bEnableSelfShadowing : true;
+	int32 LightSteps = DefaultPreset ? DefaultPreset->LightMarchingSteps : 4;
+	float LightDistance = DefaultPreset ? DefaultPreset->LightMarchingDistance : 100.0f;
+	float ShadowAmbientValue = DefaultPreset ? DefaultPreset->ShadowAmbient : 0.2f;
+	Parameters->LightMarchingSteps = bSelfShadow ? LightSteps : 0;
+	Parameters->LightMarchingDistance = LightDistance;
+	Parameters->ShadowAmbient = ShadowAmbientValue;
+
 	// Temporal (for TAA integration)
 	Parameters->FrameNumber = View.Family->FrameNumber;
 

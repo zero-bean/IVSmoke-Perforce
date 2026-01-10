@@ -120,6 +120,12 @@ float3 WindDirection;
 float3 LightDirection;
 float3 LightColor;
 float ScatterScale;
+float ScatteringAnisotropy;
+
+// Self-Shadowing (Light Marching)
+int LightMarchingSteps;
+float LightMarchingDistance;
+float ShadowAmbient;
 
 // Temporal (for TAA integration)
 uint FrameNumber;
@@ -149,8 +155,7 @@ float BlueNoiseScalar(uint2 ScreenCoord, uint FrameIndex)
 float GetNoise(float3 Position)
 {
 	float3 uvw = Position / SmokeSize;
-	// [DEMO] Time-based noise animation disabled
-	// uvw -= WindDirection * ElapsedTime;
+	uvw -= WindDirection * ElapsedTime;
 	return NoiseVolume.SampleLevel(LinearRepeat_Sampler, uvw, 0);
 }
 
@@ -260,6 +265,77 @@ float GetDensityForVolume(float3 Position, uint VolumeIdx)
 	float Falloff = min(1.0, EdgeFactor + Noise);
 
 	return VoxelDensity * (1.0 - Falloff) * Vol.DensityScale;
+}
+
+// ============================================================================
+// Self-Shadowing (Light Marching)
+// ============================================================================
+
+/**
+ * Sample total density at a position from all intersecting volumes.
+ * Used for light marching to calculate shadow transmittance.
+ *
+ * @param WorldPos      World space position to sample
+ * @return              Total combined density from all volumes
+ */
+float SampleTotalDensityAtPosition(float3 WorldPos)
+{
+	float TotalDensity = 0.0;
+
+	for (uint v = 0; v < NumActiveVolumes; v++)
+	{
+		FVolumeGPUData Vol = VolumeDataBuffer[v];
+
+		// Check if position is within volume AABB
+		if (all(WorldPos >= Vol.WorldAABBMin) && all(WorldPos <= Vol.WorldAABBMax))
+		{
+			float HoleDensity = GetHoleSDFDensity(WorldPos, v);
+			float Density = GetDensityForVolume(WorldPos, v) * HoleDensity;
+			TotalDensity += Density;
+		}
+	}
+
+	return TotalDensity;
+}
+
+/**
+ * Calculate light transmittance by marching toward light source.
+ * Returns how much light reaches this point through the smoke.
+ *
+ * @param WorldPos          Current sample position
+ * @param LightDir          Direction toward light (normalized)
+ * @param MarchDistance     Distance to march (auto-calculated or user-specified)
+ * @param Steps             Number of marching steps
+ * @return                  Transmittance [0,1] - 0=fully shadowed, 1=fully lit
+ */
+float MarchTowardLight(float3 WorldPos, float3 LightDir, float MarchDistance, int Steps)
+{
+	if (Steps <= 0)
+	{
+		return 1.0;  // Self-shadowing disabled
+	}
+
+	float StepSize = MarchDistance / (float)Steps;
+	float LightTransmittance = 1.0;
+
+	for (int i = 1; i <= Steps; i++)
+	{
+		float3 SamplePos = WorldPos + LightDir * (StepSize * i);
+		float Density = SampleTotalDensityAtPosition(SamplePos);
+
+		if (Density > 0.0001)
+		{
+			LightTransmittance *= exp(-Density * StepSize * GlobalAbsorption);
+		}
+
+		// Early exit if fully shadowed
+		if (LightTransmittance < 0.01)
+		{
+			return 0.0;
+		}
+	}
+
+	return LightTransmittance;
 }
 
 // ============================================================================
@@ -452,18 +528,42 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 			float SampleTransmittance = exp(-Extinction);
 			float3 SampleColor = WeightedColor / TotalDensity;
 
-			// Rayleigh in-scattering: light scattered toward camera
-			// Dark smoke absorbs more light, reducing visible scattering.
-			// AlbedoLuminance modulates InScatter so black smoke shows no blue tint.
+			// Self-shadowing: march toward light to calculate attenuation
+			// Calculate distance to exit GlobalAABB, capped by LightMarchingDistance (max limit)
+			float LightMarchDist = 0.0;
+			float lightTMin, lightTMax;
+			if (RayBoxIntersection(WorldPos, LightDirection, GlobalAABBMin, GlobalAABBMax, lightTMin, lightTMax))
+			{
+				LightMarchDist = lightTMax;
+				// Cap at maximum distance for performance (0 = no limit)
+				if (LightMarchingDistance > 0.0)
+				{
+					LightMarchDist = min(LightMarchDist, LightMarchingDistance);
+				}
+			}
+
+			float LightTransmittance = MarchTowardLight(
+				WorldPos,
+				LightDirection,
+				LightMarchDist,
+				LightMarchingSteps
+			);
+
+			// Apply self-shadow to base color (ShadowAmbient = minimum brightness)
+			float3 LitSampleColor = SampleColor * lerp(ShadowAmbient, 1.0, LightTransmittance);
+
+			// Henyey-Greenstein in-scattering with self-shadowing
 			float3 InScatter = float3(0, 0, 0);
 			if (ScatterScale > 0.0)
 			{
-				InScatter = RayleighInScattering(
+				// Henyey-Greenstein phase function with shadow attenuation
+				InScatter = HenyeyGreensteinInScattering(
 					RayDir,
 					LightDirection,
-					LightColor,
+					LightColor * LightTransmittance,  // Apply self-shadow
 					TotalDensity,
-					ScatterScale
+					ScatterScale,
+					ScatteringAnisotropy
 				);
 
 				// Dark smoke absorbs scattered light (black smoke → no blue tint)
@@ -473,7 +573,7 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 
 			// Combine volume color with in-scattered light
 			// Use fixed StepSize for InScatter to avoid grain amplification from jitter
-			float3 TotalSampleColor = SampleColor + InScatter * StepSize;
+			float3 TotalSampleColor = LitSampleColor + InScatter * StepSize;
 
 			AccumulatedColor += Transmittance * (1.0 - SampleTransmittance) * TotalSampleColor;
 			Transmittance *= SampleTransmittance;
