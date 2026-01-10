@@ -7,19 +7,7 @@
 #include "IVSmokeVoxelVolume.generated.h"
 
 class UIVSmokeSmokePreset;
-
-/** @todo Documentation */
-struct FIVSmokeVoxelNode
-{
-	// @todo Documentation
-	int32 Index;
-
-	// @todo Documentation
-	float Cost;
-
-	/** @todo Documentation */
-	bool operator<(const FIVSmokeVoxelNode& Other) const { return Cost < Other.Cost; }
-};
+class UIVSmokeHoleGeneratorComponent;
 
 /** @todo Documentation */
 UENUM(BlueprintType)
@@ -74,6 +62,9 @@ struct FIVSmokeDebugSettings
 	bool bDebugEnabled = true;
 
 	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
+	EIVSmokeDebugViewMode ViewMode = EIVSmokeDebugViewMode::SolidColor;
+
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
 	bool bShowVolumeBounds = true;
 
 	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
@@ -83,16 +74,10 @@ struct FIVSmokeDebugSettings
 	bool bShowVoxelWireframe = true;
 
 	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
-	EIVSmokeDebugViewMode ViewMode = EIVSmokeDebugViewMode::SolidColor;
+	bool bShowStatusText = true;
 
 	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
 	FColor DebugWireframeColor = FColor(20, 20, 20);
-
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
-	float HeatmapMin = 0.0f;
-
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
-	float HeatmapMax = 50.0f;
 
 	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (UIMin=0.0, UIMax=1.0))
 	float SliceHeight = 1.0f;
@@ -101,78 +86,61 @@ struct FIVSmokeDebugSettings
 	int32 VisibleStepCountPercent = 100;
 };
 
-class UIVSmokeHoleGeneratorComponent;
 /** @todo Documentation */
 UCLASS()
 class IVSMOKE_API AIVSmokeVoxelVolume : public AActor
 {
 	GENERATED_BODY()
 
+	//~==============================================================================
+	// Actor Lifecycle
+#pragma region Lifecycle
 public:
 	AIVSmokeVoxelVolume();
 
-protected:
-	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-public:
 	virtual void Tick(float DeltaTime) override;
-
-	// ============================================================================
-	// Rendering Data Access
-	// ============================================================================
-
-	/** Returns the voxel density array for GPU upload. Values are continuous (0.0~N). */
-	const TArray<float>& GetVoxelArray() const { return VoxelArray; }
-
-	/** Returns the grid resolution (dimensions of the voxel grid). */
-	FIntVector GetGridResolution() const { return GridResolution; }
-
-	/** Returns the center offset for grid-to-local coordinate conversion. */
-	FIntVector GetCenterOffset() const { return CenterOffset; }
-
-	/** Returns the world-space size of each voxel. */
-	float GetVoxelSize() const { return VoxelSize; }
-
-	/** Returns the current dirty level for GPU buffer synchronization. */
-	EIVSmokeDirtyLevel GetDirtyLevel() const { return DirtyLevel; }
-
-	/** Returns true if voxel data has been modified since last GPU upload. */
-	bool IsVoxelDataDirty() const { return DirtyLevel != EIVSmokeDirtyLevel::Clean; }
-
-	/** Clears the dirty flag after GPU upload. Called by renderer. */
-	void ClearVoxelDataDirty() { DirtyLevel = EIVSmokeDirtyLevel::Clean; }
-
-	/** Returns the current buffer size (for detecting resize). */
-	int32 GetVoxelBufferSize() const { return VoxelArray.Num(); }
-
-	/** Returns the smoke preset override for this volume, or nullptr to use default. */
-	const UIVSmokeSmokePreset* GetSmokePresetOverride() const { return SmokePresetOverride; }
-
-	/** Returns the number of active (non-zero density) voxels. */
-	int32 GetActiveVoxelCount() const { return ActiveVoxelCount; }
-
-	UIVSmokeHoleGeneratorComponent* GetHoleGeneratorComponent() { return HoleGeneratorComponent; }
-
-	// ============================================================================
-	// Smoke Appearance Override
-	// ============================================================================
-
-	/** Optional preset override for this volume. If null, uses default from IVSmoke Settings. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Appearance")
-	TObjectPtr<UIVSmokeSmokePreset> SmokePresetOverride;
-
 	virtual bool ShouldTickIfViewportsOnly() const override;
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+	virtual void PostEditMove(bool bFinished) override;
 #endif
 
-	// --- public API ---
+protected:
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+#pragma endregion
+
+	//~==============================================================================
+	// Actor Components
+#pragma region Components
+public:
+	// @todo Documentation
+	FORCEINLINE UIVSmokeHoleGeneratorComponent* GetHoleGeneratorComponent() { return HoleGeneratorComponent; }
+
+private:
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, Category = "IVSmoke")
+	UIVSmokeHoleGeneratorComponent* HoleGeneratorComponent;
+
+#if WITH_EDITORONLY_DATA
+	// @todo Documentation
+	UPROPERTY()
+	UInstancedStaticMeshComponent* DebugMeshComponent;
+#endif
+#pragma endregion
+
+	//~==============================================================================
+	// Actor Configuration
+#pragma region Configuation
 public:
 	// @todo Documentation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config")
 	FIntVector VolumeExtent = FIntVector(16, 16, 16);
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config")
+	FVector Radii = FVector(1.0f, 1.0f, 1.0f);
 
 	// @todo Documentation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config")
@@ -183,61 +151,198 @@ public:
 	int32 MaxVoxelNum = 1000;
 
 	// @todo Documentation
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Collision")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Appearance")
+	TObjectPtr<UIVSmokeSmokePreset> SmokePresetOverride;
+#pragma endregion
+
+	//~==============================================================================
+	// Flood Fill Simulation
+#pragma region Simulation
+public:
+	// @todo Documentation
+	UFUNCTION(BlueprintCallable, Category = "IVSmoke")
+	void Initialize();
+
+	// @todo Documentation
+	UFUNCTION(BlueprintCallable, Category = "IVSmoke")
+	void StartSimulation();
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
+	float ExpansionDuration = 3.0f;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
+	float SustainDuration = 5.0f;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
+	float DissipationDuration = 2.0f;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
+	float ExpansionNoise = 3.0f;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
+	float DissipationNoise = 3.0f;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
+	TObjectPtr<UCurveFloat> ExpansionCurve;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
+	TObjectPtr<UCurveFloat> DissipationCurve;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
 	TEnumAsByte<ECollisionChannel> VoxelCollisionChannel = ECC_WorldStatic;
 
 	// @todo Documentation
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Collision")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
 	float CollisionExtentScale = 0.9f;
 
-	// @todo Documentation (progress)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Curve")
-	UCurveFloat* ExpansionCurve;
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation", meta = (ClampMin = "0"))
+	int32 RandomSeed = 32687;
 
-	// @todo Documentation (progress)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Curve")
-	UCurveFloat* DissipationCurve;
+private:
+	// @todo Documentation
+	struct FIVSmokeVoxelNode
+	{
+		int32 Index;
+		float Cost;
+		bool operator<(const FIVSmokeVoxelNode& Other) const { return Cost < Other.Cost; }
+	};
 
-	// --- public API (Flood Fill) ---
+	FORCEINLINE static float GetCurveValue(float ElapsedTime, float Duration, const UCurveFloat* Curve)
+	{
+		if (ElapsedTime <= KINDA_SMALL_NUMBER)
+		{
+			return 1.0f;
+		}
+
+		float Alpha = FMath::Clamp(ElapsedTime / Duration, 0.0f, 1.0f);
+		if (Curve)
+		{
+			return FMath::Clamp(Curve->GetFloatValue(Alpha), 0.0f, 1.0f);
+		}
+		return Alpha;
+	}
+
+	// @todo Documentation
+	bool IsVoxelBlocked(const UWorld* World, const FVector& WorldPos) const;
+
+	// @todo Documentation
+	void UpdateExpansion(float DeltaTime);
+
+	// @todo Documentation
+	void UpdateSustain(float DeltaTime);
+
+	// @todo Documentation
+	void UpdateDissipation(float DeltaTime);
+
+	// @todo Documentation
+	void ProcessExpansion(int32 VoxelNum);
+
+	// @todo Documentation
+	void PrepareDissipation(int32 VoxelNum);
+
+	// @todo Documentation
+	void ProcessDissipation(int32 VoxelNum);
+
+	// @todo Documentation
+	EIVSmokeVoxelVolumeState CurrentState = EIVSmokeVoxelVolumeState::Idle;
+
+	// @todo Documentation
+	float ElapsedTime = 0.0f;
+
+	// @todo Documentation
+	TArray<float> VoxelArray;
+
+	// @todo Documentation
+	TArray<float> VoxelCostArray;
+
+	// @todo Documentation
+	TArray<FIVSmokeVoxelNode> MinHeap;
+
+	// @todo Documentation
+	TArray<int32> GeneratedVoxelIndices;
+
+	// @todo Documentation
+	bool bIsInitialized = false;
+
+	// @todo Documentation
+	FRandomStream RandomStream;
+
+#pragma endregion
+
+	//~==============================================================================
+	// Data Access
+#pragma region DataAccess
 public:
-	/** @todo Documentation */
-	UFUNCTION(BlueprintCallable, Category = "IVSmoke")
-	void StartFloodFill();
+	/** Returns the voxel density array for GPU upload. Values are continuous (0.0~N). */
+	FORCEINLINE const TArray<float>& GetVoxelArray() const { return VoxelArray; }
+
+	/** Returns the grid resolution (dimensions of the voxel grid). */
+	FORCEINLINE FIntVector GetGridResolution() const { return GridResolution; }
+
+	/** Returns the center offset for grid-to-local coordinate conversion. */
+	FORCEINLINE FIntVector GetCenterOffset() const { return CenterOffset; }
+
+	/** Returns the world-space size of each voxel. */
+	FORCEINLINE float GetVoxelSize() const { return VoxelSize; }
+
+	/** Returns the current dirty level for GPU buffer synchronization. */
+	FORCEINLINE EIVSmokeDirtyLevel GetDirtyLevel() const { return DirtyLevel; }
+
+	/** Returns true if voxel data has been modified since last GPU upload. */
+	FORCEINLINE bool IsVoxelDataDirty() const { return DirtyLevel != EIVSmokeDirtyLevel::Clean; }
+
+	/** Clears the dirty flag after GPU upload. Called by renderer. */
+	FORCEINLINE void ClearVoxelDataDirty() { DirtyLevel = EIVSmokeDirtyLevel::Clean; }
+
+	/** Returns the current buffer size (for detecting resize). */
+	FORCEINLINE int32 GetVoxelBufferSize() const { return VoxelArray.Num(); }
+
+	/** Returns the number of active (non-zero density) voxels. */
+	FORCEINLINE int32 GetActiveVoxelCount() const { return ActiveVoxelCount; }
+
+	/** Returns the smoke preset override for this volume, or nullptr to use default. */
+	FORCEINLINE const UIVSmokeSmokePreset* GetSmokePresetOverride() const { return SmokePresetOverride; }
+
+private:
+	/**
+	 * Sets voxel density at the given grid position.
+	 * @param GridPos   Grid position to set
+	 * @param Density   Density value (0.0 = remove, >0 = active)
+	 */
+	void SetVoxelDensity(const FIntVector& GridPos, float Density);
+
+	/**
+	 * Sets voxel density at the given linear index.
+	 * @param LinearIndex   Linear index in dense array
+	 * @param Density       Density value (0.0 = remove, >0 = active)
+	 */
+	void SetVoxelDensityByIndex(int32 LinearIndex, float Density);
 
 	// @todo Documentation
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
-	float CostBase = 1.0f;
+	FIntVector GridResolution = FIntVector::ZeroValue;
 
 	// @todo Documentation
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
-	float CostUpModifier = 2.5f;
+	FIntVector CenterOffset = FIntVector::ZeroValue;
 
 	// @todo Documentation
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
-	float CostDownModifier = 0.5f;
+	int32 ActiveVoxelCount = 0;
 
 	// @todo Documentation
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
-	float CostDistanceModifier = 0.1f;
+	EIVSmokeDirtyLevel DirtyLevel = EIVSmokeDirtyLevel::Clean;
+#pragma endregion
 
-	// @todo Documentation (seconds)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
-	float ExpansionDuration = 3.0f;
-
-	// @todo Documentation (seconds)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
-	float SustainDuration = 3.0f;
-
-	// @todo Documentation (seconds)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | FloodFill")
-	float DissipationDuration = 1.0f;
-
-	// --- public API (Flood Fill) ---
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Dissipation")
-	float CostDissipationNoise = 3.0f;
-
-	// --- public API (Debug) ---
+	//~==============================================================================
+	// Debug
+#pragma region Debug
 public:
 	/** @todo Documentation */
 	UFUNCTION(CallInEditor, Category = "IVSmoke | Debug")
@@ -249,104 +354,33 @@ public:
 
 	// @todo Documentation (seconds)
 	UPROPERTY(EditDefaultsOnly, Category = "IVSmoke | Debug")
-	UStaticMesh* DebugVoxelMesh;
+	TObjectPtr<UStaticMesh> DebugVoxelMesh;
 
 	// @todo Documentation (seconds)
 	UPROPERTY(EditDefaultsOnly, Category = "IVSmoke | Debug")
-	UMaterialInterface* DebugVoxelMaterial;
+	TObjectPtr<UMaterialInterface> DebugVoxelMaterial;
 
 	// @todo Documentation (seconds)
 	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta=(ShowOnlyInnerProperties))
 	FIVSmokeDebugSettings DebugSettings;
 
-	// --- Internal Logic ---
 private:
 	/** @todo Documentation */
-	void ProcessFloodFill(int32 SpawnNum);
+	void DrawDebugVisualization() const;
 
 	/** @todo Documentation */
-	bool IsVoxelBlocked(const FVector& WorldPos) const;
+	void DrawDebugBounds() const;
 
 	/** @todo Documentation */
-	void PrepareDissipation(int32 VoxelNum);
+	void DrawDebugVoxelWireframes() const;
 
 	/** @todo Documentation */
-	void ProcessDissipation(int32 RemoveNum);
-
-	// ============================================================================
-	// Voxel Data Management (Internal)
-	// ============================================================================
-
-	/**
-	 * Sets voxel density at the given grid position.
-	 *
-	 * @param GridPos   Grid position to set
-	 * @param Density   Density value (0.0 = remove, >0 = active)
-	 */
-	void SetVoxelDensity(const FIntVector& GridPos, float Density);
-
-	/**
-	 * Sets voxel density at the given linear index.
-	 *
-	 * @param LinearIndex   Linear index in dense array
-	 * @param Density       Density value (0.0 = remove, >0 = active)
-	 */
-	void SetVoxelDensityByIndex(int32 LinearIndex, float Density);
+	void DrawDebugVoxelMeshes() const;
 
 	/** @todo Documentation */
-	void DrawDebugVisualization();
-
-	/** @todo Documentation */
-	void DrawDebugBounds();
-
-	/** @todo Documentation */
-	void DrawDebugVoxelWireframes();
-
-	/** @todo Documentation */
-	void DrawDebugVoxelMeshes();
-
-	/** @todo Documentation */
-	void DrawDebugStatusText();
-
-	// @todo Documentation
-	EIVSmokeVoxelVolumeState CurrentState = EIVSmokeVoxelVolumeState::Idle;
-
-	// @todo Documentation
-	float ElapsedTime = 0.0f;
-
-	// @todo Documentation
-	FIntVector GridResolution = FIntVector::ZeroValue;
-
-	// @todo Documentation (Same as MaxDepth)
-	FIntVector CenterOffset = FIntVector::ZeroValue;
-
-	// @todo Documentation
-	TArray<FIVSmokeVoxelNode> MinHeap;
-
-	// @todo Documentation
-	TArray<int32> GeneratedVoxelIndices;
-
-	// @todo Documentation
-	TArray<float> VoxelCostArray;
-
-	// @todo Documentation
-	int32 ActiveVoxelCount = 0;
-
-	/** Voxel density array. Values are continuous (0.0 = empty, 1.0 = full density). */
-	TArray<float> VoxelArray;
-
-	/** Dirty flag for GPU buffer synchronization. */
-	EIVSmokeDirtyLevel DirtyLevel = EIVSmokeDirtyLevel::Clean;
+	void DrawDebugStatusText() const;
 
 	// @todo Documentation
 	bool bIsEditorPreviewing = false;
-
-	UPROPERTY(EditAnywhere, Category = "IVSmoke")
-	UIVSmokeHoleGeneratorComponent* HoleGeneratorComponent;
-
-#if WITH_EDITORONLY_DATA
-	// @todo Documentation
-	UPROPERTY()
-	UInstancedStaticMeshComponent* DebugMeshComponent;
-#endif
+#pragma endregion
 };
