@@ -125,6 +125,7 @@ float ScatteringAnisotropy;
 // Self-Shadowing (Light Marching)
 int LightMarchingSteps;
 float LightMarchingDistance;
+float LightMarchingExpFactor;
 float ShadowAmbient;
 
 // Temporal (for TAA integration)
@@ -300,27 +301,43 @@ float SampleTotalDensityAtPosition(float3 WorldPos)
 
 /**
  * Calculate light transmittance by marching toward light source.
- * Returns how much light reaches this point through the smoke.
+ * Uses exponential step distribution for better quality with fewer samples.
+ * More samples near the surface, fewer far away (where they matter less).
  *
  * @param WorldPos          Current sample position
  * @param LightDir          Direction toward light (normalized)
  * @param MarchDistance     Distance to march (auto-calculated or user-specified)
  * @param Steps             Number of marching steps
+ * @param ExpFactor         Exponential distribution factor (1.0 = uniform, higher = more near samples)
  * @return                  Transmittance [0,1] - 0=fully shadowed, 1=fully lit
  */
-float MarchTowardLight(float3 WorldPos, float3 LightDir, float MarchDistance, int Steps)
+float MarchTowardLight(float3 WorldPos, float3 LightDir, float MarchDistance, int Steps, float ExpFactor)
 {
 	if (Steps <= 0)
 	{
 		return 1.0;  // Self-shadowing disabled
 	}
 
-	float StepSize = MarchDistance / (float)Steps;
 	float LightTransmittance = 1.0;
+
+	// Exponential distribution: exp(t * ExpFactor) maps [0,1] to [1, e^ExpFactor]
+	// Normalize to [0,1] range for distance calculation
+	float ExpDenom = exp(ExpFactor) - 1.0;
+	float PrevDist = 0.0;
 
 	for (int i = 1; i <= Steps; i++)
 	{
-		float3 SamplePos = WorldPos + LightDir * (StepSize * i);
+		// Normalized position [0, 1]
+		float t = (float)i / (float)Steps;
+
+		// Exponential mapping: more samples near origin, fewer far away
+		// ExpFactor = 1.0 → nearly uniform
+		// ExpFactor = 2.0~3.0 → moderate concentration near origin
+		// ExpFactor = 4.0+ → strong concentration near origin
+		float CurrentDist = MarchDistance * (exp(t * ExpFactor) - 1.0) / ExpDenom;
+		float StepSize = CurrentDist - PrevDist;
+
+		float3 SamplePos = WorldPos + LightDir * CurrentDist;
 		float Density = SampleTotalDensityAtPosition(SamplePos);
 
 		if (Density > 0.0001)
@@ -333,6 +350,8 @@ float MarchTowardLight(float3 WorldPos, float3 LightDir, float MarchDistance, in
 		{
 			return 0.0;
 		}
+
+		PrevDist = CurrentDist;
 	}
 
 	return LightTransmittance;
@@ -546,7 +565,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 				WorldPos,
 				LightDirection,
 				LightMarchDist,
-				LightMarchingSteps
+				LightMarchingSteps,
+				LightMarchingExpFactor
 			);
 
 			// Apply self-shadow to base color (ShadowAmbient = minimum brightness)

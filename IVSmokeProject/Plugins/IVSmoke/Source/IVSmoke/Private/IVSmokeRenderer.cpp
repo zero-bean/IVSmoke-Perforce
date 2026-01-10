@@ -624,11 +624,13 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 
 	// Self-Shadowing (Light Marching)
 	bool bSelfShadow = DefaultPreset ? DefaultPreset->bEnableSelfShadowing : true;
-	int32 LightSteps = DefaultPreset ? DefaultPreset->LightMarchingSteps : 4;
-	float LightDistance = DefaultPreset ? DefaultPreset->LightMarchingDistance : 100.0f;
+	int32 LightSteps = DefaultPreset ? DefaultPreset->LightMarchingSteps : 6;
+	float LightDistance = DefaultPreset ? DefaultPreset->LightMarchingDistance : 0.0f;
+	float LightExpFactor = DefaultPreset ? DefaultPreset->LightMarchingExpFactor : 2.0f;
 	float ShadowAmbientValue = DefaultPreset ? DefaultPreset->ShadowAmbient : 0.2f;
 	Parameters->LightMarchingSteps = bSelfShadow ? LightSteps : 0;
 	Parameters->LightMarchingDistance = LightDistance;
+	Parameters->LightMarchingExpFactor = LightExpFactor;
 	Parameters->ShadowAmbient = ShadowAmbientValue;
 
 	// Temporal (for TAA integration)

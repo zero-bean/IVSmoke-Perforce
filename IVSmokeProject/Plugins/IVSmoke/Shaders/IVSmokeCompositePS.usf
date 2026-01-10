@@ -87,8 +87,19 @@ void MainPS(
 		filteredMask = lerp(smokeMaskCenter, blurredMask, blurAmount);
 	}
 
+	// smokeMask = Transmittance (1 - Alpha)
 	float smokeMask = 1.0 - saturate(filteredMask);
 
-	// Composite: blend scene with filtered smoke based on mask
-	OutColor = lerp(col, saturate(filteredSmoke), 1.0f - smokeMask);
+	// HDR burn-through 방지: 0.02 이하에서 0.01→0, 0.02→0.02로 선형 매핑
+	// Ray marching early termination (Transmittance > 0.01)으로 인한 HDR 누출 차단
+	if (smokeMask < 0.02)
+	{
+		smokeMask = max(0.0, (smokeMask - 0.01) * 2.0);
+	}
+
+	// Composite: pre-multiplied alpha blending
+	// AccumulatedColor is already weighted by transmittance during ray marching,
+	// so we DON'T multiply by alpha again.
+	// Correct formula: Scene * Transmittance + AccumulatedColor
+	OutColor = col * smokeMask + filteredSmoke;
 }

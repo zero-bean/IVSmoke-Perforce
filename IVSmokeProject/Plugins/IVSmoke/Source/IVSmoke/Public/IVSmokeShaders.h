@@ -143,6 +143,7 @@ class IVSMOKE_API FIVSmokeMultiVolumeRayMarchCS : public FGlobalShader
 		// Self-Shadowing (Light Marching)
 		SHADER_PARAMETER(int32, LightMarchingSteps)
 		SHADER_PARAMETER(float, LightMarchingDistance)
+		SHADER_PARAMETER(float, LightMarchingExpFactor)
 		SHADER_PARAMETER(float, ShadowAmbient)
 
 		// Temporal (for TAA integration)

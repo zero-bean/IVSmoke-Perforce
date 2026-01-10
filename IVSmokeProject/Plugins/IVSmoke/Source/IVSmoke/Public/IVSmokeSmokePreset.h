@@ -154,13 +154,19 @@ public:
 	/** Number of steps for light marching. Higher = better quality, lower performance.
 	 *  Recommended: 4-8 for real-time rendering. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|SelfShadowing", meta = (ClampMin = "1", ClampMax = "16", UIMin = "1", UIMax = "16", EditCondition = "bEnableSelfShadowing"))
-	int32 LightMarchingSteps = 4;
+	int32 LightMarchingSteps = 6;
 
 	/** Maximum distance to march toward light source (in world units).
 	 *  Limits the light marching range for performance.
 	 *  0 = No limit (march to volume boundary). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|SelfShadowing", meta = (ClampMin = "0.0", ClampMax = "500.0", EditCondition = "bEnableSelfShadowing"))
-	float LightMarchingDistance = 100.0f;
+	float LightMarchingDistance = 0.0f;
+
+	/** Exponential distribution factor for light marching steps.
+	 *  Higher = more samples near the surface, fewer far away.
+	 *  1.0 = uniform distribution, 2.0~3.0 = recommended for natural shadows. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|SelfShadowing", meta = (ClampMin = "1.0", ClampMax = "5.0", EditCondition = "bEnableSelfShadowing"))
+	float LightMarchingExpFactor = 2.0f;
 
 	/** Minimum brightness in fully shadowed areas.
 	 *  0 = completely dark, 1 = no shadow effect. */
