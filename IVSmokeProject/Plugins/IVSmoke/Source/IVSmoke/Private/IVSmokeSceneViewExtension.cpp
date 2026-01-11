@@ -2,6 +2,7 @@
 
 #include "IVSmokeSceneViewExtension.h"
 #include "IVSmokeRenderer.h"
+#include "IVSmokeSettings.h"
 #include "PostProcess/PostProcessMaterialInputs.h"
 #include "ScreenPass.h"
 
@@ -36,7 +37,34 @@ void FIVSmokeSceneViewExtension::SubscribeToPostProcessingPass(
 	FPostProcessingPassDelegateArray& InOutPassCallbacks,
 	bool bIsPassEnabled)
 {
-	if (Pass == EPostProcessingPass::BeforeDOF)
+	// Map IVSmoke render pass setting to engine post-processing pass
+	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
+	EIVSmokeRenderPass RenderPassSetting = Settings ? Settings->RenderPass : EIVSmokeRenderPass::TranslucencyAfterDOF;
+
+	EPostProcessingPass TargetPass;
+	switch (RenderPassSetting)
+	{
+	case EIVSmokeRenderPass::BeforeDOF:
+		TargetPass = EPostProcessingPass::BeforeDOF;
+		break;
+	case EIVSmokeRenderPass::AfterDOF:
+		TargetPass = EPostProcessingPass::AfterDOF;
+		break;
+	case EIVSmokeRenderPass::TranslucencyAfterDOF:
+		TargetPass = EPostProcessingPass::TranslucencyAfterDOF;
+		break;
+	case EIVSmokeRenderPass::MotionBlur:
+		TargetPass = EPostProcessingPass::MotionBlur;
+		break;
+	case EIVSmokeRenderPass::Tonemap:
+		TargetPass = EPostProcessingPass::Tonemap;
+		break;
+	default:
+		TargetPass = EPostProcessingPass::TranslucencyAfterDOF;
+		break;
+	}
+
+	if (Pass == TargetPass)
 	{
 		InOutPassCallbacks.Add(
 			FPostProcessingPassDelegate::CreateRaw(

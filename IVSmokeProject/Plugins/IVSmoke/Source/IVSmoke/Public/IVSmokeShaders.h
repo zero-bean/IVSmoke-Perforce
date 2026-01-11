@@ -249,3 +249,32 @@ public:
 		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
 	}
 };
+
+/**
+ * Translucency Composite pixel shader.
+ * Composites smoke OVER SeparateTranslucency (smoke on top of particles).
+ * Used for TranslucencyAfterDOF render pass.
+ */
+class IVSMOKE_API FIVSmokeTranslucencyCompositePS : public FGlobalShader
+{
+	DECLARE_GLOBAL_SHADER(FIVSmokeTranslucencyCompositePS);
+	SHADER_USE_PARAMETER_STRUCT(FIVSmokeTranslucencyCompositePS, FGlobalShader);
+
+	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeAlbedoTex)
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeMaskTex)
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, ParticlesTex)
+		SHADER_PARAMETER_SAMPLER(SamplerState, LinearSampler)
+		SHADER_PARAMETER(float, Sharpness)
+		SHADER_PARAMETER(FVector2f, ViewRectMin)
+		SHADER_PARAMETER(FVector2f, SmokeTexSize)
+		SHADER_PARAMETER(FVector2f, ParticlesTexSize)
+		RENDER_TARGET_BINDING_SLOTS()
+	END_SHADER_PARAMETER_STRUCT()
+
+public:
+	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
+	{
+		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
+	}
+};

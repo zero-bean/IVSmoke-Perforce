@@ -331,9 +331,59 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	// Composite Pass
 	// ============================================================================
 	const float Sharpness = CachedDefaultPreset ? CachedDefaultPreset->Sharpness : 0.0f;
-	AddSharpenCompositePass(GraphBuilder, View, SceneColor.Texture, SmokeAlbedoFull, SmokeMaskFull, Output, ViewportSize, Sharpness);
 
-	return Output;
+	// Check if we're in TranslucencyAfterDOF mode (setting + SeparateTranslucency input valid)
+	const bool bTranslucencyMode = (Settings->RenderPass == EIVSmokeRenderPass::TranslucencyAfterDOF);
+	FScreenPassTextureSlice SeparateTranslucencySlice = Inputs.GetInput(EPostProcessMaterialInput::SeparateTranslucency);
+	if (bTranslucencyMode && SeparateTranslucencySlice.IsValid())
+	{
+		// TranslucencyAfterDOF mode: Composite smoke OVER particles
+		FScreenPassTexture ParticlesTex(SeparateTranslucencySlice);
+
+		// Create a NEW output texture to avoid read/write conflict
+		// (Cannot read ParticlesTex while writing to the same texture)
+		FRDGTextureRef OutputTexture = FIVSmokePostProcessPass::CreateOutputTexture(
+			GraphBuilder,
+			ParticlesTex.Texture,
+			TEXT("IVSmokeTranslucencyOutput"),
+			PF_FloatRGBA,
+			ParticlesTex.ViewRect.Size()
+		);
+
+		FScreenPassRenderTarget TranslucencyOutput(
+			OutputTexture,
+			ParticlesTex.ViewRect,
+			ERenderTargetLoadAction::ENoAction
+		);
+
+		AddTranslucencyCompositePass(
+			GraphBuilder,
+			View,
+			SmokeAlbedoFull,
+			SmokeMaskFull,
+			ParticlesTex.Texture,
+			TranslucencyOutput,
+			Sharpness
+		);
+
+		return FScreenPassTexture(TranslucencyOutput);
+	}
+	else
+	{
+		// Standard mode: Composite smoke with scene color
+		AddSharpenCompositePass(
+			GraphBuilder,
+			View,
+			SceneColor.Texture,
+			SmokeAlbedoFull,
+			SmokeMaskFull,
+			Output,
+			ViewportSize,
+			Sharpness
+		);
+
+		return FScreenPassTexture(Output);
+	}
 }
 
 // ============================================================================
@@ -748,6 +798,47 @@ void FIVSmokeRenderer::AddCopyPass(
 		GraphBuilder,
 		ShaderMap,
 		CopyShader,
+		Parameters,
+		Output,
+		Config
+	);
+}
+
+void FIVSmokeRenderer::AddTranslucencyCompositePass(
+	FRDGBuilder& GraphBuilder,
+	const FSceneView& View,
+	FRDGTextureRef SmokeAlbedoTex,
+	FRDGTextureRef SmokeMaskTex,
+	FRDGTextureRef ParticlesTex,
+	const FScreenPassRenderTarget& Output,
+	float Sharpness)
+{
+	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
+	TShaderMapRef<FIVSmokeTranslucencyCompositePS> PixelShader(ShaderMap);
+
+	// Get texture sizes for UV calculation (avoids GetDimensions() in shader)
+	const FIntPoint SmokeTexSize = SmokeAlbedoTex->Desc.Extent;
+	const FIntPoint ParticlesTexSize = ParticlesTex->Desc.Extent;
+
+	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeTranslucencyCompositePS::FParameters>();
+	Parameters->SmokeAlbedoTex = SmokeAlbedoTex;
+	Parameters->SmokeMaskTex = SmokeMaskTex;
+	Parameters->ParticlesTex = ParticlesTex;
+	Parameters->LinearSampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
+	Parameters->Sharpness = Sharpness;
+	Parameters->ViewRectMin = FVector2f(Output.ViewRect.Min);
+	Parameters->SmokeTexSize = FVector2f(SmokeTexSize);
+	Parameters->ParticlesTexSize = FVector2f(ParticlesTexSize);
+	Parameters->RenderTargets[0] = Output.GetRenderTargetBinding();
+
+	FIVSmokePassConfig Config;
+	Config.EventName = TEXT("IVSmokeTranslucencyComposite");
+	Config.BlendState = TStaticBlendState<>::GetRHI();
+
+	FIVSmokePostProcessPass::AddPixelShaderPass(
+		GraphBuilder,
+		ShaderMap,
+		PixelShader,
 		Parameters,
 		Output,
 		Config

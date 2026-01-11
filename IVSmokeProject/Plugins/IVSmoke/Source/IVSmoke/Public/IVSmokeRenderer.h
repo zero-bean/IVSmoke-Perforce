@@ -165,6 +165,29 @@ private:
 		FRDGTextureRef DestTex
 	);
 
+	/**
+	 * Translucency Composite PS Pass.
+	 * Composites smoke OVER particles for TranslucencyAfterDOF mode.
+	 * Engine will composite result with SceneColor using alpha as transmittance.
+	 *
+	 * @param GraphBuilder       RDG builder
+	 * @param View               Current scene view
+	 * @param SmokeAlbedoTex     Smoke color texture from ray marching
+	 * @param SmokeMaskTex       Smoke opacity mask from ray marching
+	 * @param ParticlesTex       SeparateTranslucency texture (particles)
+	 * @param Output             Final render target
+	 * @param Sharpness          Sharpen/blur amount (-1 to 1, 0 = no filter)
+	 */
+	void AddTranslucencyCompositePass(
+		FRDGBuilder& GraphBuilder,
+		const FSceneView& View,
+		FRDGTextureRef SmokeAlbedoTex,
+		FRDGTextureRef SmokeMaskTex,
+		FRDGTextureRef ParticlesTex,
+		const FScreenPassRenderTarget& Output,
+		float Sharpness
+	);
+
 	// ============================================================================
 	// State
 	// ============================================================================

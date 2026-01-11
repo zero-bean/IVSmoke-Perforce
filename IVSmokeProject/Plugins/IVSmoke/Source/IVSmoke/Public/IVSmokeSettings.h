@@ -4,8 +4,32 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DeveloperSettings.h"
+#include "SceneViewExtension.h"
 #include "IVSmokeSmokePreset.h"
 #include "IVSmokeSettings.generated.h"
+
+/**
+ * Post-processing pass where smoke is rendered.
+ * Affects interaction with particles, DOF, Bloom, and other effects.
+ */
+UENUM(BlueprintType)
+enum class EIVSmokeRenderPass : uint8
+{
+	/** Before Depth of Field. Best quality but particles may render on top. */
+	BeforeDOF UMETA(DisplayName = "Before DOF (Best Quality)"),
+
+	/** After Depth of Field. DOF applied to smoke. Recommended for most cases. */
+	AfterDOF UMETA(DisplayName = "After DOF (Recommended)"),
+
+	/** Translucency After DOF. Smoke renders over AfterDOF particles. Experimental. */
+	TranslucencyAfterDOF UMETA(DisplayName = "Translucency After DOF (Experimental)"),
+
+	/** After Motion Blur. Most effects applied but may cause edge artifacts. */
+	MotionBlur UMETA(DisplayName = "After Motion Blur"),
+
+	/** After Tonemapping. All particles rendered below, but no Bloom/DOF/TAA on smoke. */
+	Tonemap UMETA(DisplayName = "After Tonemap (No Post Effects)")
+};
 
 /**
  * Global settings for IVSmoke plugin.
@@ -54,6 +78,15 @@ public:
 	/** Whether to regenerate noise texture on startup. */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|Noise")
 	bool bRegenerateNoiseOnStartup = true;
+
+	// ============================================================================
+	// Rendering
+	// ============================================================================
+
+	/** Post-processing pass where smoke is rendered.
+	 *  Affects interaction with particles and post-process effects. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|Rendering")
+	EIVSmokeRenderPass RenderPass = EIVSmokeRenderPass::AfterDOF;
 
 	// ============================================================================
 	// Performance
