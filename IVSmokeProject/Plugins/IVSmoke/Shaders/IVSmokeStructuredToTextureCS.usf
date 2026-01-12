@@ -1,0 +1,20 @@
+#include "/Engine/Private/Common.ush"
+
+RWTexture3D<float> Desti;
+StructuredBuffer<float> Source;
+int3 TexSize;
+
+[numthreads(8, 8, 8)]
+void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
+{
+	uint3 PixelCoord = DispatchThreadId.xyz;
+
+	// Bounds check (use TexSize for reduced resolution rendering)
+	if (PixelCoord.x >= TexSize.x || PixelCoord.y >= TexSize.y || PixelCoord.z >= TexSize.z)
+	{
+		return;
+	}
+
+	int Idx = PixelCoord.x + TexSize.x * PixelCoord.y + TexSize.x * TexSize.y * PixelCoord.z;
+	Desti[PixelCoord] = Source[Idx];
+}

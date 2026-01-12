@@ -398,6 +398,14 @@ void AIVSmokeVoxelVolume::ProcessDissipation(int32 VoxelNum)
 //~==============================================================================
 // Data Access
 #pragma region DataAccess
+FTextureRHIRef AIVSmokeVoxelVolume::GetHoleTexture() const
+{
+	if (HoleGeneratorComponent)
+	{
+		return HoleGeneratorComponent->GetHoleTexture();
+	}
+	return nullptr;
+}
 
 void AIVSmokeVoxelVolume::SetVoxelDensity(const FIntVector& GridPos, float Density)
 {

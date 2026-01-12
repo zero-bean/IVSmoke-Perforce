@@ -115,10 +115,11 @@ class IVSMOKE_API FIVSmokeMultiVolumeRayMarchCS : public FGlobalShader
 		SHADER_PARAMETER(uint32, NumActiveVolumes)
 
 		// Packed Voxel Data (all volumes concatenated)
-		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<float>, PackedVoxelBuffer)
-		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D, PackedHoleSDFBuffer)
-		SHADER_PARAMETER(int, HoleSDFTexCount)
-		SHADER_PARAMETER(FIntVector, HoleSDFTexSize)
+		SHADER_PARAMETER(int, PackedInterval)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D, PackedVoxelAtlas)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D, PackedHoleAtlas)
+		SHADER_PARAMETER(FIntVector, VoxelTexSize)
+		SHADER_PARAMETER(FIntVector, HoleTexSize)
 
 
 		// Scene Textures
@@ -170,7 +171,7 @@ class IVSMOKE_API FIVSmokeNoiseGeneratorGlobalCS : public FGlobalShader
 	DECLARE_GLOBAL_SHADER(FIVSmokeNoiseGeneratorGlobalCS);
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeNoiseGeneratorGlobalCS, FGlobalShader);
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<half>, RWNoiseTex)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>, RWNoiseTex)
 		SHADER_PARAMETER(FUintVector3, TexSize)
 		SHADER_PARAMETER(int32, Octaves)
 		SHADER_PARAMETER(float, Wrap)
@@ -178,6 +179,22 @@ class IVSMOKE_API FIVSmokeNoiseGeneratorGlobalCS : public FGlobalShader
 		SHADER_PARAMETER(float, Amplitude)
 		SHADER_PARAMETER(int32, CellSize)
 		SHADER_PARAMETER(int32, Seed)
+	END_SHADER_PARAMETER_STRUCT()
+
+public:
+	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
+	{
+		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
+	}
+};
+class IVSMOKE_API FIVSmokeStructuredToTextureCS : public FGlobalShader
+{
+	DECLARE_GLOBAL_SHADER(FIVSmokeStructuredToTextureCS);
+	SHADER_USE_PARAMETER_STRUCT(FIVSmokeStructuredToTextureCS, FGlobalShader);
+	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>, Desti)
+		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<float>, Source)
+		SHADER_PARAMETER(FIntVector, TexSize)
 	END_SHADER_PARAMETER_STRUCT()
 
 public:

@@ -24,6 +24,7 @@ struct IVSMOKE_API FIVSmokePassConfig
 	/** Thread group size for compute shader (default 8x8) */
 	uint32 ThreadGroupSizeX = 8;
 	uint32 ThreadGroupSizeY = 8;
+	uint32 ThreadGroupSizeZ = 8;
 
 	FIVSmokePassConfig()
 	{
@@ -74,7 +75,7 @@ public:
 		FGlobalShaderMap* ShaderMap,
 		TShaderMapRef<TShaderClass> ComputeShader,
 		typename TShaderClass::FParameters* Parameters,
-		const FIntPoint& TotalThreadSize,
+		const FIntVector& TotalThreadSize,
 		const FIVSmokePassConfig& Config = FIVSmokePassConfig());
 
 	/**
@@ -108,6 +109,8 @@ void FIVSmokePostProcessPass::AddPixelShaderPass(
 	const FScreenPassRenderTarget& Output,
 	const FIVSmokePassConfig& Config)
 {
+	RDG_EVENT_SCOPE(GraphBuilder, "%s PS", Config.EventName);
+
 	FPixelShaderUtils::AddFullscreenPass(
 		GraphBuilder,
 		ShaderMap,
@@ -125,17 +128,21 @@ void FIVSmokePostProcessPass::AddComputeShaderPass(
 	FGlobalShaderMap* ShaderMap,
 	TShaderMapRef<TShaderClass> ComputeShader,
 	typename TShaderClass::FParameters* Parameters,
-	const FIntPoint& TotalThreadSize,
+	const FIntVector& TotalThreadSize,
 	const FIVSmokePassConfig& Config)
 {
 	const uint32 GroupCountX = FMath::DivideAndRoundUp((uint32)TotalThreadSize.X, Config.ThreadGroupSizeX);
 	const uint32 GroupCountY = FMath::DivideAndRoundUp((uint32)TotalThreadSize.Y, Config.ThreadGroupSizeY);
+	const uint32 GroupCountZ = FMath::DivideAndRoundUp((uint32)TotalThreadSize.Z, Config.ThreadGroupSizeZ);
+
+	RDG_EVENT_SCOPE(GraphBuilder, "%s CS", Config.EventName);
 
 	FComputeShaderUtils::AddPass(
 		GraphBuilder,
 		RDG_EVENT_NAME("%s CS", Config.EventName),
 		ComputeShader,
 		Parameters,
-		FIntVector(GroupCountX, GroupCountY, 1)
+		FIntVector(GroupCountX, GroupCountY, GroupCountZ)
 	);
 }
+

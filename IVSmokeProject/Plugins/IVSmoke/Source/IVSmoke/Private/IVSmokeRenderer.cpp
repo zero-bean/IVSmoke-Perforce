@@ -12,6 +12,8 @@
 #include "PostProcess/PostProcessMaterialInputs.h"
 #include "SceneRenderTargetParameters.h"
 #include "IVSmokeHoleGeneratorComponent.h"
+#include "RenderGraphUtils.h"
+
 
 FIVSmokeRenderer& FIVSmokeRenderer::Get()
 {
@@ -155,7 +157,7 @@ void FIVSmokeRenderer::CreateNoiseVolume()
 			);
 			GraphBuilder.Execute();
 		}
-	);
+		);
 }
 
 const UIVSmokeSmokePreset* FIVSmokeRenderer::GetEffectivePreset(const AIVSmokeVoxelVolume* Volume) const
@@ -400,113 +402,88 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	const FIntPoint& ViewportSize,
 	const FIntPoint& ViewRectMin)
 {
-	if (SortedVolumes.Num() == 0 || !NoiseVolume)
+	int32 VolumeCount = SortedVolumes.Num();
+
+	if (VolumeCount == 0 || !NoiseVolume)
 	{
 		return;
 	}
 
 	// Performance warning for too many volumes
-	if (SortedVolumes.Num() > 8)
+	if (VolumeCount > 8)
 	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[FIVSmokeRenderer] Performance warning: %d volumes active (recommended: 8 or fewer)"), SortedVolumes.Num());
+		UE_LOG(LogIVSmoke, Warning, TEXT("[FIVSmokeRenderer] Performance warning: %d volumes active (recommended: 8 or fewer)"), VolumeCount);
 	}
+
+
+
+	//크기가 다를 땐 단순히 아틀라스 채워넣는 기법이 추가되므로 일단 배제
 
 	// ============================================================================
 	// Build Volume GPU Data and Pack Voxel Buffers
 	// ============================================================================
 
+	//texture size set
+	int32 TexturePackInterval = 4;
 	TArray<FIVSmokeVolumeGPUData> VolumeDataArray;
-	VolumeDataArray.Reserve(SortedVolumes.Num());
-
-	// Calculate total voxel count for packed buffer
-	uint32 TotalVoxelCount = 0;
-	for (AIVSmokeVoxelVolume* Volume : SortedVolumes)
-	{
-		TotalVoxelCount += Volume->GetVoxelBufferSize();
-	}
-
-	// Create packed voxel buffer
 	TArray<float> PackedVoxelData;
-	PackedVoxelData.Reserve(TotalVoxelCount);
+	TArray<float> VoxelIntervalData;
+	FIntVector VoxelResolution = SortedVolumes[0]->GetGridResolution();
+	FIntVector HoleResolution = SortedVolumes[0]->GetHoleGeneratorComponent()->GetHoleTexture()->GetSizeXYZ();
+	FIntVector VoxelAtlasResolution = FIntVector(VoxelResolution.X, VoxelResolution.Y, VoxelResolution.Z * VolumeCount + TexturePackInterval * (VolumeCount - 1));
+	FIntVector HoleAtlasResolution = FIntVector(HoleResolution.X, HoleResolution.Y, HoleResolution.Z * VolumeCount + TexturePackInterval * (VolumeCount - 1));
+	int32 TotalVoxelSize = VoxelAtlasResolution.X * VoxelAtlasResolution.Y * VoxelAtlasResolution.Z;
+	int32 TotalHoleSize = HoleAtlasResolution.X * HoleAtlasResolution.Y * HoleAtlasResolution.Z;
+	VolumeDataArray.Reserve(VolumeCount);
+	PackedVoxelData.Reserve(TotalVoxelSize);
+	VoxelIntervalData.Init(0, VoxelResolution.X * VoxelResolution.Y * TexturePackInterval);
+	HoleAtlasResolution = HoleAtlasResolution == FIntVector::ZeroValue ? FIntVector(64, 64, 64) : HoleAtlasResolution;
 
-	// Create packed SDF buffer (atlas of all hole textures)
-	// Use actual texture dimensions instead of VoxelResolution to avoid size mismatch
-	int32 VolumeCount = SortedVolumes.Num();
-	FIntVector HoleSDFTexSize = FIntVector::ZeroValue;
+	//atlas texture create
+	FRDGTextureDesc VoxelAtlasDesc = FRDGTextureDesc::Create3D(VoxelAtlasResolution, PF_R32_FLOAT, FClearValueBinding::None, TexCreate_ShaderResource | TexCreate_UAV);
+	FRDGTextureDesc HoleAtlas = FRDGTextureDesc::Create3D(HoleAtlasResolution, PF_R16F, FClearValueBinding::None, TexCreate_ShaderResource | TexCreate_UAV);
+	FRDGTextureRef PackedVoxelAtlas = GraphBuilder.CreateTexture(VoxelAtlasDesc, TEXT("IVSmoke_PackedVoxelAtlas"));
+	FRDGTextureRef PackedHoleAtlas = GraphBuilder.CreateTexture(HoleAtlas, TEXT("IVSmoke_PackedHoleAtlas"));
 
-	// Get texture size from first valid hole texture
-	for (int32 i = 0; i < VolumeCount; ++i)
-	{
-		UIVSmokeHoleGeneratorComponent* HoleComp = SortedVolumes[i]->GetHoleGeneratorComponent();
-		if (HoleComp && HoleComp->GetHoleTexture())
-		{
-			FIntVector TexSize = HoleComp->GetHoleTexture()->GetSizeXYZ();
-			HoleSDFTexSize = TexSize;
-			break;
-		}
-	}
-
-	// If no valid hole texture found, use default size
-	if (HoleSDFTexSize == FIntVector::ZeroValue)
-	{
-		HoleSDFTexSize = FIntVector(64, 64, 64);
-	}
-
-	FIntVector AtlasSize = FIntVector(HoleSDFTexSize.X, HoleSDFTexSize.Y, HoleSDFTexSize.Z * VolumeCount);
-	FRDGTextureDesc AtlasDesc = FRDGTextureDesc::Create3D(
-		AtlasSize,
-		PF_R16F,
-		FClearValueBinding::None,
-		TexCreate_ShaderResource | TexCreate_UAV);
-	FRDGTextureRef PackedHoleSDFBuffer = GraphBuilder.CreateTexture(AtlasDesc, TEXT("PackedHoleSDFBuffer"));
+	//copy hole texture to atlas
+	//set PackedVoxelData array
+	//set FIVSmokeVolumeGPUData 
+	FRHICopyTextureInfo HoleCpyInfo;
+	HoleCpyInfo.Size = HoleResolution;
+	HoleCpyInfo.SourcePosition = FIntVector::ZeroValue;
 
 	for (int32 i = 0; i < VolumeCount; ++i)
-	{
-		UIVSmokeHoleGeneratorComponent* HoleComp = SortedVolumes[i]->GetHoleGeneratorComponent();
-		if (!HoleComp)
-		{
-			continue;
-		}
-
-		FTextureRHIRef SourceRHI = HoleComp->GetHoleTexture();
-		if (!SourceRHI)
-		{
-			continue;
-		}
-
-		FIntVector SourceSize = SourceRHI->GetSizeXYZ();
-		FRDGTextureRef SourceTexture = GraphBuilder.RegisterExternalTexture(
-			CreateRenderTarget(SourceRHI, TEXT("Source"))
-		);
-
-		FRHICopyTextureInfo CopyInfo;
-		CopyInfo.Size = SourceSize;
-		CopyInfo.SourcePosition = FIntVector::ZeroValue;
-		CopyInfo.DestPosition = FIntVector(0, 0, i * HoleSDFTexSize.Z);
-
-		AddCopyTexturePass(
-			GraphBuilder,
-			SourceTexture,
-			PackedHoleSDFBuffer,
-			CopyInfo
-		);
-	}
-
-	uint32 CurrentOffset = 0;
-	for (int32 i = 0; i < SortedVolumes.Num(); ++i)
 	{
 		AIVSmokeVoxelVolume* Volume = SortedVolumes[i];
+		FTextureRHIRef SourceRHI = Volume->GetHoleTexture();
+		if (SourceRHI == nullptr)
+		{
+			continue;
+		}
+
+		// ============================================================================
+		// copy hole texture to atlas
+		// ============================================================================
+		FRDGTextureRef SourceTexture = GraphBuilder.RegisterExternalTexture(CreateRenderTarget(SourceRHI, TEXT("IVSmoke_CopyHoleSource")));
+		HoleCpyInfo.DestPosition = FIntVector(0, 0, i * (HoleResolution.Z + TexturePackInterval));
+		AddCopyTexturePass(GraphBuilder, SourceTexture, PackedHoleAtlas, HoleCpyInfo);
+
+		// ============================================================================
+		// set PackedVoxelData array
+		// ============================================================================
 		const TArray<float>& VoxelData = Volume->GetVoxelArray();
+		PackedVoxelData.Append(VoxelData);
+		if (i < VolumeCount - 1)
+		{
+			PackedVoxelData.Append(VoxelIntervalData);
+		}
+
+		// ============================================================================
+		// set FIVSmokeVolumeGPUData 
+		// ============================================================================
 		const FIntVector GridRes = Volume->GetGridResolution();
 		const FIntVector CenterOff = Volume->GetCenterOffset();
 		const float VoxelSz = Volume->GetVoxelSize();
-
-		// Skip invalid volumes
-		if (VoxelData.Num() == 0 || GridRes.X <= 0 || GridRes.Y <= 0 || GridRes.Z <= 0)
-		{
-			continue;
-		}
-
 		// Calculate local and world AABB
 		FVector HalfExtent = FVector(CenterOff) * VoxelSz;
 		FVector LocalMin = -HalfExtent;
@@ -528,7 +505,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 		GPUData.AABBMin = FVector3f(LocalMin);
 		GPUData.VoxelSize = VoxelSz;
 		GPUData.AABBMax = FVector3f(LocalMax);
-		GPUData.VoxelBufferOffset = CurrentOffset;
+		GPUData.VoxelBufferOffset = VoxelResolution.X * VoxelResolution.Y * (VoxelResolution.Z + TexturePackInterval) * i;
 		GPUData.GridResolution = FIntVector3(GridRes.X, GridRes.Y, GridRes.Z);
 		GPUData.VoxelCount = VoxelData.Num();
 
@@ -547,12 +524,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 		GPUData.DensityScale = Preset ? Preset->VolumeDensity : 1.0f;
 		GPUData.WorldAABBMin = FVector3f(WorldBox.Min);
 		GPUData.WorldAABBMax = FVector3f(WorldBox.Max);
-
 		VolumeDataArray.Add(GPUData);
-
-		// Append voxel data to packed buffer
-		PackedVoxelData.Append(VoxelData);
-		CurrentOffset += VoxelData.Num();
 	}
 
 	if (VolumeDataArray.Num() == 0 || PackedVoxelData.Num() == 0)
@@ -560,11 +532,36 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 		return;
 	}
 
+	//StructuredToTexture Pass
+	FRDGBufferDesc PackedVoxelBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(float), PackedVoxelData.Num());
+	FRDGBufferRef PackedVoxelBuffer = GraphBuilder.CreateBuffer(PackedVoxelBufferDesc, TEXT("IVSmoke_PackedVoxelBuffer"));
+	GraphBuilder.QueueBufferUpload(PackedVoxelBuffer, PackedVoxelData.GetData(), PackedVoxelData.Num() * sizeof(float));
+
+	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
+	TShaderMapRef<FIVSmokeStructuredToTextureCS> StructuredCopyShader(ShaderMap);
+	auto* StructuredCopyParams = GraphBuilder.AllocParameters<FIVSmokeStructuredToTextureCS::FParameters>();
+	StructuredCopyParams->Desti = GraphBuilder.CreateUAV(PackedVoxelAtlas);
+	StructuredCopyParams->Source = GraphBuilder.CreateSRV(PackedVoxelBuffer);
+	StructuredCopyParams->TexSize = VoxelAtlasResolution;
+
+	//고칠점 Config정보는 IVSmokeShader.h 에 두자
+	FIVSmokePassConfig Config2;
+	Config2.EventName = TEXT("IVSmoke_StructuredToTextureCS");
+	Config2.ThreadGroupSizeX = 8;
+	Config2.ThreadGroupSizeY = 8;
+	Config2.ThreadGroupSizeZ = 8;
+	FIVSmokePostProcessPass::AddComputeShaderPass(
+		GraphBuilder,
+		ShaderMap,
+		StructuredCopyShader,
+		StructuredCopyParams,
+		VoxelAtlasResolution,  // Dispatch at reduced resolution
+		Config2
+	);
 	// ============================================================================
 	// Create GPU Buffers
 	// ============================================================================
 
-	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
 	TShaderMapRef<FIVSmokeMultiVolumeRayMarchCS> ComputeShader(ShaderMap);
 
 	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeMultiVolumeRayMarchCS::FParameters>();
@@ -618,16 +615,12 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->VolumeDataBuffer = GraphBuilder.CreateSRV(VolumeBuffer);
 	Parameters->NumActiveVolumes = VolumeDataArray.Num();
 
-	// Packed Voxel Buffer
-	FRDGBufferDesc VoxelBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(float), PackedVoxelData.Num());
-	FRDGBufferRef VoxelBuffer = GraphBuilder.CreateBuffer(VoxelBufferDesc, TEXT("IVSmokePackedVoxelBuffer"));
-	GraphBuilder.QueueBufferUpload(VoxelBuffer, PackedVoxelData.GetData(), PackedVoxelData.Num() * sizeof(float));
-	Parameters->PackedVoxelBuffer = GraphBuilder.CreateSRV(VoxelBuffer);
-
-	// Packed SDF Buffer
-	Parameters->PackedHoleSDFBuffer = GraphBuilder.CreateSRV(PackedHoleSDFBuffer);
-	Parameters->HoleSDFTexCount = VolumeCount;
-	Parameters->HoleSDFTexSize = HoleSDFTexSize;
+	// Packed Textures
+	Parameters->PackedInterval = TexturePackInterval;
+	Parameters->PackedVoxelAtlas = GraphBuilder.CreateSRV(PackedVoxelAtlas);
+	Parameters->PackedHoleAtlas = GraphBuilder.CreateSRV(PackedHoleAtlas);
+	Parameters->VoxelTexSize = VoxelResolution;
+	Parameters->HoleTexSize = HoleResolution;
 
 	// Scene Textures
 	Parameters->SceneTexturesStruct = GetSceneTextureShaderParameters(View).SceneTextures;
@@ -691,13 +684,14 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Config.EventName = TEXT("IVSmokeMultiVolumeRayMarch");
 	Config.ThreadGroupSizeX = FIVSmokeMultiVolumeRayMarchCS::ThreadGroupSizeX;
 	Config.ThreadGroupSizeY = FIVSmokeMultiVolumeRayMarchCS::ThreadGroupSizeY;
+	Config.ThreadGroupSizeZ = 1;
 
 	FIVSmokePostProcessPass::AddComputeShaderPass(
 		GraphBuilder,
 		ShaderMap,
 		ComputeShader,
 		Parameters,
-		TexSize,  // Dispatch at reduced resolution
+		FIntVector(TexSize.X, TexSize.Y, 1),  // Dispatch at reduced resolution
 		Config
 	);
 }

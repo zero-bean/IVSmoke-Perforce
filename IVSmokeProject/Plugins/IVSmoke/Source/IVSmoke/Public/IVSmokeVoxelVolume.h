@@ -312,6 +312,9 @@ public:
 	/** Returns the smoke preset override for this volume, or nullptr to use default. */
 	FORCEINLINE const UIVSmokeSmokePreset* GetSmokePresetOverride() const { return SmokePresetOverride; }
 
+	FTextureRHIRef GetHoleTexture() const;
+
+
 private:
 	/**
 	 * Sets voxel density at the given grid position.
