@@ -173,6 +173,16 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|SelfShadowing", meta = (ClampMin = "0.0", ClampMax = "1.0", EditCondition = "bEnableSelfShadowing"))
 	float ShadowAmbient = 0.2f;
 
+
+	/** Minimum brightness in fully shadowed areas.
+ *  0 = completely dark, 1 = no shadow effect. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|FXAA")
+	float SpanMax = 4.0f;
+
+	/** Minimum brightness in fully shadowed areas.
+ *  0 = completely dark, 1 = no shadow effect. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|FXAA")
+	float FXAARange = 3.5f;
 	// ============================================================================
 	// UPrimaryDataAsset Interface
 	// ============================================================================

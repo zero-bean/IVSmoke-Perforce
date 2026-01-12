@@ -132,6 +132,10 @@ float ShadowAmbient;
 // Temporal (for TAA integration)
 uint FrameNumber;
 
+//FXAA
+float SpanMax;
+float FXAARange;
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -160,94 +164,76 @@ float GetNoise(float3 Position)
 	uvw -= WindDirection * ElapsedTime;
 	return NoiseVolume.SampleLevel(LinearRepeat_Sampler, uvw, 0);
 }
-float GetHoleDensity(float3 Position, uint VolumeIdx)
+
+float3 GetUVW(float3 WorldPos, uint VolumeIdx, int TexZSize)
 {
 	FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
-	float3 uvw = (Position - Vol.WorldAABBMin) / (Vol.WorldAABBMax - Vol.WorldAABBMin);
-	int holeAtlasZSize = HoleTexSize.z * NumActiveVolumes + PackedInterval * (NumActiveVolumes - 1);
-	int zMinTex = (HoleTexSize.z + PackedInterval) * VolumeIdx;
-	int zMaxTex = zMinTex + HoleTexSize.z;
-	float zMinUV = (float) zMinTex / holeAtlasZSize;
-	float zMaxUV = (float) zMaxTex / holeAtlasZSize;
+	float3 uvw = (WorldPos - Vol.WorldAABBMin) / (Vol.WorldAABBMax - Vol.WorldAABBMin);
+	int AtlasTexZSize = TexZSize * NumActiveVolumes + PackedInterval * (NumActiveVolumes - 1);
+	int zMinTex = (TexZSize + PackedInterval) * VolumeIdx;
+	int zMaxTex = zMinTex + TexZSize;
+	float zMinUV = (float) zMinTex / AtlasTexZSize;
+	float zMaxUV = (float) zMaxTex / AtlasTexZSize;
 	uvw.z = lerp(zMinUV, zMaxUV, uvw.z);
+	return uvw;
+}
+
+float GetHoleDensity(float3 Position, uint VolumeIdx)
+{
+	float3 uvw= GetUVW(Position, VolumeIdx, HoleTexSize.z);
 	return PackedHoleAtlas.Sample(LinearRepeat_Sampler, uvw);
 }
 float GetVoxelDensity(float3 Position, uint VolumeIdx)
 {
-	FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
-	float3 uvw = (Position - Vol.WorldAABBMin) / (Vol.WorldAABBMax - Vol.WorldAABBMin);
-	int voxelAtlasSize = VoxelTexSize.z * NumActiveVolumes + PackedInterval * (NumActiveVolumes - 1);
-	int zMinTex = (VoxelTexSize.z + PackedInterval) * VolumeIdx;
-	int zMaxTex = zMinTex + VoxelTexSize.z;
-	float zMinUV = (float) zMinTex / voxelAtlasSize;
-	float zMaxUV = (float) zMaxTex / voxelAtlasSize;
-	uvw.z = lerp(zMinUV, zMaxUV, uvw.z);
-	return PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw);
+	float3 uvw = GetUVW(Position, VolumeIdx, VoxelTexSize.z);	
+	//return PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw); //basic trilinear sample
+	
+	int AtlasTexZSize = VoxelTexSize.z * NumActiveVolumes + PackedInterval * (NumActiveVolumes - 1);
+	float3 VoxelTexRCP = float3(1.0f / VoxelTexSize.x, 1.0f / VoxelTexSize.y, 1.0f / AtlasTexZSize);
+
+	float M = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw);
+	float v000 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(-1, -1, -1) * VoxelTexRCP);
+	float v001 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(-1, -1, 1) * VoxelTexRCP);
+	float v010 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(-1, 1, -1) * VoxelTexRCP);
+	float v011 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(-1, 1, 1) * VoxelTexRCP);
+	float v100 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(1, -1, -1) * VoxelTexRCP);
+	float v101 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(1, -1, 1) * VoxelTexRCP);
+	float v110 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(1, 1, -1) * VoxelTexRCP);
+	float v111 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(1, 1, 1) * VoxelTexRCP);
+
+	float3 Dir;
+	Dir.x = (v000 + v001 + v010 + v011) - (v100 + v101 + v110 + v111);
+	Dir.y = (v000 + v001 + v100 + v101) - (v010 + v011 + v110 + v111);
+	Dir.z = (v000 + v010 + v100 + v110) - (v001 + v011 + v101 + v111);
+
+	//float DirReduce = max((v000 + v001 + v010 + v011 + v100 + v101 + v110 + v111) * 0.125f * ReduceMul, ReduceMin);
+	//float InvDirAdjustment = 1.0 / (min(abs(Dir.x), min(abs(Dir.y), abs(Dir.z))) + DirReduce); //1 / (밝기차이절대값X,Y중 최소 + DirReduce) //dir 작은값이 0일 수 있어서 최소값을 더함
+
+	//Dir = Dir * InvDirAdjustment;
+	Dir /= SpanMax;
+	Dir.x = clamp(0, 1, abs(Dir.x)); //-4 ~ 4 아마 정규분포
+	Dir.y = clamp(0, 1, abs(Dir.y));
+	Dir.z = clamp(0, 1, abs(Dir.z));
+
+	Dir.x = pow(Dir.x, 3);
+	Dir.y = pow(Dir.y, 3);
+	Dir.z = pow(Dir.z, 3);
+	
+	//차이가 적으면 를 넓게 움직임
+	Dir = FXAARange * Dir * VoxelTexRCP;
+
+	float v0 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(-1, -1, -1) * Dir);
+	float v1 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(-1, -1, 1) * Dir);
+	float v2 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(-1, 1, -1) * Dir);
+	float v3 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(-1, 1, 1) * Dir);
+	float v4 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(1, -1, -1) * Dir);
+	float v5 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(1, -1, 1) * Dir);
+	float v6 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(1, 1, -1) * Dir);
+	float v7 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(1, 1, 1) * Dir);
+
+	return (v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7) * 0.25f;
 }
-/**
- * Convert 3D grid position to linear index within a volume.
- */
-//int VolumeGridToIndex(int3 GridPos, int3 Resolution)
-//{
-//	return GridPos.x + GridPos.y * Resolution.x + GridPos.z * Resolution.x * Resolution.y;
-//}
 
-/**
- * Read voxel density from packed buffer with bounds checking.
- */
-//float ReadPackedVoxelDensity(int3 GridPos, FVolumeGPUData Vol)
-//{
-//	// Bounds check
-//	if (any(GridPos < 0) || any(GridPos >= Vol.GridResolution))
-//	{
-//		return 0.0;
-//	}
-
-//	int LocalIndex = VolumeGridToIndex(GridPos, Vol.GridResolution);
-//	uint GlobalIndex = Vol.VoxelBufferOffset + LocalIndex;
-
-//	return PackedVoxelBuffer[GlobalIndex];
-//}
-
-/**
- * Sample voxel density with trilinear interpolation from packed buffer.
- */
-//float SampleVolumeDensityTrilinear(float3 WorldPos, FVolumeGPUData Vol)
-//{
-//	// World to local transform
-//	float3 LocalPos = mul(float4(WorldPos, 1.0), Vol.WorldToLocal).xyz;
-
-//	// Local to grid coordinate (continuous)
-//	float3 GridPosF = LocalPos / Vol.VoxelSize + Vol.CenterOffset;
-
-//	// 8 neighbor voxel integer coordinates
-//	int3 P0 = int3(floor(GridPosF));
-//	int3 P1 = P0 + int3(1, 1, 1);
-
-//	// Interpolation weights
-//	float3 F = frac(GridPosF);
-
-//	// Sample 8 corners from packed buffer
-//	float C000 = ReadPackedVoxelDensity(int3(P0.x, P0.y, P0.z), Vol);
-//	float C100 = ReadPackedVoxelDensity(int3(P1.x, P0.y, P0.z), Vol);
-//	float C010 = ReadPackedVoxelDensity(int3(P0.x, P1.y, P0.z), Vol);
-//	float C110 = ReadPackedVoxelDensity(int3(P1.x, P1.y, P0.z), Vol);
-//	float C001 = ReadPackedVoxelDensity(int3(P0.x, P0.y, P1.z), Vol);
-//	float C101 = ReadPackedVoxelDensity(int3(P1.x, P0.y, P1.z), Vol);
-//	float C011 = ReadPackedVoxelDensity(int3(P0.x, P1.y, P1.z), Vol);
-//	float C111 = ReadPackedVoxelDensity(int3(P1.x, P1.y, P1.z), Vol);
-
-//	// Trilinear interpolation
-//	float C00 = lerp(C000, C100, F.x);
-//	float C10 = lerp(C010, C110, F.x);
-//	float C01 = lerp(C001, C101, F.x);
-//	float C11 = lerp(C011, C111, F.x);
-
-//	float C0 = lerp(C00, C10, F.y);
-//	float C1 = lerp(C01, C11, F.y);
-
-//	return lerp(C0, C1, F.z);
-//}
 /**
  * Calculate final smoke density at a position for a specific volume.
  * Combines voxel density, edge falloff, and noise.

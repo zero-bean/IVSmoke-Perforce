@@ -150,6 +150,10 @@ class IVSMOKE_API FIVSmokeMultiVolumeRayMarchCS : public FGlobalShader
 		// Temporal (for TAA integration)
 		SHADER_PARAMETER(uint32, FrameNumber)
 
+		// FXAA
+		SHADER_PARAMETER(float, SpanMax)
+		SHADER_PARAMETER(float, FXAARange)
+
 	END_SHADER_PARAMETER_STRUCT()
 
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)

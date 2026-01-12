@@ -675,6 +675,8 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->LightMarchingDistance = LightDistance;
 	Parameters->LightMarchingExpFactor = LightExpFactor;
 	Parameters->ShadowAmbient = ShadowAmbientValue;
+	Parameters->SpanMax = DefaultPreset ? DefaultPreset->SpanMax : 4.0f;
+	Parameters->FXAARange = DefaultPreset ? DefaultPreset->FXAARange : 8.0f;
 
 	// Temporal (for TAA integration)
 	Parameters->FrameNumber = View.Family->FrameNumber;
