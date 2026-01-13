@@ -43,6 +43,13 @@ public:
 	UPROPERTY(EditAnywhere, Category = "IVSmoke | Grenade")
 	TSubclassOf<AIVSmokeVoxelVolume> SmokeVoxelVolume;
 
+	// ============================================================================
+	// Public API
+	// ============================================================================
+
+	UFUNCTION(Server, Reliable)
+	void RequestSpawnSmokeVoxelVolume(const FVector InPosition);
+
 protected:
 	UPROPERTY(EditAnywhere, Category = "IVSmoke | Grenade",
 		meta = (ClampMin = 1.0, ClampMax = 100.0, Units = "cm"))

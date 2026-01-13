@@ -9,6 +9,7 @@
 AIVSmokeSampleGrenade::AIVSmokeSampleGrenade()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
 
 	// Create collision component as root
 	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionComponent"));
@@ -61,6 +62,16 @@ void AIVSmokeSampleGrenade::BeginPlay()
 	}
 }
 
+void AIVSmokeSampleGrenade::RequestSpawnSmokeVoxelVolume_Implementation(const FVector InPosition)
+{
+	if (SmokeVoxelVolume)
+	{
+		GetWorld()->SpawnActor<AIVSmokeVoxelVolume>(SmokeVoxelVolume, InPosition, FRotator::ZeroRotator);
+	}
+
+	Destroy();
+}
+
 void AIVSmokeSampleGrenade::OnProjectileStopped(const FHitResult& HitResult)
 {
 	if (bHasDetonated)
@@ -79,12 +90,6 @@ void AIVSmokeSampleGrenade::OnProjectileStopped(const FHitResult& HitResult)
 	// Spawn VoxelVolume at detonation location
 	if (SmokeVoxelVolume)
 	{
-		GetWorld()->SpawnActor<AIVSmokeVoxelVolume>(
-			SmokeVoxelVolume,
-			GetActorLocation(),
-			GetActorRotation()
-		);
+		RequestSpawnSmokeVoxelVolume(GetActorLocation());
 	}
-
-	Destroy();
 }
