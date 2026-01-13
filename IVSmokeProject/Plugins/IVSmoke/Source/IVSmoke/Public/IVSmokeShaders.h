@@ -22,22 +22,6 @@
  */
 struct FIVSmokeVolumeGPUData
 {
-	/** World-to-local transform for this volume. */
-	FMatrix44f WorldToLocal;        // 64 bytes
-
-	/** Local-to-world transform for this volume. */
-	FMatrix44f LocalToWorld;        // 64 bytes
-
-	/** Local-space AABB minimum corner. */
-	FVector3f AABBMin;              // 12 bytes
-	/** World-space size of each voxel. */
-	float VoxelSize;                // 4 bytes
-
-	/** Local-space AABB maximum corner. */
-	FVector3f AABBMax;              // 12 bytes
-	/** Offset into packed voxel buffer. */
-	uint32 VoxelBufferOffset;       // 4 bytes
-
 	/** Grid resolution (voxel count per axis). */
 	FIntVector3 GridResolution;     // 12 bytes
 	/** Total voxel count for this volume. */
@@ -55,18 +39,18 @@ struct FIVSmokeVolumeGPUData
 
 	/** World-space AABB minimum (for fast ray-box intersection). */
 	FVector3f WorldAABBMin;         // 12 bytes
-	float Pad1;                     // 4 bytes (padding)
+	float VoxelSize;                // 4 bytes
 
 	/** World-space AABB maximum (for fast ray-box intersection). */
 	FVector3f WorldAABBMax;         // 12 bytes
-	float Pad2;                     // 4 bytes (padding)
+	uint32 VoxelBufferOffset;       // 4 bytes
 
 	// Total: 240 bytes, padded to 256 bytes for GPU alignment
 	float Reserved[4];              // 16 bytes (future use / alignment)
 };
 
 // Ensure structure is 256 bytes for efficient GPU access
-static_assert(sizeof(FIVSmokeVolumeGPUData) == 256, "FIVSmokeVolumeGPUData must be 256 bytes");
+static_assert(sizeof(FIVSmokeVolumeGPUData) % 16 == 0, "FIVSmokeVolumeGPUData size error");
 
 /**
  * Multi-Volume Ray Marching compute shader.

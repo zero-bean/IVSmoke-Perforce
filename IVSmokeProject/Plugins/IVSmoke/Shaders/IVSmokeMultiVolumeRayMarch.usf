@@ -27,15 +27,6 @@
  */
 struct FVolumeGPUData
 {
-	float4x4 WorldToLocal;      // 64 bytes
-	float4x4 LocalToWorld;      // 64 bytes
-
-	float3 AABBMin;
-	float VoxelSize;
-
-	float3 AABBMax;
-	uint VoxelBufferOffset;     // Offset into PackedVoxelBuffer
-
 	int3 GridResolution;
 	uint VoxelCount;            // Total voxel count for this volume
 
@@ -46,10 +37,10 @@ struct FVolumeGPUData
 	float DensityScale;
 
 	float3 WorldAABBMin;
-	float Pad1;
+	float VoxelSize;
 
 	float3 WorldAABBMax;
-	float Pad2;
+	uint VoxelBufferOffset; // Offset into PackedVoxelBuffer
 
 	float Reserved[4];          // 16 bytes padding (total 256 bytes)
 };

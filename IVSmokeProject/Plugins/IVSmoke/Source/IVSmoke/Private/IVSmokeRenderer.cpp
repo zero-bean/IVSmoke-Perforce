@@ -499,11 +499,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 		FIVSmokeVolumeGPUData GPUData;
 		FMemory::Memzero(&GPUData, sizeof(GPUData));
 
-		GPUData.WorldToLocal = FMatrix44f(VolumeTransform.ToInverseMatrixWithScale());
-		GPUData.LocalToWorld = FMatrix44f(VolumeTransform.ToMatrixWithScale());
-		GPUData.AABBMin = FVector3f(LocalMin);
 		GPUData.VoxelSize = VoxelSz;
-		GPUData.AABBMax = FVector3f(LocalMax);
 		GPUData.VoxelBufferOffset = VoxelResolution.X * VoxelResolution.Y * (VoxelResolution.Z + TexturePackInterval) * i;
 		GPUData.GridResolution = FIntVector3(GridRes.X, GridRes.Y, GridRes.Z);
 		GPUData.VoxelCount = VoxelData.Num();
