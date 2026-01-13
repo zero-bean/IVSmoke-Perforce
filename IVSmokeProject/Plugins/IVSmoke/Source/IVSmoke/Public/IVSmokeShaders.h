@@ -74,11 +74,14 @@ static_assert(sizeof(FIVSmokeVolumeGPUData) == 256, "FIVSmokeVolumeGPUData must 
  */
 class IVSMOKE_API FIVSmokeMultiVolumeRayMarchCS : public FGlobalShader
 {
-	DECLARE_GLOBAL_SHADER(FIVSmokeMultiVolumeRayMarchCS);
-	SHADER_USE_PARAMETER_STRUCT(FIVSmokeMultiVolumeRayMarchCS, FGlobalShader);
-
+public:
 	static constexpr uint32 ThreadGroupSizeX = 8;
 	static constexpr uint32 ThreadGroupSizeY = 8;
+	static constexpr uint32 ThreadGroupSizeZ = 1;
+	static constexpr const TCHAR* EventName = TEXT("IVSmokeMultiVolumeRayMarchCS");
+
+	DECLARE_GLOBAL_SHADER(FIVSmokeMultiVolumeRayMarchCS);
+	SHADER_USE_PARAMETER_STRUCT(FIVSmokeMultiVolumeRayMarchCS, FGlobalShader);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 		// Output (Dual Render Target)
@@ -172,6 +175,12 @@ class IVSMOKE_API FIVSmokeMultiVolumeRayMarchCS : public FGlobalShader
 
 class IVSMOKE_API FIVSmokeNoiseGeneratorGlobalCS : public FGlobalShader
 {
+public:
+	static constexpr uint32 ThreadGroupSizeX = 8;
+	static constexpr uint32 ThreadGroupSizeY = 8;
+	static constexpr uint32 ThreadGroupSizeZ = 8;
+	static constexpr const TCHAR* EventName = TEXT("IVSmokeNoiseGeneratorGlobalCS");
+
 	DECLARE_GLOBAL_SHADER(FIVSmokeNoiseGeneratorGlobalCS);
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeNoiseGeneratorGlobalCS, FGlobalShader);
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
@@ -193,6 +202,12 @@ public:
 };
 class IVSMOKE_API FIVSmokeStructuredToTextureCS : public FGlobalShader
 {
+public:
+	static constexpr uint32 ThreadGroupSizeX = 8;
+	static constexpr uint32 ThreadGroupSizeY = 8;
+	static constexpr uint32 ThreadGroupSizeZ = 8;
+	static constexpr const TCHAR* EventName = TEXT("IVSmokeStructuredToTextureCS");
+
 	DECLARE_GLOBAL_SHADER(FIVSmokeStructuredToTextureCS);
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeStructuredToTextureCS, FGlobalShader);
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
@@ -208,30 +223,15 @@ public:
 	}
 };
 
-/**
- * Composite pixel shader.
- * Blends ray marching result with scene color.
- */
-//class IVSMOKE_API FIVSmokeCompositePS : public FGlobalShader
-//{
-//	DECLARE_GLOBAL_SHADER(FIVSmokeCompositePS);
-//	SHADER_USE_PARAMETER_STRUCT(FIVSmokeCompositePS, FGlobalShader);
-//
-//	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-//		SHADER_PARAMETER(FVector2f, ViewportSize)
-//		SHADER_PARAMETER(FVector2f, ViewRectMin)
-//		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture2D, SmokeTexture)
-//		SHADER_PARAMETER_SAMPLER(SamplerState, TextureSampler)
-//		RENDER_TARGET_BINDING_SLOTS()
-//	END_SHADER_PARAMETER_STRUCT()
-//
-//	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
-//	{
-//		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
-//	}
-//};
 class IVSMOKE_API FIVSmokeSharpenCompositePS : public FGlobalShader
 {
+public:
+	static constexpr const TCHAR* EventName = TEXT("IVSmokeSharpenCompositePS");
+	static FRHIBlendState* GetBlendState()
+	{
+		return TStaticBlendState<>::GetRHI();
+	}
+
 	DECLARE_GLOBAL_SHADER(FIVSmokeSharpenCompositePS);
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeSharpenCompositePS, FGlobalShader);
 
@@ -254,6 +254,13 @@ public:
 };
 class IVSMOKE_API FIVSmokeCopyPS : public FGlobalShader
 {
+public:
+	static constexpr const TCHAR* EventName = TEXT("IVSmokeCopyPS");
+	static FRHIBlendState* GetBlendState()
+	{
+		return TStaticBlendState<>::GetRHI();
+	}
+
 	DECLARE_GLOBAL_SHADER(FIVSmokeCopyPS);
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeCopyPS, FGlobalShader);
 
@@ -278,6 +285,13 @@ public:
  */
 class IVSMOKE_API FIVSmokeTranslucencyCompositePS : public FGlobalShader
 {
+public:
+	static constexpr const TCHAR* EventName = TEXT("IVSmokeTranslucencyCompositePS");
+	static FRHIBlendState* GetBlendState()
+	{
+		return TStaticBlendState<>::GetRHI();
+	}
+
 	DECLARE_GLOBAL_SHADER(FIVSmokeTranslucencyCompositePS);
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeTranslucencyCompositePS, FGlobalShader);
 

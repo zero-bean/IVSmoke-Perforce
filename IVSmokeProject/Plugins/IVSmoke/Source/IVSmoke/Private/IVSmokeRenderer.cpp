@@ -14,7 +14,6 @@
 #include "IVSmokeHoleGeneratorComponent.h"
 #include "RenderGraphUtils.h"
 
-
 FIVSmokeRenderer& FIVSmokeRenderer::Get()
 {
 	static FIVSmokeRenderer Instance;
@@ -544,19 +543,12 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	StructuredCopyParams->Source = GraphBuilder.CreateSRV(PackedVoxelBuffer);
 	StructuredCopyParams->TexSize = VoxelAtlasResolution;
 
-	//고칠점 Config정보는 IVSmokeShader.h 에 두자
-	FIVSmokePassConfig Config2;
-	Config2.EventName = TEXT("IVSmoke_StructuredToTextureCS");
-	Config2.ThreadGroupSizeX = 8;
-	Config2.ThreadGroupSizeY = 8;
-	Config2.ThreadGroupSizeZ = 8;
-	FIVSmokePostProcessPass::AddComputeShaderPass(
+	FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeStructuredToTextureCS>(
 		GraphBuilder,
 		ShaderMap,
 		StructuredCopyShader,
 		StructuredCopyParams,
-		VoxelAtlasResolution,  // Dispatch at reduced resolution
-		Config2
+		VoxelAtlasResolution  // Dispatch at reduced resolution
 	);
 	// ============================================================================
 	// Create GPU Buffers
@@ -682,19 +674,12 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->FrameNumber = View.Family->FrameNumber;
 
 	// Dispatch at reduced resolution (TexSize)
-	FIVSmokePassConfig Config;
-	Config.EventName = TEXT("IVSmokeMultiVolumeRayMarch");
-	Config.ThreadGroupSizeX = FIVSmokeMultiVolumeRayMarchCS::ThreadGroupSizeX;
-	Config.ThreadGroupSizeY = FIVSmokeMultiVolumeRayMarchCS::ThreadGroupSizeY;
-	Config.ThreadGroupSizeZ = 1;
-
-	FIVSmokePostProcessPass::AddComputeShaderPass(
+	FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeMultiVolumeRayMarchCS>(
 		GraphBuilder,
 		ShaderMap,
 		ComputeShader,
 		Parameters,
-		FIntVector(TexSize.X, TexSize.Y, 1),  // Dispatch at reduced resolution
-		Config
+		FIntVector(TexSize.X, TexSize.Y, 1) // Dispatch at reduced resolution
 	);
 }
 
@@ -721,19 +706,7 @@ void FIVSmokeRenderer::AddSharpenCompositePass(
 	Parameters->ViewRectMin = FVector2f(Output.ViewRect.Min);
 	Parameters->RenderTargets[0] = Output.GetRenderTargetBinding();
 
-	FIVSmokePassConfig Config;
-	Config.EventName = TEXT("IVSmokeSharpenComposite");
-	// No blend state needed - shader does the compositing internally
-	Config.BlendState = TStaticBlendState<>::GetRHI();
-
-	FIVSmokePostProcessPass::AddPixelShaderPass(
-		GraphBuilder,
-		ShaderMap,
-		PixelShader,
-		Parameters,
-		Output,
-		Config
-	);
+	FIVSmokePostProcessPass::AddPixelShaderPass<FIVSmokeSharpenCompositePS>(GraphBuilder, ShaderMap, PixelShader, Parameters, Output);
 }
 
 // ============================================================================
@@ -786,18 +759,7 @@ void FIVSmokeRenderer::AddCopyPass(
 		ERenderTargetLoadAction::ENoAction
 	);
 
-	FIVSmokePassConfig Config;
-	Config.EventName = TEXT("IVSmokeCopy");
-	Config.BlendState = TStaticBlendState<>::GetRHI();
-
-	FIVSmokePostProcessPass::AddPixelShaderPass(
-		GraphBuilder,
-		ShaderMap,
-		CopyShader,
-		Parameters,
-		Output,
-		Config
-	);
+	FIVSmokePostProcessPass::AddPixelShaderPass<FIVSmokeCopyPS>(GraphBuilder, ShaderMap, CopyShader, Parameters, Output);
 }
 
 void FIVSmokeRenderer::AddTranslucencyCompositePass(
@@ -827,16 +789,5 @@ void FIVSmokeRenderer::AddTranslucencyCompositePass(
 	Parameters->ParticlesTexSize = FVector2f(ParticlesTexSize);
 	Parameters->RenderTargets[0] = Output.GetRenderTargetBinding();
 
-	FIVSmokePassConfig Config;
-	Config.EventName = TEXT("IVSmokeTranslucencyComposite");
-	Config.BlendState = TStaticBlendState<>::GetRHI();
-
-	FIVSmokePostProcessPass::AddPixelShaderPass(
-		GraphBuilder,
-		ShaderMap,
-		PixelShader,
-		Parameters,
-		Output,
-		Config
-	);
+	FIVSmokePostProcessPass::AddPixelShaderPass< FIVSmokeTranslucencyCompositePS>(GraphBuilder, ShaderMap, PixelShader, Parameters, Output);
 }

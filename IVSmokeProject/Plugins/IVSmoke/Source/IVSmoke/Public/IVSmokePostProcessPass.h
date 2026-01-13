@@ -11,32 +11,10 @@
 #include "PixelShaderUtils.h"
 
 /**
- * Configuration for a post process pass.
- */
-struct IVSMOKE_API FIVSmokePassConfig
-{
-	/** Blend state for pixel shader path */
-	FRHIBlendState* BlendState = nullptr;
-
-	/** Event name for RDG debugging */
-	const TCHAR* EventName = TEXT("IVSmokePass");
-
-	/** Thread group size for compute shader (default 8x8) */
-	uint32 ThreadGroupSizeX = 8;
-	uint32 ThreadGroupSizeY = 8;
-	uint32 ThreadGroupSizeZ = 8;
-
-	FIVSmokePassConfig()
-	{
-		// Default: alpha blend
-		BlendState = TStaticBlendState<CW_RGBA, BO_Add, BF_SourceAlpha, BF_InverseSourceAlpha>::GetRHI();
-	}
-};
-
-/**
  * Core utility for dispatching PS/CS post process passes.
  * Designed for reusability - bring your own shader and parameters.
  */
+
 class IVSMOKE_API FIVSmokePostProcessPass
 {
 public:
@@ -56,8 +34,7 @@ public:
 		FGlobalShaderMap* ShaderMap,
 		TShaderMapRef<TShaderClass> PixelShader,
 		typename TShaderClass::FParameters* Parameters,
-		const FScreenPassRenderTarget& Output,
-		const FIVSmokePassConfig& Config = FIVSmokePassConfig());
+		const FScreenPassRenderTarget& Output);
 
 	/**
 	 * Add a compute shader pass.
@@ -75,8 +52,7 @@ public:
 		FGlobalShaderMap* ShaderMap,
 		TShaderMapRef<TShaderClass> ComputeShader,
 		typename TShaderClass::FParameters* Parameters,
-		const FIntVector& TotalThreadSize,
-		const FIVSmokePassConfig& Config = FIVSmokePassConfig());
+		const FIntVector& TotalThreadSize);
 
 	/**
 	 * Create an output texture suitable for UAV (compute shader).
@@ -106,19 +82,18 @@ void FIVSmokePostProcessPass::AddPixelShaderPass(
 	FGlobalShaderMap* ShaderMap,
 	TShaderMapRef<TShaderClass> PixelShader,
 	typename TShaderClass::FParameters* Parameters,
-	const FScreenPassRenderTarget& Output,
-	const FIVSmokePassConfig& Config)
+	const FScreenPassRenderTarget& Output)
 {
-	RDG_EVENT_SCOPE(GraphBuilder, "%s PS", Config.EventName);
+	RDG_EVENT_SCOPE(GraphBuilder, "%s", TShaderClass::EventName);
 
 	FPixelShaderUtils::AddFullscreenPass(
 		GraphBuilder,
 		ShaderMap,
-		RDG_EVENT_NAME("%s PS", Config.EventName),
+		RDG_EVENT_NAME("%s", TShaderClass::EventName),
 		PixelShader,
 		Parameters,
 		Output.ViewRect,
-		Config.BlendState
+		TShaderClass::GetBlendState()
 	);
 }
 
@@ -128,21 +103,19 @@ void FIVSmokePostProcessPass::AddComputeShaderPass(
 	FGlobalShaderMap* ShaderMap,
 	TShaderMapRef<TShaderClass> ComputeShader,
 	typename TShaderClass::FParameters* Parameters,
-	const FIntVector& TotalThreadSize,
-	const FIVSmokePassConfig& Config)
+	const FIntVector& TotalThreadSize)
 {
-	const uint32 GroupCountX = FMath::DivideAndRoundUp((uint32)TotalThreadSize.X, Config.ThreadGroupSizeX);
-	const uint32 GroupCountY = FMath::DivideAndRoundUp((uint32)TotalThreadSize.Y, Config.ThreadGroupSizeY);
-	const uint32 GroupCountZ = FMath::DivideAndRoundUp((uint32)TotalThreadSize.Z, Config.ThreadGroupSizeZ);
+	const uint32 GroupCountX = FMath::DivideAndRoundUp((uint32)TotalThreadSize.X, TShaderClass::ThreadGroupSizeX);
+	const uint32 GroupCountY = FMath::DivideAndRoundUp((uint32)TotalThreadSize.Y, TShaderClass::ThreadGroupSizeY);
+	const uint32 GroupCountZ = FMath::DivideAndRoundUp((uint32)TotalThreadSize.Z, TShaderClass::ThreadGroupSizeZ);
 
-	RDG_EVENT_SCOPE(GraphBuilder, "%s CS", Config.EventName);
+	RDG_EVENT_SCOPE(GraphBuilder, "%s", TShaderClass::EventName);
 
 	FComputeShaderUtils::AddPass(
 		GraphBuilder,
-		RDG_EVENT_NAME("%s CS", Config.EventName),
+		RDG_EVENT_NAME("%s", TShaderClass::EventName),
 		ComputeShader,
 		Parameters,
 		FIntVector(GroupCountX, GroupCountY, GroupCountZ)
 	);
 }
-
