@@ -74,6 +74,7 @@ public:
 
 		// Input Textures
 		SHADER_PARAMETER_RDG_TEXTURE(Texture3D, NoiseVolume)
+		SHADER_PARAMETER(float, NoiseUVMul)
 
 		// Samplers
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearBorder_Sampler)

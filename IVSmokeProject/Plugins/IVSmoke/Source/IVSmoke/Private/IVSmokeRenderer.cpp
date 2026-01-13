@@ -640,6 +640,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 		CreateRenderTarget(TextureRHI, TEXT("IVSmokeNoiseVolume"))
 	);
 	Parameters->NoiseVolume = NoiseVolumeRDG;
+	Parameters->NoiseUVMul = DefaultPreset ? DefaultPreset->NoiseUVMul : 1.0f;
 
 	// Sampler
 	Parameters->LinearBorder_Sampler = TStaticSamplerState<SF_Trilinear, AM_Border, AM_Border, AM_Border>::GetRHI();

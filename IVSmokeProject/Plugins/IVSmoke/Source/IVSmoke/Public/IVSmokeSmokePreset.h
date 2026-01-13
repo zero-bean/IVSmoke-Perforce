@@ -56,6 +56,8 @@ public:
 	// ============================================================================
 	// Appearance
 	// ============================================================================
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Noise")
+	float NoiseUVMul = 1.0f;
 
 	/** Base color of the smoke. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Appearance")

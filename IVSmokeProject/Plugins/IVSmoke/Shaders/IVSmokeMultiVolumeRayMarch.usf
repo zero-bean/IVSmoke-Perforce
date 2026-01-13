@@ -65,6 +65,7 @@ RWTexture2D<float4> SmokeMaskTex;
 
 // Input Textures
 Texture3D<half> NoiseVolume;
+float NoiseUVMul;
 
 // Samplers
 SamplerState LinearBorder_Sampler;
@@ -149,6 +150,7 @@ float BlueNoiseScalar(uint2 ScreenCoord, uint FrameIndex)
 float GetNoise(float3 WorldPos)
 {
 	float3 uvw = WorldPos / SmokeSize;
+	uvw *= NoiseUVMul;
 	uvw -= WindDirection * ElapsedTime;
 	return NoiseVolume.SampleLevel(LinearRepeat_Sampler, uvw, 0);
 }
