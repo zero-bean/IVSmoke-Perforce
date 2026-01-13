@@ -188,6 +188,29 @@ private:
 		float Sharpness
 	);
 
+	/**
+	 * Depth-Sorted Composite PS Pass.
+	 * Compares Z values to determine front/back ordering, then applies standard over blending.
+	 * Accesses CustomDepth and SceneDepth via SceneTexturesStruct uniform buffer.
+	 *
+	 * @param GraphBuilder            RDG builder
+	 * @param View                    Current scene view
+	 * @param SceneTex                Scene color texture (background)
+	 * @param SmokeAlbedoTex          Smoke color texture from ray marching
+	 * @param SmokeMaskTex            Smoke opacity mask from ray marching
+	 * @param SeparateTranslucencyTex Particle layer from SeparateTranslucency
+	 * @param Output                  Final render target
+	 */
+	void AddDepthSortedCompositePass(
+		FRDGBuilder& GraphBuilder,
+		const FSceneView& View,
+		FRDGTextureRef SceneTex,
+		FRDGTextureRef SmokeAlbedoTex,
+		FRDGTextureRef SmokeMaskTex,
+		FRDGTextureRef SeparateTranslucencyTex,
+		const FScreenPassRenderTarget& Output
+	);
+
 	// ============================================================================
 	// State
 	// ============================================================================

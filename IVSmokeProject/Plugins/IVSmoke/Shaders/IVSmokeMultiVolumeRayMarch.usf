@@ -479,6 +479,7 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	float3 AccumulatedColor = float3(0.0, 0.0, 0.0);
 	float Transmittance = 1.0;
 	float RayLength = globalTMax - globalTMin;
+	float FirstHitDepth = 0.0;  // Track depth for particle sorting
 
 	// Step size calculation:
 	// Use FIXED step size based on GlobalAABB diagonal, not RayLength.
@@ -533,6 +534,12 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 		// Beer-Lambert integration (use jittered step size for correct integration)
 		if (TotalDensity > 0.0001)
 		{
+			// Record first hit depth (for particle depth sorting)
+			if (FirstHitDepth == 0.0)
+			{
+				FirstHitDepth = T;  // Distance along ray to first smoke
+			}
+
 			float Extinction = TotalDensity * GlobalAbsorption * JitteredStepSize;
 			float SampleTransmittance = exp(-Extinction);
 			float3 SampleColor = WeightedColor / TotalDensity;
@@ -593,7 +600,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	}
 
 	// Output: Dual Render Target (Albedo + Mask separated)
+	// .r = Alpha (opacity), .g = FirstHitDepth (ray distance to first smoke)
 	float Alpha = 1.0 - Transmittance;
 	SmokeAlbedoTex[PixelCoord] = float4(AccumulatedColor, 1.0);
-	SmokeMaskTex[PixelCoord] = float4(Alpha, 0.0, 0.0, 0.0);
+	SmokeMaskTex[PixelCoord] = float4(Alpha, FirstHitDepth, 0.0, 0.0);
 }

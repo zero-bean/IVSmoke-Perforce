@@ -332,11 +332,50 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	// Composite Pass
 	// ============================================================================
 	const float Sharpness = CachedDefaultPreset ? CachedDefaultPreset->Sharpness : 0.0f;
+	const bool bUseCustomDepthBasedSorting = Settings ? Settings->bUseCustomDepthBasedSorting : false;
 
 	// Check if we're in TranslucencyAfterDOF mode (setting + SeparateTranslucency input valid)
 	const bool bTranslucencyMode = (Settings->RenderPass == EIVSmokeRenderPass::TranslucencyAfterDOF);
 	FScreenPassTextureSlice SeparateTranslucencySlice = Inputs.GetInput(EPostProcessMaterialInput::SeparateTranslucency);
-	if (bTranslucencyMode && SeparateTranslucencySlice.IsValid())
+
+	// ============================================================================
+	// Depth-Sorted Composite: Proper smoke/particle sorting using CustomDepth
+	// ============================================================================
+	if (bUseCustomDepthBasedSorting && bTranslucencyMode && SeparateTranslucencySlice.IsValid())
+	{
+		FScreenPassTexture ParticlesTex(SeparateTranslucencySlice);
+
+		// Create output texture
+		FRDGTextureRef OutputTexture = FIVSmokePostProcessPass::CreateOutputTexture(
+			GraphBuilder,
+			SceneColor.Texture,
+			TEXT("IVSmokeDepthSortedOutput"),
+			PF_FloatRGBA,
+			ViewportSize
+		);
+
+		FScreenPassRenderTarget SortedOutput(
+			OutputTexture,
+			SceneColor.ViewRect,
+			ERenderTargetLoadAction::ENoAction
+		);
+
+		AddDepthSortedCompositePass(
+			GraphBuilder,
+			View,
+			SceneColor.Texture,
+			SmokeAlbedoFull,
+			SmokeMaskFull,
+			ParticlesTex.Texture,
+			SortedOutput
+		);
+
+		return FScreenPassTexture(SortedOutput);
+	}
+	// ============================================================================
+	// Standard TranslucencyAfterDOF Mode: Smoke OVER particles (no depth sorting)
+	// ============================================================================
+	else if (bTranslucencyMode && SeparateTranslucencySlice.IsValid())
 	{
 		// TranslucencyAfterDOF mode: Composite smoke OVER particles
 		FScreenPassTexture ParticlesTex(SeparateTranslucencySlice);
@@ -369,9 +408,11 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 
 		return FScreenPassTexture(TranslucencyOutput);
 	}
+	// ============================================================================
+	// Standard Mode: Composite smoke with scene color
+	// ============================================================================
 	else
 	{
-		// Standard mode: Composite smoke with scene color
 		AddSharpenCompositePass(
 			GraphBuilder,
 			View,
@@ -786,4 +827,48 @@ void FIVSmokeRenderer::AddTranslucencyCompositePass(
 	Parameters->RenderTargets[0] = Output.GetRenderTargetBinding();
 
 	FIVSmokePostProcessPass::AddPixelShaderPass< FIVSmokeTranslucencyCompositePS>(GraphBuilder, ShaderMap, PixelShader, Parameters, Output);
+}
+
+void FIVSmokeRenderer::AddDepthSortedCompositePass(
+	FRDGBuilder& GraphBuilder,
+	const FSceneView& View,
+	FRDGTextureRef SceneTex,
+	FRDGTextureRef SmokeAlbedoTex,
+	FRDGTextureRef SmokeMaskTex,
+	FRDGTextureRef SeparateTranslucencyTex,
+	const FScreenPassRenderTarget& Output)
+{
+	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
+	TShaderMapRef<FIVSmokeDepthSortedCompositePS> PixelShader(ShaderMap);
+
+	const FIntPoint ViewportSize = Output.ViewRect.Size();
+
+	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeDepthSortedCompositePS::FParameters>();
+
+	// Scene background
+	Parameters->SceneTex = SceneTex;
+
+	// Smoke layer (from ray marching CS)
+	Parameters->SmokeAlbedoTex = SmokeAlbedoTex;
+	Parameters->SmokeMaskTex = SmokeMaskTex;
+
+	// Particle layer (from Separate Translucency)
+	Parameters->SeparateTranslucencyTex = SeparateTranslucencyTex;
+
+	// Scene Textures (provides CustomDepth and SceneDepth via uniform buffer)
+	Parameters->SceneTexturesStruct = GetSceneTextureShaderParameters(View).SceneTextures;
+
+	// Samplers
+	Parameters->PointClamp_Sampler = TStaticSamplerState<SF_Point, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
+	Parameters->LinearClamp_Sampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
+
+	// Viewport
+	Parameters->ViewportSize = FVector2f(ViewportSize);
+	Parameters->ViewRectMin = FVector2f(Output.ViewRect.Min);
+	Parameters->InvDeviceZToWorldZTransform = FVector4f(View.InvDeviceZToWorldZTransform);
+
+	// Render target
+	Parameters->RenderTargets[0] = Output.GetRenderTargetBinding();
+
+	FIVSmokePostProcessPass::AddPixelShaderPass<FIVSmokeDepthSortedCompositePS>(GraphBuilder, ShaderMap, PixelShader, Parameters, Output);
 }

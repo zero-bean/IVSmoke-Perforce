@@ -297,3 +297,53 @@ public:
 		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
 	}
 };
+
+/**
+ * Depth-Sorted Composite pixel shader.
+ * Compares Z values to determine front/back ordering, then applies standard over blending.
+ * Properly composites smoke and particles based on their depth relationship.
+ */
+class IVSMOKE_API FIVSmokeDepthSortedCompositePS : public FGlobalShader
+{
+public:
+	static constexpr const TCHAR* EventName = TEXT("IVSmokeDepthSortedCompositePS");
+	static FRHIBlendState* GetBlendState()
+	{
+		return TStaticBlendState<>::GetRHI();
+	}
+
+	DECLARE_GLOBAL_SHADER(FIVSmokeDepthSortedCompositePS);
+	SHADER_USE_PARAMETER_STRUCT(FIVSmokeDepthSortedCompositePS, FGlobalShader);
+
+	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		// Scene background
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SceneTex)
+
+		// Smoke layer (from ray marching CS)
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeAlbedoTex)
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeMaskTex)
+
+		// Particle layer (from Separate Translucency)
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SeparateTranslucencyTex)
+
+		// Scene Textures (provides CustomDepth and SceneDepth via uniform buffer)
+		SHADER_PARAMETER_RDG_UNIFORM_BUFFER(FSceneTextureUniformParameters, SceneTexturesStruct)
+
+		// Samplers
+		SHADER_PARAMETER_SAMPLER(SamplerState, PointClamp_Sampler)
+		SHADER_PARAMETER_SAMPLER(SamplerState, LinearClamp_Sampler)
+
+		// Viewport
+		SHADER_PARAMETER(FVector2f, ViewportSize)
+		SHADER_PARAMETER(FVector2f, ViewRectMin)
+		SHADER_PARAMETER(FVector4f, InvDeviceZToWorldZTransform)
+
+		RENDER_TARGET_BINDING_SLOTS()
+	END_SHADER_PARAMETER_STRUCT()
+
+public:
+	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
+	{
+		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
+	}
+};

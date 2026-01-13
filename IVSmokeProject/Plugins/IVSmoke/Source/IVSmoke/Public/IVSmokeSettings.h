@@ -88,6 +88,12 @@ public:
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|Rendering")
 	EIVSmokeRenderPass RenderPass = EIVSmokeRenderPass::AfterDOF;
 
+	/** Use CustomDepth for depth-based sorting between smoke and particles.
+	 *  Compares smoke depth (from ray marching) with particle CustomDepth.
+	 *  Requires: RenderPass = TranslucencyAfterDOF, particles must write to CustomDepth. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|Rendering", meta = (DisplayName = "Use CustomDepth-Based Sorting", EditCondition = "RenderPass == EIVSmokeRenderPass::TranslucencyAfterDOF"))
+	bool bUseCustomDepthBasedSorting = false;
+
 	// ============================================================================
 	// Performance
 	// ============================================================================
