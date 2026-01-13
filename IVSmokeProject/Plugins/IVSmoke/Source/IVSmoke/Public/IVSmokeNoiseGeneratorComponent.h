@@ -59,7 +59,7 @@ private:
 	uint32 CellSize = 32;
 
 	UPROPERTY(EditAnywhere, category = "NoiseGenerator")
-	UTextureRenderTargetVolume* NoiseVolume;
+	TObjectPtr<UTextureRenderTargetVolume> NoiseVolume;
 
 
 };

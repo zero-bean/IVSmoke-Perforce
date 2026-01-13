@@ -121,12 +121,12 @@ public:
 private:
 	// @todo Documentation
 	UPROPERTY(EditAnywhere, Category = "IVSmoke")
-	UIVSmokeHoleGeneratorComponent* HoleGeneratorComponent;
+	TObjectPtr<UIVSmokeHoleGeneratorComponent> HoleGeneratorComponent;
 
 #if WITH_EDITORONLY_DATA
 	// @todo Documentation
 	UPROPERTY()
-	UInstancedStaticMeshComponent* DebugMeshComponent;
+	TObjectPtr<UInstancedStaticMeshComponent> DebugMeshComponent;
 #endif
 #pragma endregion
 
