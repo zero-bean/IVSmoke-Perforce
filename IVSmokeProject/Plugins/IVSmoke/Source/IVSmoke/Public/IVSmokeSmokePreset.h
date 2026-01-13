@@ -56,8 +56,8 @@ public:
 	// ============================================================================
 	// Appearance
 	// ============================================================================
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Noise")
-	float NoiseUVMul = 1.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Noise", meta = (ClampMin = "0.0", ClampMax = "5.0"))
+	float NoiseUVMul = 0.39f;
 
 	/** Base color of the smoke. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Appearance")
@@ -178,16 +178,16 @@ public:
 
 	/** Minimum brightness in fully shadowed areas.
  *  0 = completely dark, 1 = no shadow effect. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|FXAA")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|FXAA", meta = (ClampMin = "0.1", ClampMax = "4.0"))
 	float FXAASpanMax = 4.0f;
 
 	/** Minimum brightness in fully shadowed areas.
  *  0 = completely dark, 1 = no shadow effect. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|FXAA")
-	float FXAARange = 3.5f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|FXAA", meta = (ClampMin = "0.1", ClampMax = "8.0"))
+	float FXAARange = 1.5f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|FXAA")
-	float FXAASharpness = 3.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|FXAA", meta = (ClampMin = "0.1", ClampMax = "4.0"))
+	float FXAASharpness = 1.7f;
 	// ============================================================================
 	// UPrimaryDataAsset Interface
 	// ============================================================================
