@@ -7,6 +7,7 @@
 #include "IVSmokeRenderer.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "IVSmokeHoleGeneratorComponent.h"
+#include "Net/UnrealNetwork.h"
 
 static const FIntVector FloodFillDirections[] = {
 	FIntVector(1, 0, 0), FIntVector(-1, 0, 0),
@@ -20,6 +21,7 @@ static const FIntVector FloodFillDirections[] = {
 AIVSmokeVoxelVolume::AIVSmokeVoxelVolume()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
 
 #if WITH_EDITORONLY_DATA
 	DebugMeshComponent = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DebugMeshComponent"));
@@ -50,6 +52,11 @@ void AIVSmokeVoxelVolume::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	FIVSmokeRenderer::Get().RemoveVolume(this);
 
 	Super::EndPlay(EndPlayReason);
+}
+
+void AIVSmokeVoxelVolume::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 }
 
 void AIVSmokeVoxelVolume::Tick(float DeltaTime)
@@ -127,7 +134,6 @@ void AIVSmokeVoxelVolume::PostEditMove(bool bFinished)
 
 #pragma endregion
 
-
 //~==============================================================================
 // Flood Fill Simulation
 #pragma region Simulation
@@ -184,14 +190,20 @@ void AIVSmokeVoxelVolume::Initialize()
 	bIsInitialized = true;
 }
 
-void AIVSmokeVoxelVolume::StartSimulation()
+void AIVSmokeVoxelVolume::RequestStartSimulation_Implementation()
+{
+	const int32 NewSeed = FMath::Rand();
+	StartSimulation(NewSeed);
+}
+
+void AIVSmokeVoxelVolume::StartSimulation_Implementation(int32 InRandomSeed)
 {
 	if (!bIsInitialized)
 	{
 		Initialize();
 	}
 
-	RandomStream.Initialize(RandomSeed);
+	RandomStream.Initialize(InRandomSeed);
 
 	int32 CenterIndex = UIVSmokeGridLibrary::GridToIndex(CenterOffset, GridResolution);
 	if (VoxelCostArray.IsValidIndex(CenterIndex))
@@ -448,7 +460,7 @@ void AIVSmokeVoxelVolume::PreviewSimulation()
 {
 	bIsEditorPreviewing = true;
 	ResetSimulation();
-	StartSimulation();
+	StartSimulation(RandomSeed);
 }
 
 void AIVSmokeVoxelVolume::ResetSimulation()

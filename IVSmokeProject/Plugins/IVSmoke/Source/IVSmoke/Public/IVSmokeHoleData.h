@@ -21,8 +21,7 @@ namespace IVSmokeHoleType
 
 /**
  * @struct FIVSmokePenetrationRequest
- * @brief Request data for creating a penetration hole (bullet, projectile, etc.)
- *        The plugin will raycast internally to calculate Entry/Exit points.
+ * @brief Request data for creating a penetration hole
  */
 USTRUCT(BlueprintType)
 struct IVSMOKE_API FIVSmokePenetrationRequest
@@ -55,7 +54,7 @@ struct IVSMOKE_API FIVSmokePenetrationRequest
 
 /**
  * @struct FIVSmokeExplosionRequest
- * @brief Request data for creating an explosion hole (grenade, rocket, etc.)
+ * @brief Request data for creating an explosion hole
  */
 USTRUCT(BlueprintType)
 struct IVSMOKE_API FIVSmokeExplosionRequest
@@ -83,13 +82,7 @@ struct IVSMOKE_API FIVSmokeExplosionRequest
 
 /**
  * @struct FIVSmokeHoleData
- * @brief Internal data structure for a smoke hole.
- *        Created by processing Request structures.
- *        Designed for network replication and GPU rendering.
- *
- * @note Replication strategy:
- *       - Replicated: HoleType, Position, Radius, EndPosition, EndRadius, InitialLifetime
- *       - NotReplicated: LocalCreationTime (set on each client when received)
+ * @brief Internal data structure for a smoke hole created by processing Request structures
  */
 USTRUCT(BlueprintType)
 struct IVSMOKE_API FIVSmokeHoleData
@@ -129,32 +122,34 @@ struct IVSMOKE_API FIVSmokeHoleData
 	float EndRadius = 25.0f;
 
 	// ============================================================================
-	// Lifetime Properties (Network-Sync Ready)
+	// Lifetime Properties (Server Time Based)
 	// ============================================================================
 
-	/** Total lifetime of the hole in seconds (set by server/authority) */
+	/** Total lifetime of the hole in seconds */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Lifetime",
 		meta = (ClampMin = "0.1", ClampMax = "30.0"))
 	float InitialLifetime = 3.0f;
 
-	/** Local creation time (NOT replicated, set when hole is received) */
-	double LocalCreationTime = 0.0;
+	/** Expiration time in server time (set by Authority) */
+	UPROPERTY()
+	float ExpirationServerTime = 0.0f;
 
 	// ============================================================================
 	// Helper Methods
 	// ============================================================================
 
 	/** Calculate normalized age (0.0 = just created, 1.0 = about to expire) */
-	float GetNormalizedAge(const double CurrentTime) const
+	float GetNormalizedAge(const float CurrentServerTime) const
 	{
-		const float Elapsed = static_cast<float>(CurrentTime - LocalCreationTime);
-		return FMath::Clamp(Elapsed / InitialLifetime, 0.0f, 1.0f);
+		const float RemainingTime = ExpirationServerTime - CurrentServerTime;
+		const float ElapsedTime = InitialLifetime - RemainingTime;
+		return FMath::Clamp(ElapsedTime / InitialLifetime, 0.0f, 1.0f);
 	}
 
-	/** Check if this hole has expired */
-	bool IsExpired(const double CurrentTime) const
+	/** Check if this hole has expired (Authority only) */
+	bool IsExpired(const float CurrentServerTime) const
 	{
-		return (CurrentTime - LocalCreationTime) > InitialLifetime;
+		return CurrentServerTime >= ExpirationServerTime;
 	}
 
 	/** Calculate AABB for this hole in local space */

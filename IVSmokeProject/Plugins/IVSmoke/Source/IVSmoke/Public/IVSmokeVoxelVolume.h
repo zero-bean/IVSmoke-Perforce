@@ -109,6 +109,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 #pragma endregion
 
 	//~==============================================================================
@@ -163,9 +164,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "IVSmoke")
 	void Initialize();
 
-	// @todo Documentation
-	UFUNCTION(BlueprintCallable, Category = "IVSmoke")
-	void StartSimulation();
+	// request it to server and server will broadcast.
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "IVSmoke")
+	void RequestStartSimulation();
+
+	// Starts the smoke simulation called by server via Multicast after RequestStartSimulation.
+	UFUNCTION(NetMulticast, Reliable)
+	void StartSimulation(int32 InRandomSeed);
 
 	// @todo Documentation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
