@@ -212,14 +212,7 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	const FSceneView& View,
 	const FPostProcessMaterialInputs& Inputs)
 {
-	// Check if rendering is enabled
-	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
-	if (!Settings->bEnableSmokeRendering)
-	{
-		return FScreenPassTexture();
-	}
-
-	// Get scene color from inputs
+	// Get scene color from inputs FIRST - needed for passthrough
 	FScreenPassTextureSlice SceneColorSlice = Inputs.GetInput(EPostProcessMaterialInput::SceneColor);
 	if (!SceneColorSlice.IsValid())
 	{
@@ -227,6 +220,13 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	}
 
 	FScreenPassTexture SceneColor(SceneColorSlice);
+
+	// Check if rendering is enabled - passthrough if disabled
+	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
+	if (!Settings->bEnableSmokeRendering)
+	{
+		return SceneColor;
+	}
 
 	FScreenPassRenderTarget Output = Inputs.OverrideOutput;
 
@@ -288,7 +288,7 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 
 	if (SortedVolumes.Num() == 0)
 	{
-		return FScreenPassTexture();
+		return SceneColor;
 	}
 
 	// ============================================================================
@@ -446,7 +446,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 
 	//copy hole texture to atlas
 	//set PackedVoxelData array
-	//set FIVSmokeVolumeGPUData 
+	//set FIVSmokeVolumeGPUData
 	FRHICopyTextureInfo HoleCpyInfo;
 	HoleCpyInfo.Size = HoleResolution;
 	HoleCpyInfo.SourcePosition = FIntVector::ZeroValue;
@@ -478,7 +478,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 		}
 
 		// ============================================================================
-		// set FIVSmokeVolumeGPUData 
+		// set FIVSmokeVolumeGPUData
 		// ============================================================================
 		const FIntVector GridRes = Volume->GetGridResolution();
 		const FIntVector CenterOff = Volume->GetCenterOffset();
