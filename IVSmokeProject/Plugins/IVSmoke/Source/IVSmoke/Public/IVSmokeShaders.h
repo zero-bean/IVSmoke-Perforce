@@ -76,6 +76,7 @@ public:
 		SHADER_PARAMETER_RDG_TEXTURE(Texture3D, NoiseVolume)
 
 		// Samplers
+		SHADER_PARAMETER_SAMPLER(SamplerState, LinearBorder_Sampler)
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearRepeat_Sampler)
 
 		// Time
@@ -136,10 +137,6 @@ public:
 
 		// Temporal (for TAA integration)
 		SHADER_PARAMETER(uint32, FrameNumber)
-
-		// FXAA
-		SHADER_PARAMETER(float, SpanMax)
-		SHADER_PARAMETER(float, FXAARange)
 
 	END_SHADER_PARAMETER_STRUCT()
 
@@ -205,6 +202,28 @@ public:
 	{
 		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
 	}
+};
+class IVSMOKE_API FIVSmokeVoxelFXAACS : public FGlobalShader
+{
+public:
+	static constexpr uint32 ThreadGroupSizeX = 8;
+	static constexpr uint32 ThreadGroupSizeY = 8;
+	static constexpr uint32 ThreadGroupSizeZ = 8;
+	static constexpr const TCHAR* EventName = TEXT("IVSmokeVoxelFXAACS");
+
+	DECLARE_GLOBAL_SHADER(FIVSmokeVoxelFXAACS);
+	SHADER_USE_PARAMETER_STRUCT(FIVSmokeVoxelFXAACS, FGlobalShader);
+	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>, Desti)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float>, Source)
+		SHADER_PARAMETER_SAMPLER(SamplerState, LinearBorder_Sampler)
+		SHADER_PARAMETER(FIntVector, TexSize)
+
+		//FXAA
+		SHADER_PARAMETER(float, FXAASpanMax)
+		SHADER_PARAMETER(float, FXAARange)
+		SHADER_PARAMETER(float, FXAASharpness)
+	END_SHADER_PARAMETER_STRUCT()
 };
 
 class IVSMOKE_API FIVSmokeSharpenCompositePS : public FGlobalShader

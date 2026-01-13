@@ -468,10 +468,15 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	TArray<FIVSmokeVolumeGPUData> VolumeDataArray;
 	TArray<float> PackedVoxelData;
 	TArray<float> VoxelIntervalData;
+
 	FIntVector VoxelResolution = SortedVolumes[0]->GetGridResolution();
+	FIntVector VoxelHighResolution = VoxelResolution * 1;
 	FIntVector HoleResolution = SortedVolumes[0]->GetHoleGeneratorComponent()->GetHoleTexture()->GetSizeXYZ();
+
 	FIntVector VoxelAtlasResolution = FIntVector(VoxelResolution.X, VoxelResolution.Y, VoxelResolution.Z * VolumeCount + TexturePackInterval * (VolumeCount - 1));
+	FIntVector VoxelAtlasHighResolution = VoxelAtlasResolution * 1;
 	FIntVector HoleAtlasResolution = FIntVector(HoleResolution.X, HoleResolution.Y, HoleResolution.Z * VolumeCount + TexturePackInterval * (VolumeCount - 1));
+
 	int32 TotalVoxelSize = VoxelAtlasResolution.X * VoxelAtlasResolution.Y * VoxelAtlasResolution.Z;
 	int32 TotalHoleSize = HoleAtlasResolution.X * HoleAtlasResolution.Y * HoleAtlasResolution.Z;
 	VolumeDataArray.Reserve(VolumeCount);
@@ -481,9 +486,14 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 
 	//atlas texture create
 	FRDGTextureDesc VoxelAtlasDesc = FRDGTextureDesc::Create3D(VoxelAtlasResolution, PF_R32_FLOAT, FClearValueBinding::None, TexCreate_ShaderResource | TexCreate_UAV);
-	FRDGTextureDesc HoleAtlas = FRDGTextureDesc::Create3D(HoleAtlasResolution, PF_R16F, FClearValueBinding::None, TexCreate_ShaderResource | TexCreate_UAV);
 	FRDGTextureRef PackedVoxelAtlas = GraphBuilder.CreateTexture(VoxelAtlasDesc, TEXT("IVSmoke_PackedVoxelAtlas"));
+	FRDGTextureDesc VoxelAtlasHighResDesc = FRDGTextureDesc::Create3D(VoxelAtlasHighResolution, PF_R32_FLOAT, FClearValueBinding::None, TexCreate_ShaderResource | TexCreate_UAV);
+	FRDGTextureRef PackedVoxelAtlasHighRes = GraphBuilder.CreateTexture(VoxelAtlasHighResDesc, TEXT("IVSmoke_PackedVoxelAtlasHighRes"));
+	FRDGTextureDesc HoleAtlas = FRDGTextureDesc::Create3D(HoleAtlasResolution, PF_R16F, FClearValueBinding::None, TexCreate_ShaderResource | TexCreate_UAV);
 	FRDGTextureRef PackedHoleAtlas = GraphBuilder.CreateTexture(HoleAtlas, TEXT("IVSmoke_PackedHoleAtlas"));
+
+	FRDGTextureSRVRef PackedVoxelAtlasSRV = GraphBuilder.CreateSRV(PackedVoxelAtlas);
+	FRDGTextureSRVRef PackedVoxelAtlasHighResSRV = GraphBuilder.CreateSRV(PackedVoxelAtlas);
 
 	//copy hole texture to atlas
 	//set PackedVoxelData array
@@ -567,8 +577,11 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	{
 		return;
 	}
+	const UIVSmokeSmokePreset* DefaultPreset = CachedDefaultPreset.Get();
 
-	//StructuredToTexture Pass
+	// ============================================================================
+	// StructuredToTexture Pass
+	// ============================================================================
 	FRDGBufferDesc PackedVoxelBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(float), PackedVoxelData.Num());
 	FRDGBufferRef PackedVoxelBuffer = GraphBuilder.CreateBuffer(PackedVoxelBufferDesc, TEXT("IVSmoke_PackedVoxelBuffer"));
 	GraphBuilder.QueueBufferUpload(PackedVoxelBuffer, PackedVoxelData.GetData(), PackedVoxelData.Num() * sizeof(float));
@@ -587,6 +600,28 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 		StructuredCopyParams,
 		VoxelAtlasResolution  // Dispatch at reduced resolution
 	);
+
+	// ============================================================================
+	// Voxel Fxaa Pass
+	// ============================================================================*/
+	TShaderMapRef<FIVSmokeVoxelFXAACS> VoxelFXAAShader(ShaderMap);
+	auto* VoxelFXAAParams = GraphBuilder.AllocParameters<FIVSmokeVoxelFXAACS::FParameters>();
+
+	VoxelFXAAParams->Desti = GraphBuilder.CreateUAV(PackedVoxelAtlasHighRes);
+	VoxelFXAAParams->Source = GraphBuilder.CreateSRV(PackedVoxelAtlas);
+	VoxelFXAAParams->LinearBorder_Sampler = TStaticSamplerState<SF_Bilinear, AM_Border, AM_Border, AM_Border>::GetRHI();
+	VoxelFXAAParams->TexSize = VoxelAtlasHighResolution;
+	VoxelFXAAParams->FXAASpanMax = DefaultPreset ? DefaultPreset->FXAASpanMax : 4.0f;
+	VoxelFXAAParams->FXAARange = DefaultPreset ? DefaultPreset->FXAARange : 3.5f;
+	VoxelFXAAParams->FXAASharpness = DefaultPreset ? DefaultPreset->FXAASharpness : 3.0f;
+
+	FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeVoxelFXAACS>(
+		GraphBuilder,
+		ShaderMap,
+		VoxelFXAAShader,
+		VoxelFXAAParams,
+		VoxelAtlasHighResolution );
+
 	// ============================================================================
 	// Create GPU Buffers
 	// ============================================================================
@@ -607,6 +642,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->NoiseVolume = NoiseVolumeRDG;
 
 	// Sampler
+	Parameters->LinearBorder_Sampler = TStaticSamplerState<SF_Trilinear, AM_Border, AM_Border, AM_Border>::GetRHI();
 	Parameters->LinearRepeat_Sampler = TStaticSamplerState<SF_Trilinear, AM_Wrap, AM_Wrap, AM_Wrap>::GetRHI();
 
 	// Time (use RealTimeSeconds to keep jitter working during pause)
@@ -634,7 +670,6 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->AspectRatio = AspectRatio;
 
 	// Ray Marching
-	const UIVSmokeSmokePreset* DefaultPreset = CachedDefaultPreset.Get();
 	Parameters->MaxSteps = DefaultPreset ? DefaultPreset->MaxSteps : 128;
 
 	// Volume Data Buffer
@@ -646,9 +681,11 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 
 	// Packed Textures
 	Parameters->PackedInterval = TexturePackInterval;
-	Parameters->PackedVoxelAtlas = GraphBuilder.CreateSRV(PackedVoxelAtlas);
+	Parameters->PackedVoxelAtlas = GraphBuilder.CreateSRV(PackedVoxelAtlasHighRes);
+	Parameters->VoxelTexSize = VoxelHighResolution;
+	//Parameters->PackedVoxelAtlas = GraphBuilder.CreateSRV(PackedVoxelAtlas);
+	//Parameters->VoxelTexSize = VoxelResolution;
 	Parameters->PackedHoleAtlas = GraphBuilder.CreateSRV(PackedHoleAtlas);
-	Parameters->VoxelTexSize = VoxelResolution;
 	Parameters->HoleTexSize = HoleResolution;
 
 	// Scene Textures
@@ -704,8 +741,6 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->LightMarchingDistance = LightDistance;
 	Parameters->LightMarchingExpFactor = LightExpFactor;
 	Parameters->ShadowAmbient = ShadowAmbientValue;
-	Parameters->SpanMax = DefaultPreset ? DefaultPreset->SpanMax : 4.0f;
-	Parameters->FXAARange = DefaultPreset ? DefaultPreset->FXAARange : 8.0f;
 
 	// Temporal (for TAA integration)
 	Parameters->FrameNumber = View.Family->FrameNumber;

@@ -177,12 +177,15 @@ public:
 	/** Minimum brightness in fully shadowed areas.
  *  0 = completely dark, 1 = no shadow effect. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|FXAA")
-	float SpanMax = 4.0f;
+	float FXAASpanMax = 4.0f;
 
 	/** Minimum brightness in fully shadowed areas.
  *  0 = completely dark, 1 = no shadow effect. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|FXAA")
 	float FXAARange = 3.5f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|FXAA")
+	float FXAASharpness = 3.0f;
 	// ============================================================================
 	// UPrimaryDataAsset Interface
 	// ============================================================================

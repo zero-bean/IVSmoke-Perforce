@@ -67,6 +67,7 @@ RWTexture2D<float4> SmokeMaskTex;
 Texture3D<half> NoiseVolume;
 
 // Samplers
+SamplerState LinearBorder_Sampler;
 SamplerState LinearRepeat_Sampler;
 
 // Time
@@ -123,10 +124,6 @@ float ShadowAmbient;
 // Temporal (for TAA integration)
 uint FrameNumber;
 
-//FXAA
-float SpanMax;
-float FXAARange;
-
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -149,9 +146,9 @@ float BlueNoiseScalar(uint2 ScreenCoord, uint FrameIndex)
  * @param Position   World space position to sample
  * @return           Noise value [0, 1]
  */
-float GetNoise(float3 Position)
+float GetNoise(float3 WorldPos)
 {
-	float3 uvw = Position / SmokeSize;
+	float3 uvw = WorldPos / SmokeSize;
 	uvw -= WindDirection * ElapsedTime;
 	return NoiseVolume.SampleLevel(LinearRepeat_Sampler, uvw, 0);
 }
@@ -169,60 +166,16 @@ float3 GetUVW(float3 WorldPos, uint VolumeIdx, int TexZSize)
 	return uvw;
 }
 
-float GetHoleDensity(float3 Position, uint VolumeIdx)
+float GetHoleDensity(float3 WorldPos, uint VolumeIdx)
 {
-	float3 uvw= GetUVW(Position, VolumeIdx, HoleTexSize.z);
-	return PackedHoleAtlas.Sample(LinearRepeat_Sampler, uvw);
+	float3 uvw = GetUVW(WorldPos, VolumeIdx, HoleTexSize.z);
+	return PackedHoleAtlas.Sample(LinearBorder_Sampler, uvw);
 }
-float GetVoxelDensity(float3 Position, uint VolumeIdx)
+
+float GetVoxelDensity(float3 WorldPos, uint VolumeIdx)
 {
-	float3 uvw = GetUVW(Position, VolumeIdx, VoxelTexSize.z);	
-	//return PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw); //basic trilinear sample
-	
-	int AtlasTexZSize = VoxelTexSize.z * NumActiveVolumes + PackedInterval * (NumActiveVolumes - 1);
-	float3 VoxelTexRCP = float3(1.0f / VoxelTexSize.x, 1.0f / VoxelTexSize.y, 1.0f / AtlasTexZSize);
-
-	float M = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw);
-	float v000 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(-1, -1, -1) * VoxelTexRCP);
-	float v001 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(-1, -1, 1) * VoxelTexRCP);
-	float v010 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(-1, 1, -1) * VoxelTexRCP);
-	float v011 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(-1, 1, 1) * VoxelTexRCP);
-	float v100 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(1, -1, -1) * VoxelTexRCP);
-	float v101 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(1, -1, 1) * VoxelTexRCP);
-	float v110 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(1, 1, -1) * VoxelTexRCP);
-	float v111 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(1, 1, 1) * VoxelTexRCP);
-
-	float3 Dir;
-	Dir.x = (v000 + v001 + v010 + v011) - (v100 + v101 + v110 + v111);
-	Dir.y = (v000 + v001 + v100 + v101) - (v010 + v011 + v110 + v111);
-	Dir.z = (v000 + v010 + v100 + v110) - (v001 + v011 + v101 + v111);
-
-	//float DirReduce = max((v000 + v001 + v010 + v011 + v100 + v101 + v110 + v111) * 0.125f * ReduceMul, ReduceMin);
-	//float InvDirAdjustment = 1.0 / (min(abs(Dir.x), min(abs(Dir.y), abs(Dir.z))) + DirReduce); //1 / (밝기차이절대값X,Y중 최소 + DirReduce) //dir 작은값이 0일 수 있어서 최소값을 더함
-
-	//Dir = Dir * InvDirAdjustment;
-	Dir /= SpanMax;
-	Dir.x = clamp(0, 1, abs(Dir.x)); //-4 ~ 4 아마 정규분포
-	Dir.y = clamp(0, 1, abs(Dir.y));
-	Dir.z = clamp(0, 1, abs(Dir.z));
-
-	Dir.x = pow(Dir.x, 3);
-	Dir.y = pow(Dir.y, 3);
-	Dir.z = pow(Dir.z, 3);
-	
-	//차이가 적으면 를 넓게 움직임
-	Dir = FXAARange * Dir * VoxelTexRCP;
-
-	float v0 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(-1, -1, -1) * Dir);
-	float v1 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(-1, -1, 1) * Dir);
-	float v2 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(-1, 1, -1) * Dir);
-	float v3 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(-1, 1, 1) * Dir);
-	float v4 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(1, -1, -1) * Dir);
-	float v5 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(1, -1, 1) * Dir);
-	float v6 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(1, 1, -1) * Dir);
-	float v7 = PackedVoxelAtlas.Sample(LinearRepeat_Sampler, uvw + int3(1, 1, 1) * Dir);
-
-	return (v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7) * 0.25f;
+	float3 uvw = GetUVW(WorldPos, VolumeIdx, VoxelTexSize.z);
+	return PackedVoxelAtlas.Sample(LinearBorder_Sampler, uvw);
 }
 
 /**
