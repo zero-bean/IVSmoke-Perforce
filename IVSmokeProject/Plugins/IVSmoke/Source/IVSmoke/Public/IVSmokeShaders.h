@@ -121,8 +121,10 @@ public:
 		// Global Smoke Parameters
 		SHADER_PARAMETER(float, GlobalAbsorption)
 		SHADER_PARAMETER(float, SmokeSize)
-		SHADER_PARAMETER(float, SmokeDensityFalloff)
 		SHADER_PARAMETER(FVector3f, WindDirection)
+		SHADER_PARAMETER(float, VolumeRangeOffset)
+		SHADER_PARAMETER(float, VolumeEdgeNoiseFadeOffset)
+		SHADER_PARAMETER(float, VolumeEdgeFadeShapness)
 
 		// Rayleigh Scattering
 		SHADER_PARAMETER(FVector3f, LightDirection)

@@ -107,8 +107,10 @@ float4 InvDeviceZToWorldZTransform;
 // Global Smoke Parameters
 float GlobalAbsorption;
 float SmokeSize;
-float SmokeDensityFalloff;
 float3 WindDirection;
+float VolumeRangeOffset; //0.1
+float VolumeEdgeNoiseFadeOffset; //0.04
+float VolumeEdgeFadeShapness; //3.5
 
 // Rayleigh Scattering
 float3 LightDirection;
@@ -191,26 +193,18 @@ float GetVoxelDensity(float3 WorldPos, uint VolumeIdx)
 float GetDensityForVolume(float3 Position, uint VolumeIdx)
 {
 	FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
-
 	float VoxelDensity = GetVoxelDensity(Position, VolumeIdx);
-	if (VoxelDensity <= 0.0)
-	{
-		return 0.0;
-	}
-
 	float Noise = GetNoise(Position);
-
-	// Edge falloff: creates soft edges at smoke boundaries
-	// VoxelDensity=1 (center) → EdgeFactor=0.5
-	// VoxelDensity=0 (edge)   → EdgeFactor=1.0
-	float EdgeFactor = 1.0 - VoxelDensity * 0.5;
-	EdgeFactor = smoothstep(SmokeDensityFalloff, 1.0, EdgeFactor);
-
-	// Combine edge falloff with noise for natural variation
-	// High noise areas become more transparent, creating mottled appearance
-	float Falloff = min(1.0, EdgeFactor + Noise);
-
-	return VoxelDensity * (1.0 - Falloff) * Vol.DensityScale;
+	
+	//noise 값의 범위에 적합한 값을 넣어둔것
+	float CurDensity = saturate(0.7f - Noise) * VoxelDensity;
+	CurDensity = saturate((CurDensity - VolumeRangeOffset) / (1 - VolumeRangeOffset));
+	float InvDensity = saturate(1 - CurDensity);
+	InvDensity = pow(InvDensity, VolumeEdgeFadeShapness); //높을수록 복셀 가장자리의 페이드 부분이 줄어듬
+	float NoiseWeight = 1 - InvDensity;
+	NoiseWeight = saturate(NoiseWeight - VolumeEdgeNoiseFadeOffset);
+	float result = Noise * NoiseWeight + CurDensity;
+	return result * Vol.DensityScale;
 }
 
 // ============================================================================

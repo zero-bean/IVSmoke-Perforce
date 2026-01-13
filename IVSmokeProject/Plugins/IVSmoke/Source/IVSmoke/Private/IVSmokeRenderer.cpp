@@ -652,8 +652,10 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	// Global Smoke Parameters (from Settings)
 	Parameters->GlobalAbsorption = 0.1f; // Default value, per-volume absorption is used from preset
 	Parameters->SmokeSize = Settings->SmokeSize;
-	Parameters->SmokeDensityFalloff = Settings->SmokeDensityFalloff;
 	Parameters->WindDirection = FVector3f(Settings->WindDirection);
+	Parameters->VolumeRangeOffset = Settings->VolumeRangeOffset;
+	Parameters->VolumeEdgeNoiseFadeOffset = Settings->VolumeEdgeNoiseFadeOffset;
+	Parameters->VolumeEdgeFadeShapness = Settings->VolumeEdgeFadeShapness;
 
 	// Rayleigh Scattering (from Settings)
 	const float ScatterScaleValue = Settings->ScatterScale;

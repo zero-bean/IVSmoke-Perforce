@@ -111,8 +111,8 @@ public:
 	bool bRegenerateNoiseOnStartup = true;
 
 	/** Noise UV multiplier for sampling. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|Noise", meta = (ClampMin = "0.1", ClampMax = "10.0"))
-	float NoiseUVMul = 1.0f;
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|Noise", meta = (ClampMin = "0.01", ClampMax = "10.0"))
+	float NoiseUVMul = 0.42f;
 
 	// ============================================================================
 	// Appearance (Global)
@@ -125,6 +125,12 @@ public:
 	/** Scale for noise sampling. Affects smoke detail size. */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|Appearance", meta = (ClampMin = "1.0", ClampMax = "1000.0"))
 	float SmokeSize = 128.0f;
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|Appearance", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float VolumeRangeOffset = 0.1;
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|Appearance", meta = (ClampMin = "-1.0", ClampMax = "1.0"))
+	float VolumeEdgeNoiseFadeOffset = 0.04f;
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|Appearance", meta = (ClampMin = "0.1", ClampMax = "10.0"))
+	float VolumeEdgeFadeShapness = 3.5f;
 
 	// ============================================================================
 	// Animation
@@ -132,7 +138,7 @@ public:
 
 	/** Wind direction and speed for smoke animation. */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|Animation")
-	FVector WindDirection = FVector(0.01f, 0.02f, 0.1f);
+	FVector WindDirection = FVector(0.00f, 0.00f, 0.1f);
 
 	// ============================================================================
 	// Ray Marching
@@ -140,7 +146,7 @@ public:
 
 	/** Maximum ray marching steps. Higher = better quality, lower performance. */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|RayMarching", meta = (ClampMin = "16", ClampMax = "512"))
-	int32 MaxSteps = 256;
+	int32 MaxSteps = 128;
 
 	// ============================================================================
 	// Post Processing
@@ -223,16 +229,16 @@ public:
 	// ============================================================================
 
 	/** Maximum edge search distance for voxel anti-aliasing. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|VoxelFXAA", meta = (ClampMin = "1.0", ClampMax = "16.0"))
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|VoxelFXAA", meta = (ClampMin = "0.0", ClampMax = "4.0"))
 	float FXAASpanMax = 4.0f;
 
 	/** Edge detection threshold range. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|VoxelFXAA", meta = (ClampMin = "0.5", ClampMax = "8.0"))
-	float FXAARange = 3.5f;
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|VoxelFXAA", meta = (ClampMin = "0.0", ClampMax = "8.0"))
+	float FXAARange = 1.2f;
 
 	/** Sharpness factor for voxel anti-aliasing. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|VoxelFXAA", meta = (ClampMin = "0.5", ClampMax = "8.0"))
-	float FXAASharpness = 3.0f;
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|VoxelFXAA", meta = (ClampMin = "0.1", ClampMax = "8.0"))
+	float FXAASharpness = 1.7f;
 
 	// ============================================================================
 	// Rendering
