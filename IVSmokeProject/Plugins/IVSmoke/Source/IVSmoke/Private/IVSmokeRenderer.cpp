@@ -33,32 +33,7 @@ void FIVSmokeRenderer::Initialize()
 
 	CreateNoiseVolume();
 
-	// Cache default preset on Game Thread to avoid Render Thread access issues
-	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
-
-	// Use !IsNull() instead of IsValid() because IsValid() returns false for unloaded assets
-	// IsNull() checks if the path is empty, !IsNull() means a path is configured
-	if (!Settings->DefaultSmokePreset.IsNull())
-	{
-		CachedDefaultPreset = Settings->DefaultSmokePreset.LoadSynchronous();
-		if (CachedDefaultPreset)
-		{
-			UE_LOG(LogIVSmoke, Log, TEXT("[FIVSmokeRenderer::Initialize] Loaded DefaultSmokePreset: %s, Color: (%.2f, %.2f, %.2f)"),
-				*CachedDefaultPreset->GetName(),
-				CachedDefaultPreset->SmokeColor.R,
-				CachedDefaultPreset->SmokeColor.G,
-				CachedDefaultPreset->SmokeColor.B);
-		}
-		else
-		{
-			UE_LOG(LogIVSmoke, Error, TEXT("[FIVSmokeRenderer::Initialize] Failed to load DefaultSmokePreset from path: %s"),
-				*Settings->DefaultSmokePreset.ToString());
-		}
-	}
-	else
-	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[FIVSmokeRenderer::Initialize] DefaultSmokePreset is not configured in Project Settings! Smoke will use fallback gray color (0.8, 0.8, 0.8)."));
-	}
+	UE_LOG(LogIVSmoke, Log, TEXT("[FIVSmokeRenderer::Initialize] Renderer initialized. Global settings loaded from UIVSmokeSettings."));
 }
 
 void FIVSmokeRenderer::Shutdown()
@@ -68,31 +43,7 @@ void FIVSmokeRenderer::Shutdown()
 		NoiseVolume->RemoveFromRoot();
 		NoiseVolume = nullptr;
 	}
-	CachedDefaultPreset = nullptr;
 	ElapsedTime = 0.0f;
-}
-
-void FIVSmokeRenderer::RefreshCachedPreset()
-{
-	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
-
-	if (!Settings->DefaultSmokePreset.IsNull())
-	{
-		CachedDefaultPreset = Settings->DefaultSmokePreset.LoadSynchronous();
-		if (CachedDefaultPreset)
-		{
-			UE_LOG(LogIVSmoke, Log, TEXT("[FIVSmokeRenderer::RefreshCachedPreset] Refreshed DefaultSmokePreset: %s, Color: (%.2f, %.2f, %.2f)"),
-				*CachedDefaultPreset->GetName(),
-				CachedDefaultPreset->SmokeColor.R,
-				CachedDefaultPreset->SmokeColor.G,
-				CachedDefaultPreset->SmokeColor.B);
-		}
-	}
-	else
-	{
-		CachedDefaultPreset = nullptr;
-		UE_LOG(LogIVSmoke, Warning, TEXT("[FIVSmokeRenderer::RefreshCachedPreset] DefaultSmokePreset is not configured. Using fallback values."));
-	}
 }
 
 void FIVSmokeRenderer::CreateNoiseVolume()
@@ -171,8 +122,8 @@ const UIVSmokeSmokePreset* FIVSmokeRenderer::GetEffectivePreset(const AIVSmokeVo
 		}
 	}
 
-	// Fall back to cached default preset (loaded on Initialize() to avoid Render Thread issues)
-	return CachedDefaultPreset.Get();
+	// Fall back to CDO (Class Default Object) for default appearance values
+	return GetDefault<UIVSmokeSmokePreset>();
 }
 
 // ============================================================================
@@ -331,8 +282,8 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	// ============================================================================
 	// Composite Pass
 	// ============================================================================
-	const float Sharpness = CachedDefaultPreset ? CachedDefaultPreset->Sharpness : 0.0f;
-	const bool bUseCustomDepthBasedSorting = Settings ? Settings->bUseCustomDepthBasedSorting : false;
+	const float Sharpness = Settings->Sharpness;
+	const bool bUseCustomDepthBasedSorting = Settings->bUseCustomDepthBasedSorting;
 
 	// Check if we're in TranslucencyAfterDOF mode (setting + SeparateTranslucency input valid)
 	const bool bTranslucencyMode = (Settings->RenderPass == EIVSmokeRenderPass::TranslucencyAfterDOF);
@@ -577,7 +528,9 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	{
 		return;
 	}
-	const UIVSmokeSmokePreset* DefaultPreset = CachedDefaultPreset.Get();
+
+	// Get global settings for rendering parameters
+	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
 
 	// ============================================================================
 	// StructuredToTexture Pass
@@ -611,9 +564,9 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	VoxelFXAAParams->Source = GraphBuilder.CreateSRV(PackedVoxelAtlas);
 	VoxelFXAAParams->LinearBorder_Sampler = TStaticSamplerState<SF_Bilinear, AM_Border, AM_Border, AM_Border>::GetRHI();
 	VoxelFXAAParams->TexSize = VoxelAtlasHighResolution;
-	VoxelFXAAParams->FXAASpanMax = DefaultPreset ? DefaultPreset->FXAASpanMax : 4.0f;
-	VoxelFXAAParams->FXAARange = DefaultPreset ? DefaultPreset->FXAARange : 3.5f;
-	VoxelFXAAParams->FXAASharpness = DefaultPreset ? DefaultPreset->FXAASharpness : 3.0f;
+	VoxelFXAAParams->FXAASpanMax = Settings->FXAASpanMax;
+	VoxelFXAAParams->FXAARange = Settings->FXAARange;
+	VoxelFXAAParams->FXAASharpness = Settings->FXAASharpness;
 
 	FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeVoxelFXAACS>(
 		GraphBuilder,
@@ -640,7 +593,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 		CreateRenderTarget(TextureRHI, TEXT("IVSmokeNoiseVolume"))
 	);
 	Parameters->NoiseVolume = NoiseVolumeRDG;
-	Parameters->NoiseUVMul = DefaultPreset ? DefaultPreset->NoiseUVMul : 1.0f;
+	Parameters->NoiseUVMul = Settings->NoiseUVMul;
 
 	// Sampler
 	Parameters->LinearBorder_Sampler = TStaticSamplerState<SF_Trilinear, AM_Border, AM_Border, AM_Border>::GetRHI();
@@ -671,7 +624,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->AspectRatio = AspectRatio;
 
 	// Ray Marching
-	Parameters->MaxSteps = DefaultPreset ? DefaultPreset->MaxSteps : 128;
+	Parameters->MaxSteps = Settings->MaxSteps;
 
 	// Volume Data Buffer
 	FRDGBufferDesc VolumeBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FIVSmokeVolumeGPUData), VolumeDataArray.Num());
@@ -696,31 +649,31 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	// View (for BlueNoise access)
 	Parameters->View = View.ViewUniformBuffer;
 
-	// Global Smoke Parameters
-	Parameters->GlobalAbsorption = DefaultPreset ? DefaultPreset->SmokeAbsorption : 0.1f;
-	Parameters->SmokeSize = DefaultPreset ? DefaultPreset->SmokeSize : 128.0f;
-	Parameters->SmokeDensityFalloff = DefaultPreset ? DefaultPreset->SmokeDensityFalloff : 0.2f;
-	Parameters->WindDirection = DefaultPreset ? FVector3f(DefaultPreset->WindDirection) : FVector3f(0.01f, 0.02f, 0.1f);
+	// Global Smoke Parameters (from Settings)
+	Parameters->GlobalAbsorption = 0.1f; // Default value, per-volume absorption is used from preset
+	Parameters->SmokeSize = Settings->SmokeSize;
+	Parameters->SmokeDensityFalloff = Settings->SmokeDensityFalloff;
+	Parameters->WindDirection = FVector3f(Settings->WindDirection);
 
-	// Rayleigh Scattering
-	float ScatterScaleValue = DefaultPreset ? DefaultPreset->ScatterScale : 0.5f;
-	bool bEnableScatter = DefaultPreset ? DefaultPreset->bEnableScattering : true;
+	// Rayleigh Scattering (from Settings)
+	const float ScatterScaleValue = Settings->ScatterScale;
+	const bool bEnableScatter = Settings->bEnableScattering;
 
-	// Light Direction - use preset override or default overhead sun
+	// Light Direction - use settings override or default overhead sun
 	FVector3f LightDir = FVector3f(0.2f, 0.1f, 0.9f).GetSafeNormal();
-	if (DefaultPreset && DefaultPreset->bOverrideLightDirection)
+	if (Settings->bOverrideLightDirection)
 	{
-		LightDir = FVector3f(DefaultPreset->LightDirectionOverride.GetSafeNormal());
+		LightDir = FVector3f(Settings->LightDirectionOverride.GetSafeNormal());
 	}
 
-	// Light Color - use preset override or default warm white
+	// Light Color - use settings override or default warm white
 	FVector3f LightColorValue = FVector3f(1.0f, 0.95f, 0.9f);
-	if (DefaultPreset && DefaultPreset->bOverrideLightColor)
+	if (Settings->bOverrideLightColor)
 	{
 		LightColorValue = FVector3f(
-			DefaultPreset->LightColorOverride.R,
-			DefaultPreset->LightColorOverride.G,
-			DefaultPreset->LightColorOverride.B
+			Settings->LightColorOverride.R,
+			Settings->LightColorOverride.G,
+			Settings->LightColorOverride.B
 		);
 	}
 
@@ -729,19 +682,14 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->ScatterScale = bEnableScatter ? ScatterScaleValue : 0.0f;
 
 	// Henyey-Greenstein Anisotropy
-	float AnisotropyValue = DefaultPreset ? DefaultPreset->ScatteringAnisotropy : 0.5f;
-	Parameters->ScatteringAnisotropy = AnisotropyValue;
+	Parameters->ScatteringAnisotropy = Settings->ScatteringAnisotropy;
 
-	// Self-Shadowing (Light Marching)
-	bool bSelfShadow = DefaultPreset ? DefaultPreset->bEnableSelfShadowing : true;
-	int32 LightSteps = DefaultPreset ? DefaultPreset->LightMarchingSteps : 6;
-	float LightDistance = DefaultPreset ? DefaultPreset->LightMarchingDistance : 0.0f;
-	float LightExpFactor = DefaultPreset ? DefaultPreset->LightMarchingExpFactor : 2.0f;
-	float ShadowAmbientValue = DefaultPreset ? DefaultPreset->ShadowAmbient : 0.2f;
-	Parameters->LightMarchingSteps = bSelfShadow ? LightSteps : 0;
-	Parameters->LightMarchingDistance = LightDistance;
-	Parameters->LightMarchingExpFactor = LightExpFactor;
-	Parameters->ShadowAmbient = ShadowAmbientValue;
+	// Self-Shadowing (Light Marching) - from Settings
+	const bool bSelfShadow = Settings->bEnableSelfShadowing;
+	Parameters->LightMarchingSteps = bSelfShadow ? Settings->LightMarchingSteps : 0;
+	Parameters->LightMarchingDistance = Settings->LightMarchingDistance;
+	Parameters->LightMarchingExpFactor = Settings->LightMarchingExpFactor;
+	Parameters->ShadowAmbient = Settings->ShadowAmbient;
 
 	// Temporal (for TAA integration)
 	Parameters->FrameNumber = View.Family->FrameNumber;

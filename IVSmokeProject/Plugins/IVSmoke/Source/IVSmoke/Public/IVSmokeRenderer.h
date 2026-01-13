@@ -31,9 +31,6 @@ public:
 	/** Release renderer resources. */
 	void Shutdown();
 
-	/** Refresh cached preset from settings. Called when settings change in editor. */
-	void RefreshCachedPreset();
-
 	/** Check if renderer is initialized with valid resources. */
 	bool IsInitialized() const { return NoiseVolume != nullptr; }
 
@@ -220,9 +217,6 @@ private:
 
 	/** Shared noise volume texture for all smoke rendering. Prevent GC via AddToRoot. */
 	UTextureRenderTargetVolume* NoiseVolume = nullptr;
-
-	/** Cached default smoke preset. Loaded on Initialize() to avoid Render Thread access. */
-	TObjectPtr<const UIVSmokeSmokePreset> CachedDefaultPreset = nullptr;
 
 	/** Elapsed time for animation. */
 	float ElapsedTime = 0.0f;

@@ -18,15 +18,7 @@ void UIVSmokeSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyCha
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
-	const FName PropertyName = PropertyChangedEvent.GetPropertyName();
-
-	// Refresh renderer's cached preset when DefaultSmokePreset changes
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(UIVSmokeSettings, DefaultSmokePreset))
-	{
-		if (FIVSmokeRenderer::Get().IsInitialized())
-		{
-			FIVSmokeRenderer::Get().RefreshCachedPreset();
-		}
-	}
+	// Global settings are read directly from UIVSmokeSettings::Get() each frame,
+	// so no manual refresh is needed when properties change.
 }
 #endif
