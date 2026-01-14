@@ -30,6 +30,9 @@ SamplerState LinearClamp_Sampler;
 float2 SmokeTexExtent;
 float2 TranslucencyTexExtent;
 
+// Sharpness filter (matching TranslucencyComposite)
+float Sharpness;
+
 float4 InvDeviceZToWorldZTransform;
 
 // ============================================================================
@@ -65,18 +68,72 @@ void MainPS(
 	int2 PixelCoord = int2(SvPosition.xy);
 
 	// ========================================================================
-	// Sample Input Textures
+	// Sample Input Textures with Sharpness Filtering
 	// ========================================================================
 
-	// Smoke layer (AccumulatedColor is pre-multiplied during ray marching) - uses SmokeUV
-	// SmokeMaskTex: .r = Alpha, .g = FirstHitDepth (ray distance to first smoke)
-	float4 SmokeAlbedo = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV);
-	float2 SmokeMask = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV).rg;
-	float SmokeAlpha = SmokeMask.r;
-	float SmokeRayDepth = SmokeMask.g;  // Ray distance to first smoke hit
+	// Texel size for filtering
+	float2 TexelSize = 2.0f / SmokeTexExtent;
+
+	// Sample center values
+	float4 smokeAlbedoCenter = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV);
+	float2 smokeMaskCenter = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV).rg;
+
+	// Apply Sharpness filter (matching TranslucencyComposite)
+	float4 filteredSmoke;
+	float filteredMask;
+
+	if (Sharpness >= 0.0)
+	{
+		// Laplacian sharpening
+		float4 albedo_n = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(0, 1));
+		float4 albedo_e = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(1, 0));
+		float4 albedo_s = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(0, -1));
+		float4 albedo_w = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(-1, 0));
+
+		float neighbor = Sharpness * -1.0f;
+		float center = Sharpness * 4.0f + 1.0f;
+		filteredSmoke = albedo_n * neighbor + albedo_e * neighbor + smokeAlbedoCenter * center + albedo_s * neighbor + albedo_w * neighbor;
+		filteredMask = smokeMaskCenter.r;
+	}
+	else
+	{
+		// 3x3 Gaussian-like blur
+		float4 a0 = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(-1, -1));
+		float4 a1 = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 0, -1));
+		float4 a2 = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 1, -1));
+		float4 a3 = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(-1,  0));
+		float4 a4 = smokeAlbedoCenter;
+		float4 a5 = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 1,  0));
+		float4 a6 = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(-1,  1));
+		float4 a7 = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 0,  1));
+		float4 a8 = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 1,  1));
+
+		float m0 = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(-1, -1)).r;
+		float m1 = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 0, -1)).r;
+		float m2 = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 1, -1)).r;
+		float m3 = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(-1,  0)).r;
+		float m4 = smokeMaskCenter.r;
+		float m5 = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 1,  0)).r;
+		float m6 = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(-1,  1)).r;
+		float m7 = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 0,  1)).r;
+		float m8 = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 1,  1)).r;
+
+		float4 blurredAlbedo = (a0 + a2 + a6 + a8) + (a1 + a3 + a5 + a7) * 2.0 + a4 * 4.0;
+		blurredAlbedo /= 16.0;
+
+		float blurredMask = (m0 + m2 + m6 + m8) + (m1 + m3 + m5 + m7) * 2.0 + m4 * 4.0;
+		blurredMask /= 16.0;
+
+		float blurAmount = saturate(-Sharpness);
+		filteredSmoke = lerp(smokeAlbedoCenter, blurredAlbedo, blurAmount);
+		filteredMask = lerp(smokeMaskCenter.r, blurredMask, blurAmount);
+	}
+
+	// Use filtered values
+	float SmokeAlpha = filteredMask;
+	float SmokeRayDepth = smokeMaskCenter.g;  // Depth is not filtered (need accurate value)
 
 	// Particle layer (Separate Translucency: premultiplied alpha in RGB, transmittance in A)
-	// IMPORTANT: Uses TranslucencyUV because SeparateTranslucency can have different ViewRect!
 	float4 ParticleData = SeparateTranslucencyTex.Sample(LinearClamp_Sampler, TranslucencyUV);
 	float3 ParticleColorPremul = ParticleData.rgb;
 	float ParticleTransmittance = ParticleData.a;
@@ -144,7 +201,7 @@ void MainPS(
 	if (ParticleAlpha < 0.001)
 	{
 		// Smoke only: RGB = AccumulatedColor (pre-multiplied), A = Transmittance
-		FinalColor = SmokeAlbedo.rgb;
+		FinalColor = filteredSmoke.rgb;
 		FinalTransmittance = SmokeTransmittance;
 	}
 	// No smoke case - particles only
@@ -163,7 +220,7 @@ void MainPS(
 			// Composite: Smoke OVER Particles (both pre-multiplied)
 			// RGB = Smoke + Particles * SmokeTransmittance
 			// A   = SmokeTransmittance * ParticleTransmittance (combined transmittance)
-			FinalColor = SmokeAlbedo.rgb + ParticleColorPremul * SmokeTransmittance;
+			FinalColor = filteredSmoke.rgb + ParticleColorPremul * SmokeTransmittance;
 			FinalTransmittance = SmokeTransmittance * ParticleTransmittance;
 		}
 		else
@@ -172,7 +229,7 @@ void MainPS(
 			// Composite: Particles OVER Smoke (both pre-multiplied)
 			// RGB = Particles + Smoke * ParticleTransmittance
 			// A   = ParticleTransmittance * SmokeTransmittance (combined transmittance)
-			FinalColor = ParticleColorPremul + SmokeAlbedo.rgb * ParticleTransmittance;
+			FinalColor = ParticleColorPremul + filteredSmoke.rgb * ParticleTransmittance;
 			FinalTransmittance = ParticleTransmittance * SmokeTransmittance;
 		}
 	}

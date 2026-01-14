@@ -521,7 +521,8 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 			ParticlesTex.Texture,
 			SortedOutput,
 			SmokeExtent,
-			TranslucencyExtent
+			TranslucencyExtent,
+			Sharpness
 		);
 
 		return FScreenPassTexture(SortedOutput);
@@ -964,7 +965,8 @@ void FIVSmokeRenderer::AddDepthSortedCompositePass(
 	FRDGTextureRef SeparateTranslucencyTex,
 	const FScreenPassRenderTarget& Output,
 	const FIntPoint& SmokeTexExtent,
-	const FIntPoint& TranslucencyTexExtent)
+	const FIntPoint& TranslucencyTexExtent,
+	float Sharpness)
 {
 	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
 	TShaderMapRef<FIVSmokeDepthSortedCompositePS> PixelShader(ShaderMap);
@@ -988,6 +990,7 @@ void FIVSmokeRenderer::AddDepthSortedCompositePass(
 	// Texture Extents for UV calculation (UV = SvPosition / TexExtent)
 	Parameters->SmokeTexExtent = FVector2f(SmokeTexExtent);
 	Parameters->TranslucencyTexExtent = FVector2f(TranslucencyTexExtent);
+	Parameters->Sharpness = Sharpness;
 	Parameters->InvDeviceZToWorldZTransform = FVector4f(View.InvDeviceZToWorldZTransform);
 
 	// Render target
