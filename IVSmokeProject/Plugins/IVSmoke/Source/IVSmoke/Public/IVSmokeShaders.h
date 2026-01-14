@@ -307,9 +307,8 @@ public:
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, ParticlesTex)
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearSampler)
 		SHADER_PARAMETER(float, Sharpness)
-		SHADER_PARAMETER(FVector2f, ViewRectMin)
-		SHADER_PARAMETER(FVector2f, SmokeTexSize)
-		SHADER_PARAMETER(FVector2f, ParticlesTexSize)
+		SHADER_PARAMETER(FVector2f, SmokeTexExtent)
+		SHADER_PARAMETER(FVector2f, ParticlesTexExtent)
 		RENDER_TARGET_BINDING_SLOTS()
 	END_SHADER_PARAMETER_STRUCT()
 
@@ -338,9 +337,6 @@ public:
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeDepthSortedCompositePS, FGlobalShader);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-		// Scene background
-		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SceneTex)
-
 		// Smoke layer (from ray marching CS)
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeAlbedoTex)
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeMaskTex)
@@ -355,9 +351,9 @@ public:
 		SHADER_PARAMETER_SAMPLER(SamplerState, PointClamp_Sampler)
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearClamp_Sampler)
 
-		// Viewport
-		SHADER_PARAMETER(FVector2f, ViewportSize)
-		SHADER_PARAMETER(FVector2f, ViewRectMin)
+		// Texture Extents for UV calculation (UV = SvPosition / TexExtent)
+		SHADER_PARAMETER(FVector2f, SmokeTexExtent)
+		SHADER_PARAMETER(FVector2f, TranslucencyTexExtent)
 		SHADER_PARAMETER(FVector4f, InvDeviceZToWorldZTransform)
 
 		RENDER_TARGET_BINDING_SLOTS()

@@ -11,28 +11,25 @@ Texture2D SmokeMaskTex;
 Texture2D ParticlesTex;
 SamplerState LinearSampler;
 float Sharpness;
-float2 ViewRectMin;
-float2 SmokeTexSize;
-float2 ParticlesTexSize;
+float2 SmokeTexExtent;
+float2 ParticlesTexExtent;
 
 void MainPS(
 	float4 SvPosition : SV_POSITION,
 	out float4 OutColor : SV_Target0)
 {
-	// UV for smoke textures (based on smoke texture size from C++)
-	float2 SmokeUV = (SvPosition.xy - ViewRectMin) / SmokeTexSize;
+	// UV Calculation - Extent based (UV = SvPosition / TexExtent)
+	float2 SmokeUV = SvPosition.xy / SmokeTexExtent;
+	float2 ParticlesUV = SvPosition.xy / ParticlesTexExtent;
 
-	// UV for particles (based on particles texture size from C++)
-	float2 ParticlesUV = (SvPosition.xy - ViewRectMin) / ParticlesTexSize;
+	// Texel size for filtering
+	float2 TexelSize = 2.0f / SmokeTexExtent;
 
-	// Texel size for filtering (based on smoke texture)
-	float2 TexelSize = 2.0f / SmokeTexSize;
-
-	// Sample smoke textures
+	// Sample smoke textures using smoke UV
 	float4 smokeAlbedo = SmokeAlbedoTex.Sample(LinearSampler, SmokeUV);
 	float smokeMaskCenter = SmokeMaskTex.Sample(LinearSampler, SmokeUV).r;
 
-	// Sample particles (SeparateTranslucency) with its own UV
+	// Sample particles using particles UV
 	float4 particles = ParticlesTex.Sample(LinearSampler, ParticlesUV);
 
 	float4 filteredSmoke;

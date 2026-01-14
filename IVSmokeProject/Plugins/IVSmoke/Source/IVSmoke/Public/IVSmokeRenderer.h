@@ -270,6 +270,8 @@ private:
 	 * @param SmokeMaskTex       Smoke opacity mask from ray marching
 	 * @param ParticlesTex       SeparateTranslucency texture (particles)
 	 * @param Output             Final render target
+	 * @param SmokeTexExtent     Smoke texture extent (= ViewportSize)
+	 * @param ParticlesTexExtent Particles texture extent
 	 * @param Sharpness          Sharpen/blur amount (-1 to 1, 0 = no filter)
 	 */
 	void AddTranslucencyCompositePass(
@@ -279,6 +281,8 @@ private:
 		FRDGTextureRef SmokeMaskTex,
 		FRDGTextureRef ParticlesTex,
 		const FScreenPassRenderTarget& Output,
+		const FIntPoint& SmokeTexExtent,
+		const FIntPoint& ParticlesTexExtent,
 		float Sharpness
 	);
 
@@ -289,20 +293,22 @@ private:
 	 *
 	 * @param GraphBuilder            RDG builder
 	 * @param View                    Current scene view
-	 * @param SceneTex                Scene color texture (background)
 	 * @param SmokeAlbedoTex          Smoke color texture from ray marching
 	 * @param SmokeMaskTex            Smoke opacity mask from ray marching
 	 * @param SeparateTranslucencyTex Particle layer from SeparateTranslucency
 	 * @param Output                  Final render target
+	 * @param SmokeTexExtent          Smoke texture extent (= ViewportSize)
+	 * @param TranslucencyTexExtent   SeparateTranslucency texture extent
 	 */
 	void AddDepthSortedCompositePass(
 		FRDGBuilder& GraphBuilder,
 		const FSceneView& View,
-		FRDGTextureRef SceneTex,
 		FRDGTextureRef SmokeAlbedoTex,
 		FRDGTextureRef SmokeMaskTex,
 		FRDGTextureRef SeparateTranslucencyTex,
-		const FScreenPassRenderTarget& Output
+		const FScreenPassRenderTarget& Output,
+		const FIntPoint& SmokeTexExtent,
+		const FIntPoint& TranslucencyTexExtent
 	);
 
 	// ============================================================================

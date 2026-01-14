@@ -11,9 +11,6 @@
 // Input Textures
 // ============================================================================
 
-// Scene background
-Texture2D SceneTex;
-
 // Smoke layer (from ray marching CS)
 Texture2D SmokeAlbedoTex;
 Texture2D SmokeMaskTex;
@@ -26,11 +23,13 @@ SamplerState PointClamp_Sampler;
 SamplerState LinearClamp_Sampler;
 
 // ============================================================================
-// Viewport
+// Viewport - Texture Extents for UV calculation
 // ============================================================================
 
-float2 ViewportSize;
-float2 ViewRectMin;
+// Texture Extents (UV = SvPosition / TexExtent)
+float2 SmokeTexExtent;
+float2 TranslucencyTexExtent;
+
 float4 InvDeviceZToWorldZTransform;
 
 // ============================================================================
@@ -56,14 +55,12 @@ void MainPS(
 	out float4 OutColor : SV_Target0)
 {
 	// ========================================================================
-	// UV Calculation (matching IVSmokeCompositePS.usf)
+	// UV Calculation - Extent based
 	// ========================================================================
+	// UV = SvPosition / TexExtent (direct texel-to-UV mapping)
 
-	float2 SmokeUV = (SvPosition.xy - ViewRectMin) / ViewportSize;
-
-	uint SceneWidth, SceneHeight;
-	SceneTex.GetDimensions(SceneWidth, SceneHeight);
-	float2 SceneUV = SvPosition.xy / float2(SceneWidth, SceneHeight);
+	float2 SmokeUV = SvPosition.xy / SmokeTexExtent;
+	float2 TranslucencyUV = SvPosition.xy / TranslucencyTexExtent;
 
 	int2 PixelCoord = int2(SvPosition.xy);
 
@@ -71,10 +68,7 @@ void MainPS(
 	// Sample Input Textures
 	// ========================================================================
 
-	// Background scene color (opaque)
-	float3 SceneColor = SceneTex.Sample(LinearClamp_Sampler, SceneUV).rgb;
-
-	// Smoke layer (AccumulatedColor is pre-multiplied during ray marching)
+	// Smoke layer (AccumulatedColor is pre-multiplied during ray marching) - uses SmokeUV
 	// SmokeMaskTex: .r = Alpha, .g = FirstHitDepth (ray distance to first smoke)
 	float4 SmokeAlbedo = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV);
 	float2 SmokeMask = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV).rg;
@@ -82,7 +76,8 @@ void MainPS(
 	float SmokeRayDepth = SmokeMask.g;  // Ray distance to first smoke hit
 
 	// Particle layer (Separate Translucency: premultiplied alpha in RGB, transmittance in A)
-	float4 ParticleData = SeparateTranslucencyTex.Sample(LinearClamp_Sampler, SceneUV);
+	// IMPORTANT: Uses TranslucencyUV because SeparateTranslucency can have different ViewRect!
+	float4 ParticleData = SeparateTranslucencyTex.Sample(LinearClamp_Sampler, TranslucencyUV);
 	float3 ParticleColorPremul = ParticleData.rgb;
 	float ParticleTransmittance = ParticleData.a;
 	float ParticleAlpha = 1.0 - ParticleTransmittance;
