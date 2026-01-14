@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "ScreenPass.h"
+#include "IVSmokeShaders.h"
 
 class AIVSmokeVoxelVolume;
 class FRDGBuilder;
@@ -11,6 +12,72 @@ class FSceneView;
 class UIVSmokeSmokePreset;
 class UTextureRenderTargetVolume;
 struct FPostProcessMaterialInputs;
+
+// ============================================================================
+// Render Data Structures (Thread-Safe Data Transfer)
+// ============================================================================
+
+/**
+ * Packed render data for all smoke volumes.
+ * Created on Game Thread, consumed on Render Thread.
+ * Contains all data needed for rendering without accessing Volume actors.
+ */
+struct IVSMOKE_API FIVSmokePackedRenderData
+{
+	/** All Volume VoxelArrays packed into one array (Game Thread에서 패킹) */
+	TArray<float> PackedVoxelData;
+
+	/** Per-volume GPU metadata */
+	TArray<FIVSmokeVolumeGPUData> VolumeDataArray;
+
+	/** Hole Texture references (RHI resources are thread-safe) */
+	TArray<FTextureRHIRef> HoleTextures;
+	TArray<FIntVector> HoleTextureSizes;
+
+	/** Common resolution info */
+	FIntVector VoxelResolution = FIntVector::ZeroValue;
+	FIntVector HoleResolution = FIntVector::ZeroValue;
+	int32 VolumeCount = 0;
+
+	/** Preset parameters (copied from default preset) */
+	float Sharpness = 0.0f;
+	int32 MaxSteps = 128;
+	float GlobalAbsorption = 0.1f;
+	float SmokeSize = 128.0f;
+	float SmokeDensityFalloff = 0.2f;
+	FVector WindDirection = FVector(0.01f, 0.02f, 0.1f);
+	float VolumeRangeOffset = 0.1f;
+	float VolumeEdgeNoiseFadeOffset = 0.04f;
+	float VolumeEdgeFadeSharpness = 3.5f;
+
+	/** Scattering parameters */
+	bool bEnableScattering = true;
+	float ScatterScale = 0.5f;
+	float ScatteringAnisotropy = 0.5f;
+	FVector LightDirection = FVector(0.2f, 0.1f, 0.9f);
+	FLinearColor LightColor = FLinearColor::White;
+
+	/** Self-shadowing parameters */
+	bool bEnableSelfShadowing = true;
+	int32 LightMarchingSteps = 6;
+	float LightMarchingDistance = 0.0f;
+	float LightMarchingExpFactor = 2.0f;
+	float ShadowAmbient = 0.2f;
+
+	/** Validity flag */
+	bool bIsValid = false;
+
+	/** Reset to invalid state */
+	void Reset()
+	{
+		PackedVoxelData.Empty();
+		VolumeDataArray.Empty();
+		HoleTextures.Empty();
+		HoleTextureSizes.Empty();
+		VolumeCount = 0;
+		bIsValid = false;
+	}
+};
 
 /**
  * Manages registered smoke volumes and handles rendering.
@@ -42,6 +109,36 @@ public:
 	void RemoveVolume(AIVSmokeVoxelVolume* Volume);
 
 	bool HasVolumes() const;
+
+	/** Access to volumes array (for PrepareRenderData). */
+	const TArray<TWeakObjectPtr<AIVSmokeVoxelVolume>>& GetVolumes() const { return Volumes; }
+
+	/** Access to volumes mutex (for thread-safe iteration). */
+	FCriticalSection& GetVolumesMutex() const { return VolumesMutex; }
+
+	// ============================================================================
+	// Thread-Safe Render Data (Game Thread → Render Thread)
+	// ============================================================================
+
+	/**
+	 * Prepare render data from all registered volumes.
+	 * Must be called on Game Thread.
+	 * Copies and packs all volume data for safe Render Thread access.
+	 *
+	 * @param InVolumes Array of volumes to process
+	 * @return Packed render data ready for Render Thread
+	 */
+	FIVSmokePackedRenderData PrepareRenderData(const TArray<AIVSmokeVoxelVolume*>& InVolumes);
+
+	/**
+	 * Set cached render data for next frame.
+	 * Called from Render Thread via ENQUEUE_RENDER_COMMAND.
+	 */
+	void SetCachedRenderData(FIVSmokePackedRenderData&& InRenderData)
+	{
+		FScopeLock Lock(&RenderDataMutex);
+		CachedRenderData = MoveTemp(InRenderData);
+	}
 
 	// ============================================================================
 	// Rendering
@@ -85,7 +182,7 @@ private:
 	 *
 	 * @param GraphBuilder       RDG builder
 	 * @param View               Current scene view
-	 * @param SortedVolumes      Sorted array of volumes to render
+	 * @param RenderData         Pre-packed render data (created on Game Thread)
 	 * @param SmokeAlbedoTex     UAV texture for smoke color output
 	 * @param SmokeMaskTex       UAV texture for smoke opacity mask
 	 * @param TexSize            Size of output textures (may be reduced resolution)
@@ -95,7 +192,7 @@ private:
 	void AddMultiVolumeRayMarchPass(
 		FRDGBuilder& GraphBuilder,
 		const FSceneView& View,
-		const TArray<AIVSmokeVoxelVolume*>& SortedVolumes,
+		const FIVSmokePackedRenderData& RenderData,
 		FRDGTextureRef SmokeAlbedoTex,
 		FRDGTextureRef SmokeMaskTex,
 		const FIntPoint& TexSize,
@@ -220,4 +317,14 @@ private:
 
 	/** Elapsed time for animation. */
 	float ElapsedTime = 0.0f;
+
+	// ============================================================================
+	// Thread-Safe Render Data Cache
+	// ============================================================================
+
+	/** Cached render data prepared on Game Thread, consumed on Render Thread. */
+	FIVSmokePackedRenderData CachedRenderData;
+
+	/** Mutex for thread-safe access to CachedRenderData. */
+	mutable FCriticalSection RenderDataMutex;
 };

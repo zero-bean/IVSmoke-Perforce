@@ -155,6 +155,209 @@ bool FIVSmokeRenderer::HasVolumes() const
 }
 
 // ============================================================================
+// Thread-Safe Render Data Preparation
+// ============================================================================
+
+FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmokeVoxelVolume*>& InVolumes)
+{
+	// Must be called on Game Thread
+	check(IsInGameThread());
+
+	FIVSmokePackedRenderData Result;
+
+	if (InVolumes.Num() == 0)
+	{
+		return Result;
+	}
+
+	Result.VolumeCount = InVolumes.Num();
+	Result.VolumeDataArray.Reserve(Result.VolumeCount);
+	Result.HoleTextures.Reserve(Result.VolumeCount);
+	Result.HoleTextureSizes.Reserve(Result.VolumeCount);
+
+	// Get resolution info from first valid volume
+	for (AIVSmokeVoxelVolume* Volume : InVolumes)
+	{
+		if (Volume)
+		{
+			Result.VoxelResolution = Volume->GetGridResolution();
+			if (UIVSmokeHoleGeneratorComponent* HoleComp = Volume->GetHoleGeneratorComponent())
+			{
+				if (FTextureRHIRef HoleTex = HoleComp->GetHoleTexture())
+				{
+					Result.HoleResolution = HoleTex->GetSizeXYZ();
+				}
+			}
+			break;
+		}
+	}
+
+	// Fallback for hole resolution
+	if (Result.HoleResolution == FIntVector::ZeroValue)
+	{
+		Result.HoleResolution = FIntVector(64, 64, 64);
+	}
+
+	// Calculate packed buffer sizes
+	const int32 TexturePackInterval = 4;
+	TArray<float> VoxelIntervalData;
+	VoxelIntervalData.Init(0, Result.VoxelResolution.X * Result.VoxelResolution.Y * TexturePackInterval);
+
+	FIntVector VoxelAtlasResolution = FIntVector(
+		Result.VoxelResolution.X,
+		Result.VoxelResolution.Y,
+		Result.VoxelResolution.Z * Result.VolumeCount + TexturePackInterval * (Result.VolumeCount - 1)
+	);
+	int32 TotalVoxelSize = VoxelAtlasResolution.X * VoxelAtlasResolution.Y * VoxelAtlasResolution.Z;
+	Result.PackedVoxelData.Reserve(TotalVoxelSize);
+
+	// Collect data from all volumes (Game Thread - safe to access)
+	for (int32 i = 0; i < InVolumes.Num(); ++i)
+	{
+		AIVSmokeVoxelVolume* Volume = InVolumes[i];
+		if (!Volume)
+		{
+			continue;
+		}
+
+		// ============================================
+		// Copy VoxelArray data (Game Thread safe)
+		// ============================================
+		const TArray<float>& VoxelArray = Volume->GetVoxelArray();
+		Result.PackedVoxelData.Append(VoxelArray);
+		if (i < InVolumes.Num() - 1)
+		{
+			Result.PackedVoxelData.Append(VoxelIntervalData);
+		}
+
+		// ============================================
+		// Hole Texture reference (RHI resources are thread-safe)
+		// ============================================
+		if (UIVSmokeHoleGeneratorComponent* HoleComp = Volume->GetHoleGeneratorComponent())
+		{
+			FTextureRHIRef HoleTex = HoleComp->GetHoleTexture();
+			Result.HoleTextures.Add(HoleTex);
+			if (HoleTex)
+			{
+				Result.HoleTextureSizes.Add(HoleTex->GetSizeXYZ());
+			}
+			else
+			{
+				Result.HoleTextureSizes.Add(FIntVector::ZeroValue);
+			}
+		}
+		else
+		{
+			Result.HoleTextures.Add(nullptr);
+			Result.HoleTextureSizes.Add(FIntVector::ZeroValue);
+		}
+
+		// ============================================
+		// Build GPU metadata
+		// ============================================
+		const FIntVector GridRes = Volume->GetGridResolution();
+		const FIntVector CenterOff = Volume->GetCenterOffset();
+		const float VoxelSz = Volume->GetVoxelSize();
+		const FTransform VolumeTransform = Volume->GetActorTransform();
+
+		// Calculate AABB
+		FVector HalfExtent = FVector(CenterOff) * VoxelSz;
+		FVector LocalMin = -HalfExtent;
+		FVector LocalMax = FVector(GridRes - CenterOff - FIntVector(1, 1, 1)) * VoxelSz;
+		FBox LocalBox(LocalMin, LocalMax);
+		FBox WorldBox = LocalBox.TransformBy(VolumeTransform);
+
+		// Get preset data
+		const UIVSmokeSmokePreset* Preset = GetEffectivePreset(Volume);
+
+		// Build GPU data struct
+		FIVSmokeVolumeGPUData GPUData;
+		FMemory::Memzero(&GPUData, sizeof(GPUData));
+
+		GPUData.VoxelSize = VoxelSz;
+		GPUData.VoxelBufferOffset = Result.VoxelResolution.X * Result.VoxelResolution.Y *
+			(Result.VoxelResolution.Z + TexturePackInterval) * i;
+		GPUData.GridResolution = FIntVector3(GridRes.X, GridRes.Y, GridRes.Z);
+		GPUData.VoxelCount = VoxelArray.Num();
+		GPUData.CenterOffset = FVector3f(CenterOff.X, CenterOff.Y, CenterOff.Z);
+		GPUData.WorldAABBMin = FVector3f(WorldBox.Min);
+		GPUData.WorldAABBMax = FVector3f(WorldBox.Max);
+
+		if (Preset)
+		{
+			GPUData.SmokeColor = FVector3f(Preset->SmokeColor.R, Preset->SmokeColor.G, Preset->SmokeColor.B);
+			GPUData.Absorption = Preset->SmokeAbsorption;
+			GPUData.DensityScale = Preset->VolumeDensity;
+		}
+		else
+		{
+			GPUData.SmokeColor = FVector3f(0.8f, 0.8f, 0.8f);
+			GPUData.Absorption = 0.1f;
+			GPUData.DensityScale = 1.0f;
+		}
+
+		Result.VolumeDataArray.Add(GPUData);
+	}
+
+	// ============================================
+	// Copy global settings parameters
+	// ============================================
+	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
+
+	if (Settings)
+	{
+		// Post processing
+		Result.Sharpness = Settings->Sharpness;
+
+		// Ray marching
+		Result.MaxSteps = Settings->MaxSteps;
+
+		// Appearance
+		Result.GlobalAbsorption = 0.1f;  // Default, per-volume absorption from preset
+		Result.SmokeSize = Settings->SmokeSize;
+		Result.SmokeDensityFalloff = Settings->SmokeDensityFalloff;
+		Result.WindDirection = Settings->WindDirection;
+		Result.VolumeRangeOffset = Settings->VolumeRangeOffset;
+		Result.VolumeEdgeNoiseFadeOffset = Settings->VolumeEdgeNoiseFadeOffset;
+		Result.VolumeEdgeFadeSharpness = Settings->VolumeEdgeFadeShapness;
+
+		// Scattering
+		Result.bEnableScattering = Settings->bEnableScattering;
+		Result.ScatterScale = Settings->ScatterScale;
+		Result.ScatteringAnisotropy = Settings->ScatteringAnisotropy;
+
+		if (Settings->bOverrideLightDirection)
+		{
+			Result.LightDirection = Settings->LightDirectionOverride.GetSafeNormal();
+		}
+		else
+		{
+			Result.LightDirection = FVector(0.2f, 0.1f, 0.9f).GetSafeNormal();
+		}
+
+		if (Settings->bOverrideLightColor)
+		{
+			Result.LightColor = Settings->LightColorOverride;
+		}
+		else
+		{
+			Result.LightColor = FLinearColor(1.0f, 0.95f, 0.9f);
+		}
+
+		// Self-shadowing
+		Result.bEnableSelfShadowing = Settings->bEnableSelfShadowing;
+		Result.LightMarchingSteps = Settings->LightMarchingSteps;
+		Result.LightMarchingDistance = Settings->LightMarchingDistance;
+		Result.LightMarchingExpFactor = Settings->LightMarchingExpFactor;
+		Result.ShadowAmbient = Settings->ShadowAmbient;
+	}
+
+	Result.bIsValid = Result.VolumeDataArray.Num() > 0 && Result.PackedVoxelData.Num() > 0;
+
+	return Result;
+}
+
+// ============================================================================
 // Rendering
 // ============================================================================
 
@@ -224,20 +427,15 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 		HalfSize
 	);
 
-	// Collect valid volumes
-	TArray<AIVSmokeVoxelVolume*> SortedVolumes;
+	// Get cached render data (prepared on Game Thread via BeginRenderViewFamily)
+	// Use copy instead of MoveTemp - multiple views in same frame share the same data
+	FIVSmokePackedRenderData RenderData;
 	{
-		FScopeLock Lock(&VolumesMutex);
-		for (const auto& WeakVolume : Volumes)
-		{
-			if (auto* Volume = WeakVolume.Get())
-			{
-				SortedVolumes.Add(Volume);
-			}
-		}
+		FScopeLock Lock(&RenderDataMutex);
+		RenderData = CachedRenderData;  // Copy - don't consume, other views may need it
 	}
 
-	if (SortedVolumes.Num() == 0)
+	if (!RenderData.bIsValid)
 	{
 		return SceneColor;
 	}
@@ -248,7 +446,7 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	AddMultiVolumeRayMarchPass(
 		GraphBuilder,
 		View,
-		SortedVolumes,
+		RenderData,
 		SmokeAlbedoTex,
 		SmokeMaskTex,
 		HalfSize,
@@ -282,7 +480,7 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	// ============================================================================
 	// Composite Pass
 	// ============================================================================
-	const float Sharpness = Settings->Sharpness;
+	const float Sharpness = RenderData.Sharpness;
 	const bool bUseCustomDepthBasedSorting = Settings->bUseCustomDepthBasedSorting;
 
 	// Check if we're in TranslucencyAfterDOF mode (setting + SeparateTranslucency input valid)
@@ -386,16 +584,16 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	FRDGBuilder& GraphBuilder,
 	const FSceneView& View,
-	const TArray<AIVSmokeVoxelVolume*>& SortedVolumes,
+	const FIVSmokePackedRenderData& RenderData,
 	FRDGTextureRef SmokeAlbedoTex,
 	FRDGTextureRef SmokeMaskTex,
 	const FIntPoint& TexSize,
 	const FIntPoint& ViewportSize,
 	const FIntPoint& ViewRectMin)
 {
-	int32 VolumeCount = SortedVolumes.Num();
+	const int32 VolumeCount = RenderData.VolumeCount;
 
-	if (VolumeCount == 0 || !NoiseVolume)
+	if (VolumeCount == 0 || !NoiseVolume || !RenderData.bIsValid)
 	{
 		return;
 	}
@@ -406,138 +604,93 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 		UE_LOG(LogIVSmoke, Warning, TEXT("[FIVSmokeRenderer] Performance warning: %d volumes active (recommended: 8 or fewer)"), VolumeCount);
 	}
 
-
-
-	//크기가 다를 땐 단순히 아틀라스 채워넣는 기법이 추가되므로 일단 배제
-
 	// ============================================================================
-	// Build Volume GPU Data and Pack Voxel Buffers
+	// Use Pre-Packed Data from RenderData (prepared on Game Thread)
 	// ============================================================================
 
-	//texture size set
-	int32 TexturePackInterval = 4;
-	TArray<FIVSmokeVolumeGPUData> VolumeDataArray;
-	TArray<float> PackedVoxelData;
-	TArray<float> VoxelIntervalData;
+	const int32 TexturePackInterval = 4;
+	const FIntVector VoxelResolution = RenderData.VoxelResolution;
+	const FIntVector VoxelHighResolution = VoxelResolution * 1;
+	const FIntVector HoleResolution = RenderData.HoleResolution;
 
-	FIntVector VoxelResolution = SortedVolumes[0]->GetGridResolution();
-	FIntVector VoxelHighResolution = VoxelResolution * 1;
-	FIntVector HoleResolution = SortedVolumes[0]->GetHoleGeneratorComponent()->GetHoleTexture()->GetSizeXYZ();
+	const FIntVector VoxelAtlasResolution = FIntVector(
+		VoxelResolution.X,
+		VoxelResolution.Y,
+		VoxelResolution.Z * VolumeCount + TexturePackInterval * (VolumeCount - 1)
+	);
+	const FIntVector VoxelAtlasHighResolution = VoxelAtlasResolution * 1;
+	const FIntVector HoleAtlasResolution = FIntVector(
+		HoleResolution.X,
+		HoleResolution.Y,
+		HoleResolution.Z * VolumeCount + TexturePackInterval * (VolumeCount - 1)
+	);
 
-	FIntVector VoxelAtlasResolution = FIntVector(VoxelResolution.X, VoxelResolution.Y, VoxelResolution.Z * VolumeCount + TexturePackInterval * (VolumeCount - 1));
-	FIntVector VoxelAtlasHighResolution = VoxelAtlasResolution * 1;
-	FIntVector HoleAtlasResolution = FIntVector(HoleResolution.X, HoleResolution.Y, HoleResolution.Z * VolumeCount + TexturePackInterval * (VolumeCount - 1));
-
-	int32 TotalVoxelSize = VoxelAtlasResolution.X * VoxelAtlasResolution.Y * VoxelAtlasResolution.Z;
-	int32 TotalHoleSize = HoleAtlasResolution.X * HoleAtlasResolution.Y * HoleAtlasResolution.Z;
-	VolumeDataArray.Reserve(VolumeCount);
-	PackedVoxelData.Reserve(TotalVoxelSize);
-	VoxelIntervalData.Init(0, VoxelResolution.X * VoxelResolution.Y * TexturePackInterval);
-	HoleAtlasResolution = HoleAtlasResolution == FIntVector::ZeroValue ? FIntVector(64, 64, 64) : HoleAtlasResolution;
-
-	//atlas texture create
-	FRDGTextureDesc VoxelAtlasDesc = FRDGTextureDesc::Create3D(VoxelAtlasResolution, PF_R32_FLOAT, FClearValueBinding::None, TexCreate_ShaderResource | TexCreate_UAV);
+	// Create atlas textures
+	FRDGTextureDesc VoxelAtlasDesc = FRDGTextureDesc::Create3D(
+		VoxelAtlasResolution,
+		PF_R32_FLOAT,
+		FClearValueBinding::None,
+		TexCreate_ShaderResource | TexCreate_UAV
+	);
 	FRDGTextureRef PackedVoxelAtlas = GraphBuilder.CreateTexture(VoxelAtlasDesc, TEXT("IVSmoke_PackedVoxelAtlas"));
-	FRDGTextureDesc VoxelAtlasHighResDesc = FRDGTextureDesc::Create3D(VoxelAtlasHighResolution, PF_R32_FLOAT, FClearValueBinding::None, TexCreate_ShaderResource | TexCreate_UAV);
+
+	FRDGTextureDesc VoxelAtlasHighResDesc = FRDGTextureDesc::Create3D(
+		VoxelAtlasHighResolution,
+		PF_R32_FLOAT,
+		FClearValueBinding::None,
+		TexCreate_ShaderResource | TexCreate_UAV
+	);
 	FRDGTextureRef PackedVoxelAtlasHighRes = GraphBuilder.CreateTexture(VoxelAtlasHighResDesc, TEXT("IVSmoke_PackedVoxelAtlasHighRes"));
-	FRDGTextureDesc HoleAtlas = FRDGTextureDesc::Create3D(HoleAtlasResolution, PF_R16F, FClearValueBinding::None, TexCreate_ShaderResource | TexCreate_UAV);
-	FRDGTextureRef PackedHoleAtlas = GraphBuilder.CreateTexture(HoleAtlas, TEXT("IVSmoke_PackedHoleAtlas"));
 
-	FRDGTextureSRVRef PackedVoxelAtlasSRV = GraphBuilder.CreateSRV(PackedVoxelAtlas);
-	FRDGTextureSRVRef PackedVoxelAtlasHighResSRV = GraphBuilder.CreateSRV(PackedVoxelAtlas);
+	FRDGTextureDesc HoleAtlasDesc = FRDGTextureDesc::Create3D(
+		HoleAtlasResolution,
+		PF_R16F,
+		FClearValueBinding::None,
+		TexCreate_ShaderResource | TexCreate_UAV
+	);
+	FRDGTextureRef PackedHoleAtlas = GraphBuilder.CreateTexture(HoleAtlasDesc, TEXT("IVSmoke_PackedHoleAtlas"));
 
-	//copy hole texture to atlas
-	//set PackedVoxelData array
-	//set FIVSmokeVolumeGPUData
+	// ============================================================================
+	// Clear Hole Atlas first (ensures uninitialized regions are zero, not garbage)
+	// ============================================================================
+	AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(PackedHoleAtlas), 0.0f);
+
+	// ============================================================================
+	// Copy Hole Textures to Atlas (using pre-collected RHI references)
+	// ============================================================================
 	FRHICopyTextureInfo HoleCpyInfo;
 	HoleCpyInfo.Size = HoleResolution;
 	HoleCpyInfo.SourcePosition = FIntVector::ZeroValue;
 
 	for (int32 i = 0; i < VolumeCount; ++i)
 	{
-		AIVSmokeVoxelVolume* Volume = SortedVolumes[i];
-		FTextureRHIRef SourceRHI = Volume->GetHoleTexture();
-		if (SourceRHI == nullptr)
+		if (i >= RenderData.HoleTextures.Num())
+		{
+			break;
+		}
+
+		FTextureRHIRef SourceRHI = RenderData.HoleTextures[i];
+		if (!SourceRHI)
 		{
 			continue;
 		}
 
-		// ============================================================================
-		// copy hole texture to atlas
-		// ============================================================================
-		FRDGTextureRef SourceTexture = GraphBuilder.RegisterExternalTexture(CreateRenderTarget(SourceRHI, TEXT("IVSmoke_CopyHoleSource")));
+		FRDGTextureRef SourceTexture = GraphBuilder.RegisterExternalTexture(
+			CreateRenderTarget(SourceRHI, TEXT("IVSmoke_CopyHoleSource"))
+		);
 		HoleCpyInfo.DestPosition = FIntVector(0, 0, i * (HoleResolution.Z + TexturePackInterval));
 		AddCopyTexturePass(GraphBuilder, SourceTexture, PackedHoleAtlas, HoleCpyInfo);
-
-		// ============================================================================
-		// set PackedVoxelData array
-		// ============================================================================
-		const TArray<float>& VoxelData = Volume->GetVoxelArray();
-		PackedVoxelData.Append(VoxelData);
-		if (i < VolumeCount - 1)
-		{
-			PackedVoxelData.Append(VoxelIntervalData);
-		}
-
-		// ============================================================================
-		// set FIVSmokeVolumeGPUData
-		// ============================================================================
-		const FIntVector GridRes = Volume->GetGridResolution();
-		const FIntVector CenterOff = Volume->GetCenterOffset();
-		const float VoxelSz = Volume->GetVoxelSize();
-		// Calculate local and world AABB
-		FVector HalfExtent = FVector(CenterOff) * VoxelSz;
-		FVector LocalMin = -HalfExtent;
-		FVector LocalMax = FVector(GridRes - CenterOff - FIntVector(1, 1, 1)) * VoxelSz;
-
-		FTransform VolumeTransform = Volume->GetActorTransform();
-		FBox LocalBox(LocalMin, LocalMax);
-		FBox WorldBox = LocalBox.TransformBy(VolumeTransform);
-
-		// Get effective preset
-		const UIVSmokeSmokePreset* Preset = GetEffectivePreset(Volume);
-
-		// Build GPU data
-		FIVSmokeVolumeGPUData GPUData;
-		FMemory::Memzero(&GPUData, sizeof(GPUData));
-
-		GPUData.VoxelSize = VoxelSz;
-		GPUData.VoxelBufferOffset = VoxelResolution.X * VoxelResolution.Y * (VoxelResolution.Z + TexturePackInterval) * i;
-		GPUData.GridResolution = FIntVector3(GridRes.X, GridRes.Y, GridRes.Z);
-		GPUData.VoxelCount = VoxelData.Num();
-
-		if (Preset)
-		{
-			GPUData.SmokeColor = FVector3f(Preset->SmokeColor.R, Preset->SmokeColor.G, Preset->SmokeColor.B);
-			GPUData.Absorption = Preset->SmokeAbsorption;
-		}
-		else
-		{
-			GPUData.SmokeColor = FVector3f(0.8f, 0.8f, 0.8f);
-			GPUData.Absorption = 0.1f;
-		}
-
-		GPUData.CenterOffset = FVector3f(CenterOff.X, CenterOff.Y, CenterOff.Z);
-		GPUData.DensityScale = Preset ? Preset->VolumeDensity : 1.0f;
-		GPUData.WorldAABBMin = FVector3f(WorldBox.Min);
-		GPUData.WorldAABBMax = FVector3f(WorldBox.Max);
-		VolumeDataArray.Add(GPUData);
 	}
 
-	if (VolumeDataArray.Num() == 0 || PackedVoxelData.Num() == 0)
-	{
-		return;
-	}
-
-	// Get global settings for rendering parameters
+	// Get global settings for FXAA parameters
 	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
 
 	// ============================================================================
 	// StructuredToTexture Pass
 	// ============================================================================
-	FRDGBufferDesc PackedVoxelBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(float), PackedVoxelData.Num());
+	FRDGBufferDesc PackedVoxelBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(float), RenderData.PackedVoxelData.Num());
 	FRDGBufferRef PackedVoxelBuffer = GraphBuilder.CreateBuffer(PackedVoxelBufferDesc, TEXT("IVSmoke_PackedVoxelBuffer"));
-	GraphBuilder.QueueBufferUpload(PackedVoxelBuffer, PackedVoxelData.GetData(), PackedVoxelData.Num() * sizeof(float));
+	GraphBuilder.QueueBufferUpload(PackedVoxelBuffer, RenderData.PackedVoxelData.GetData(), RenderData.PackedVoxelData.Num() * sizeof(float));
 
 	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
 	TShaderMapRef<FIVSmokeStructuredToTextureCS> StructuredCopyShader(ShaderMap);
@@ -624,14 +777,14 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->AspectRatio = AspectRatio;
 
 	// Ray Marching
-	Parameters->MaxSteps = Settings->MaxSteps;
+	Parameters->MaxSteps = RenderData.MaxSteps;
 
-	// Volume Data Buffer
-	FRDGBufferDesc VolumeBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FIVSmokeVolumeGPUData), VolumeDataArray.Num());
+	// Volume Data Buffer (use pre-built data from RenderData)
+	FRDGBufferDesc VolumeBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FIVSmokeVolumeGPUData), RenderData.VolumeDataArray.Num());
 	FRDGBufferRef VolumeBuffer = GraphBuilder.CreateBuffer(VolumeBufferDesc, TEXT("IVSmokeVolumeDataBuffer"));
-	GraphBuilder.QueueBufferUpload(VolumeBuffer, VolumeDataArray.GetData(), VolumeDataArray.Num() * sizeof(FIVSmokeVolumeGPUData));
+	GraphBuilder.QueueBufferUpload(VolumeBuffer, RenderData.VolumeDataArray.GetData(), RenderData.VolumeDataArray.Num() * sizeof(FIVSmokeVolumeGPUData));
 	Parameters->VolumeDataBuffer = GraphBuilder.CreateSRV(VolumeBuffer);
-	Parameters->NumActiveVolumes = VolumeDataArray.Num();
+	Parameters->NumActiveVolumes = RenderData.VolumeDataArray.Num();
 
 	// Packed Textures
 	Parameters->PackedInterval = TexturePackInterval;
@@ -649,49 +802,27 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	// View (for BlueNoise access)
 	Parameters->View = View.ViewUniformBuffer;
 
-	// Global Smoke Parameters (from Settings)
-	Parameters->GlobalAbsorption = 0.1f; // Default value, per-volume absorption is used from preset
-	Parameters->SmokeSize = Settings->SmokeSize;
-	Parameters->WindDirection = FVector3f(Settings->WindDirection);
-	Parameters->VolumeRangeOffset = Settings->VolumeRangeOffset;
-	Parameters->VolumeEdgeNoiseFadeOffset = Settings->VolumeEdgeNoiseFadeOffset;
-	Parameters->VolumeEdgeFadeShapness = Settings->VolumeEdgeFadeShapness;
+	// Global Smoke Parameters (from RenderData - prepared on Game Thread)
+	Parameters->GlobalAbsorption = RenderData.GlobalAbsorption;
+	Parameters->SmokeSize = RenderData.SmokeSize;
+	Parameters->WindDirection = FVector3f(RenderData.WindDirection);
+	Parameters->VolumeRangeOffset = RenderData.VolumeRangeOffset;
+	Parameters->VolumeEdgeNoiseFadeOffset = RenderData.VolumeEdgeNoiseFadeOffset;
+	Parameters->VolumeEdgeFadeShapness = RenderData.VolumeEdgeFadeSharpness;
 
-	// Rayleigh Scattering (from Settings)
-	const float ScatterScaleValue = Settings->ScatterScale;
-	const bool bEnableScatter = Settings->bEnableScattering;
-
-	// Light Direction - use settings override or default overhead sun
-	FVector3f LightDir = FVector3f(0.2f, 0.1f, 0.9f).GetSafeNormal();
-	if (Settings->bOverrideLightDirection)
-	{
-		LightDir = FVector3f(Settings->LightDirectionOverride.GetSafeNormal());
-	}
-
-	// Light Color - use settings override or default warm white
-	FVector3f LightColorValue = FVector3f(1.0f, 0.95f, 0.9f);
-	if (Settings->bOverrideLightColor)
-	{
-		LightColorValue = FVector3f(
-			Settings->LightColorOverride.R,
-			Settings->LightColorOverride.G,
-			Settings->LightColorOverride.B
-		);
-	}
-
-	Parameters->LightDirection = LightDir;
-	Parameters->LightColor = LightColorValue;
-	Parameters->ScatterScale = bEnableScatter ? ScatterScaleValue : 0.0f;
+	// Rayleigh Scattering (from RenderData)
+	Parameters->LightDirection = FVector3f(RenderData.LightDirection);
+	Parameters->LightColor = FVector3f(RenderData.LightColor.R, RenderData.LightColor.G, RenderData.LightColor.B);
+	Parameters->ScatterScale = RenderData.bEnableScattering ? RenderData.ScatterScale : 0.0f;
 
 	// Henyey-Greenstein Anisotropy
-	Parameters->ScatteringAnisotropy = Settings->ScatteringAnisotropy;
+	Parameters->ScatteringAnisotropy = RenderData.ScatteringAnisotropy;
 
-	// Self-Shadowing (Light Marching) - from Settings
-	const bool bSelfShadow = Settings->bEnableSelfShadowing;
-	Parameters->LightMarchingSteps = bSelfShadow ? Settings->LightMarchingSteps : 0;
-	Parameters->LightMarchingDistance = Settings->LightMarchingDistance;
-	Parameters->LightMarchingExpFactor = Settings->LightMarchingExpFactor;
-	Parameters->ShadowAmbient = Settings->ShadowAmbient;
+	// Self-Shadowing (Light Marching) - from RenderData
+	Parameters->LightMarchingSteps = RenderData.bEnableSelfShadowing ? RenderData.LightMarchingSteps : 0;
+	Parameters->LightMarchingDistance = RenderData.LightMarchingDistance;
+	Parameters->LightMarchingExpFactor = RenderData.LightMarchingExpFactor;
+	Parameters->ShadowAmbient = RenderData.ShadowAmbient;
 
 	// Temporal (for TAA integration)
 	Parameters->FrameNumber = View.Family->FrameNumber;

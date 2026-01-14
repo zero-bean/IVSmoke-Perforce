@@ -3,8 +3,10 @@
 #include "IVSmokeSceneViewExtension.h"
 #include "IVSmokeRenderer.h"
 #include "IVSmokeSettings.h"
+#include "IVSmokeVoxelVolume.h"
 #include "PostProcess/PostProcessMaterialInputs.h"
 #include "ScreenPass.h"
+#include "RenderingThread.h"
 
 TSharedPtr<FIVSmokeSceneViewExtension, ESPMode::ThreadSafe> FIVSmokeSceneViewExtension::Instance;
 
@@ -24,6 +26,48 @@ void FIVSmokeSceneViewExtension::Initialize()
 void FIVSmokeSceneViewExtension::Shutdown()
 {
 	Instance.Reset();
+}
+
+void FIVSmokeSceneViewExtension::BeginRenderViewFamily(FSceneViewFamily& InViewFamily)
+{
+	// Called ONCE per frame on Game Thread (not per-view!)
+	// This ensures render data is prepared exactly once per frame
+	FIVSmokeRenderer& Renderer = FIVSmokeRenderer::Get();
+
+	// Skip if no volumes
+	if (!Renderer.HasVolumes())
+	{
+		return;
+	}
+
+	// Collect valid volumes under lock
+	TArray<AIVSmokeVoxelVolume*> ValidVolumes;
+	{
+		FScopeLock Lock(&Renderer.GetVolumesMutex());
+		for (const auto& WeakVolume : Renderer.GetVolumes())
+		{
+			if (AIVSmokeVoxelVolume* Volume = WeakVolume.Get())
+			{
+				ValidVolumes.Add(Volume);
+			}
+		}
+	}
+
+	if (ValidVolumes.Num() == 0)
+	{
+		return;
+	}
+
+	// Prepare render data on Game Thread (all Volume data access happens here)
+	FIVSmokePackedRenderData RenderData = Renderer.PrepareRenderData(ValidVolumes);
+
+	// Transfer to Render Thread via command queue
+	ENQUEUE_RENDER_COMMAND(IVSmokeSetRenderData)(
+		[&Renderer, RenderData = MoveTemp(RenderData)](FRHICommandListImmediate& RHICmdList) mutable
+		{
+			Renderer.SetCachedRenderData(MoveTemp(RenderData));
+		}
+	);
 }
 
 bool FIVSmokeSceneViewExtension::IsActiveThisFrame_Internal(const FSceneViewExtensionContext& Context) const
