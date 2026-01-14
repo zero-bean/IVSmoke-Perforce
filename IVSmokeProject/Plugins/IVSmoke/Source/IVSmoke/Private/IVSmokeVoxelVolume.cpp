@@ -162,6 +162,26 @@ bool AIVSmokeVoxelVolume::IsVoxelBlocked(const UWorld* World, const FVector& Wor
 	);
 }
 
+bool AIVSmokeVoxelVolume::IsConnectionBlocked(const UWorld* World, const FVector& BeginPos, const FVector& EndPos) const
+{
+	if (!World)
+	{
+		return false;
+	}
+
+	FCollisionQueryParams CollisionParams;
+	CollisionParams.bTraceComplex = false;
+
+	FHitResult HitResult;
+	return World->LineTraceSingleByChannel(
+		HitResult,
+		BeginPos,
+		EndPos,
+		VoxelCollisionChannel,
+		CollisionParams
+	);
+}
+
 void AIVSmokeVoxelVolume::Initialize()
 {
 	GridResolution.X = FMath::Max(1, (VolumeExtent.X * 2) - 1);
@@ -214,7 +234,7 @@ void AIVSmokeVoxelVolume::StartSimulation_Implementation(int32 InRandomSeed)
 	if (VoxelCostArray.IsValidIndex(CenterIndex))
 	{
 		VoxelCostArray[CenterIndex] = 0.0f;
-		MinHeap.HeapPush({ CenterIndex, 0.0f });
+		MinHeap.HeapPush({ CenterIndex, INDEX_NONE, 0.0f });
 	}
 
 	CurrentState = EIVSmokeVoxelVolumeState::Expansion;
@@ -356,6 +376,23 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 VoxelNum)
 			return;
 		}
 
+		if (CurrentNode.ParentIndex != INDEX_NONE)
+		{
+			FIntVector CurrentGrid = UIVSmokeGridLibrary::IndexToGrid(CurrentNode.Index, GridResolution);
+			FIntVector ParentGrid = UIVSmokeGridLibrary::IndexToGrid(CurrentNode.ParentIndex, GridResolution);
+
+			FVector CurrentLocalPos = UIVSmokeGridLibrary::GridToLocal(CurrentGrid, VoxelSize, CenterOffset);
+			FVector ParentLocalPos = UIVSmokeGridLibrary::GridToLocal(ParentGrid, VoxelSize, CenterOffset);
+
+			FVector CurrentWorldPos = ActorTrans.TransformPosition(CurrentLocalPos);
+			FVector ParentWorldPos = ActorTrans.TransformPosition(ParentLocalPos);
+
+			if (IsConnectionBlocked(World, CurrentWorldPos, ParentWorldPos))
+			{
+				continue;
+			}
+		}
+
 		FIntVector CurrentGrid = UIVSmokeGridLibrary::IndexToGrid(CurrentNode.Index, GridResolution);
 		for (const FIntVector& Direction : FloodFillDirections)
 		{
@@ -374,12 +411,6 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 VoxelNum)
 			}
 
 			FVector NextLocalPos = UIVSmokeGridLibrary::GridToLocal(NextGrid, VoxelSize, CenterOffset);
-			FVector NextWorldPos = ActorTrans.TransformPosition(NextLocalPos);
-			if (IsVoxelBlocked(World, NextWorldPos))
-			{
-				continue;
-			}
-
 			float NormX = NextLocalPos.X * InvRadii.X;
 			float NormY = NextLocalPos.Y * InvRadii.Y;
 			float NormZ = NextLocalPos.Z * InvRadii.Z;
@@ -391,7 +422,7 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 VoxelNum)
 			if (NewCost < VoxelCostArray[NextIndex])
 			{
 				VoxelCostArray[NextIndex] = NewCost;
-				MinHeap.HeapPush({ NextIndex, NewCost });
+				MinHeap.HeapPush({ NextIndex, CurrentNode.Index, NewCost });
 			}
 		}
 	}
@@ -412,7 +443,7 @@ void AIVSmokeVoxelVolume::PrepareDissipation(int32 VoxelNum)
 		if (VoxelCostArray.IsValidIndex(VoxelIndex))
 		{
 			float DissipationPriority = VoxelCostArray[VoxelIndex] + RandomStream.FRandRange(0.0f, DissipationNoise);
-			MinHeap.HeapPush({ VoxelIndex, -DissipationPriority });
+			MinHeap.HeapPush({ VoxelIndex, INDEX_NONE, -DissipationPriority });
 		}
 	}
 }

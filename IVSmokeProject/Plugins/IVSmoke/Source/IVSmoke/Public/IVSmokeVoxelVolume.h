@@ -194,11 +194,11 @@ public:
 
 	// @todo Documentation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
-	float ExpansionNoise = 3.0f;
+	float ExpansionNoise = 100.0f;
 
 	// @todo Documentation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
-	float DissipationNoise = 3.0f;
+	float DissipationNoise = 100.0f;
 
 	// @todo Documentation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
@@ -214,7 +214,7 @@ public:
 
 	// @todo Documentation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
-	float CollisionExtentScale = 0.9f;
+	float CollisionExtentScale = 0.3f;
 
 	// @todo Documentation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation", meta = (ClampMin = "0"))
@@ -225,6 +225,7 @@ private:
 	struct FIVSmokeVoxelNode
 	{
 		int32 Index;
+		int32 ParentIndex;
 		float Cost;
 		bool operator<(const FIVSmokeVoxelNode& Other) const { return Cost < Other.Cost; }
 	};
@@ -246,6 +247,9 @@ private:
 
 	// @todo Documentation
 	bool IsVoxelBlocked(const UWorld* World, const FVector& WorldPos) const;
+
+	// @todo Documentation
+	bool IsConnectionBlocked(const UWorld* World, const FVector& BeginPos, const FVector& EndPos) const;
 
 	// @todo Documentation
 	void UpdateExpansion(float DeltaTime);
@@ -350,7 +354,6 @@ public:
 	FORCEINLINE const UIVSmokeSmokePreset* GetSmokePresetOverride() const { return SmokePresetOverride; }
 
 	FTextureRHIRef GetHoleTexture() const;
-
 
 private:
 	/**
