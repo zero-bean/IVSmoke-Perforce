@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "IVSmokeVoxelVolume.generated.h"
 
+class UIVSmokeCollisionComponent;
 class UIVSmokeSmokePreset;
 class UIVSmokeHoleGeneratorComponent;
 
@@ -119,10 +120,17 @@ public:
 	// @todo Documentation
 	FORCEINLINE UIVSmokeHoleGeneratorComponent* GetHoleGeneratorComponent() { return HoleGeneratorComponent; }
 
+	// @todo Documentation
+	FORCEINLINE UIVSmokeCollisionComponent* GetCollisionComponent() { return CollisionComponent; }
+
 private:
 	// @todo Documentation
 	UPROPERTY(EditAnywhere, Category = "IVSmoke")
 	TObjectPtr<UIVSmokeHoleGeneratorComponent> HoleGeneratorComponent;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, Category = "IVSmoke")
+	TObjectPtr<UIVSmokeCollisionComponent> CollisionComponent;
 
 #if WITH_EDITORONLY_DATA
 	// @todo Documentation
@@ -280,6 +288,30 @@ private:
 
 	// @todo Documentation
 	FRandomStream RandomStream;
+
+#pragma endregion
+
+	//~==============================================================================
+	// Collision
+#pragma region Collision
+public:
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Collision")
+	float MinCollisionUpdateTimeInterval = 0.5f;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Collision", meta = (ClampMin = "0.01", ClampMax = "1.0"))
+	float MinCollisionUpdateProgressInterval = 0.25f;
+
+private:
+	/** @todo Documentation */
+	void TryUpdateCollision(float CurrentProgress, bool bForceUpdate = false);
+
+	// @todo Documentation
+	float LastCollisionUpdateTime = 0.0f;
+
+	// @todo Documentation
+	float LastCollisionUpdateProgress = 0.0f;
 
 #pragma endregion
 

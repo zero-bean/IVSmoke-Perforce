@@ -3,6 +3,7 @@
 #include "IVSmokeVoxelVolume.h"
 
 #include "IVSmoke.h"
+#include "IVSmokeCollisionComponent.h"
 #include "IVSmokeGridLibrary.h"
 #include "IVSmokeRenderer.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -45,6 +46,8 @@ void AIVSmokeVoxelVolume::BeginPlay()
 	{
 		HoleGeneratorComponent->SyncWithVoxelVolume(VolumeExtent, VoxelSize);
 	}
+
+	CollisionComponent = FindComponentByClass<UIVSmokeCollisionComponent>();
 }
 
 void AIVSmokeVoxelVolume::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -188,6 +191,8 @@ void AIVSmokeVoxelVolume::Initialize()
 	DirtyLevel = EIVSmokeDirtyLevel::Dirty;
 	CurrentState = EIVSmokeVoxelVolumeState::Idle;
 	bIsInitialized = true;
+
+	LastCollisionUpdateTime = 0.0f;
 }
 
 void AIVSmokeVoxelVolume::RequestStartSimulation_Implementation()
@@ -223,20 +228,29 @@ void AIVSmokeVoxelVolume::UpdateExpansion(float DeltaTime)
 
 	float CurveValue = GetCurveValue(ElapsedTime, ExpansionDuration, ExpansionCurve);
 
+	int32 TotalVoxelNum = GeneratedVoxelIndices.Num();
 	int32 TargetSpawnNum = FMath::FloorToInt(MaxVoxelNum * CurveValue);
-	int32 SpawnNum = TargetSpawnNum - GeneratedVoxelIndices.Num();
+	int32 SpawnNum = TargetSpawnNum - TotalVoxelNum;
 	if (SpawnNum > 0)
 	{
 		ProcessExpansion(SpawnNum);
 	}
 
+	float CurrentProgress = (MaxVoxelNum > 0) ? (static_cast<float>(TotalVoxelNum) / MaxVoxelNum) : 0.0f;
+
 	bool bIsTimeOver = ElapsedTime >= ExpansionDuration;
 	bool bIsFillFinished = MinHeap.IsEmpty() && SpawnNum <= 0;
+
+	TryUpdateCollision(CurrentProgress, bIsTimeOver || bIsFillFinished);
+
 	if (bIsTimeOver || bIsFillFinished)
 	{
-		CurrentState = EIVSmokeVoxelVolumeState::Sustain;
 		ElapsedTime = 0.0f;
+		LastCollisionUpdateTime = 0.0f;
+		LastCollisionUpdateProgress = 0.0f;
 		MinHeap.Empty();
+
+		CurrentState = EIVSmokeVoxelVolumeState::Sustain;
 	}
 }
 
@@ -258,8 +272,9 @@ void AIVSmokeVoxelVolume::UpdateSustain(float DeltaTime)
 
 	if (bIsTimeOver)
 	{
-		CurrentState = EIVSmokeVoxelVolumeState::Dissipation;
 		ElapsedTime = 0.0f;
+
+		CurrentState = EIVSmokeVoxelVolumeState::Dissipation;
 	}
 }
 
@@ -279,15 +294,28 @@ void AIVSmokeVoxelVolume::UpdateDissipation(float DeltaTime)
 	}
 
 	bool bIsTimeOver = ElapsedTime >= DissipationDuration;
-	if (bIsTimeOver || (MinHeap.IsEmpty() && ActiveVoxelCount <= 0))
-	{
-		CurrentState = EIVSmokeVoxelVolumeState::Finished;
+	bool bIsFinished = MinHeap.IsEmpty() && ActiveVoxelCount <= 0;
 
+	float CurrentProgress = (TotalVoxelNum > 0) ? 1.0f - (static_cast<float>(ActiveVoxelCount) / TotalVoxelNum) : 0.0f;
+	if (!bIsTimeOver && !bIsFinished)
+	{
+		TryUpdateCollision(CurrentProgress, false);
+	}
+
+	if (bIsTimeOver || bIsFinished)
+	{
 		GeneratedVoxelIndices.Empty();
 		MinHeap.Empty();
 		FMemory::Memzero(VoxelArray.GetData(), VoxelArray.Num() * sizeof(float));
 		ActiveVoxelCount = 0;
 		DirtyLevel = EIVSmokeDirtyLevel::Dirty;
+
+		if (CollisionComponent)
+		{
+			CollisionComponent->ResetCollision();
+		}
+
+		CurrentState = EIVSmokeVoxelVolumeState::Finished;
 	}
 }
 
@@ -408,6 +436,29 @@ void AIVSmokeVoxelVolume::ProcessDissipation(int32 VoxelNum)
 #pragma endregion
 
 //~==============================================================================
+// Collision
+#pragma region Collision
+
+void AIVSmokeVoxelVolume::TryUpdateCollision(float CurrentProgress, bool bForceUpdate)
+{
+	if (!CollisionComponent)
+	{
+		return;
+	}
+
+	bool bShouldUpdateByTime = ElapsedTime - LastCollisionUpdateTime >= MinCollisionUpdateTimeInterval;
+	bool bShouldUpdateByProgress = CurrentProgress - LastCollisionUpdateProgress >= MinCollisionUpdateProgressInterval;
+	if (bForceUpdate || (bShouldUpdateByTime && bShouldUpdateByProgress))
+	{
+		CollisionComponent->UpdateCollision(VoxelArray, GridResolution, VoxelSize);
+		LastCollisionUpdateTime = ElapsedTime;
+		LastCollisionUpdateProgress = CurrentProgress;
+	}
+}
+
+#pragma endregion
+
+//~==============================================================================
 // Data Access
 #pragma region DataAccess
 FTextureRHIRef AIVSmokeVoxelVolume::GetHoleTexture() const
@@ -469,6 +520,11 @@ void AIVSmokeVoxelVolume::ResetSimulation()
 
 	FlushPersistentDebugLines(GetWorld());
 
+	if (CollisionComponent)
+	{
+		CollisionComponent->ResetCollision();
+	}
+
 #if WITH_EDITOR
 	if (DebugMeshComponent)
 	{
@@ -489,6 +545,11 @@ void AIVSmokeVoxelVolume::DrawDebugVisualization() const
 	DrawDebugVoxelWireframes();
 	DrawDebugVoxelMeshes();
 	DrawDebugStatusText();
+
+	if (CollisionComponent)
+	{
+		CollisionComponent->DrawDebugVisualization();
+	}
 #endif
 }
 
