@@ -125,7 +125,7 @@ void UIVSmokeHoleGeneratorComponent::SyncWithVoxelVolume(FIntVector VolumeExtent
 	FVector HalfExtent = FVector(GridRes) * InVoxelSize * 0.5f;
 	SetBoxExtent(HalfExtent);
 
-	VoxelResolution = FIntVector(64, 64, 64);
+	VoxelResolution = FIntVector(128, 128, 128);
 	InitializeHoleTexture();
 }
 
