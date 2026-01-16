@@ -17,6 +17,7 @@ void FIVSmokeModule::StartupModule()
 	);
 	AddShaderSourceDirectoryMapping(TEXT("/Plugin/IVSmoke"), PluginShaderDir);
 
+#if !UE_SERVER
 	// SceneViewExtension requires GEngine, defer until engine is ready
 	UE_LOG(LogIVSmoke, Log, TEXT("[FIVSmokeModule::StartupModule] Registering OnPostEngineInit"));
 	FCoreDelegates::OnPostEngineInit.AddLambda([]()
@@ -24,14 +25,16 @@ void FIVSmokeModule::StartupModule()
 		UE_LOG(LogIVSmoke, Log, TEXT("[FIVSmokeModule::StartupModule] OnPostEngineInit fired"));
 		FIVSmokeSceneViewExtension::Initialize();
 	});
+#endif
 }
 
 void FIVSmokeModule::ShutdownModule()
 {
+#if !UE_SERVER
 	FIVSmokeSceneViewExtension::Shutdown();
-	ResetAllShaderSourceDirectoryMappings();
+#endif
 }
 
 #undef LOCTEXT_NAMESPACE
-	
+
 IMPLEMENT_MODULE(FIVSmokeModule, IVSmoke)

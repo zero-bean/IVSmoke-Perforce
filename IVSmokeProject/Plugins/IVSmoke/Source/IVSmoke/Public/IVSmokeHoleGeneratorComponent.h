@@ -2,10 +2,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Components/BoxComponent.h"
-#include "RHIResources.h"
-#include "Net/UnrealNetwork.h"
 #include "IVSmokeHoleData.h"
 #include "IVSmokeHoleGeneratorComponent.generated.h"
 

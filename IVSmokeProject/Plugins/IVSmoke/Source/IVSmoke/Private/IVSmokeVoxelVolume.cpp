@@ -8,7 +8,6 @@
 #include "IVSmokeRenderer.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "IVSmokeHoleGeneratorComponent.h"
-#include "Net/UnrealNetwork.h"
 
 DECLARE_CYCLE_STAT(TEXT("Update Expansion"),	STAT_IVSmoke_UpdateExpansion,		STATGROUP_IVSmoke);
 DECLARE_CYCLE_STAT(TEXT("Update Sustain"),		STAT_IVSmoke_UpdateSustain,			STATGROUP_IVSmoke);
@@ -51,7 +50,10 @@ void AIVSmokeVoxelVolume::BeginPlay()
 
 	Super::BeginPlay();
 
+#if !UE_SERVER
 	FIVSmokeRenderer::Get().AddVolume(this);
+#endif
+
 	HoleGeneratorComponent = FindComponentByClass<UIVSmokeHoleGeneratorComponent>();
 	if (HoleGeneratorComponent)
 	{
@@ -63,7 +65,9 @@ void AIVSmokeVoxelVolume::BeginPlay()
 
 void AIVSmokeVoxelVolume::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+#if !UE_SERVER
 	FIVSmokeRenderer::Get().RemoveVolume(this);
+#endif
 
 	Super::EndPlay(EndPlayReason);
 }

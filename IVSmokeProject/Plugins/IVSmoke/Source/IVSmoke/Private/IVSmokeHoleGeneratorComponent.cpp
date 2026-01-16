@@ -9,6 +9,7 @@
 #include "RHICommandList.h"
 #include "GlobalShader.h"
 #include "GameFramework/GameStateBase.h"
+#include "Net/UnrealNetwork.h"
 
 #if ENABLE_DRAW_DEBUG
 #include "DrawDebugHelpers.h"
@@ -26,12 +27,19 @@ void UIVSmokeHoleGeneratorComponent::BeginPlay()
 
 	ActiveHoles.Reserve(MaxHoles);
 
+	// todo: FIVSmokeDebugRender must be deleted soon ! (PYB, 260116)
+#if !UE_SERVER
 	FIVSmokeDebugRenderer::Get().Register(this);
+#endif
 }
 
 void UIVSmokeHoleGeneratorComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	// todo: FIVSmokeDebugRender must be deleted soon ! (PYB, 260116)
+#if !UE_SERVER
 	FIVSmokeDebugRenderer::Get().Unregister(this);
+#endif
+
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -53,10 +61,12 @@ void UIVSmokeHoleGeneratorComponent::TickComponent(float DeltaTime, ELevelTick T
 	}
 
 	// Client / Standalone: Rebuild texture if holes exist
-	if (GetNetMode() != NM_DedicatedServer && ActiveHoles.Num() > 0)
+#if !UE_SERVER
+	if (ActiveHoles.Num() > 0)
 	{
 		Local_RebuildHoleTexture();
 	}
+#endif
 
 #if ENABLE_DRAW_DEBUG
 	if (bShowVolumeDebug)
@@ -111,6 +121,7 @@ void UIVSmokeHoleGeneratorComponent::RequestExplosionHole_Implementation(const F
 	Authority_CreateHole(HoleData);
 }
 
+#if !UE_SERVER
 void UIVSmokeHoleGeneratorComponent::SyncWithVoxelVolume(FIntVector VolumeExtent, float InVoxelSize)
 {
 	FIntVector GridRes;
@@ -128,6 +139,7 @@ void UIVSmokeHoleGeneratorComponent::SyncWithVoxelVolume(FIntVector VolumeExtent
 	VoxelResolution = FIntVector(128, 128, 128);
 	InitializeHoleTexture();
 }
+#endif
 
 // ============================================================================
 // Authority Only
@@ -163,6 +175,7 @@ void UIVSmokeHoleGeneratorComponent::Authority_CleanupExpiredHoles()
 // Local Only
 // ============================================================================
 
+#if !UE_SERVER
 void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 {
 	if (!HoleTexture.IsValid())
@@ -234,6 +247,7 @@ void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 		}
 	);
 }
+#endif
 
 // ============================================================================
 // Helper
@@ -292,6 +306,7 @@ bool UIVSmokeHoleGeneratorComponent::CalculatePenetrationPoints(
 	return true;
 }
 
+#if !UE_SERVER
 void UIVSmokeHoleGeneratorComponent::InitializeHoleTexture()
 {
 	if (VoxelResolution.X <= 0 || VoxelResolution.Y <= 0 || VoxelResolution.Z <= 0)
@@ -334,6 +349,8 @@ void UIVSmokeHoleGeneratorComponent::InitializeHoleTexture()
 		}
 	);
 }
+#endif
+
 
 FIntVector UIVSmokeHoleGeneratorComponent::LocalToVoxel(const FVector& LocalPos) const
 {
@@ -359,6 +376,7 @@ FIntVector UIVSmokeHoleGeneratorComponent::LocalToVoxelCeil(const FVector& Local
 	);
 }
 
+#if !UE_SERVER
 TArray<FIVSmokeHoleGPU> UIVSmokeHoleGeneratorComponent::BuildGPUHoleBuffer() const
 {
 	const FTransform Transform = GetComponentTransform();
@@ -400,3 +418,4 @@ TArray<FIVSmokeHoleGPU> UIVSmokeHoleGeneratorComponent::BuildGPUHoleBuffer() con
 
 	return GPUBuffer;
 }
+#endif

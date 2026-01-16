@@ -1,7 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "IVSmokeRenderer.h"
-
 #include "IVSmoke.h"
 #include "IVSmokePostProcessPass.h"
 #include "IVSmokeSettings.h"
@@ -14,6 +13,7 @@
 #include "IVSmokeHoleGeneratorComponent.h"
 #include "RenderGraphUtils.h"
 
+#if !UE_SERVER
 FIVSmokeRenderer& FIVSmokeRenderer::Get()
 {
 	static FIVSmokeRenderer Instance;
@@ -994,3 +994,4 @@ void FIVSmokeRenderer::AddDepthSortedCompositePass(
 
 	FIVSmokePostProcessPass::AddPixelShaderPass<FIVSmokeDepthSortedCompositePS>(GraphBuilder, ShaderMap, PixelShader, Parameters, Output);
 }
+#endif
