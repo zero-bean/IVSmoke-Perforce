@@ -2,7 +2,11 @@
 
 #include "IVSmokeCollisionComponent.h"
 
+#include "IVSmoke.h"
 #include "PhysicsEngine/BodySetup.h"
+
+DECLARE_CYCLE_STAT(TEXT("Update Collision"), STAT_IVSmoke_UpdateCollision, STATGROUP_IVSmoke)
+DECLARE_CYCLE_STAT(TEXT("Rebuild Physics Geometry"), STAT_IVSmoke_RebuildPhysicsGeometry, STATGROUP_IVSmoke)
 
 //~==============================================================================
 // Component Lifecycle
@@ -41,6 +45,10 @@ void UIVSmokeCollisionComponent::OnCreatePhysicsState()
 
 void UIVSmokeCollisionComponent::UpdateCollision(const TArray<float>& VoxelData, const FIntVector& GridResolution, float VoxelSize)
 {
+	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_UpdateCollision);
+
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::UIVSmokeCollisionComponent::UpdateCollision");
+
 	if (!bCollisionEnabled)
 	{
 		return;
@@ -67,6 +75,10 @@ void UIVSmokeCollisionComponent::ResetCollision()
 
 void UIVSmokeCollisionComponent::RebuildPhysicsGeometry()
 {
+	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_RebuildPhysicsGeometry);
+
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::UIVSmokeCollisionComponent::RebuildPhysicsGeometry");
+
 	UBodySetup* BodySetup = GetBodySetup();
 	if (!BodySetup)
 	{

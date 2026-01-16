@@ -2,10 +2,18 @@
 
 #include "IVSmokeOctree.h"
 
+#include "IVSmoke.h"
 #include "IVSmokeGridLibrary.h"
+
+DECLARE_CYCLE_STAT(TEXT("Build Octree"), STAT_IVSmoke_BuildOctree, STATGROUP_IVSmoke)
+DECLARE_CYCLE_STAT(TEXT("Check Octree State"), STAT_IVSmoke_CheckOctree, STATGROUP_IVSmoke)
 
 void FIVSmokeOctree::Build(const TArray<float>& VoxelData, const FIntVector& GridResolution, float VoxelSize)
 {
+	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_BuildOctree);
+
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::FIVSmokeOctree::Build");
+
 	Reset();
 
 	if (VoxelData.IsEmpty())
