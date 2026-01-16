@@ -298,7 +298,6 @@ private:
 	 * @param SeparateTranslucencyTex Particle layer from SeparateTranslucency
 	 * @param Output                  Final render target
 	 * @param SmokeTexExtent          Smoke texture extent (= ViewportSize)
-	 * @param TranslucencyTexExtent   SeparateTranslucency texture extent
 	 * @param Sharpness               Sharpen/blur amount (-1 to 1, 0 = no filter)
 	 */
 	void AddDepthSortedCompositePass(
@@ -309,7 +308,6 @@ private:
 		FRDGTextureRef SeparateTranslucencyTex,
 		const FScreenPassRenderTarget& Output,
 		const FIntPoint& SmokeTexExtent,
-		const FIntPoint& TranslucencyTexExtent,
 		float Sharpness
 	);
 

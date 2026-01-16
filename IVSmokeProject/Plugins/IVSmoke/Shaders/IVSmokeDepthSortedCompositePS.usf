@@ -28,7 +28,6 @@ SamplerState LinearClamp_Sampler;
 
 // Texture Extents (UV = SvPosition / TexExtent)
 float2 SmokeTexExtent;
-float2 TranslucencyTexExtent;
 
 // Sharpness filter (matching TranslucencyComposite)
 float Sharpness;
@@ -63,9 +62,11 @@ void MainPS(
 	// UV = SvPosition / TexExtent (direct texel-to-UV mapping)
 
 	float2 SmokeUV = SvPosition.xy / SmokeTexExtent;
-	float2 TranslucencyUV = SvPosition.xy / TranslucencyTexExtent;
 
-	int2 PixelCoord = int2(SvPosition.xy);
+	// Get actual texture dimensions for accurate UV (CL 277 style)
+	uint TranslucencyWidth, TranslucencyHeight;
+	SeparateTranslucencyTex.GetDimensions(TranslucencyWidth, TranslucencyHeight);
+	float2 TranslucencyUV = SvPosition.xy / float2(TranslucencyWidth, TranslucencyHeight);
 
 	// ========================================================================
 	// Sample Input Textures with Sharpness Filtering
@@ -163,6 +164,8 @@ void MainPS(
 	// For particles: use CustomDepth if available, convert to linear depth
 	// CustomDepth is in device-Z (reversed-Z: 1=near, 0=far), convert using InvDeviceZToWorldZTransform
 
+	// Sample CustomDepth using direct pixel coordinates (Load method - CL 277 style)
+	int2 PixelCoord = int2(SvPosition.xy);
 	float CustomDeviceZ = SceneTexturesStruct.CustomDepthTexture.Load(int3(PixelCoord, 0)).r;
 
 	// Convert CustomDepth device-Z to linear world depth
@@ -183,6 +186,14 @@ void MainPS(
 	bool bSmokeInFront = (SmokeLinearDepth > 0.0) && (SmokeLinearDepth < ParticleLinearDepth);
 
 	// ========================================================================
+	// Particle presence check (supports both opaque and additive particles)
+	// ========================================================================
+	// Additive particles have Transmittance = 1.0, so ParticleAlpha = 0
+	// Use luminance to detect additive particles that have color but no alpha
+	float ParticleLuminance = dot(ParticleColorPremul, float3(0.299, 0.587, 0.114));
+	bool bHasParticles = (ParticleAlpha > 0.001) || (ParticleLuminance > 0.001);
+
+	// ========================================================================
 	// Composite (pre-multiplied alpha blending)
 	// ========================================================================
 	//
@@ -198,7 +209,7 @@ void MainPS(
 	float FinalTransmittance;
 
 	// No particles case - smoke only
-	if (ParticleAlpha < 0.001)
+	if (!bHasParticles)
 	{
 		// Smoke only: RGB = AccumulatedColor (pre-multiplied), A = Transmittance
 		FinalColor = filteredSmoke.rgb;

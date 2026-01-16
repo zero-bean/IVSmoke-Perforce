@@ -353,7 +353,6 @@ public:
 
 		// Texture Extents for UV calculation (UV = SvPosition / TexExtent)
 		SHADER_PARAMETER(FVector2f, SmokeTexExtent)
-		SHADER_PARAMETER(FVector2f, TranslucencyTexExtent)
 		SHADER_PARAMETER(float, Sharpness)
 		SHADER_PARAMETER(FVector4f, InvDeviceZToWorldZTransform)
 
