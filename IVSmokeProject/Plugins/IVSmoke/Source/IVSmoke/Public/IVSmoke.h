@@ -7,6 +7,8 @@
 /** Log category for IVSmoke plugin */
 DECLARE_LOG_CATEGORY_EXTERN(LogIVSmoke, Log, All);
 
+DECLARE_STATS_GROUP(TEXT("IVSmoke"), STATGROUP_IVSmoke, STATCAT_Advanced);
+
 class FIVSmokeModule : public IModuleInterface
 {
 public:

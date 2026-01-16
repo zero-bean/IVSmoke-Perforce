@@ -10,6 +10,17 @@
 #include "IVSmokeHoleGeneratorComponent.h"
 #include "Net/UnrealNetwork.h"
 
+DECLARE_CYCLE_STAT(TEXT("Update Expansion"),	STAT_IVSmoke_UpdateExpansion,		STATGROUP_IVSmoke);
+DECLARE_CYCLE_STAT(TEXT("Update Sustain"),		STAT_IVSmoke_UpdateSustain,			STATGROUP_IVSmoke);
+DECLARE_CYCLE_STAT(TEXT("Update Dissipation"),	STAT_IVSmoke_UpdateDissipation,		STATGROUP_IVSmoke);
+DECLARE_CYCLE_STAT(TEXT("Process Expansion"),	STAT_IVSmoke_ProcessExpansion,		STATGROUP_IVSmoke);
+DECLARE_CYCLE_STAT(TEXT("Prepare Dissipation"),	STAT_IVSmoke_PrepareDissipation,	STATGROUP_IVSmoke);
+DECLARE_CYCLE_STAT(TEXT("Process Dissipation"),	STAT_IVSmoke_ProcessDissipation,	STATGROUP_IVSmoke);
+
+DECLARE_DWORD_COUNTER_STAT(TEXT("Active Voxel Count"),					STAT_IVSmoke_ActiveVoxelCount,	STATGROUP_IVSmoke);
+DECLARE_DWORD_COUNTER_STAT(TEXT("Created Voxel Count (Per Frame)"),		STAT_IVSmoke_CreatedVoxel,		STATGROUP_IVSmoke);
+DECLARE_DWORD_COUNTER_STAT(TEXT("Destroyed Voxel Count (Per Frame)"),	STAT_IVSmoke_DestroyedVoxel,	STATGROUP_IVSmoke);
+
 static const FIntVector FloodFillDirections[] = {
 	FIntVector(1, 0, 0), FIntVector(-1, 0, 0),
 	FIntVector(0, 1, 0), FIntVector(0, -1, 0),
@@ -65,6 +76,11 @@ void AIVSmokeVoxelVolume::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 void AIVSmokeVoxelVolume::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (ActiveVoxelCount > 0)
+	{
+		INC_DWORD_STAT_BY(STAT_IVSmoke_ActiveVoxelCount, ActiveVoxelCount);
+	}
 
 	switch (CurrentState)
 	{
@@ -164,6 +180,8 @@ bool AIVSmokeVoxelVolume::IsVoxelBlocked(const UWorld* World, const FVector& Wor
 
 bool AIVSmokeVoxelVolume::IsConnectionBlocked(const UWorld* World, const FVector& BeginPos, const FVector& EndPos) const
 {
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::AIVSmokeVoxelVolume::IsConnectionBlocked");
+
 	if (!World)
 	{
 		return false;
@@ -244,6 +262,10 @@ void AIVSmokeVoxelVolume::StartSimulation_Implementation(int32 InRandomSeed)
 
 void AIVSmokeVoxelVolume::UpdateExpansion(float DeltaTime)
 {
+	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_UpdateExpansion);
+
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::AIVSmokeVoxelVolume::UpdateExpansion");
+
 	ElapsedTime += DeltaTime;
 
 	float CurveValue = GetCurveValue(ElapsedTime, ExpansionDuration, ExpansionCurve);
@@ -276,6 +298,10 @@ void AIVSmokeVoxelVolume::UpdateExpansion(float DeltaTime)
 
 void AIVSmokeVoxelVolume::UpdateSustain(float DeltaTime)
 {
+	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_UpdateSustain);
+
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::AIVSmokeVoxelVolume::UpdateSustain");
+
 	ElapsedTime += DeltaTime;
 
 	float CurveValue = GetCurveValue(ElapsedTime, SustainDuration, nullptr);
@@ -300,6 +326,10 @@ void AIVSmokeVoxelVolume::UpdateSustain(float DeltaTime)
 
 void AIVSmokeVoxelVolume::UpdateDissipation(float DeltaTime)
 {
+	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_UpdateDissipation);
+
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::AIVSmokeVoxelVolume::UpdateDissipation");
+
 	ElapsedTime += DeltaTime;
 
 	float CurveValue = GetCurveValue(ElapsedTime, DissipationDuration, DissipationCurve);
@@ -341,6 +371,10 @@ void AIVSmokeVoxelVolume::UpdateDissipation(float DeltaTime)
 
 void AIVSmokeVoxelVolume::ProcessExpansion(int32 VoxelNum)
 {
+	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_ProcessExpansion);
+
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::AIVSmokeVoxelVolume::ProcessExpansion");
+
 	UWorld* World = GetWorld();
 
 	FTransform ActorTrans = GetActorTransform();
@@ -430,6 +464,10 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 VoxelNum)
 
 void AIVSmokeVoxelVolume::PrepareDissipation(int32 VoxelNum)
 {
+	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_PrepareDissipation);
+
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::AIVSmokeVoxelVolume::PrepareDissipation");
+
 	if (GeneratedVoxelIndices.IsEmpty())
 	{
 		return;
@@ -450,6 +488,10 @@ void AIVSmokeVoxelVolume::PrepareDissipation(int32 VoxelNum)
 
 void AIVSmokeVoxelVolume::ProcessDissipation(int32 VoxelNum)
 {
+	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_ProcessDissipation);
+
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::AIVSmokeVoxelVolume::ProcessDissipation");
+
 	int32 RemoveCount = 0;
 	while (RemoveCount < VoxelNum && !MinHeap.IsEmpty())
 	{
@@ -523,10 +565,12 @@ void AIVSmokeVoxelVolume::SetVoxelDensityByIndex(int32 LinearIndex, float Densit
 	if (bIsActive && !bWasActive)
 	{
 		++ActiveVoxelCount;
+		INC_DWORD_STAT(STAT_IVSmoke_CreatedVoxel);
 	}
 	else if (!bIsActive && bWasActive)
 	{
 		--ActiveVoxelCount;
+		INC_DWORD_STAT(STAT_IVSmoke_DestroyedVoxel);
 	}
 
 	DirtyLevel = EIVSmokeDirtyLevel::Dirty;
