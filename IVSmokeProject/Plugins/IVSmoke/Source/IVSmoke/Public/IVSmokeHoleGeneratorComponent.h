@@ -131,5 +131,5 @@ private:
 	FIntVector VoxelResolution = FIntVector(64, 64, 64);
 
 	UPROPERTY(Transient)
-	UTextureRenderTargetVolume* HoleTexture = nullptr;
+	TObjectPtr<UTextureRenderTargetVolume> HoleTexture = nullptr;
 };
