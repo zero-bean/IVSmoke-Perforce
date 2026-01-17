@@ -10,6 +10,7 @@ class AIVSmokeVoxelVolume;
 class FRDGBuilder;
 class FSceneView;
 class UIVSmokeSmokePreset;
+class UIVSmokeShadowCaptureComponent;
 class UTextureRenderTargetVolume;
 struct FPostProcessMaterialInputs;
 
@@ -56,6 +57,7 @@ struct IVSMOKE_API FIVSmokePackedRenderData
 	float ScatteringAnisotropy = 0.5f;
 	FVector LightDirection = FVector(0.2f, 0.1f, 0.9f);
 	FLinearColor LightColor = FLinearColor::White;
+	float LightIntensity = 1.0f;
 
 	/** Self-shadowing parameters */
 	bool bEnableSelfShadowing = true;
@@ -63,6 +65,15 @@ struct IVSMOKE_API FIVSmokePackedRenderData
 	float LightMarchingDistance = 0.0f;
 	float LightMarchingExpFactor = 2.0f;
 	float ShadowAmbient = 0.2f;
+
+	/** External shadowing parameters (Scene Capture Shadow Map) */
+	bool bEnableExternalShadowing = false;
+	float ShadowDepthBias = 1.0f;
+	float ExternalShadowAmbient = 0.3f;
+	FTextureRHIRef ShadowDepthTexture;
+	FMatrix LightViewProjectionMatrix = FMatrix::Identity;
+	FVector ShadowCameraPosition = FVector::ZeroVector;
+	FVector ShadowCameraForward = FVector(0.0f, 0.0f, -1.0f);
 
 	/** Validity flag */
 	bool bIsValid = false;
@@ -79,6 +90,11 @@ struct IVSMOKE_API FIVSmokePackedRenderData
 		HoleTextureSizes.Empty();
 		VolumeCount = 0;
 		bIsValid = false;
+
+		// External shadowing
+		bEnableExternalShadowing = false;
+		ShadowDepthTexture = nullptr;
+		LightViewProjectionMatrix = FMatrix::Identity;
 	}
 };
 
@@ -327,6 +343,43 @@ private:
 
 	/** Elapsed time for animation. */
 	float ElapsedTime = 0.0f;
+
+	// ============================================================================
+	// External Shadowing (Scene Capture)
+	// ============================================================================
+
+	/** Shadow capture component (global singleton, owned by ShadowCaptureOwner). */
+	TWeakObjectPtr<UIVSmokeShadowCaptureComponent> ShadowCaptureComponent;
+
+	/** Owner actor for shadow capture component. */
+	TWeakObjectPtr<AActor> ShadowCaptureOwner;
+
+	/** Frame counter for shadow update interval. */
+	int32 ShadowUpdateFrameCounter = 0;
+
+	/** Last frame number when shadow was updated (prevents multiple updates per frame). */
+	uint32 LastShadowUpdateFrameNumber = 0;
+
+	/** Re-entry guard to prevent infinite recursion during shadow capture. */
+	bool bIsCapturingShadow = false;
+
+	/** Initialize shadow capture component if needed. */
+	void InitializeShadowCapture(UWorld* World);
+
+	/** Clean up shadow capture resources. */
+	void CleanupShadowCapture();
+
+	/**
+	 * Find the main directional light (Atmosphere Sun Light) in the world.
+	 * Uses the same logic as the engine: bAtmosphereSunLight + AtmosphereSunLightIndex.
+	 *
+	 * @param World          World to search in
+	 * @param OutDirection   Direction TOWARD the light source (opposite of light travel direction)
+	 * @param OutColor       Light color
+	 * @param OutIntensity   Light intensity
+	 * @return true if a directional light was found
+	 */
+	bool GetMainDirectionalLight(UWorld* World, FVector& OutDirection, FLinearColor& OutColor, float& OutIntensity);
 
 	// ============================================================================
 	// Thread-Safe Render Data Cache

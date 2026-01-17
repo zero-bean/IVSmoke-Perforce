@@ -144,6 +144,16 @@ public:
 		SHADER_PARAMETER(float, LightMarchingExpFactor)
 		SHADER_PARAMETER(float, ShadowAmbient)
 
+		// External Shadowing (Scene Capture Shadow Map)
+		SHADER_PARAMETER(int32, bEnableExternalShadowing)
+		SHADER_PARAMETER(float, ShadowDepthBias)
+		SHADER_PARAMETER(float, ExternalShadowAmbient)
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, ShadowDepthTexture)
+		SHADER_PARAMETER_SAMPLER(SamplerState, ShadowSampler)
+		SHADER_PARAMETER(FMatrix44f, LightViewProjectionMatrix)
+		SHADER_PARAMETER(FVector3f, ShadowCameraPosition)
+		SHADER_PARAMETER(FVector3f, ShadowCameraForward)
+
 		// Temporal (for TAA integration)
 		SHADER_PARAMETER(uint32, FrameNumber)
 

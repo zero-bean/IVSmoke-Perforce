@@ -88,6 +88,19 @@ float LightMarchingDistance;
 float LightMarchingExpFactor;
 float ShadowAmbient;
 
+// External Shadowing (Scene Capture Shadow Map)
+int bEnableExternalShadowing;
+float ShadowDepthBias;
+float ExternalShadowAmbient;
+Texture2D<float> ShadowDepthTexture;
+SamplerState ShadowSampler;
+float4x4 LightViewProjectionMatrix;
+float3 ShadowCameraPosition;
+float3 ShadowCameraForward;
+
+// DEBUG: Set to 1 to visualize shadow depth values
+#define DEBUG_EXTERNAL_SHADOW 0
+
 // Temporal (for TAA integration)
 uint FrameNumber;
 
@@ -277,6 +290,101 @@ float MarchTowardLight(float3 WorldPos, float3 LightDir, float MarchDistance, in
 }
 
 // ============================================================================
+// External Shadowing (Scene Capture Shadow Map)
+// ============================================================================
+
+/**
+ * Sample external shadow map for a given world position.
+ * Uses orthographic projection from directional light's perspective.
+ * SCS_SceneDepth outputs linear depth in cm (world units).
+ *
+ * @param WorldPos  World space position to test for shadow
+ * @return          Shadow factor: 1.0 = fully lit, ExternalShadowAmbient = fully shadowed
+ */
+float SampleExternalShadow(float3 WorldPos)
+{
+	if (!bEnableExternalShadowing)
+	{
+		return 1.0;
+	}
+
+	// Transform world position to light clip space (for UV calculation only)
+	float4 LightClipPos = mul(float4(WorldPos, 1.0), LightViewProjectionMatrix);
+
+	// Perspective divide (for orthographic, w should be 1.0)
+	float3 LightNDC = LightClipPos.xyz / LightClipPos.w;
+
+	// NDC to UV: [-1, 1] -> [0, 1]
+	float2 ShadowUV = LightNDC.xy * 0.5 + 0.5;
+	ShadowUV.y = 1.0 - ShadowUV.y; // Flip Y for UE texture convention
+
+	// Bounds check: outside shadow map = no shadow
+	if (any(ShadowUV < 0.0) || any(ShadowUV > 1.0))
+	{
+		return 1.0;
+	}
+
+	// Sample shadow depth (SCS_SceneDepth = linear depth in cm from shadow camera)
+	float ShadowDepth = ShadowDepthTexture.SampleLevel(ShadowSampler, ShadowUV, 0).r;
+
+	// Calculate linear depth of current position from shadow camera
+	// For orthographic projection: depth = dot(WorldPos - CameraPos, CameraForward)
+	float CurrentDepth = dot(WorldPos - ShadowCameraPosition, ShadowCameraForward);
+
+	// Shadow test logic:
+	// - ShadowDepth = depth of closest object in shadow map (occluder)
+	// - CurrentDepth = depth of current smoke position
+	// - If ShadowDepth is very large (no occluder), smoke should be lit
+	// - If ShadowDepth is smaller than CurrentDepth, there's an occluder in front → shadowed
+	//
+	// Note: SCS_SceneDepth may return very large values (far plane) when nothing is captured
+	// So: CurrentDepth > ShadowDepth means occluder is between light and smoke → shadowed
+	float ShadowFactor = (CurrentDepth <= ShadowDepth + ShadowDepthBias) ? 1.0 : ExternalShadowAmbient;
+
+	return ShadowFactor;
+}
+
+// Debug function to visualize shadow depth (call from main for debugging)
+float3 DebugShadowDepth(float3 WorldPos)
+{
+	if (!bEnableExternalShadowing)
+	{
+		return float3(1, 0, 1); // Magenta = disabled
+	}
+
+	float4 LightClipPos = mul(float4(WorldPos, 1.0), LightViewProjectionMatrix);
+	float3 LightNDC = LightClipPos.xyz / LightClipPos.w;
+	float2 ShadowUV = LightNDC.xy * 0.5 + 0.5;
+	ShadowUV.y = 1.0 - ShadowUV.y;
+
+	if (any(ShadowUV < 0.0) || any(ShadowUV > 1.0))
+	{
+		return float3(0, 0, 1); // Blue = out of bounds
+	}
+
+	float ShadowDepth = ShadowDepthTexture.SampleLevel(ShadowSampler, ShadowUV, 0).r;
+	float CurrentDepth = dot(WorldPos - ShadowCameraPosition, ShadowCameraForward);
+
+	// Debug output interpretation:
+	// - If RED is 0 (black): Shadow texture is not capturing anything
+	// - If GREEN > RED: Current pos is behind occluder → should be shadowed
+	// - If GREEN <= RED: Current pos is in front of occluder → should be lit
+	//
+	// Expected for working shadow:
+	// - Areas with occluder above: RED = small value (occluder depth)
+	// - Areas without occluder: RED = very bright (far plane / 10000)
+	// - GREEN = smoke depth (should be consistent across smoke volume)
+
+	float NormShadow = saturate(ShadowDepth / 10000.0); // Normalized shadow depth
+	float NormCurrent = saturate(CurrentDepth / 10000.0); // Normalized current depth
+
+	// Show comparison result: Blue = lit (CurrentDepth <= ShadowDepth), Black = shadowed
+	float IsLit = (CurrentDepth <= ShadowDepth + ShadowDepthBias) ? 1.0 : 0.0;
+
+	return float3(NormShadow, NormCurrent, IsLit);
+}
+
+// ============================================================================
 // Multi-Volume Ray Marching CS
 // ============================================================================
 
@@ -290,6 +398,34 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	{
 		return;
 	}
+
+#if DEBUG_EXTERNAL_SHADOW
+	// EARLY DEBUG: Output shadow parameters as colors
+	// This runs UNCONDITIONALLY to verify shader is recompiling
+	if (bEnableExternalShadowing)
+	{
+		// Visualize ShadowCameraPosition and ShadowCameraForward
+		// Red = abs(ShadowCameraForward.x), Green = abs(ShadowCameraForward.y), Blue = abs(ShadowCameraForward.z)
+		float3 DebugColor = abs(ShadowCameraForward);
+
+		// If ShadowCameraForward is zero, show magenta (error)
+		if (length(ShadowCameraForward) < 0.001)
+		{
+			DebugColor = float3(1, 0, 1); // Magenta = ShadowCameraForward is zero!
+		}
+
+		// Sample shadow texture at screen center to verify it's working
+		float CenterShadowDepth = ShadowDepthTexture.SampleLevel(ShadowSampler, float2(0.5, 0.5), 0).r;
+
+		// Show as brightness: if depth is 0, output will be dark (problem!)
+		// If depth is large (far plane), output will be bright (normal for empty areas)
+		float NormDepth = saturate(CenterShadowDepth / 100000.0);
+
+		SmokeAlbedoTex[PixelCoord] = float4(NormDepth, NormDepth, NormDepth, 1.0);
+		SmokeMaskTex[PixelCoord] = float4(1.0, 0.0, 0.0, 1.0);
+		return;
+	}
+#endif
 
 	// Calculate screen position (use TexSize for UV calculation)
 	float2 PixelUV = (float2(PixelCoord) + 0.5) / TexSize;
@@ -488,6 +624,21 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 				LightMarchingSteps,
 				LightMarchingExpFactor
 			);
+
+			// External shadowing: apply shadow from external objects (trees, buildings, etc.)
+			float ExternalShadow = SampleExternalShadow(WorldPos);
+			LightTransmittance *= ExternalShadow;
+
+#if DEBUG_EXTERNAL_SHADOW
+			// Debug visualization: output shadow depth info as color
+			if (bEnableExternalShadowing && step == 0)
+			{
+				float3 DebugColor = DebugShadowDepth(WorldPos);
+				SmokeAlbedoTex[DispatchThreadId.xy] = float4(DebugColor, 1.0);
+				SmokeMaskTex[DispatchThreadId.xy] = float4(1.0, 0.0, 0.0, 1.0);
+				return;
+			}
+#endif
 
 			// Apply self-shadow to base color (ShadowAmbient = minimum brightness)
 			float3 LitSampleColor = SampleColor * lerp(ShadowAmbient, 1.0, LightTransmittance);

@@ -225,6 +225,35 @@ public:
 	float ShadowAmbient = 0.2f;
 
 	// ============================================================================
+	// External Shadowing (Scene Capture Shadow Maps)
+	// ============================================================================
+
+	/** Enable external object shadows (trees, buildings) via scene capture depth map.
+	 *  Captures orthographic depth from directional light's perspective. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing")
+	bool bEnableExternalShadowing = false;
+
+	/** Shadow map resolution (power of 2). Higher = better quality, more memory.
+	 *  1024 recommended for most cases. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing", meta = (ClampMin = "256", ClampMax = "4096", EditCondition = "bEnableExternalShadowing"))
+	int32 ShadowMapResolution = 1024;
+
+	/** Shadow depth bias to prevent shadow acne.
+	 *  Increase if shadow artifacts appear on surfaces. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing", meta = (ClampMin = "0.0", ClampMax = "100.0", EditCondition = "bEnableExternalShadowing"))
+	float ShadowDepthBias = 1.0f;
+
+	/** Minimum brightness in externally shadowed areas.
+	 *  0 = fully dark shadows, 1 = no shadow effect. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing", meta = (ClampMin = "0.0", ClampMax = "1.0", EditCondition = "bEnableExternalShadowing"))
+	float ExternalShadowAmbient = 0.3f;
+
+	/** Update shadow map every N frames (1 = every frame).
+	 *  Higher values improve performance for static scenes. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing", meta = (ClampMin = "1", ClampMax = "10", EditCondition = "bEnableExternalShadowing"))
+	int32 ShadowUpdateInterval = 1;
+
+	// ============================================================================
 	// Voxel FXAA
 	// ============================================================================
 

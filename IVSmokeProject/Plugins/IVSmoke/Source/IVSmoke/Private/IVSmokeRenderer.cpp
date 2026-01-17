@@ -7,11 +7,17 @@
 #include "IVSmokeShaders.h"
 #include "IVSmokeSmokePreset.h"
 #include "IVSmokeVoxelVolume.h"
+#include "IVSmokeShadowCaptureComponent.h"
 #include "Engine/TextureRenderTargetVolume.h"
 #include "PostProcess/PostProcessMaterialInputs.h"
 #include "SceneRenderTargetParameters.h"
 #include "IVSmokeHoleGeneratorComponent.h"
 #include "RenderGraphUtils.h"
+#include "Engine/DirectionalLight.h"
+#include "Components/DirectionalLightComponent.h"
+#include "EngineUtils.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/SceneComponent.h"
 
 #if !UE_SERVER
 FIVSmokeRenderer& FIVSmokeRenderer::Get()
@@ -44,6 +50,8 @@ void FIVSmokeRenderer::Shutdown()
 		NoiseVolume = nullptr;
 	}
 	ElapsedTime = 0.0f;
+
+	CleanupShadowCapture();
 }
 FIntVector FIVSmokeRenderer::GetAtlasTexCount(const FIntVector& TexSize, const int32 TexCount, const int32 TexturePackInterval, const int32 TexturePackMaxSize)
 {
@@ -84,6 +92,116 @@ FIntVector FIVSmokeRenderer::GetAtlasTexCount(const FIntVector& TexSize, const i
 	return AtlasTexCount;
 }
 
+
+void FIVSmokeRenderer::InitializeShadowCapture(UWorld* World)
+{
+	// If owner actor was destroyed (e.g., PIE ended), the component pointer is dangling
+	if (!ShadowCaptureOwner.IsValid())
+	{
+		ShadowCaptureComponent.Reset();
+	}
+
+	if (ShadowCaptureComponent.IsValid() || !World)
+	{
+		return;
+	}
+
+	// Create owner actor for the shadow capture component
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = TEXT("IVSmokeShadowCaptureOwner");
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	AActor* OwnerActor = World->SpawnActor<AActor>(AActor::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+	if (!OwnerActor)
+	{
+		UE_LOG(LogIVSmoke, Warning, TEXT("[FIVSmokeRenderer::InitializeShadowCapture] Failed to spawn shadow capture owner actor"));
+		return;
+	}
+
+	ShadowCaptureOwner = OwnerActor;
+
+	// Create shadow capture component
+	ShadowCaptureComponent = NewObject<UIVSmokeShadowCaptureComponent>(OwnerActor, TEXT("ShadowCaptureComponent"));
+	if (ShadowCaptureComponent.IsValid())
+	{
+		// Set owner actor's root component if needed
+		if (!OwnerActor->GetRootComponent())
+		{
+			USceneComponent* RootComp = NewObject<USceneComponent>(OwnerActor, TEXT("RootComponent"));
+			OwnerActor->SetRootComponent(RootComp);
+			RootComp->RegisterComponentWithWorld(World);
+		}
+
+		// Attach to owner actor and register with world
+		ShadowCaptureComponent->AttachToComponent(OwnerActor->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
+		ShadowCaptureComponent->RegisterComponentWithWorld(World);
+		UE_LOG(LogIVSmoke, Log, TEXT("[FIVSmokeRenderer::InitializeShadowCapture] Shadow capture component initialized"));
+	}
+}
+
+void FIVSmokeRenderer::CleanupShadowCapture()
+{
+	ShadowCaptureComponent.Reset();
+
+	if (AActor* Owner = ShadowCaptureOwner.Get())
+	{
+		Owner->Destroy();
+	}
+	ShadowCaptureOwner.Reset();
+
+	ShadowUpdateFrameCounter = 0;
+	LastShadowUpdateFrameNumber = 0;
+}
+
+bool FIVSmokeRenderer::GetMainDirectionalLight(UWorld* World, FVector& OutDirection, FLinearColor& OutColor, float& OutIntensity)
+{
+	if (!World)
+	{
+		return false;
+	}
+
+	UDirectionalLightComponent* BestLight = nullptr;
+	int32 BestIndex = INT_MAX;
+
+	// Find the atmosphere sun light with lowest index (0 = sun, 1 = moon)
+	for (TActorIterator<ADirectionalLight> It(World); It; ++It)
+	{
+		UDirectionalLightComponent* LightComp = Cast<UDirectionalLightComponent>(It->GetLightComponent());
+		if (LightComp && LightComp->IsUsedAsAtmosphereSunLight())
+		{
+			int32 Index = LightComp->GetAtmosphereSunLightIndex();
+			if (Index < BestIndex)
+			{
+				BestIndex = Index;
+				BestLight = LightComp;
+			}
+		}
+	}
+
+	// Fallback: first DirectionalLight found
+	if (!BestLight)
+	{
+		for (TActorIterator<ADirectionalLight> It(World); It; ++It)
+		{
+			BestLight = Cast<UDirectionalLightComponent>(It->GetLightComponent());
+			if (BestLight)
+			{
+				break;
+			}
+		}
+	}
+
+	if (BestLight)
+	{
+		// Negate: Shader expects direction TOWARD the light, not FROM the light
+		OutDirection = -BestLight->GetComponentRotation().Vector();
+		OutColor = BestLight->GetLightColor();
+		OutIntensity = BestLight->Intensity;
+		return true;
+	}
+
+	return false;
+}
 
 void FIVSmokeRenderer::CreateNoiseVolume()
 {
@@ -369,22 +487,45 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		Result.ScatterScale = Settings->ScatterScale;
 		Result.ScatteringAnisotropy = Settings->ScatteringAnisotropy;
 
+		// Get world from first volume (single lookup, reused for light detection and shadow capture)
+		UWorld* World = (InVolumes.Num() > 0 && InVolumes[0]) ? InVolumes[0]->GetWorld() : nullptr;
+
+		// Light Direction and Color
+		// Priority: Settings Override > World DirectionalLight > Default
 		if (Settings->bOverrideLightDirection)
 		{
 			Result.LightDirection = Settings->LightDirectionOverride.GetSafeNormal();
+			Result.LightIntensity = 1.0f;  // Override assumes full intensity
 		}
 		else
 		{
-			Result.LightDirection = FVector(0.2f, 0.1f, 0.9f).GetSafeNormal();
+			FVector AutoLightDir;
+			FLinearColor AutoLightColor;
+			float AutoLightIntensity;
+
+			if (GetMainDirectionalLight(World, AutoLightDir, AutoLightColor, AutoLightIntensity))
+			{
+				Result.LightDirection = AutoLightDir;
+				Result.LightIntensity = AutoLightIntensity;
+
+				// Also use auto light color if not overridden
+				if (!Settings->bOverrideLightColor)
+				{
+					Result.LightColor = AutoLightColor;
+				}
+			}
+			else
+			{
+				// No directional light found - dark environment
+				Result.LightDirection = FVector(0.0f, 0.0f, -1.0f);
+				Result.LightIntensity = 0.0f;
+				Result.LightColor = FLinearColor::Black;
+			}
 		}
 
 		if (Settings->bOverrideLightColor)
 		{
 			Result.LightColor = Settings->LightColorOverride;
-		}
-		else
-		{
-			Result.LightColor = FLinearColor(1.0f, 0.95f, 0.9f);
 		}
 
 		// Self-shadowing
@@ -393,6 +534,82 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		Result.LightMarchingDistance = Settings->LightMarchingDistance;
 		Result.LightMarchingExpFactor = Settings->LightMarchingExpFactor;
 		Result.ShadowAmbient = Settings->ShadowAmbient;
+
+		// External shadowing (Scene Capture Shadow Map)
+		Result.bEnableExternalShadowing = Settings->bEnableExternalShadowing;
+		Result.ShadowDepthBias = Settings->ShadowDepthBias;
+		Result.ExternalShadowAmbient = Settings->ExternalShadowAmbient;
+
+		// Skip shadow capture if we're already inside a shadow capture render pass (prevents infinite recursion)
+		if (Settings->bEnableExternalShadowing && InVolumes.Num() > 0 && !bIsCapturingShadow)
+		{
+			// Calculate combined AABB of all visible volumes
+			FBox CombinedAABB(ForceInit);
+			for (AIVSmokeVoxelVolume* Volume : InVolumes)
+			{
+				if (Volume)
+				{
+					FBox VolumeAABB(Volume->GetVoxelWorldAABBMin(), Volume->GetVoxelWorldAABBMax());
+					if (CombinedAABB.IsValid)
+					{
+						CombinedAABB = CombinedAABB + VolumeAABB;
+					}
+					else
+					{
+						CombinedAABB = VolumeAABB;
+					}
+				}
+			}
+
+			// Update shadow capture if AABB is valid
+			if (CombinedAABB.IsValid)
+			{
+				// Per-frame guard: Only update once per actual engine frame
+				// PrepareRenderData can be called multiple times per frame (multiple views)
+				// but we must only do the double-buffer promotion once
+				const uint32 CurrentFrameNumber = GFrameNumber;
+				const bool bAlreadyUpdatedThisFrame = (LastShadowUpdateFrameNumber == CurrentFrameNumber);
+
+				// Frame interval check (only increment when not already updated this frame)
+				if (!bAlreadyUpdatedThisFrame && ++ShadowUpdateFrameCounter >= Settings->ShadowUpdateInterval)
+				{
+					ShadowUpdateFrameCounter = 0;
+					LastShadowUpdateFrameNumber = CurrentFrameNumber;
+
+					if (World)
+					{
+						// Initialize shadow capture if needed
+						InitializeShadowCapture(World);
+
+						if (ShadowCaptureComponent.IsValid())
+						{
+							// Initialize render target
+							ShadowCaptureComponent->InitializeRenderTarget(Settings->ShadowMapResolution);
+
+							// Set re-entry guard (safety measure)
+							bIsCapturingShadow = true;
+
+							// Update camera position/rotation for next frame's capture
+							// Note: We don't call CaptureScene() here. The component has bCaptureEveryFrame = true,
+							// so the engine handles capture timing automatically. The shader reads from the
+							// previous frame's captured texture, which is acceptable for shadow maps.
+							ShadowCaptureComponent->UpdateCapture(Result.LightDirection, CombinedAABB);
+
+							bIsCapturingShadow = false;
+						}
+					}
+				}
+
+				// Get shadow texture (even if not updated this frame)
+				if (ShadowCaptureComponent.IsValid() && ShadowCaptureComponent->IsReady())
+				{
+					Result.ShadowDepthTexture = ShadowCaptureComponent->GetShadowDepthTexture();
+					Result.LightViewProjectionMatrix = ShadowCaptureComponent->GetLightViewProjectionMatrix();
+					Result.ShadowCameraPosition = ShadowCaptureComponent->GetShadowCameraPosition();
+					Result.ShadowCameraForward = ShadowCaptureComponent->GetShadowCameraForward();
+				}
+			}
+		}
 	}
 
 	Result.bIsValid = Result.VolumeDataArray.Num() > 0 && Result.PackedVoxelData.Num() > 0;
@@ -892,9 +1109,10 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->VolumeEdgeFadeShapness = RenderData.VolumeEdgeFadeSharpness;
 
 	// Rayleigh Scattering (from RenderData)
+	// ScatterScale is multiplied by LightIntensity so that no directional light = no scattering = dark smoke
 	Parameters->LightDirection = FVector3f(RenderData.LightDirection);
 	Parameters->LightColor = FVector3f(RenderData.LightColor.R, RenderData.LightColor.G, RenderData.LightColor.B);
-	Parameters->ScatterScale = RenderData.bEnableScattering ? RenderData.ScatterScale : 0.0f;
+	Parameters->ScatterScale = RenderData.bEnableScattering ? (RenderData.ScatterScale * RenderData.LightIntensity) : 0.0f;
 
 	// Henyey-Greenstein Anisotropy
 	Parameters->ScatteringAnisotropy = RenderData.ScatteringAnisotropy;
@@ -904,6 +1122,40 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->LightMarchingDistance = RenderData.LightMarchingDistance;
 	Parameters->LightMarchingExpFactor = RenderData.LightMarchingExpFactor;
 	Parameters->ShadowAmbient = RenderData.ShadowAmbient;
+
+	// External Shadowing (Scene Capture Shadow Map)
+	Parameters->bEnableExternalShadowing = RenderData.bEnableExternalShadowing ? 1 : 0;
+	Parameters->ShadowDepthBias = RenderData.ShadowDepthBias;
+	Parameters->ExternalShadowAmbient = RenderData.ExternalShadowAmbient;
+	Parameters->LightViewProjectionMatrix = FMatrix44f(RenderData.LightViewProjectionMatrix);
+	Parameters->ShadowCameraPosition = FVector3f(RenderData.ShadowCameraPosition);
+	Parameters->ShadowCameraForward = FVector3f(RenderData.ShadowCameraForward);
+
+	if (RenderData.bEnableExternalShadowing && RenderData.ShadowDepthTexture.IsValid())
+	{
+		FRDGTextureRef ShadowDepthRDG = GraphBuilder.RegisterExternalTexture(
+			CreateRenderTarget(RenderData.ShadowDepthTexture, TEXT("IVSmokeShadowDepth"))
+		);
+		Parameters->ShadowDepthTexture = ShadowDepthRDG;
+	}
+	else
+	{
+		// Create dummy 1x1 texture with large depth value (no shadow) when shadow is disabled
+		// Must use UAV and clear it, since RDG requires write before read
+		FRDGTextureDesc DummyDesc = FRDGTextureDesc::Create2D(
+			FIntPoint(1, 1),
+			PF_R32_FLOAT,
+			FClearValueBinding(FLinearColor(1000000.0f, 0.0f, 0.0f, 0.0f)),
+			TexCreate_ShaderResource | TexCreate_UAV
+		);
+		FRDGTextureRef DummyShadowTex = GraphBuilder.CreateTexture(DummyDesc, TEXT("IVSmokeShadowDepthDummy"));
+
+		// Clear the texture to far depth value (no occluders = no shadow)
+		AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(DummyShadowTex), FVector4f(1000000.0f, 0.0f, 0.0f, 0.0f));
+
+		Parameters->ShadowDepthTexture = DummyShadowTex;
+	}
+	Parameters->ShadowSampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
 
 	// Temporal (for TAA integration)
 	Parameters->FrameNumber = View.Family->FrameNumber;
