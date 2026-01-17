@@ -37,14 +37,14 @@ public:
 	 * @brief Request a penetration hole (bullet, projectile, hitscan).
 	 * @note Server RPC - callable from any machine, executed on Authority.
 	 */
-	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "IVSmoke|Hole")
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "IVSmoke | Hole")
 	void RequestPenetrationHole(const FIVSmokePenetrationRequest& Request);
 
 	/**
 	 * @brief Request to create a spherical hole at the specified origin.
 	 * @note Server RPC - callable from any machine, executed on Authority.
 	 */
-	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "IVSmoke|Hole")
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "IVSmoke | Hole")
 	void RequestExplosionHole(const FIVSmokeExplosionRequest& Request);
 
 public:
@@ -52,17 +52,21 @@ public:
 	// Configuration
 	// ============================================================================
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Hole|Optimization",
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Hole | Optimization",
 		meta = (ClampMin = "1", ClampMax = "256"))
 	int32 MaxHoles = 128;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Hole|Configuration",
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Hole | Configuration",
 		meta = (ClampMin = "0.0", ClampMax = "1.0", Tooltip = "0=hard edge, 1=soft gradient"))
 	float EdgeSoftness = 0.3f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Hole|Configuration",
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Hole | Configuration",
 		meta = (ClampMin = "0.0", ClampMax = "1.0", Tooltip = "0=transparent, 1=full hole"))
 	float DensityMultiplier = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Hole | Configuration",
+		meta = (Tooltip = "Select the type of obstacle that will block the penetration hole"))
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObstacleObjectTypes;
 
 	// ============================================================================
 	// Texture Access
@@ -74,7 +78,7 @@ public:
 	/** Get hole texture RHI for shader binding */
 	FTextureRHIRef GetHoleTextureRHI() const;
 
-	UFUNCTION(BlueprintPure, Category = "IVSmoke|Voxel")
+	UFUNCTION(BlueprintPure, Category = "IVSmoke | Voxel")
 	FORCEINLINE FIntVector GetVoxelResolution() const { return VoxelResolution; }
 
 protected:
@@ -83,7 +87,7 @@ protected:
 	// ============================================================================
 
 	/** Active holes array - replicated to all clients */
-	UPROPERTY(Replicated, VisibleAnywhere, Category = "IVSmoke|Debug")
+	UPROPERTY(Replicated, VisibleAnywhere, Category = "IVSmoke | Hole | Debug")
 	TArray<FIVSmokeHoleData> ActiveHoles;
 
 private:
@@ -127,7 +131,7 @@ private:
 	/** Set BoxExtent and Component Position to VoxelAABB Center */
 	void SetBoxToVoxelAABB();
 
-	UPROPERTY(EditAnywhere, Category = "IVSmoke|Hole|Configuration")
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Hole | Optimization")
 	FIntVector VoxelResolution = FIntVector(64, 64, 64);
 
 	UPROPERTY(Transient)

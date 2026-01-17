@@ -268,6 +268,7 @@ bool UIVSmokeHoleGeneratorComponent::CalculatePenetrationPoints(
 	const FVector Origin = Request.Origin;
 	const FVector Direction = Request.Direction.GetSafeNormal();
 
+	// 0. Edge Case
 	if (Direction.IsNearlyZero())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[CalculatePenetrationPoints] Direction is zero"));
@@ -284,11 +285,13 @@ bool UIVSmokeHoleGeneratorComponent::CalculatePenetrationPoints(
 	FCollisionQueryParams QueryParams;
 	QueryParams.bTraceComplex = false;
 
+	// 1. Forward trace (Origin -> RayEnd) to find Entry point
 	if (!LineTraceComponent(HitEntry, Origin, RayEnd, QueryParams))
 	{
 		return false;
 	}
 
+	// 2. Reverse trace (RayEnd -> Origin) to find Exit point
 	if (!LineTraceComponent(HitExit, RayEnd, Origin, QueryParams))
 	{
 		OutExit = HitEntry.Location;
@@ -299,6 +302,23 @@ bool UIVSmokeHoleGeneratorComponent::CalculatePenetrationPoints(
 	}
 
 	OutEntry = HitEntry.Location;
+
+	// 3. Obstacle detection using SphereTrace between Entry and Exit
+	if (ObstacleObjectTypes.Num() > 0)
+	{
+		FHitResult ObstacleHit;
+		FCollisionQueryParams WorldParams;
+		const FCollisionShape SweepShape = FCollisionShape::MakeSphere(Request.EndRadius);
+		const FCollisionObjectQueryParams ObjectParams(ObstacleObjectTypes);
+
+		if (GetWorld()->SweepSingleByObjectType(
+			ObstacleHit,OutEntry, OutExit, FQuat::Identity,
+			ObjectParams, SweepShape, WorldParams))
+		{
+			OutExit = ObstacleHit.Location;
+		}
+	}
+
 	return true;
 }
 
@@ -319,7 +339,6 @@ void UIVSmokeHoleGeneratorComponent::InitializeHoleTexture()
 	HoleTexture->UpdateResourceImmediate(true);
 }
 #endif
-
 
 #if !UE_SERVER
 TArray<FIVSmokeHoleGPU> UIVSmokeHoleGeneratorComponent::BuildGPUHoleBuffer() const
@@ -363,6 +382,7 @@ TArray<FIVSmokeHoleGPU> UIVSmokeHoleGeneratorComponent::BuildGPUHoleBuffer() con
 	return GPUBuffer;
 }
 #endif
+
 #if !UE_SERVER
 void UIVSmokeHoleGeneratorComponent::SetBoxToVoxelAABB()
 {
