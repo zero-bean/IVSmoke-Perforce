@@ -293,6 +293,12 @@ private:
 	// @todo Documentation
 	FRandomStream RandomStream;
 
+	// @todo Documentation
+	FVector VoxelWorldAABBMin;
+
+	// @todo Documentation
+	FVector VoxelWorldAABBMax;
+
 #pragma endregion
 
 	//~==============================================================================
@@ -352,6 +358,12 @@ public:
 
 	/** Returns the smoke preset override for this volume, or nullptr to use default. */
 	FORCEINLINE const UIVSmokeSmokePreset* GetSmokePresetOverride() const { return SmokePresetOverride; }
+
+	/** Returns the AABBMin of voxels. */
+	FORCEINLINE const FVector& GetVoxelWorldAABBMin() const { return VoxelWorldAABBMin; }
+
+	/** Returns the AABBMax of voxels. */
+	FORCEINLINE const  FVector& GetVoxelWorldAABBMax() const { return VoxelWorldAABBMax; }
 
 	FTextureRHIRef GetHoleTexture() const;
 

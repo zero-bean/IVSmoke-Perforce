@@ -69,8 +69,6 @@ public:
 	// Texture Access
 	// ============================================================================
 
-	UFUNCTION(BlueprintCallable, Category = "IVSmoke|Sync")
-	void SyncWithVoxelVolume(FIntVector VolumeExtent, float InVoxelSize);
 
 	FTextureRHIRef GetHoleTexture() const { return HoleTexture; }
 
@@ -117,12 +115,6 @@ private:
 	/** Initialize 3D texture for hole data */
 	void InitializeHoleTexture();
 
-	/** Convert local position to voxel coordinate (floor) */
-	FIntVector LocalToVoxel(const FVector& LocalPos) const;
-
-	/** Convert local position to voxel coordinate (ceil) */
-	FIntVector LocalToVoxelCeil(const FVector& LocalPos) const;
-
 	/** Build GPU buffer from ActiveHoles */
 	TArray<FIVSmokeHoleGPU> BuildGPUHoleBuffer() const;
 
@@ -130,6 +122,11 @@ private:
 	// Local State (Not Replicated)
 	// ============================================================================
 
-	FIntVector VoxelResolution = FIntVector(128, 128, 128);
+	/** Set BoxExtent and Component Position to VoxelAABB Center */
+	void SetBoxToVoxelAABB();
+
+	UPROPERTY(EditAnywhere, Category = "IVSmoke|Hole|Configuration")
+	FIntVector VoxelResolution = FIntVector(64, 64, 64);
+
 	FTextureRHIRef HoleTexture;
 };

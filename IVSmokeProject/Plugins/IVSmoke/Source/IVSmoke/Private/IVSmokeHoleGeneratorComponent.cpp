@@ -10,6 +10,7 @@
 #include "GlobalShader.h"
 #include "GameFramework/GameStateBase.h"
 #include "Net/UnrealNetwork.h"
+#include "IVSmokeVoxelVolume.h"
 
 #if ENABLE_DRAW_DEBUG
 #include "DrawDebugHelpers.h"
@@ -30,7 +31,9 @@ void UIVSmokeHoleGeneratorComponent::BeginPlay()
 	// todo: FIVSmokeDebugRender must be deleted soon ! (PYB, 260116)
 #if !UE_SERVER
 	FIVSmokeDebugRenderer::Get().Register(this);
+	InitializeHoleTexture();
 #endif
+
 }
 
 void UIVSmokeHoleGeneratorComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -53,7 +56,9 @@ void UIVSmokeHoleGeneratorComponent::TickComponent(float DeltaTime, ELevelTick T
 	FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
+#if !UE_SERVER
+	SetBoxToVoxelAABB();
+#endif
 	// Authority: Cleanup expired holes
 	if (GetOwner()->HasAuthority())
 	{
@@ -121,25 +126,6 @@ void UIVSmokeHoleGeneratorComponent::RequestExplosionHole_Implementation(const F
 	Authority_CreateHole(HoleData);
 }
 
-#if !UE_SERVER
-void UIVSmokeHoleGeneratorComponent::SyncWithVoxelVolume(FIntVector VolumeExtent, float InVoxelSize)
-{
-	FIntVector GridRes;
-	GridRes.X = (VolumeExtent.X * 2) - 1;
-	GridRes.Y = (VolumeExtent.Y * 2) - 1;
-	GridRes.Z = (VolumeExtent.Z * 2) - 1;
-
-	GridRes.X = FMath::Max(1, GridRes.X);
-	GridRes.Y = FMath::Max(1, GridRes.Y);
-	GridRes.Z = FMath::Max(1, GridRes.Z);
-
-	FVector HalfExtent = FVector(GridRes) * InVoxelSize * 0.5f;
-	SetBoxExtent(HalfExtent);
-
-	VoxelResolution = FIntVector(128, 128, 128);
-	InitializeHoleTexture();
-}
-#endif
 
 // ============================================================================
 // Authority Only
@@ -185,8 +171,23 @@ void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 
 	TArray<FIVSmokeHoleGPU> GPUHoles = BuildGPUHoleBuffer();
 
-	const FVector3f VolumeMin = FVector3f(-GetUnscaledBoxExtent());
-	const FVector3f VolumeMax = FVector3f(GetUnscaledBoxExtent());
+
+	AIVSmokeVoxelVolume* VoxelVolume = Cast<AIVSmokeVoxelVolume>(GetOwner());
+	if (VoxelVolume == nullptr)
+	{
+		return;
+	}
+
+	const FVector3f WorldlVolumeMin = FVector3f(VoxelVolume->GetVoxelWorldAABBMin());
+	const FVector3f WorldlVolumeMax = FVector3f(VoxelVolume->GetVoxelWorldAABBMax());
+
+	//UE_LOG(LogTemp, Display, TEXT("Min : %s, Max : %s"), *WorldlVolumeMin.ToString(), *WorldlVolumeMax.ToString());
+	//UE_LOG(LogTemp, Display, TEXT("HoleCount : %d"), GPUHoles.Num());
+	//for (FIVSmokeHoleGPU& Hole : GPUHoles)
+	//{
+	//	UE_LOG(LogTemp, Display, TEXT("pos : %s, endpos : %s"), *Hole.Position.ToString(), *Hole.EndPosition.ToString());
+	//}
+
 	const FIntVector Resolution = VoxelResolution;
 	const int32 NumHoles = ActiveHoles.Num();
 	FTextureRHIRef Texture = HoleTexture;
@@ -196,7 +197,7 @@ void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 	const FIntVector RegionMax = VoxelResolution - FIntVector(1, 1, 1);
 
 	ENQUEUE_RENDER_COMMAND(IVSmokeHoleCarveFullRebuild)(
-		[Texture, GPUHoles = MoveTemp(GPUHoles), VolumeMin, VolumeMax, Resolution,
+		[Texture, GPUHoles = MoveTemp(GPUHoles), WorldlVolumeMin, WorldlVolumeMax, Resolution,
 		 RegionMin, RegionMax, NumHoles](FRHICommandListImmediate& RHICmdList)
 		{
 			FRDGBuilder GraphBuilder(RHICmdList);
@@ -217,8 +218,8 @@ void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 			FIVSmokeHoleCarveCS::FParameters* Parameters = GraphBuilder.AllocParameters<FIVSmokeHoleCarveCS::FParameters>();
 			Parameters->VolumeTexture = GraphBuilder.CreateUAV(RDGTexture);
 			Parameters->HoleBuffer = GraphBuilder.CreateSRV(HoleBuffer);
-			Parameters->VolumeMin = VolumeMin;
-			Parameters->VolumeMax = VolumeMax;
+			Parameters->VolumeMin = WorldlVolumeMin;
+			Parameters->VolumeMax = WorldlVolumeMax;
 			Parameters->Resolution = Resolution;
 			Parameters->UpdateRegionMin = RegionMin;
 			Parameters->UpdateRegionMax = RegionMax;
@@ -352,30 +353,6 @@ void UIVSmokeHoleGeneratorComponent::InitializeHoleTexture()
 #endif
 
 
-FIntVector UIVSmokeHoleGeneratorComponent::LocalToVoxel(const FVector& LocalPos) const
-{
-	const FVector VolumeExtent = GetUnscaledBoxExtent();
-	const FVector Normalized = (LocalPos + VolumeExtent) / (VolumeExtent * 2.0);
-
-	return FIntVector(
-		FMath::Clamp(FMath::FloorToInt(Normalized.X * VoxelResolution.X), 0, VoxelResolution.X - 1),
-		FMath::Clamp(FMath::FloorToInt(Normalized.Y * VoxelResolution.Y), 0, VoxelResolution.Y - 1),
-		FMath::Clamp(FMath::FloorToInt(Normalized.Z * VoxelResolution.Z), 0, VoxelResolution.Z - 1)
-	);
-}
-
-FIntVector UIVSmokeHoleGeneratorComponent::LocalToVoxelCeil(const FVector& LocalPos) const
-{
-	const FVector VolumeExtent = GetUnscaledBoxExtent();
-	const FVector Normalized = (LocalPos + VolumeExtent) / (VolumeExtent * 2.0);
-
-	return FIntVector(
-		FMath::Clamp(FMath::CeilToInt(Normalized.X * VoxelResolution.X), 0, VoxelResolution.X - 1),
-		FMath::Clamp(FMath::CeilToInt(Normalized.Y * VoxelResolution.Y), 0, VoxelResolution.Y - 1),
-		FMath::Clamp(FMath::CeilToInt(Normalized.Z * VoxelResolution.Z), 0, VoxelResolution.Z - 1)
-	);
-}
-
 #if !UE_SERVER
 TArray<FIVSmokeHoleGPU> UIVSmokeHoleGeneratorComponent::BuildGPUHoleBuffer() const
 {
@@ -389,12 +366,12 @@ TArray<FIVSmokeHoleGPU> UIVSmokeHoleGeneratorComponent::BuildGPUHoleBuffer() con
 	{
 		FIVSmokeHoleGPU GPUHole;
 
-		GPUHole.Position = FVector3f(Transform.InverseTransformPosition(Hole.Position));
+		GPUHole.Position = FVector3f(Hole.Position);
 		GPUHole.Radius = Hole.Radius;
 
 		if (Hole.HoleType == IVSmokeHoleType::Penetration)
 		{
-			GPUHole.EndPosition = FVector3f(Transform.InverseTransformPosition(Hole.EndPosition));
+			GPUHole.EndPosition = FVector3f(Hole.EndPosition);
 			GPUHole.EndRadius = Hole.EndRadius;
 		}
 		else
@@ -417,5 +394,22 @@ TArray<FIVSmokeHoleGPU> UIVSmokeHoleGeneratorComponent::BuildGPUHoleBuffer() con
 	}
 
 	return GPUBuffer;
+}
+#endif
+#if !UE_SERVER
+void UIVSmokeHoleGeneratorComponent::SetBoxToVoxelAABB()
+{
+	AIVSmokeVoxelVolume* VoxelVolume = Cast<AIVSmokeVoxelVolume>(GetOwner());
+	if (VoxelVolume == nullptr)
+	{
+		return;
+	}
+	const FVector WorldVoxelAABBMin = VoxelVolume->GetVoxelWorldAABBMin();
+	const FVector WorldVoxelAABBMax = VoxelVolume->GetVoxelWorldAABBMax();
+	const FVector Extent = (WorldVoxelAABBMax - WorldVoxelAABBMin) * 0.5f;
+	const FVector WorldVoxelCenter = (WorldVoxelAABBMax + WorldVoxelAABBMin) * 0.5f;
+
+	SetWorldLocation(WorldVoxelCenter);
+	SetBoxExtent(Extent, false);
 }
 #endif

@@ -280,8 +280,10 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		GPUData.GridResolution = FIntVector3(GridRes.X, GridRes.Y, GridRes.Z);
 		GPUData.VoxelCount = VoxelArray.Num();
 		GPUData.CenterOffset = FVector3f(CenterOff.X, CenterOff.Y, CenterOff.Z);
-		GPUData.WorldAABBMin = FVector3f(WorldBox.Min);
-		GPUData.WorldAABBMax = FVector3f(WorldBox.Max);
+		GPUData.VolumeWorldAABBMin = FVector3f(WorldBox.Min);
+		GPUData.VolumeWorldAABBMax = FVector3f(WorldBox.Max);
+		GPUData.VoxelWorldAABBMin = FVector3f(Volume->GetVoxelWorldAABBMin());
+		GPUData.VoxelWorldAABBMax = FVector3f(Volume->GetVoxelWorldAABBMax());
 
 		if (Preset)
 		{

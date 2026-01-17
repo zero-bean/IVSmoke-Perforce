@@ -38,14 +38,18 @@ struct FIVSmokeVolumeGPUData
 	float DensityScale;             // 4 bytes
 
 	/** World-space AABB minimum (for fast ray-box intersection). */
-	FVector3f WorldAABBMin;         // 12 bytes
+	FVector3f VolumeWorldAABBMin;         // 12 bytes
 	float VoxelSize;                // 4 bytes
 
 	/** World-space AABB maximum (for fast ray-box intersection). */
-	FVector3f WorldAABBMax;         // 12 bytes
+	FVector3f VolumeWorldAABBMax;         // 12 bytes
 	uint32 VoxelBufferOffset;       // 4 bytes
 
-	// Total: 240 bytes, padded to 256 bytes for GPU alignment
+	FVector3f VoxelWorldAABBMin;	// 12 bytes
+	float padding0;					// 4 bytes
+	FVector3f VoxelWorldAABBMax;	// 12 bytes
+	float padding1;					// 4 bytes
+
 	float Reserved[4];              // 16 bytes (future use / alignment)
 };
 

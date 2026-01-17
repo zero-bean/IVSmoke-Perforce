@@ -36,13 +36,18 @@ struct FVolumeGPUData
 	float3 CenterOffset;
 	float DensityScale;
 
-	float3 WorldAABBMin;
+	float3 VolumeWorldAABBMin;
 	float VoxelSize;
 
-	float3 WorldAABBMax;
+	float3 VolumeWorldAABBMax;
 	uint VoxelBufferOffset; // Offset into PackedVoxelBuffer
 
-	float Reserved[4];          // 16 bytes padding (total 256 bytes)
+	float3 VoxelWorldAABBMin;
+	float padding0;
+	float3 VoxelWorldAABBMax;
+	float padding1;
+	
+	float Reserved[4];         
 };
 
 /**
@@ -157,10 +162,10 @@ float GetNoise(float3 WorldPos)
 	return NoiseVolume.SampleLevel(LinearRepeat_Sampler, uvw, 0);
 }
 
-float3 GetUVW(float3 WorldPos, uint VolumeIdx, int TexZSize)
+float3 GetVoxelUVW(float3 WorldPos, uint VolumeIdx, int TexZSize)
 {
 	FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
-	float3 uvw = (WorldPos - Vol.WorldAABBMin) / (Vol.WorldAABBMax - Vol.WorldAABBMin);
+	float3 uvw = (WorldPos - Vol.VolumeWorldAABBMin) / (Vol.VolumeWorldAABBMax - Vol.VolumeWorldAABBMin);
 	int AtlasTexZSize = TexZSize * NumActiveVolumes + PackedInterval * (NumActiveVolumes - 1);
 	int zMinTex = (TexZSize + PackedInterval) * VolumeIdx;
 	int zMaxTex = zMinTex + TexZSize;
@@ -170,15 +175,27 @@ float3 GetUVW(float3 WorldPos, uint VolumeIdx, int TexZSize)
 	return uvw;
 }
 
+float3 GetHoleUVW(float3 WorldPos, uint VolumeIdx, int TexZSize)
+{
+	FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
+	float3 uvw = (WorldPos - Vol.VoxelWorldAABBMin) / (Vol.VoxelWorldAABBMax - Vol.VoxelWorldAABBMin);
+	int AtlasTexZSize = TexZSize * NumActiveVolumes + PackedInterval * (NumActiveVolumes - 1);
+	int zMinTex = (TexZSize + PackedInterval) * VolumeIdx;
+	int zMaxTex = zMinTex + TexZSize;
+	float zMinUV = (float) zMinTex / AtlasTexZSize;
+	float zMaxUV = (float) zMaxTex / AtlasTexZSize;
+	uvw.z = lerp(zMinUV, zMaxUV, uvw.z);
+	return uvw;
+}
 float GetHoleDensity(float3 WorldPos, uint VolumeIdx)
 {
-	float3 uvw = GetUVW(WorldPos, VolumeIdx, HoleTexSize.z);
+	float3 uvw = GetHoleUVW(WorldPos, VolumeIdx, HoleTexSize.z);
 	return PackedHoleAtlas.Sample(LinearBorder_Sampler, uvw);
 }
 
 float GetVoxelDensity(float3 WorldPos, uint VolumeIdx)
 {
-	float3 uvw = GetUVW(WorldPos, VolumeIdx, VoxelTexSize.z);
+	float3 uvw = GetVoxelUVW(WorldPos, VolumeIdx, VoxelTexSize.z);
 	return PackedVoxelAtlas.Sample(LinearBorder_Sampler, uvw);
 }
 
@@ -227,7 +244,7 @@ float SampleTotalDensityAtPosition(float3 WorldPos)
 		FVolumeGPUData Vol = VolumeDataBuffer[v];
 
 		// Check if position is within volume AABB
-		if (all(WorldPos >= Vol.WorldAABBMin) && all(WorldPos <= Vol.WorldAABBMax))
+		if (all(WorldPos >= Vol.VolumeWorldAABBMin) && all(WorldPos <= Vol.VolumeWorldAABBMax))
 		{
 			float HoleDensity = GetHoleDensity(WorldPos, v);
 			float Density = GetDensityForVolume(WorldPos, v) * HoleDensity;
@@ -350,8 +367,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	for (uint v = 0; v < NumActiveVolumes; v++)
 	{
 		FVolumeGPUData Vol = VolumeDataBuffer[v];
-		GlobalAABBMin = min(GlobalAABBMin, Vol.WorldAABBMin);
-		GlobalAABBMax = max(GlobalAABBMax, Vol.WorldAABBMax);
+		GlobalAABBMin = min(GlobalAABBMin, Vol.VolumeWorldAABBMin);
+		GlobalAABBMax = max(GlobalAABBMax, Vol.VolumeWorldAABBMax);
 	}
 
 	// Global AABB diagonal length for fixed step size calculation
@@ -392,7 +409,7 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 		FVolumeGPUData Vol = VolumeDataBuffer[vi];
 
 		float tNear, tFar;
-		if (RayBoxIntersection(RayOrigin, RayDir, Vol.WorldAABBMin, Vol.WorldAABBMax, tNear, tFar))
+		if (RayBoxIntersection(RayOrigin, RayDir, Vol.VolumeWorldAABBMin, Vol.VolumeWorldAABBMax, tNear, tFar))
 		{
 			tNear = max(0.0, tNear);
 			tFar = min(SceneRayDistance, tFar);
@@ -464,12 +481,6 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 				
 				float HoleDensity = GetHoleDensity(WorldPos, VolumeIdx);
 				float Density = GetDensityForVolume(WorldPos, VolumeIdx) * HoleDensity;
-				//if (HoleDensity <= 0.1f)
-				//{
-				//	SmokeAlbedoTex[PixelCoord] = float4(HoleDensity, 0, 0, 1.0);
-				//	SmokeMaskTex[PixelCoord] = float4(HoleDensity, 0.0, 0.0, 0.0);
-				//	return;
-				//}
 
 				if (Density > 0.0001)
 				{

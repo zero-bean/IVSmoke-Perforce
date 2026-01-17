@@ -55,10 +55,6 @@ void AIVSmokeVoxelVolume::BeginPlay()
 #endif
 
 	HoleGeneratorComponent = FindComponentByClass<UIVSmokeHoleGeneratorComponent>();
-	if (HoleGeneratorComponent)
-	{
-		HoleGeneratorComponent->SyncWithVoxelVolume(VolumeExtent, VoxelSize);
-	}
 
 	CollisionComponent = FindComponentByClass<UIVSmokeCollisionComponent>();
 }
@@ -206,6 +202,9 @@ bool AIVSmokeVoxelVolume::IsConnectionBlocked(const UWorld* World, const FVector
 
 void AIVSmokeVoxelVolume::Initialize()
 {
+	VoxelWorldAABBMin = GetActorLocation();
+	VoxelWorldAABBMax = GetActorLocation();
+
 	GridResolution.X = FMath::Max(1, (VolumeExtent.X * 2) - 1);
 	GridResolution.Y = FMath::Max(1, (VolumeExtent.Y * 2) - 1);
 	GridResolution.Z = FMath::Max(1, (VolumeExtent.Z * 2) - 1);
@@ -569,7 +568,13 @@ void AIVSmokeVoxelVolume::SetVoxelDensityByIndex(int32 LinearIndex, float Densit
 	if (bIsActive && !bWasActive)
 	{
 		++ActiveVoxelCount;
+
 		INC_DWORD_STAT(STAT_IVSmoke_CreatedVoxel);
+		const FIntVector GridPos = UIVSmokeGridLibrary::IndexToGrid(LinearIndex, GridResolution);
+		const FVector LocalPos = UIVSmokeGridLibrary::GridToLocal(GridPos, VoxelSize, CenterOffset);
+		const FVector WorldPos = GetActorTransform().TransformPosition(LocalPos);
+		VoxelWorldAABBMin = FVector::Min(WorldPos, VoxelWorldAABBMin);
+		VoxelWorldAABBMax = FVector::Max(WorldPos, VoxelWorldAABBMax);
 	}
 	else if (!bIsActive && bWasActive)
 	{
