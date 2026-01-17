@@ -46,9 +46,9 @@ struct FIVSmokeVolumeGPUData
 	uint32 VoxelBufferOffset;       // 4 bytes
 
 	FVector3f VoxelWorldAABBMin;	// 12 bytes
-	float padding0;					// 4 bytes
+	float FadeInDuration;			// 4 bytes
 	FVector3f VoxelWorldAABBMax;	// 12 bytes
-	float padding1;					// 4 bytes
+	float FadeOutDuration;			// 4 bytes
 
 	float Reserved[4];              // 16 bytes (future use / alignment)
 };
@@ -203,7 +203,12 @@ public:
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>, Desti)
 		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<float>, Source)
+		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<FIVSmokeVolumeGPUData>, VolumeDataBuffer)
+
 		SHADER_PARAMETER(FIntVector, TexSize)
+		SHADER_PARAMETER(FIntVector, VoxelResolution)
+		SHADER_PARAMETER(int32, PackedInterval)
+		SHADER_PARAMETER(float, GameTime)
 	END_SHADER_PARAMETER_STRUCT()
 
 public:

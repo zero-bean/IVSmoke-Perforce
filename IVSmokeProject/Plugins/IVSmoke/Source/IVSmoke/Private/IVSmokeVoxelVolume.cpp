@@ -269,26 +269,31 @@ void AIVSmokeVoxelVolume::UpdateExpansion(float DeltaTime)
 
 	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::AIVSmokeVoxelVolume::UpdateExpansion");
 
+	int32 TotalVoxelNum = GeneratedVoxelIndices.Num();
+
 	ElapsedTime += DeltaTime;
 
-	float CurveValue = GetCurveValue(ElapsedTime, ExpansionDuration, ExpansionCurve);
+	float CurveValue = 1.0f;
+	if (ElapsedTime <= ExpansionDuration)
+	{
+		CurveValue = GetCurveValue(ElapsedTime, ExpansionDuration, ExpansionCurve);
+	}
 
-	int32 TotalVoxelNum = GeneratedVoxelIndices.Num();
 	int32 TargetSpawnNum = FMath::FloorToInt(MaxVoxelNum * CurveValue);
 	int32 SpawnNum = TargetSpawnNum - TotalVoxelNum;
-	if (SpawnNum > 0)
+
+	if (!MinHeap.IsEmpty() && SpawnNum > 0)
 	{
 		ProcessExpansion(SpawnNum);
 	}
 
 	float CurrentProgress = (MaxVoxelNum > 0) ? (static_cast<float>(TotalVoxelNum) / MaxVoxelNum) : 0.0f;
 
-	bool bIsTimeOver = ElapsedTime >= ExpansionDuration;
-	bool bIsFillFinished = MinHeap.IsEmpty() && SpawnNum <= 0;
+	bool bIsTimeOver = ElapsedTime >= ExpansionDuration + FadeInDuration;
 
-	TryUpdateCollision(CurrentProgress, bIsTimeOver || bIsFillFinished);
+	TryUpdateCollision(CurrentProgress, bIsTimeOver);
 
-	if (bIsTimeOver || bIsFillFinished)
+	if (bIsTimeOver)
 	{
 		ElapsedTime = 0.0f;
 		LastCollisionUpdateTime = 0.0f;
@@ -333,29 +338,33 @@ void AIVSmokeVoxelVolume::UpdateDissipation(float DeltaTime)
 
 	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::AIVSmokeVoxelVolume::UpdateDissipation");
 
+	int32 TotalVoxelNum = GeneratedVoxelIndices.Num();
+
 	ElapsedTime += DeltaTime;
 
-	float CurveValue = GetCurveValue(ElapsedTime, DissipationDuration, DissipationCurve);
+	float CurveValue = 1.0f;
+	if (ElapsedTime <= DissipationDuration)
+	{
+		CurveValue = GetCurveValue(ElapsedTime, DissipationDuration, DissipationCurve);
+	}
 
-	int32 TotalVoxelNum = GeneratedVoxelIndices.Num();
 	int32 TargetVoxelNum = FMath::FloorToInt(TotalVoxelNum * (1.0f - CurveValue));
 	int32 VoxelNum = FMath::Max(ActiveVoxelCount - TargetVoxelNum, 0);
-	if (VoxelNum > 0)
+	if (!MinHeap.IsEmpty() && VoxelNum > 0)
 	{
 		checkf(VoxelNum <= MinHeap.Num(), TEXT("[AIVSmokeVoxelVolume::UpdateDissipation] : MinHeap not enough elements to dissipate - Heap: %d, Request: %d"), MinHeap.Num(), VoxelNum);
 		ProcessDissipation(VoxelNum);
 	}
 
-	bool bIsTimeOver = ElapsedTime >= DissipationDuration;
-	bool bIsFinished = MinHeap.IsEmpty() && ActiveVoxelCount <= 0;
-
 	float CurrentProgress = (TotalVoxelNum > 0) ? 1.0f - (static_cast<float>(ActiveVoxelCount) / TotalVoxelNum) : 0.0f;
-	if (!bIsTimeOver && !bIsFinished)
+
+	bool bIsTimeOver = ElapsedTime >= DissipationDuration + FadeOutDuration;
+	if (!bIsTimeOver)
 	{
 		TryUpdateCollision(CurrentProgress, false);
 	}
 
-	if (bIsTimeOver || bIsFinished)
+	if (bIsTimeOver)
 	{
 		GeneratedVoxelIndices.Empty();
 		MinHeap.Empty();
@@ -399,13 +408,13 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 VoxelNum)
 			continue;
 		}
 
-		if (VoxelArray[CurrentNode.Index] > 0.0f)
+		if (IsVoxelActive(CurrentNode.Index))
 		{
 			continue;
 		}
 
 		GeneratedVoxelIndices.Add(CurrentNode.Index);
-		SetVoxelDensityByIndex(CurrentNode.Index, 1.0f);
+		SetVoxelStateByIndex(CurrentNode.Index, true);
 		++SpawnCount;
 
 		if (GeneratedVoxelIndices.Num() >= MaxVoxelNum)
@@ -503,7 +512,7 @@ void AIVSmokeVoxelVolume::ProcessDissipation(int32 VoxelNum)
 
 		if (VoxelArray.IsValidIndex(CurrentNode.Index))
 		{
-			SetVoxelDensityByIndex(CurrentNode.Index, 0.0f);
+			SetVoxelStateByIndex(CurrentNode.Index, false);
 		}
 		++RemoveCount;
 	}
@@ -583,6 +592,51 @@ void AIVSmokeVoxelVolume::SetVoxelDensityByIndex(int32 LinearIndex, float Densit
 	}
 
 	DirtyLevel = EIVSmokeDirtyLevel::Dirty;
+}
+
+void AIVSmokeVoxelVolume::SetVoxelState(const FIntVector& GridPos, bool bIsActive)
+{
+	int32 LinearIndex = UIVSmokeGridLibrary::GridToIndex(GridPos, GridResolution);
+	SetVoxelStateByIndex(LinearIndex, bIsActive);
+}
+
+void AIVSmokeVoxelVolume::SetVoxelStateByIndex(int32 LinearIndex, bool bIsActive)
+{
+	if (!VoxelArray.IsValidIndex(LinearIndex))
+	{
+		return;
+	}
+
+	const float CurrentWorldTime = FMath::Max(GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f, 0.001f);
+
+	const float NewValue = bIsActive ? CurrentWorldTime : -CurrentWorldTime;
+	const float OldValue = VoxelArray[LinearIndex];
+
+	if (OldValue != NewValue)
+	{
+		VoxelArray[LinearIndex] = NewValue;
+
+		const bool bWasActive = OldValue > 0.0f;
+
+		if (bIsActive && !bWasActive)
+		{
+			++ActiveVoxelCount;
+			INC_DWORD_STAT(STAT_IVSmoke_CreatedVoxel);
+
+			const FIntVector GridPos = UIVSmokeGridLibrary::IndexToGrid(LinearIndex, GridResolution);
+			const FVector LocalPos = UIVSmokeGridLibrary::GridToLocal(GridPos, VoxelSize, CenterOffset);
+			const FVector WorldPos = GetActorTransform().TransformPosition(LocalPos);
+			VoxelWorldAABBMin = FVector::Min(WorldPos, VoxelWorldAABBMin);
+			VoxelWorldAABBMax = FVector::Max(WorldPos, VoxelWorldAABBMax);
+		}
+		else if (!bIsActive && bWasActive)
+		{
+			--ActiveVoxelCount;
+			INC_DWORD_STAT(STAT_IVSmoke_DestroyedVoxel);
+		}
+
+		DirtyLevel = EIVSmokeDirtyLevel::Dirty;
+	}
 }
 
 #pragma endregion
@@ -690,7 +744,7 @@ void AIVSmokeVoxelVolume::DrawDebugVoxelWireframes() const
 	for (int32 i = 0; i < MaxVisibleIndex; ++i)
 	{
 		int32 VoxelIndex = GeneratedVoxelIndices[i];
-		if (!VoxelArray.IsValidIndex(VoxelIndex) || VoxelArray[VoxelIndex] <= 0.0f)
+		if (!VoxelArray.IsValidIndex(VoxelIndex) || !IsVoxelActive(VoxelIndex))
 		{
 			continue;
 		}
@@ -757,7 +811,7 @@ void AIVSmokeVoxelVolume::DrawDebugVoxelMeshes() const
 	{
 		int32 VoxelIndex = GeneratedVoxelIndices[i];
 
-		if (!VoxelArray.IsValidIndex(VoxelIndex) || VoxelArray[VoxelIndex] <= 0.0f)
+		if (!VoxelArray.IsValidIndex(VoxelIndex) || !IsVoxelActive(VoxelIndex))
 		{
 			continue;
 		}

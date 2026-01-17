@@ -67,6 +67,9 @@ struct IVSMOKE_API FIVSmokePackedRenderData
 	/** Validity flag */
 	bool bIsValid = false;
 
+	/** Game World Time */
+	float GameTime = 0.0f;
+
 	/** Reset to invalid state */
 	void Reset()
 	{

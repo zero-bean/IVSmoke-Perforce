@@ -18,49 +18,6 @@
 #define MAX_VOLUME_INTERSECTIONS 64
 
 // ============================================================================
-// GPU Data Structures
-// ============================================================================
-
-/**
- * Per-volume metadata. Must match FIVSmokeVolumeGPUData in C++.
- * Total: 256 bytes
- */
-struct FVolumeGPUData
-{
-	int3 GridResolution;
-	uint VoxelCount;            // Total voxel count for this volume
-
-	float3 SmokeColor;
-	float Absorption;
-
-	float3 CenterOffset;
-	float DensityScale;
-
-	float3 VolumeWorldAABBMin;
-	float VoxelSize;
-
-	float3 VolumeWorldAABBMax;
-	uint VoxelBufferOffset; // Offset into PackedVoxelBuffer
-
-	float3 VoxelWorldAABBMin;
-	float padding0;
-	float3 VoxelWorldAABBMax;
-	float padding1;
-	
-	float Reserved[4];         
-};
-
-/**
- * Cached intersection data for a single volume.
- */
-struct FVolumeIntersection
-{
-	uint VolumeIndex;
-	float tNear;
-	float tFar;
-};
-
-// ============================================================================
 // Shader Parameters
 // ============================================================================
 
@@ -218,7 +175,7 @@ float GetDensityForVolume(float3 Position, uint VolumeIdx)
 	FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
 	float VoxelDensity = GetVoxelDensity(Position, VolumeIdx);
 	float Noise = GetNoise(Position);
-	
+
 	//noise 값의 범위에 적합한 값을 넣어둔것
 	float CurDensity = saturate(0.7f - Noise) * VoxelDensity;
 	CurDensity = saturate((CurDensity - VolumeRangeOffset) / (1 - VolumeRangeOffset));
@@ -482,9 +439,9 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 		{
 			// Check if current T is within this volume's range
 			if (T >= intersections[i].tNear && T <= intersections[i].tFar)
-			{	
+			{
 				uint VolumeIdx = intersections[i].VolumeIndex;
-				
+
 				float HoleDensity = GetHoleDensity(WorldPos, VolumeIdx);
 				float Density = GetDensityForVolume(WorldPos, VolumeIdx) * HoleDensity;
 

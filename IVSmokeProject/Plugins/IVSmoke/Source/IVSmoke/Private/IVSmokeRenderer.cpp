@@ -323,6 +323,8 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		GPUData.VolumeWorldAABBMax = FVector3f(WorldBox.Max);
 		GPUData.VoxelWorldAABBMin = FVector3f(Volume->GetVoxelWorldAABBMin());
 		GPUData.VoxelWorldAABBMax = FVector3f(Volume->GetVoxelWorldAABBMax());
+		GPUData.FadeInDuration = Volume->FadeInDuration;
+		GPUData.FadeOutDuration = Volume->FadeOutDuration;
 
 		if (Preset)
 		{
@@ -394,6 +396,15 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 	}
 
 	Result.bIsValid = Result.VolumeDataArray.Num() > 0 && Result.PackedVoxelData.Num() > 0;
+
+	if (InVolumes.Num() > 0 && InVolumes[0])
+	{
+		Result.GameTime = InVolumes[0]->GetWorld()->GetTimeSeconds();
+	}
+	else
+	{
+		Result.GameTime = 0.0f;
+	}
 
 	return Result;
 }
@@ -755,12 +766,20 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	FRDGBufferRef PackedVoxelBuffer = GraphBuilder.CreateBuffer(PackedVoxelBufferDesc, TEXT("IVSmoke_PackedVoxelBuffer"));
 	GraphBuilder.QueueBufferUpload(PackedVoxelBuffer, RenderData.PackedVoxelData.GetData(), RenderData.PackedVoxelData.Num() * sizeof(float));
 
+	FRDGBufferDesc VolumeBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FIVSmokeVolumeGPUData), RenderData.VolumeDataArray.Num());
+	FRDGBufferRef VolumeBuffer = GraphBuilder.CreateBuffer(VolumeBufferDesc, TEXT("IVSmokeVolumeDataBuffer"));
+	GraphBuilder.QueueBufferUpload(VolumeBuffer, RenderData.VolumeDataArray.GetData(), RenderData.VolumeDataArray.Num() * sizeof(FIVSmokeVolumeGPUData));
+
 	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
 	TShaderMapRef<FIVSmokeStructuredToTextureCS> StructuredCopyShader(ShaderMap);
 	auto* StructuredCopyParams = GraphBuilder.AllocParameters<FIVSmokeStructuredToTextureCS::FParameters>();
 	StructuredCopyParams->Desti = GraphBuilder.CreateUAV(PackedVoxelAtlas);
 	StructuredCopyParams->Source = GraphBuilder.CreateSRV(PackedVoxelBuffer);
+	StructuredCopyParams->VolumeDataBuffer = GraphBuilder.CreateSRV(VolumeBuffer);
 	StructuredCopyParams->TexSize = VoxelAtlasResolution;
+	StructuredCopyParams->VoxelResolution = RenderData.VoxelResolution;
+	StructuredCopyParams->PackedInterval = TexturePackInterval;
+	StructuredCopyParams->GameTime = RenderData.GameTime;
 
 	FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeStructuredToTextureCS>(
 		GraphBuilder,
@@ -843,9 +862,6 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->MaxSteps = RenderData.MaxSteps;
 
 	// Volume Data Buffer (use pre-built data from RenderData)
-	FRDGBufferDesc VolumeBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FIVSmokeVolumeGPUData), RenderData.VolumeDataArray.Num());
-	FRDGBufferRef VolumeBuffer = GraphBuilder.CreateBuffer(VolumeBufferDesc, TEXT("IVSmokeVolumeDataBuffer"));
-	GraphBuilder.QueueBufferUpload(VolumeBuffer, RenderData.VolumeDataArray.GetData(), RenderData.VolumeDataArray.Num() * sizeof(FIVSmokeVolumeGPUData));
 	Parameters->VolumeDataBuffer = GraphBuilder.CreateSRV(VolumeBuffer);
 	Parameters->NumActiveVolumes = RenderData.VolumeDataArray.Num();
 

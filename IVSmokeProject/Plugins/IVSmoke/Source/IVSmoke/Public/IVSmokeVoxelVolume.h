@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "UObject/ObjectMacros.h"
 #include "IVSmokeVoxelVolume.generated.h"
 
 class UIVSmokeCollisionComponent;
@@ -186,11 +187,19 @@ public:
 
 	// @todo Documentation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
+	float FadeInDuration = 2.0f;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
 	float SustainDuration = 5.0f;
 
 	// @todo Documentation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
 	float DissipationDuration = 2.0f;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
+	float FadeOutDuration = 2.0f;
 
 	// @todo Documentation
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
@@ -329,6 +338,10 @@ private:
 	// Data Access
 #pragma region DataAccess
 public:
+	/** @todo Documentation */
+	UFUNCTION(BlueprintPure, Category = "IVSmoke")
+	FORCEINLINE EIVSmokeVoxelVolumeState GetCurrentState() const { return CurrentState; }
+
 	/** Returns the voxel density array for GPU upload. Values are continuous (0.0~N). */
 	FORCEINLINE const TArray<float>& GetVoxelArray() const { return VoxelArray; }
 
@@ -365,6 +378,9 @@ public:
 	/** Returns the AABBMax of voxels. */
 	FORCEINLINE const FVector GetVoxelWorldAABBMax() const { return VoxelWorldAABBMax + VoxelSize; }
 
+	/** @todo Documentation */
+	FORCEINLINE bool IsVoxelActive(int32 Index) const { return FMath::Abs(VoxelArray[Index]) > 0.001f; }
+
 	FTextureRHIRef GetHoleTexture() const;
 
 private:
@@ -373,14 +389,25 @@ private:
 	 * @param GridPos   Grid position to set
 	 * @param Density   Density value (0.0 = remove, >0 = active)
 	 */
-	void SetVoxelDensity(const FIntVector& GridPos, float Density);
+	[[deprecated]] void SetVoxelDensity(const FIntVector& GridPos, float Density);
 
 	/**
 	 * Sets voxel density at the given linear index.
 	 * @param LinearIndex   Linear index in dense array
 	 * @param Density       Density value (0.0 = remove, >0 = active)
 	 */
-	void SetVoxelDensityByIndex(int32 LinearIndex, float Density);
+	[[deprecated]] void SetVoxelDensityByIndex(int32 LinearIndex, float Density);
+
+	/**
+	 * Sets the state of a voxel.
+	 * Stores Signed Timestamp:
+	 * Positive (>0): Birth Time (Alive)
+	 * Negative (<0): Death Time (Dissipating)
+	 * Zero (0): Empty
+	 */
+	void SetVoxelState(const FIntVector& GridPos, bool bIsActive);
+
+	void SetVoxelStateByIndex(int32 LinearIndex, bool bIsActive);
 
 	// @todo Documentation
 	FIntVector GridResolution = FIntVector::ZeroValue;

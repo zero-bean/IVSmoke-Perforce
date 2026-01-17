@@ -1,20 +1,68 @@
 #include "/Engine/Private/Common.ush"
+#include "IVSmokeCommon.ush"
 
 RWTexture3D<float> Desti;
 StructuredBuffer<float> Source;
+StructuredBuffer<FVolumeGPUData> VolumeDataBuffer;
+
 int3 TexSize;
+int3 VoxelResolution;
+int PackedInterval;
+float GameTime;
+
+float GetExpansionCurve(float t)
+{
+	return pow(saturate(t), 0.5);
+}
+
+float GetDissipationCurve(float t)
+{
+	return 1.0 - pow(saturate(t), 0.5);
+}
 
 [numthreads(8, 8, 8)]
 void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 {
 	uint3 PixelCoord = DispatchThreadId.xyz;
-
-	// Bounds check (use TexSize for reduced resolution rendering)
 	if (PixelCoord.x >= TexSize.x || PixelCoord.y >= TexSize.y || PixelCoord.z >= TexSize.z)
 	{
 		return;
 	}
 
-	int Idx = PixelCoord.x + TexSize.x * PixelCoord.y + TexSize.x * TexSize.y * PixelCoord.z;
-	Desti[PixelCoord] = Source[Idx];
+	int SliceHeight = VoxelResolution.z + PackedInterval;
+	uint VolumeIndex = PixelCoord.z / SliceHeight;
+
+	int LocalZ = PixelCoord.z % SliceHeight;
+	if (LocalZ >= VoxelResolution.z)
+	{
+		Desti[PixelCoord] = 0.0f;
+		return;
+	}
+
+	FVolumeGPUData VolumeData = VolumeDataBuffer[VolumeIndex];
+
+	uint LocalIdx = PixelCoord.x + VoxelResolution.x * PixelCoord.y + VoxelResolution.x * VoxelResolution.y * LocalZ;
+	uint SourceIdx = VolumeData.VoxelBufferOffset + LocalIdx;
+
+	float FinalDensity = 0.0;
+	float StoredTime = Source[SourceIdx];
+	if (abs(StoredTime) > 0.001)
+	{
+		if (StoredTime > 0.0)
+		{
+			float Progress = saturate((GameTime - StoredTime) / VolumeData.FadeInDuration);
+			FinalDensity = GetExpansionCurve(Progress);
+		}
+		else
+		{
+			float Progress = saturate((GameTime + StoredTime) / VolumeData.FadeOutDuration);
+			FinalDensity = GetDissipationCurve(Progress);
+		}
+
+		Desti[PixelCoord] = FinalDensity;
+	}
+	else
+	{
+		Desti[PixelCoord] = 0.0f;
+	}
 }

@@ -3,6 +3,49 @@
 #pragma once
 
 // ============================================================================
+// GPU Data Structures
+// ============================================================================
+
+/**
+ * Per-volume metadata. Must match FIVSmokeVolumeGPUData in C++.
+ * Total: 256 bytes
+ */
+struct FVolumeGPUData
+{
+	int3 GridResolution;
+	uint VoxelCount;            // Total voxel count for this volume
+
+	float3 SmokeColor;
+	float Absorption;
+
+	float3 CenterOffset;
+	float DensityScale;
+
+	float3 VolumeWorldAABBMin;
+	float VoxelSize;
+
+	float3 VolumeWorldAABBMax;
+	uint VoxelBufferOffset; // Offset into PackedVoxelBuffer
+
+	float3 VoxelWorldAABBMin;
+	float FadeInDuration;
+	float3 VoxelWorldAABBMax;
+	float FadeOutDuration;
+
+	float Reserved[4];
+};
+
+/**
+ * Cached intersection data for a single volume.
+ */
+struct FVolumeIntersection
+{
+	uint VolumeIndex;
+	float tNear;
+	float tFar;
+};
+
+// ============================================================================
 // Ray-Box Intersection
 // ============================================================================
 
