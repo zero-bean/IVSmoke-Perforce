@@ -360,10 +360,10 @@ public:
 	FORCEINLINE const UIVSmokeSmokePreset* GetSmokePresetOverride() const { return SmokePresetOverride; }
 
 	/** Returns the AABBMin of voxels. */
-	FORCEINLINE const FVector& GetVoxelWorldAABBMin() const { return VoxelWorldAABBMin; }
+	FORCEINLINE const FVector GetVoxelWorldAABBMin() const { return VoxelWorldAABBMin - VoxelSize; }
 
 	/** Returns the AABBMax of voxels. */
-	FORCEINLINE const  FVector& GetVoxelWorldAABBMax() const { return VoxelWorldAABBMax; }
+	FORCEINLINE const FVector GetVoxelWorldAABBMax() const { return VoxelWorldAABBMax + VoxelSize; }
 
 	FTextureRHIRef GetHoleTexture() const;
 
