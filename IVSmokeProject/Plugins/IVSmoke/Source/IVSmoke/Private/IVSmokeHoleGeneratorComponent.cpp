@@ -1,8 +1,8 @@
 // Copyright SDB. All Rights Reserved.
 
 #include "IVSmokeHoleGeneratorComponent.h"
-#include "IVSmokeDebugRenderer.h"
 #include "IVSmokeHoleCarveCS.h"
+#include "Engine/TextureRenderTargetVolume.h"
 #include "RenderGraphBuilder.h"
 #include "RenderGraphUtils.h"
 #include "RenderingThread.h"
@@ -11,10 +11,6 @@
 #include "GameFramework/GameStateBase.h"
 #include "Net/UnrealNetwork.h"
 #include "IVSmokeVoxelVolume.h"
-
-#if ENABLE_DRAW_DEBUG
-#include "DrawDebugHelpers.h"
-#endif
 
 UIVSmokeHoleGeneratorComponent::UIVSmokeHoleGeneratorComponent()
 {
@@ -28,21 +24,13 @@ void UIVSmokeHoleGeneratorComponent::BeginPlay()
 
 	ActiveHoles.Reserve(MaxHoles);
 
-	// todo: FIVSmokeDebugRender must be deleted soon ! (PYB, 260116)
 #if !UE_SERVER
-	FIVSmokeDebugRenderer::Get().Register(this);
 	InitializeHoleTexture();
 #endif
-
 }
 
 void UIVSmokeHoleGeneratorComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	// todo: FIVSmokeDebugRender must be deleted soon ! (PYB, 260116)
-#if !UE_SERVER
-	FIVSmokeDebugRenderer::Get().Unregister(this);
-#endif
-
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -56,9 +44,7 @@ void UIVSmokeHoleGeneratorComponent::TickComponent(float DeltaTime, ELevelTick T
 	FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-#if !UE_SERVER
-	SetBoxToVoxelAABB();
-#endif
+
 	// Authority: Cleanup expired holes
 	if (GetOwner()->HasAuthority())
 	{
@@ -67,16 +53,11 @@ void UIVSmokeHoleGeneratorComponent::TickComponent(float DeltaTime, ELevelTick T
 
 	// Client / Standalone: Rebuild texture if holes exist
 #if !UE_SERVER
+	SetBoxToVoxelAABB();
+
 	if (ActiveHoles.Num() > 0)
 	{
 		Local_RebuildHoleTexture();
-	}
-#endif
-
-#if ENABLE_DRAW_DEBUG
-	if (bShowVolumeDebug)
-	{
-		FIVSmokeDebugRenderer::Get().UpdateRenderData(this);
 	}
 #endif
 }
@@ -164,49 +145,43 @@ void UIVSmokeHoleGeneratorComponent::Authority_CleanupExpiredHoles()
 #if !UE_SERVER
 void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 {
-	if (!HoleTexture.IsValid())
+	const FTextureRenderTargetResource* RenderTargetResource =
+		HoleTexture ? HoleTexture->GameThread_GetRenderTargetResource() : nullptr;
+	if (!RenderTargetResource)
 	{
 		return;
 	}
 
 	TArray<FIVSmokeHoleGPU> GPUHoles = BuildGPUHoleBuffer();
 
-
-	AIVSmokeVoxelVolume* VoxelVolume = Cast<AIVSmokeVoxelVolume>(GetOwner());
+	const AIVSmokeVoxelVolume* VoxelVolume = Cast<AIVSmokeVoxelVolume>(GetOwner());
 	if (VoxelVolume == nullptr)
 	{
 		return;
 	}
 
-	const FVector3f WorldlVolumeMin = FVector3f(VoxelVolume->GetVoxelWorldAABBMin());
-	const FVector3f WorldlVolumeMax = FVector3f(VoxelVolume->GetVoxelWorldAABBMax());
-
-	//UE_LOG(LogTemp, Display, TEXT("Min : %s, Max : %s"), *WorldlVolumeMin.ToString(), *WorldlVolumeMax.ToString());
-	//UE_LOG(LogTemp, Display, TEXT("HoleCount : %d"), GPUHoles.Num());
-	//for (FIVSmokeHoleGPU& Hole : GPUHoles)
-	//{
-	//	UE_LOG(LogTemp, Display, TEXT("pos : %s, endpos : %s"), *Hole.Position.ToString(), *Hole.EndPosition.ToString());
-	//}
+	const FVector3f WorldVolumeMin = FVector3f(VoxelVolume->GetVoxelWorldAABBMin());
+	const FVector3f WorldVolumeMax = FVector3f(VoxelVolume->GetVoxelWorldAABBMax());
 
 	const FIntVector Resolution = VoxelResolution;
 	const int32 NumHoles = ActiveHoles.Num();
-	FTextureRHIRef Texture = HoleTexture;
+	FTextureRHIRef Texture = RenderTargetResource->GetRenderTargetTexture();
 
 	// Full rebuild: entire volume
 	const FIntVector RegionMin = FIntVector::ZeroValue;
 	const FIntVector RegionMax = VoxelResolution - FIntVector(1, 1, 1);
 
 	ENQUEUE_RENDER_COMMAND(IVSmokeHoleCarveFullRebuild)(
-		[Texture, GPUHoles = MoveTemp(GPUHoles), WorldlVolumeMin, WorldlVolumeMax, Resolution,
+		[Texture, GPUHoles = MoveTemp(GPUHoles), WorldVolumeMin, WorldVolumeMax, Resolution,
 		 RegionMin, RegionMax, NumHoles](FRHICommandListImmediate& RHICmdList)
 		{
 			FRDGBuilder GraphBuilder(RHICmdList);
 
-			FRDGTextureRef RDGTexture = GraphBuilder.RegisterExternalTexture(
+			const FRDGTextureRef RDGTexture = GraphBuilder.RegisterExternalTexture(
 				CreateRenderTarget(Texture, TEXT("IVSmokeHoleTexture"))
 			);
 
-			FRDGBufferRef HoleBuffer = CreateStructuredBuffer(
+			const FRDGBufferRef HoleBuffer = CreateStructuredBuffer(
 				GraphBuilder,
 				TEXT("IVSmokeHoleBuffer"),
 				sizeof(FIVSmokeHoleGPU),
@@ -218,19 +193,19 @@ void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 			FIVSmokeHoleCarveCS::FParameters* Parameters = GraphBuilder.AllocParameters<FIVSmokeHoleCarveCS::FParameters>();
 			Parameters->VolumeTexture = GraphBuilder.CreateUAV(RDGTexture);
 			Parameters->HoleBuffer = GraphBuilder.CreateSRV(HoleBuffer);
-			Parameters->VolumeMin = WorldlVolumeMin;
-			Parameters->VolumeMax = WorldlVolumeMax;
+			Parameters->VolumeMin = WorldVolumeMin;
+			Parameters->VolumeMax = WorldVolumeMax;
 			Parameters->Resolution = Resolution;
 			Parameters->UpdateRegionMin = RegionMin;
 			Parameters->UpdateRegionMax = RegionMax;
 			Parameters->NumHoles = NumHoles;
 			Parameters->bIsFullRebuild = 1;
 
-			TShaderMapRef<FIVSmokeHoleCarveCS> ComputeShader(GetGlobalShaderMap(GMaxRHIFeatureLevel));
+			const TShaderMapRef<FIVSmokeHoleCarveCS> ComputeShader(GetGlobalShaderMap(GMaxRHIFeatureLevel));
 
 			const FIntVector DispatchSize = RegionMax - RegionMin + FIntVector(1, 1, 1);
 			const uint32 ThreadGroupSize = FIVSmokeHoleCarveCS::ThreadGroupSize;
-			FIntVector GroupCount(
+			const FIntVector GroupCount(
 				FMath::DivideAndRoundUp(DispatchSize.X, static_cast<int32>(ThreadGroupSize)),
 				FMath::DivideAndRoundUp(DispatchSize.Y, static_cast<int32>(ThreadGroupSize)),
 				FMath::DivideAndRoundUp(DispatchSize.Z, static_cast<int32>(ThreadGroupSize))
@@ -247,6 +222,26 @@ void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 			GraphBuilder.Execute();
 		}
 	);
+}
+#endif
+
+// ============================================================================
+// Texture Access
+// ============================================================================
+
+#if !UE_SERVER
+FTextureRHIRef UIVSmokeHoleGeneratorComponent::GetHoleTextureRHI() const
+{
+	if (HoleTexture)
+	{
+		// Use GameThread-safe accessor
+		if (const FTextureRenderTargetResource* Resource = HoleTexture->GameThread_GetRenderTargetResource())
+		{
+			return Resource->GetRenderTargetTexture();
+		}
+	}
+
+	return nullptr;
 }
 #endif
 
@@ -315,40 +310,13 @@ void UIVSmokeHoleGeneratorComponent::InitializeHoleTexture()
 		return;
 	}
 
-	const int32 TotalVoxels = VoxelResolution.X * VoxelResolution.Y * VoxelResolution.Z;
-
-	TArray<FFloat16> InitialData;
-	InitialData.SetNumUninitialized(TotalVoxels);
-	for (int32 i = 0; i < TotalVoxels; ++i)
-	{
-		InitialData[i] = FFloat16(1.0f);
-	}
-
-	FTextureRHIRef* TexturePtr = &HoleTexture;
-	FIntVector Resolution = VoxelResolution;
-
-	ENQUEUE_RENDER_COMMAND(CreateHoleTexture)(
-		[TexturePtr, Resolution, InitialData = MoveTemp(InitialData)](FRHICommandListImmediate& RHICmdList)
-		{
-			const FRHITextureCreateDesc Desc =
-				FRHITextureCreateDesc::Create3D(TEXT("IVSmokeHoleTexture"), Resolution.X, Resolution.Y, Resolution.Z, PF_R16F)
-				.SetFlags(ETextureCreateFlags::ShaderResource | ETextureCreateFlags::UAV)
-				.SetInitialState(ERHIAccess::CopyDest);
-
-			*TexturePtr = RHICreateTexture(Desc);
-
-			if (TexturePtr->IsValid())
-			{
-				FUpdateTextureRegion3D Region(0, 0, 0, 0, 0, 0, Resolution.X, Resolution.Y, Resolution.Z);
-				const uint32 SourceRowPitch = Resolution.X * sizeof(FFloat16);
-				const uint32 SourceDepthPitch = Resolution.X * Resolution.Y * sizeof(FFloat16);
-
-				RHIUpdateTexture3D(*TexturePtr, 0, Region, SourceRowPitch, SourceDepthPitch,
-					reinterpret_cast<const uint8*>(InitialData.GetData()));
-				RHICmdList.Transition(FRHITransitionInfo(*TexturePtr, ERHIAccess::CopyDest, ERHIAccess::SRVGraphics));
-			}
-		}
-	);
+	// Create UTextureRenderTargetVolume
+	HoleTexture = NewObject<UTextureRenderTargetVolume>(this, TEXT("HoleTexture"));
+	HoleTexture->Init(VoxelResolution.X, VoxelResolution.Y, VoxelResolution.Z, PF_R16F);
+	HoleTexture->bCanCreateUAV = true;
+	HoleTexture->ClearColor = FLinearColor::White;
+	HoleTexture->SRGB = false;
+	HoleTexture->UpdateResourceImmediate(true);
 }
 #endif
 
@@ -356,7 +324,6 @@ void UIVSmokeHoleGeneratorComponent::InitializeHoleTexture()
 #if !UE_SERVER
 TArray<FIVSmokeHoleGPU> UIVSmokeHoleGeneratorComponent::BuildGPUHoleBuffer() const
 {
-	const FTransform Transform = GetComponentTransform();
 	const float CurrentServerTime = GetSyncedTime();
 
 	TArray<FIVSmokeHoleGPU> GPUBuffer;
@@ -399,7 +366,7 @@ TArray<FIVSmokeHoleGPU> UIVSmokeHoleGeneratorComponent::BuildGPUHoleBuffer() con
 #if !UE_SERVER
 void UIVSmokeHoleGeneratorComponent::SetBoxToVoxelAABB()
 {
-	AIVSmokeVoxelVolume* VoxelVolume = Cast<AIVSmokeVoxelVolume>(GetOwner());
+	const AIVSmokeVoxelVolume* VoxelVolume = Cast<AIVSmokeVoxelVolume>(GetOwner());
 	if (VoxelVolume == nullptr)
 	{
 		return;

@@ -222,7 +222,7 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 			Result.VoxelResolution = Volume->GetGridResolution();
 			if (UIVSmokeHoleGeneratorComponent* HoleComp = Volume->GetHoleGeneratorComponent())
 			{
-				if (FTextureRHIRef HoleTex = HoleComp->GetHoleTexture())
+				if (FTextureRHIRef HoleTex = HoleComp->GetHoleTextureRHI())
 				{
 					Result.HoleResolution = HoleTex->GetSizeXYZ();
 				}
@@ -274,7 +274,7 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		// ============================================
 		if (UIVSmokeHoleGeneratorComponent* HoleComp = Volume->GetHoleGeneratorComponent())
 		{
-			FTextureRHIRef HoleTex = HoleComp->GetHoleTexture();
+			FTextureRHIRef HoleTex = HoleComp->GetHoleTextureRHI();
 			Result.HoleTextures.Add(HoleTex);
 			if (HoleTex)
 			{
@@ -439,7 +439,7 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	const FIntPoint ViewRectMin = SceneColor.ViewRect.Min;
 
 	// ============================================================================
-	// Upscaling Pipeline (1/2 → Full)
+	// Upscaling Pipeline (1/2 Full)
 	// ============================================================================
 	//
 	// Ray March at 1/2 resolution for quality/performance balance.
@@ -496,11 +496,11 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	);
 
 	// ============================================================================
-	// Upscaling (1/2 → Full)
+	// Upscaling (1/2 Full)
 	// ============================================================================
 	// Single-step bilinear upscaling smooths IGN grain patterns.
 
-	// Albedo: 1/2 → Full
+	// Albedo: 1/2 Full
 	FRDGTextureRef SmokeAlbedoFull = AddCopyPass(
 		GraphBuilder,
 		View,
@@ -509,7 +509,7 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 		TEXT("IVSmokeAlbedoTex_Full")
 	);
 
-	// Mask: 1/2 → Full
+	// Mask: 1/2 Full
 	FRDGTextureRef SmokeMaskFull = AddCopyPass(
 		GraphBuilder,
 		View,

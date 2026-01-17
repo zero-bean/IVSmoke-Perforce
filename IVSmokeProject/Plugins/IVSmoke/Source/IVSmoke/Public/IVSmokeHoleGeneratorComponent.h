@@ -6,6 +6,8 @@
 #include "IVSmokeHoleData.h"
 #include "IVSmokeHoleGeneratorComponent.generated.h"
 
+class UTextureRenderTargetVolume;
+
 /**
  * @brief Component that generates hole texture for volumetric smoke.
  *        Provides public API for penetration and explosion holes.
@@ -62,15 +64,15 @@ public:
 		meta = (ClampMin = "0.0", ClampMax = "1.0", Tooltip = "0=transparent, 1=full hole"))
 	float DensityMultiplier = 1.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke|Hole|Debug")
-	bool bShowVolumeDebug = true;
-
 	// ============================================================================
 	// Texture Access
 	// ============================================================================
 
+	/** Get hole texture for material binding */
+	UTextureRenderTargetVolume* GetHoleTexture() const { return HoleTexture; }
 
-	FTextureRHIRef GetHoleTexture() const { return HoleTexture; }
+	/** Get hole texture RHI for shader binding */
+	FTextureRHIRef GetHoleTextureRHI() const;
 
 	UFUNCTION(BlueprintPure, Category = "IVSmoke|Voxel")
 	FORCEINLINE FIntVector GetVoxelResolution() const { return VoxelResolution; }
@@ -128,5 +130,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "IVSmoke|Hole|Configuration")
 	FIntVector VoxelResolution = FIntVector(64, 64, 64);
 
-	FTextureRHIRef HoleTexture;
+	UPROPERTY(Transient)
+	UTextureRenderTargetVolume* HoleTexture = nullptr;
 };

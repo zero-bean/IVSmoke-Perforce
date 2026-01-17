@@ -541,7 +541,7 @@ FTextureRHIRef AIVSmokeVoxelVolume::GetHoleTexture() const
 {
 	if (HoleGeneratorComponent)
 	{
-		return HoleGeneratorComponent->GetHoleTexture();
+		return HoleGeneratorComponent->GetHoleTextureRHI();
 	}
 	return nullptr;
 }
