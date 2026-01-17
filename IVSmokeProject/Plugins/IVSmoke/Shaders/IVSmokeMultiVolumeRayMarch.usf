@@ -105,6 +105,8 @@ Texture3D<float> PackedVoxelAtlas;
 Texture3D<float> PackedHoleAtlas;
 int3 VoxelTexSize;
 int3 HoleTexSize;
+int3 PackedHoleTexSize;
+int3 HoleAtlasCount;
 
 // Scene Depth
 float4 InvDeviceZToWorldZTransform;
@@ -175,21 +177,25 @@ float3 GetVoxelUVW(float3 WorldPos, uint VolumeIdx, int TexZSize)
 	return uvw;
 }
 
-float3 GetHoleUVW(float3 WorldPos, uint VolumeIdx, int TexZSize)
+float3 GetHoleUVW(float3 WorldPos, uint VolumeIdx)
 {
 	FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
 	float3 uvw = (WorldPos - Vol.VoxelWorldAABBMin) / (Vol.VoxelWorldAABBMax - Vol.VoxelWorldAABBMin);
-	int AtlasTexZSize = TexZSize * NumActiveVolumes + PackedInterval * (NumActiveVolumes - 1);
-	int zMinTex = (TexZSize + PackedInterval) * VolumeIdx;
-	int zMaxTex = zMinTex + TexZSize;
-	float zMinUV = (float) zMinTex / AtlasTexZSize;
-	float zMaxUV = (float) zMaxTex / AtlasTexZSize;
-	uvw.z = lerp(zMinUV, zMaxUV, uvw.z);
+	uvw = saturate(uvw);
+	int3 HoleAtlasID;
+	HoleAtlasID.x = VolumeIdx % HoleAtlasCount.x;
+	HoleAtlasID.y = (VolumeIdx / HoleAtlasCount.x) % HoleAtlasCount.y;
+	HoleAtlasID.z = VolumeIdx / (HoleAtlasCount.x * HoleAtlasCount.y);
+	int3 MinTexPos = HoleAtlasID * (HoleTexSize + PackedInterval);
+	int3 MaxTexPos = MinTexPos + HoleTexSize;
+	float3 MinUV = (float3) MinTexPos / PackedHoleTexSize;
+	float3 MaxUV = (float3) MaxTexPos / PackedHoleTexSize;
+	uvw = lerp(MinUV, MaxUV, uvw);
 	return uvw;
 }
 float GetHoleDensity(float3 WorldPos, uint VolumeIdx)
 {
-	float3 uvw = GetHoleUVW(WorldPos, VolumeIdx, HoleTexSize.z);
+	float3 uvw = GetHoleUVW(WorldPos, VolumeIdx);
 	return PackedHoleAtlas.Sample(LinearBorder_Sampler, uvw);
 }
 

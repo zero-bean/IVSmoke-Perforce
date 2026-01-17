@@ -45,6 +45,45 @@ void FIVSmokeRenderer::Shutdown()
 	}
 	ElapsedTime = 0.0f;
 }
+FIntVector FIVSmokeRenderer::GetAtlasTexCount(const FIntVector& TexSize, const int32 TexCount, const int32 TexturePackInterval, const int32 TexturePackMaxSize)
+{
+	int QuotientX = TexturePackMaxSize / (TexSize.X + TexturePackInterval);
+	int QuotientY = TexturePackMaxSize / (TexSize.Y + TexturePackInterval);
+	int QuotientZ = TexturePackMaxSize / (TexSize.Z + TexturePackInterval);
+
+	FIntVector AtlasTexCount = FIntVector(1, 1, 1);
+	if (QuotientX < TexCount)
+	{
+		AtlasTexCount.X = QuotientX;
+	}
+	else
+	{
+		AtlasTexCount.X = TexCount;
+	}
+
+	int CurTexCount = TexCount / QuotientX + (TexCount % QuotientX == 0 ? 0 : 1);
+	if (QuotientY < CurTexCount)
+	{
+		AtlasTexCount.Y = QuotientY;
+	}
+	else
+	{
+		AtlasTexCount.Y = CurTexCount;
+	}
+
+	CurTexCount = CurTexCount / QuotientY + (CurTexCount % QuotientY == 0 ? 0 : 1);
+	if (QuotientZ < CurTexCount)
+	{
+		//warning size full
+		AtlasTexCount.Z = QuotientZ;
+	}
+	else
+	{
+		AtlasTexCount.Z = CurTexCount;
+	}
+	return AtlasTexCount;
+}
+
 
 void FIVSmokeRenderer::CreateNoiseVolume()
 {
@@ -623,21 +662,20 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	// ============================================================================
 
 	const int32 TexturePackInterval = 4;
+	const int32 TexturePackMaxSize = 2048;
 	const FIntVector VoxelResolution = RenderData.VoxelResolution;
-	const FIntVector VoxelHighResolution = VoxelResolution * 1;
 	const FIntVector HoleResolution = RenderData.HoleResolution;
+	const FIntVector HoleAtlasCount = GetAtlasTexCount(HoleResolution, VolumeCount, TexturePackInterval, TexturePackMaxSize);
 
 	const FIntVector VoxelAtlasResolution = FIntVector(
 		VoxelResolution.X,
 		VoxelResolution.Y,
-		VoxelResolution.Z * VolumeCount + TexturePackInterval * (VolumeCount - 1)
-	);
-	const FIntVector VoxelAtlasHighResolution = VoxelAtlasResolution * 1;
+		VoxelResolution.Z * VolumeCount + TexturePackInterval * (VolumeCount - 1));
+	const FIntVector VoxelAtlasFXAAResolution = VoxelAtlasResolution * 1;
 	const FIntVector HoleAtlasResolution = FIntVector(
-		HoleResolution.X,
-		HoleResolution.Y,
-		HoleResolution.Z * VolumeCount + TexturePackInterval * (VolumeCount - 1)
-	);
+		HoleResolution.X * HoleAtlasCount.X + TexturePackInterval * (HoleAtlasCount.X - 1),
+		HoleResolution.Y * HoleAtlasCount.Y + TexturePackInterval * (HoleAtlasCount.Y - 1),
+		HoleResolution.Z * HoleAtlasCount.Z + TexturePackInterval * (HoleAtlasCount.Z - 1));
 
 	// Create atlas textures
 	FRDGTextureDesc VoxelAtlasDesc = FRDGTextureDesc::Create3D(
@@ -648,13 +686,13 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	);
 	FRDGTextureRef PackedVoxelAtlas = GraphBuilder.CreateTexture(VoxelAtlasDesc, TEXT("IVSmoke_PackedVoxelAtlas"));
 
-	FRDGTextureDesc VoxelAtlasHighResDesc = FRDGTextureDesc::Create3D(
-		VoxelAtlasHighResolution,
+	FRDGTextureDesc VoxelAtlasFXAAResDesc = FRDGTextureDesc::Create3D(
+		VoxelAtlasFXAAResolution,
 		PF_R32_FLOAT,
 		FClearValueBinding::None,
 		TexCreate_ShaderResource | TexCreate_UAV
 	);
-	FRDGTextureRef PackedVoxelAtlasHighRes = GraphBuilder.CreateTexture(VoxelAtlasHighResDesc, TEXT("IVSmoke_PackedVoxelAtlasHighRes"));
+	FRDGTextureRef PackedVoxelAtlasFXAA = GraphBuilder.CreateTexture(VoxelAtlasFXAAResDesc, TEXT("IVSmoke_PackedVoxelAtlasFXAA"));
 
 	FRDGTextureDesc HoleAtlasDesc = FRDGTextureDesc::Create3D(
 		HoleAtlasResolution,
@@ -676,24 +714,35 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	HoleCpyInfo.Size = HoleResolution;
 	HoleCpyInfo.SourcePosition = FIntVector::ZeroValue;
 
-	for (int32 i = 0; i < VolumeCount; ++i)
+	for (int z = 0; z < HoleAtlasCount.Z; ++z)
 	{
-		if (i >= RenderData.HoleTextures.Num())
+		for (int y = 0; y < HoleAtlasCount.Y; ++y)
 		{
-			break;
-		}
+			for (int x = 0; x < HoleAtlasCount.X; ++x)
+			{
+				int i = x + HoleAtlasCount.X * y + z * HoleAtlasCount.X * HoleAtlasCount.Y;
 
-		FTextureRHIRef SourceRHI = RenderData.HoleTextures[i];
-		if (!SourceRHI)
-		{
-			continue;
-		}
+				if (i >= RenderData.HoleTextures.Num())
+				{
+					break;
+				}
 
-		FRDGTextureRef SourceTexture = GraphBuilder.RegisterExternalTexture(
-			CreateRenderTarget(SourceRHI, TEXT("IVSmoke_CopyHoleSource"))
-		);
-		HoleCpyInfo.DestPosition = FIntVector(0, 0, i * (HoleResolution.Z + TexturePackInterval));
-		AddCopyTexturePass(GraphBuilder, SourceTexture, PackedHoleAtlas, HoleCpyInfo);
+				FTextureRHIRef SourceRHI = RenderData.HoleTextures[i];
+				if (!SourceRHI)
+				{
+					continue;
+				}
+
+				FRDGTextureRef SourceTexture = GraphBuilder.RegisterExternalTexture(
+					CreateRenderTarget(SourceRHI, TEXT("IVSmoke_CopyHoleSource"))
+				);
+
+				HoleCpyInfo.DestPosition.X = x * (HoleResolution.X + TexturePackInterval);
+				HoleCpyInfo.DestPosition.Y = y * (HoleResolution.Y + TexturePackInterval);
+				HoleCpyInfo.DestPosition.Z = z * (HoleResolution.Z + TexturePackInterval);
+				AddCopyTexturePass(GraphBuilder, SourceTexture, PackedHoleAtlas, HoleCpyInfo);
+			}
+		}
 	}
 
 	// Get global settings for FXAA parameters
@@ -727,10 +776,10 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	TShaderMapRef<FIVSmokeVoxelFXAACS> VoxelFXAAShader(ShaderMap);
 	auto* VoxelFXAAParams = GraphBuilder.AllocParameters<FIVSmokeVoxelFXAACS::FParameters>();
 
-	VoxelFXAAParams->Desti = GraphBuilder.CreateUAV(PackedVoxelAtlasHighRes);
+	VoxelFXAAParams->Desti = GraphBuilder.CreateUAV(PackedVoxelAtlasFXAA);
 	VoxelFXAAParams->Source = GraphBuilder.CreateSRV(PackedVoxelAtlas);
 	VoxelFXAAParams->LinearBorder_Sampler = TStaticSamplerState<SF_Bilinear, AM_Border, AM_Border, AM_Border>::GetRHI();
-	VoxelFXAAParams->TexSize = VoxelAtlasHighResolution;
+	VoxelFXAAParams->TexSize = VoxelAtlasFXAAResolution;
 	VoxelFXAAParams->FXAASpanMax = Settings->FXAASpanMax;
 	VoxelFXAAParams->FXAARange = Settings->FXAARange;
 	VoxelFXAAParams->FXAASharpness = Settings->FXAASharpness;
@@ -740,7 +789,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 		ShaderMap,
 		VoxelFXAAShader,
 		VoxelFXAAParams,
-		VoxelAtlasHighResolution );
+		VoxelAtlasFXAAResolution );
 
 	// ============================================================================
 	// Create GPU Buffers
@@ -802,12 +851,14 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 
 	// Packed Textures
 	Parameters->PackedInterval = TexturePackInterval;
-	Parameters->PackedVoxelAtlas = GraphBuilder.CreateSRV(PackedVoxelAtlasHighRes);
-	Parameters->VoxelTexSize = VoxelHighResolution;
+	Parameters->PackedVoxelAtlas = GraphBuilder.CreateSRV(PackedVoxelAtlasFXAA);
+	Parameters->VoxelTexSize = VoxelResolution;
 	//Parameters->PackedVoxelAtlas = GraphBuilder.CreateSRV(PackedVoxelAtlas);
 	//Parameters->VoxelTexSize = VoxelResolution;
 	Parameters->PackedHoleAtlas = GraphBuilder.CreateSRV(PackedHoleAtlas);
 	Parameters->HoleTexSize = HoleResolution;
+	Parameters->PackedHoleTexSize = HoleAtlasResolution;
+	Parameters->HoleAtlasCount = HoleAtlasCount;
 
 	// Scene Textures
 	Parameters->SceneTexturesStruct = GetSceneTextureShaderParameters(View).SceneTextures;

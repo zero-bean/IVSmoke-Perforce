@@ -161,6 +161,7 @@ public:
 private:
 	FIVSmokeRenderer() = default;
 
+	FIntVector GetAtlasTexCount(const FIntVector& TexSize, const int32 TexCount, const int32 TexturePackInterval, const int32 TexturePackMaxSize);
 	// ============================================================================
 	// Resource Management
 	// ============================================================================
