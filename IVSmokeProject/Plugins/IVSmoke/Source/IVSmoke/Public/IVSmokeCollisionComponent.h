@@ -30,7 +30,10 @@ protected:
 #pragma region Collision
 public:
 	/** @todo Documentation */
-	void UpdateCollision(const TArray<float>& VoxelData, const FIntVector& GridResolution, float VoxelSize);
+	void UpdateCollisionWithOctree(const TArray<float>& VoxelArray, const FIntVector& GridResolution, float VoxelSize);
+
+	/** @todo Documentation */
+	void UpdateCollision(const TArray<uint64>& VoxelBitArray, const FIntVector& GridResolution, float VoxelSize);
 
 	/** @todo Documentation */
 	void ResetCollision();
@@ -52,7 +55,13 @@ public:
 
 private:
 	/** @todo Documentation */
-	void RebuildPhysicsGeometry();
+	void ApplyCollisionSettings();
+
+	/** @todo Documentation */
+	void FinalizePhysicsUpdate();
+
+	/** @todo Documentation */
+	void RebuildPhysicsGeometryWithOctree();
 
 	// @todo Documentation
 	UPROPERTY(Transient)

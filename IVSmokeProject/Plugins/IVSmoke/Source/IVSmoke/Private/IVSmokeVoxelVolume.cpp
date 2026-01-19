@@ -222,6 +222,17 @@ void AIVSmokeVoxelVolume::Initialize()
 		FMemory::Memzero(VoxelArray.GetData(), VoxelArray.Num() * sizeof(float));
 	}
 
+	int32 TotalGridSizeYZ = GridResolution.Y * GridResolution.Z;
+
+	if (VoxelBitArray.Num() != TotalGridSizeYZ)
+	{
+		VoxelBitArray.Init(0ULL, TotalGridSizeYZ);
+	}
+	else
+	{
+		FMemory::Memzero(VoxelBitArray.GetData(), TotalGridSizeYZ * sizeof(uint64));
+	}
+
 	VoxelCostArray.Empty(TotalGridSize);
 	VoxelCostArray.Init(FLT_MAX, TotalGridSize);
 
@@ -535,7 +546,8 @@ void AIVSmokeVoxelVolume::TryUpdateCollision(float CurrentProgress, bool bForceU
 	bool bShouldUpdateByProgress = CurrentProgress - LastCollisionUpdateProgress >= MinCollisionUpdateProgressInterval;
 	if (bForceUpdate || (bShouldUpdateByTime && bShouldUpdateByProgress))
 	{
-		CollisionComponent->UpdateCollision(VoxelArray, GridResolution, VoxelSize);
+		CollisionComponent->UpdateCollisionWithOctree(VoxelArray, GridResolution, VoxelSize);
+		// CollisionComponent->UpdateCollision(VoxelBitArray, GridResolution, VoxelSize);
 		LastCollisionUpdateTime = ElapsedTime;
 		LastCollisionUpdateProgress = CurrentProgress;
 	}
@@ -615,6 +627,8 @@ void AIVSmokeVoxelVolume::SetVoxelStateByIndex(int32 LinearIndex, bool bIsActive
 	if (OldValue != NewValue)
 	{
 		VoxelArray[LinearIndex] = NewValue;
+
+		UIVSmokeGridLibrary::SetVoxelBit(VoxelBitArray, LinearIndex, GridResolution, bIsActive);
 
 		const bool bWasActive = OldValue > 0.0f;
 

@@ -3,9 +3,11 @@
 #include "IVSmokeCollisionComponent.h"
 
 #include "IVSmoke.h"
+#include "IVSmokeGridLibrary.h"
 #include "PhysicsEngine/BodySetup.h"
 
 DECLARE_CYCLE_STAT(TEXT("Update Collision"), STAT_IVSmoke_UpdateCollision, STATGROUP_IVSmoke)
+DECLARE_CYCLE_STAT(TEXT("Update Collision With Octree"), STAT_IVSmoke_UpdateCollisionWithOctree, STATGROUP_IVSmoke)
 DECLARE_CYCLE_STAT(TEXT("Rebuild Physics Geometry"), STAT_IVSmoke_RebuildPhysicsGeometry, STATGROUP_IVSmoke)
 
 //~==============================================================================
@@ -43,20 +45,132 @@ void UIVSmokeCollisionComponent::OnCreatePhysicsState()
 // Collision Management
 #pragma region Collision
 
-void UIVSmokeCollisionComponent::UpdateCollision(const TArray<float>& VoxelData, const FIntVector& GridResolution, float VoxelSize)
+void UIVSmokeCollisionComponent::UpdateCollisionWithOctree(const TArray<float>& VoxelArray, const FIntVector& GridResolution, float VoxelSize)
 {
-	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_UpdateCollision);
+	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_UpdateCollisionWithOctree);
 
-	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::UIVSmokeCollisionComponent::UpdateCollision");
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::UIVSmokeCollisionComponent::UpdateCollisionWithOctree");
 
 	if (!bCollisionEnabled)
 	{
 		return;
 	}
 
-	Octree.Build(VoxelData, GridResolution, VoxelSize);
+	Octree.Build(VoxelArray, GridResolution, VoxelSize);
 
-	RebuildPhysicsGeometry();
+	RebuildPhysicsGeometryWithOctree();
+}
+
+void UIVSmokeCollisionComponent::UpdateCollision(const TArray<uint64>& VoxelBitArray, const FIntVector& GridResolution, float VoxelSize)
+{
+	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_UpdateCollision);
+
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::UIVSmokeCollisionComponent::UpdateCollision");
+
+	UBodySetup* BodySetup = GetBodySetup();
+	if (!BodySetup)
+	{
+		return;
+	}
+
+	BodySetup->AggGeom.EmptyElements();
+
+	TArray<uint64> TempVoxelBitArray = VoxelBitArray;
+
+	const int32 ResolutionY = GridResolution.Y;
+	const int32 ResolutionZ = GridResolution.Z;
+
+	const FIntVector CenterOffset = GridResolution / 2;
+
+	const float VoxelExtent = VoxelSize * 0.5f;
+
+	for (int32 Z = 0; Z < ResolutionZ; ++Z)
+	{
+		for (int32 Y = 0; Y < ResolutionY; ++Y)
+		{
+			const int32 Index = UIVSmokeGridLibrary::GridToVoxelBitIndex(Y, Z, ResolutionY);
+
+			uint64& CurrentRow = TempVoxelBitArray[Index];
+			while (CurrentRow)
+			{
+				const int32 BeginX = FMath::CountTrailingZeros64(CurrentRow);
+
+				const uint64 Shifted = CurrentRow >> BeginX;
+
+				const int32 Width = (Shifted == MAX_uint64) ? (64 - BeginX) : FMath::CountTrailingZeros64(~Shifted);
+
+				const uint64 Mask = (Width == 64) ? MAX_uint64 : ((1ULL << Width) - 1ULL) << BeginX;
+
+				int32 Height = 1;
+				for (int32 NextY = Y + 1; NextY < ResolutionY; ++NextY)
+				{
+					const int32 NextIndex = UIVSmokeGridLibrary::GridToVoxelBitIndex(NextY, Z, ResolutionY);
+
+					const uint64& NextRow = TempVoxelBitArray[NextIndex];
+					if ((NextRow & Mask) == Mask)
+					{
+						++Height;
+					}
+					else
+					{
+						break;
+					}
+				}
+
+				int32 Depth = 1;
+				for (int32 NextZ = Z + 1; NextZ < ResolutionZ; ++NextZ)
+				{
+					bool bCanExpand = true;
+					for (int32 H = 0; H < Height; ++H)
+					{
+						const int32 NextIndex = UIVSmokeGridLibrary::GridToVoxelBitIndex(Y + H, NextZ, ResolutionY);
+
+						const uint64& NextRow = TempVoxelBitArray[NextIndex];
+						if ((NextRow & Mask) != Mask)
+						{
+							bCanExpand = false;
+							break;
+						}
+					}
+
+					if (bCanExpand)
+					{
+						++Depth;
+					}
+					else
+					{
+						break;
+					}
+				}
+
+				for (int32 D = 0; D < Depth; ++D)
+				{
+					for (int32 H = 0; H < Height; ++H)
+					{
+						const int32 NextIndex = UIVSmokeGridLibrary::GridToVoxelBitIndex(Y + H, Z + D, ResolutionY);
+
+						TempVoxelBitArray[NextIndex] &= ~Mask;
+					}
+				}
+
+				FKBoxElem Box;
+
+				FIntVector BeginGridPos(BeginX, Y, Z);
+				FVector BeginVoxelCenter = UIVSmokeGridLibrary::GridToLocal(BeginGridPos, VoxelSize, CenterOffset);
+				FVector CenterShift((Width - 1) * VoxelExtent, (Height - 1) * VoxelExtent, (Depth - 1) * VoxelExtent);
+				Box.Center = BeginVoxelCenter + CenterShift;
+
+				Box.X = Width * VoxelSize;
+				Box.Y = Height * VoxelSize;
+				Box.Z = Depth * VoxelSize;
+				Box.Rotation = FRotator::ZeroRotator;
+
+				BodySetup->AggGeom.BoxElems.Add(Box);
+			}
+		}
+	}
+
+	FinalizePhysicsUpdate();
 }
 
 void UIVSmokeCollisionComponent::ResetCollision()
@@ -73,7 +187,7 @@ void UIVSmokeCollisionComponent::ResetCollision()
 	RecreatePhysicsState();
 }
 
-void UIVSmokeCollisionComponent::RebuildPhysicsGeometry()
+void UIVSmokeCollisionComponent::RebuildPhysicsGeometryWithOctree()
 {
 	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_RebuildPhysicsGeometry);
 
@@ -116,6 +230,11 @@ void UIVSmokeCollisionComponent::RebuildPhysicsGeometry()
 		BodySetup->AggGeom.BoxElems.Add(BoxElem);
 	}
 
+	FinalizePhysicsUpdate();
+}
+
+void UIVSmokeCollisionComponent::ApplyCollisionSettings()
+{
 	bool bUseProfile = !SmokeCollisionProfileName.IsNone() &&
 						SmokeCollisionProfileName != UCollisionProfile::NoCollision_ProfileName &&
 						SmokeCollisionProfileName != UCollisionProfile::CustomCollisionProfileName;
@@ -137,9 +256,21 @@ void UIVSmokeCollisionComponent::RebuildPhysicsGeometry()
 		}
 	}
 
-	BodySetup->InvalidatePhysicsData();
-
 	BodyInstance.UpdatePhysicsFilterData();
+}
+
+void UIVSmokeCollisionComponent::FinalizePhysicsUpdate()
+{
+	if (!VoxelBodySetup)
+	{
+		return;
+	}
+
+	ApplyCollisionSettings();
+
+	VoxelBodySetup->InvalidatePhysicsData();
+	VoxelBodySetup->CreatePhysicsMeshes();
+
 	RecreatePhysicsState();
 }
 
@@ -157,36 +288,41 @@ void UIVSmokeCollisionComponent::DrawDebugVisualization() const
 		return;
 	}
 
-	const TArray<FIVSmokeOctreeNode>& NodeArray = Octree.GetNodeArray();
-	const TArray<int32>& ActiveLeafIndexArray = Octree.GetActiveLeafIndexArray();
+	if (!VoxelBodySetup)
+	{
+		return;
+	}
 
 	FTransform ComponentTrans = GetComponentTransform();
-	FQuat Rotation = ComponentTrans.GetRotation();
-	FColor WireColor = FColor::Green;
 
-	for (int32 NodeIndex : ActiveLeafIndexArray)
+	const float GapScale = 0.95f;
+
+	for (const FKBoxElem& Box : VoxelBodySetup->AggGeom.BoxElems)
 	{
-		if (!NodeArray.IsValidIndex(NodeIndex))
-		{
-			continue;
-		}
+		FVector WorldCenter = ComponentTrans.TransformPosition(Box.Center);
 
-		const FIVSmokeOctreeNode& Node = NodeArray[NodeIndex];
+		FVector Extent(Box.X * 0.5f * GapScale, Box.Y * 0.5f * GapScale, Box.Z * 0.5f * GapScale);
 
-		FVector WorldCenter = ComponentTrans.TransformPosition(Node.Center);
-		FVector Extent(Node.Extent);
+		FQuat WorldRotation = ComponentTrans.GetRotation() * Box.Rotation.Quaternion();
+
+		uint32 Hash = GetTypeHash(Box.Center);
+		FRandomStream StableRNG(Hash);
+
+		float Hue = StableRNG.FRandRange(0.0f, 360.0f);
+		FLinearColor BoxColor = FLinearColor::MakeFromHSV8(Hue, 200, 255);
 
 		DrawDebugBox(
 			World,
 			WorldCenter,
 			Extent,
-			Rotation,
-			WireColor,
+			WorldRotation,
+			BoxColor.ToFColor(true),
 			false, -1.0f, 0, 1.5f
 		);
 	}
+
 	FVector TextPos = GetComponentLocation() + FVector(0, 0, 50.0f);
-	FString DebugMsg = FString::Printf(TEXT("Octree Leaves: %d"), ActiveLeafIndexArray.Num());
+	FString DebugMsg = FString::Printf(TEXT("Collision Boxes: %d"), VoxelBodySetup->AggGeom.BoxElems.Num());
 	DrawDebugString(World, TextPos, DebugMsg, nullptr, FColor::White, 0.0f, true);
 #endif
 }

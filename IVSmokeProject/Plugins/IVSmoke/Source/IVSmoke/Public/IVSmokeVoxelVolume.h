@@ -291,6 +291,9 @@ private:
 	TArray<float> VoxelCostArray;
 
 	// @todo Documentation
+	TArray<uint64> VoxelBitArray;
+
+	// @todo Documentation
 	TArray<FIVSmokeVoxelNode> MinHeap;
 
 	// @todo Documentation
