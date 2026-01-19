@@ -1,6 +1,7 @@
 // Copyright SDB. All Rights Reserved.
 
 #include "IVSmokeHoleGeneratorComponent.h"
+#include "IVSmokeHolePreset.h"
 #include "IVSmokeHoleCarveCS.h"
 #include "Engine/TextureRenderTargetVolume.h"
 #include "RenderGraphBuilder.h"
@@ -8,6 +9,7 @@
 #include "RenderingThread.h"
 #include "RHICommandList.h"
 #include "GlobalShader.h"
+#include "IVSmoke.h"
 #include "GameFramework/GameStateBase.h"
 #include "Net/UnrealNetwork.h"
 #include "IVSmokeVoxelVolume.h"
@@ -63,46 +65,94 @@ void UIVSmokeHoleGeneratorComponent::TickComponent(float DeltaTime, ELevelTick T
 }
 
 // ============================================================================
-// Public API (Server RPC Implementation)
+// Public API (Blueprint & C++)
 // ============================================================================
 
-void UIVSmokeHoleGeneratorComponent::RequestPenetrationHole_Implementation(const FIVSmokePenetrationRequest& Request)
+void UIVSmokeHoleGeneratorComponent::RequestPenetrationHole(FVector Origin, FVector Direction, UIVSmokeHolePreset* Preset)
 {
+	if (!Preset)
+	{
+		UE_LOG(LogIVSmoke, Warning, TEXT("[RequestPenetrationHole] Preset is null"));
+		return;
+	}
+
+	Internal_RequestPenetrationHole(Origin, Direction, Preset->GetPresetID());
+}
+
+void UIVSmokeHoleGeneratorComponent::RequestExplosionHole(FVector Origin, UIVSmokeHolePreset* Preset)
+{
+	if (!Preset)
+	{
+		UE_LOG(LogIVSmoke, Warning, TEXT("[RequestExplosionHole] Preset is null"));
+		return;
+	}
+
+	Internal_RequestExplosionHole(Origin, Preset->GetPresetID());
+}
+
+// ============================================================================
+// Internal Server RPC Implementation
+// ============================================================================
+
+void UIVSmokeHoleGeneratorComponent::Internal_RequestPenetrationHole_Implementation(FVector Origin, FVector Direction, uint8 PresetID)
+{
+	const TObjectPtr<UIVSmokeHolePreset> Preset = UIVSmokeHolePreset::FindByID(PresetID);
+	if (!Preset)
+	{
+		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestPenetrationHole] Invalid PresetID: %d"), PresetID);
+		return;
+	}
+
+	if (Preset->Lifetime <= 0.0f)
+	{
+		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestPenetrationHole] Invalid Lifetime: %f"), Preset->Lifetime);
+		return;
+	}
+
 	FVector EntryPoint, ExitPoint;
-	if (!CalculatePenetrationPoints(Request, EntryPoint, ExitPoint))
+	if (!CalculatePenetrationPoints(Origin, Direction, Preset->EndRadius, EntryPoint, ExitPoint))
 	{
 		return;
 	}
 
 	FIVSmokeHoleData HoleData;
-	HoleData.HoleType = IVSmokeHoleType::Penetration;
 	HoleData.Position = EntryPoint;
 	HoleData.EndPosition = ExitPoint;
-	HoleData.Radius = Request.StartRadius;
-	HoleData.EndRadius = Request.EndRadius;
-	HoleData.InitialLifetime = Request.LifeTime;
+	HoleData.PresetID = PresetID;
+	HoleData.ExpirationServerTime = GetSyncedTime() + Preset->Lifetime;
 
 	Authority_CreateHole(HoleData);
 }
 
-void UIVSmokeHoleGeneratorComponent::RequestExplosionHole_Implementation(const FIVSmokeExplosionRequest& Request)
+void UIVSmokeHoleGeneratorComponent::Internal_RequestExplosionHole_Implementation(FVector Origin, uint8 PresetID)
 {
-	const FBox VolumeBox = Bounds.GetBox();
-	const FVector ExpandedMin = VolumeBox.Min - FVector(Request.Radius);
-	const FVector ExpandedMax = VolumeBox.Max + FVector(Request.Radius);
+	TObjectPtr<UIVSmokeHolePreset> Preset = UIVSmokeHolePreset::FindByID(PresetID);
+	if (!Preset)
+	{
+		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestExplosionHole] Invalid PresetID: %d"), PresetID);
+		return;
+	}
 
-	if (const FBox ExpandedBox(ExpandedMin, ExpandedMax); !ExpandedBox.IsInside(Request.Origin))
+	if (Preset->Lifetime <= 0.0f)
+	{
+		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestExplosionHole] Invalid Lifetime: %f"), Preset->Lifetime);
+		return;
+	}
+
+	const FBox VolumeBox = Bounds.GetBox();
+	const FVector ExpandedMin = VolumeBox.Min - FVector(Preset->StartRadius);
+	const FVector ExpandedMax = VolumeBox.Max + FVector(Preset->StartRadius);
+
+	if (const FBox ExpandedBox(ExpandedMin, ExpandedMax); !ExpandedBox.IsInside(Origin))
 	{
 		return;
 	}
 
 	FIVSmokeHoleData HoleData;
-	HoleData.HoleType = IVSmokeHoleType::Explosion;
-	HoleData.Position = Request.Origin;
-	HoleData.EndPosition = Request.Origin;
-	HoleData.Radius = Request.Radius;
-	HoleData.EndRadius = Request.Radius;
-	HoleData.InitialLifetime = Request.LifeTime;
+	HoleData.Position = Origin;
+	HoleData.EndPosition = Origin;
+	HoleData.PresetID = PresetID;
+	HoleData.ExpirationServerTime = GetSyncedTime() + Preset->Lifetime;
 
 	Authority_CreateHole(HoleData);
 }
@@ -119,10 +169,7 @@ void UIVSmokeHoleGeneratorComponent::Authority_CreateHole(const FIVSmokeHoleData
 		ActiveHoles.RemoveAt(0);
 	}
 
-	FIVSmokeHoleData HoleData = InHoleData;
-	HoleData.ExpirationServerTime = GetSyncedTime() + HoleData.InitialLifetime;
-
-	ActiveHoles.Add(HoleData);
+	ActiveHoles.Add(InHoleData);
 }
 
 void UIVSmokeHoleGeneratorComponent::Authority_CleanupExpiredHoles()
@@ -263,15 +310,14 @@ float UIVSmokeHoleGeneratorComponent::GetSyncedTime() const
 }
 
 bool UIVSmokeHoleGeneratorComponent::CalculatePenetrationPoints(
-	const FIVSmokePenetrationRequest& Request, FVector& OutEntry, FVector& OutExit)
+	FVector Origin, FVector Direction, float EndRadius, FVector& OutEntry, FVector& OutExit)
 {
-	const FVector Origin = Request.Origin;
-	const FVector Direction = Request.Direction.GetSafeNormal();
+	Direction = Direction.GetSafeNormal();
 
 	// 0. Edge Case
 	if (Direction.IsNearlyZero())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[CalculatePenetrationPoints] Direction is zero"));
+		UE_LOG(LogIVSmoke, Warning, TEXT("[CalculatePenetrationPoints] Direction is zero"));
 		return false;
 	}
 
@@ -308,11 +354,11 @@ bool UIVSmokeHoleGeneratorComponent::CalculatePenetrationPoints(
 	{
 		FHitResult ObstacleHit;
 		FCollisionQueryParams WorldParams;
-		const FCollisionShape SweepShape = FCollisionShape::MakeSphere(Request.EndRadius);
+		const FCollisionShape SweepShape = FCollisionShape::MakeSphere(EndRadius);
 		const FCollisionObjectQueryParams ObjectParams(ObstacleObjectTypes);
 
 		if (GetWorld()->SweepSingleByObjectType(
-			ObstacleHit,OutEntry, OutExit, FQuat::Identity,
+			ObstacleHit, OutEntry, OutExit, FQuat::Identity,
 			ObjectParams, SweepShape, WorldParams))
 		{
 			OutExit = ObstacleHit.Location;
@@ -350,26 +396,37 @@ TArray<FIVSmokeHoleGPU> UIVSmokeHoleGeneratorComponent::BuildGPUHoleBuffer() con
 
 	for (const FIVSmokeHoleData& Hole : ActiveHoles)
 	{
+		TObjectPtr<UIVSmokeHolePreset> Preset = UIVSmokeHolePreset::FindByID(Hole.PresetID);
+		if (!Preset)
+		{
+			continue;
+		}
+
 		FIVSmokeHoleGPU GPUHole;
 
 		GPUHole.Position = FVector3f(Hole.Position);
-		GPUHole.Radius = Hole.Radius;
+		GPUHole.Radius = Preset->StartRadius;
 
-		if (Hole.HoleType == IVSmokeHoleType::Penetration)
+		if (Preset->HoleType == EIVSmokeHoleType::Penetration)
 		{
 			GPUHole.EndPosition = FVector3f(Hole.EndPosition);
-			GPUHole.EndRadius = Hole.EndRadius;
+			GPUHole.EndRadius = Preset->EndRadius;
 		}
-		else
+		else if (Preset->HoleType == EIVSmokeHoleType::Explosion)
 		{
 			GPUHole.EndPosition = GPUHole.Position;
-			GPUHole.EndRadius = Hole.Radius;
+			GPUHole.EndRadius = Preset->StartRadius;
 		}
 
-		GPUHole.EdgeSoftness = EdgeSoftness;
-		GPUHole.DensityMultiplier = DensityMultiplier;
-		GPUHole.NormalizedAge = Hole.GetNormalizedAge(CurrentServerTime);
-		GPUHole.HoleType = Hole.HoleType;
+		GPUHole.EdgeSoftness = Preset->EdgeSoftness;
+		GPUHole.DensityMultiplier = Preset->DensityMultiplier;
+		GPUHole.HoleType = static_cast<int32>(Preset->HoleType);
+
+		// Calculate normalized age (with division by zero protection)
+		const float Lifetime = FMath::Max(Preset->Lifetime, SMALL_NUMBER);
+		const float RemainingTime = Hole.ExpirationServerTime - CurrentServerTime;
+		const float ElapsedTime = Lifetime - RemainingTime;
+		GPUHole.NormalizedAge = FMath::Clamp(ElapsedTime / Lifetime, 0.0f, 1.0f);
 
 		GPUBuffer.Add(GPUHole);
 	}
