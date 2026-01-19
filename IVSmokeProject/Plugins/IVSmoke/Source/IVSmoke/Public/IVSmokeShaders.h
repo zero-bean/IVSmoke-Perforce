@@ -130,7 +130,7 @@ public:
 		SHADER_PARAMETER(FVector3f, WindDirection)
 		SHADER_PARAMETER(float, VolumeRangeOffset)
 		SHADER_PARAMETER(float, VolumeEdgeNoiseFadeOffset)
-		SHADER_PARAMETER(float, VolumeEdgeFadeShapness)
+		SHADER_PARAMETER(float, VolumeEdgeFadeSharpness)
 
 		// Rayleigh Scattering
 		SHADER_PARAMETER(FVector3f, LightDirection)
@@ -144,15 +144,27 @@ public:
 		SHADER_PARAMETER(float, LightMarchingExpFactor)
 		SHADER_PARAMETER(float, ShadowAmbient)
 
-		// External Shadowing (Scene Capture Shadow Map)
-		SHADER_PARAMETER(int32, bEnableExternalShadowing)
+		// External Shadowing (CSM - Cascaded Shadow Maps)
+		// Note: CSM is always enabled when external shadowing is used
+		SHADER_PARAMETER(int32, NumCascades)
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2DArray, CSMDepthTextureArray)
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2DArray, CSMVSMTextureArray)
+		SHADER_PARAMETER_SAMPLER(SamplerState, CSMSampler)
+		SHADER_PARAMETER_ARRAY(FMatrix44f, CSMViewProjectionMatrices, [8])
+		SHADER_PARAMETER_SCALAR_ARRAY(float, CSMSplitDistances, [8])
+		SHADER_PARAMETER(FVector3f, CSMCameraPosition)
+		SHADER_PARAMETER(float, CascadeBlendRange)
+		SHADER_PARAMETER_ARRAY(FVector4f, CSMLightCameraPositions, [8])
+		SHADER_PARAMETER_ARRAY(FVector4f, CSMLightCameraForwards, [8])
+
+		// VSM parameters
+		SHADER_PARAMETER(int32, bEnableVSM)
+		SHADER_PARAMETER(float, VSMMinVariance)
+		SHADER_PARAMETER(float, VSMLightBleedingReduction)
+
+		// Shadow common parameters
 		SHADER_PARAMETER(float, ShadowDepthBias)
 		SHADER_PARAMETER(float, ExternalShadowAmbient)
-		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, ShadowDepthTexture)
-		SHADER_PARAMETER_SAMPLER(SamplerState, ShadowSampler)
-		SHADER_PARAMETER(FMatrix44f, LightViewProjectionMatrix)
-		SHADER_PARAMETER(FVector3f, ShadowCameraPosition)
-		SHADER_PARAMETER(FVector3f, ShadowCameraForward)
 
 		// Temporal (for TAA integration)
 		SHADER_PARAMETER(uint32, FrameNumber)
@@ -384,5 +396,82 @@ public:
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
 	{
 		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
+	}
+};
+
+// ============================================================================
+// VSM (Variance Shadow Map) Shaders
+// ============================================================================
+
+/**
+ * Depth to Variance compute shader.
+ * Converts depth texture (R32F) to variance texture (RG32F).
+ * Output: (depth, depth²)
+ */
+class IVSMOKE_API FIVSmokeDepthToVarianceCS : public FGlobalShader
+{
+public:
+	static constexpr uint32 ThreadGroupSizeX = 8;
+	static constexpr uint32 ThreadGroupSizeY = 8;
+	static constexpr uint32 ThreadGroupSizeZ = 1;
+	static constexpr const TCHAR* EventName = TEXT("IVSmokeDepthToVarianceCS");
+
+	DECLARE_GLOBAL_SHADER(FIVSmokeDepthToVarianceCS);
+	SHADER_USE_PARAMETER_STRUCT(FIVSmokeDepthToVarianceCS, FGlobalShader);
+
+	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, DepthTexture)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float2>, VarianceTexture)
+		SHADER_PARAMETER(FIntPoint, TextureSize)
+	END_SHADER_PARAMETER_STRUCT()
+
+	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
+	{
+		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
+	}
+
+	static void ModifyCompilationEnvironment(const FGlobalShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment)
+	{
+		FGlobalShader::ModifyCompilationEnvironment(Parameters, OutEnvironment);
+		OutEnvironment.SetDefine(TEXT("THREADGROUP_SIZE_X"), ThreadGroupSizeX);
+		OutEnvironment.SetDefine(TEXT("THREADGROUP_SIZE_Y"), ThreadGroupSizeY);
+	}
+};
+
+/**
+ * VSM Gaussian blur compute shader.
+ * Performs separable Gaussian blur on variance texture.
+ * Uses horizontal or vertical direction based on BlurDirection parameter.
+ */
+class IVSMOKE_API FIVSmokeVSMBlurCS : public FGlobalShader
+{
+public:
+	static constexpr uint32 ThreadGroupSizeX = 8;
+	static constexpr uint32 ThreadGroupSizeY = 8;
+	static constexpr uint32 ThreadGroupSizeZ = 1;
+	static constexpr const TCHAR* EventName = TEXT("IVSmokeVSMBlurCS");
+
+	DECLARE_GLOBAL_SHADER(FIVSmokeVSMBlurCS);
+	SHADER_USE_PARAMETER_STRUCT(FIVSmokeVSMBlurCS, FGlobalShader);
+
+	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SourceTexture)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float2>, DestTexture)
+		SHADER_PARAMETER_SAMPLER(SamplerState, LinearClampSampler)
+		SHADER_PARAMETER(FIntPoint, TextureSize)
+		SHADER_PARAMETER(int32, BlurRadius)
+		SHADER_PARAMETER(int32, BlurDirection)  // 0 = Horizontal, 1 = Vertical
+	END_SHADER_PARAMETER_STRUCT()
+
+	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
+	{
+		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
+	}
+
+	static void ModifyCompilationEnvironment(const FGlobalShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment)
+	{
+		FGlobalShader::ModifyCompilationEnvironment(Parameters, OutEnvironment);
+		OutEnvironment.SetDefine(TEXT("THREADGROUP_SIZE_X"), ThreadGroupSizeX);
+		OutEnvironment.SetDefine(TEXT("THREADGROUP_SIZE_Y"), ThreadGroupSizeY);
 	}
 };

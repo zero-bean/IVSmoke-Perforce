@@ -10,9 +10,10 @@ class AIVSmokeVoxelVolume;
 class FRDGBuilder;
 class FSceneView;
 class UIVSmokeSmokePreset;
-class UIVSmokeShadowCaptureComponent;
 class UTextureRenderTargetVolume;
 struct FPostProcessMaterialInputs;
+class FIVSmokeCSMRenderer;
+class FIVSmokeVSMProcessor;
 
 // ============================================================================
 // Render Data Structures (Thread-Safe Data Transfer)
@@ -66,14 +67,26 @@ struct IVSMOKE_API FIVSmokePackedRenderData
 	float LightMarchingExpFactor = 2.0f;
 	float ShadowAmbient = 0.2f;
 
-	/** External shadowing parameters (Scene Capture Shadow Map) */
-	bool bEnableExternalShadowing = false;
+	/** External shadowing parameters (CSM - Cascaded Shadow Maps) */
+	/** Note: CSM is always used when external shadowing is enabled */
+	int32 NumCascades = 0;
+	TArray<FTextureRHIRef> CSMDepthTextures;
+	TArray<FTextureRHIRef> CSMVSMTextures;
+	TArray<FMatrix> CSMViewProjectionMatrices;
+	TArray<float> CSMSplitDistances;
+	TArray<FVector> CSMLightCameraPositions;
+	TArray<FVector> CSMLightCameraForwards;
+	float CascadeBlendRange = 0.1f;
 	float ShadowDepthBias = 1.0f;
 	float ExternalShadowAmbient = 0.3f;
-	FTextureRHIRef ShadowDepthTexture;
-	FMatrix LightViewProjectionMatrix = FMatrix::Identity;
-	FVector ShadowCameraPosition = FVector::ZeroVector;
-	FVector ShadowCameraForward = FVector(0.0f, 0.0f, -1.0f);
+
+	/** VSM parameters */
+	bool bEnableVSM = true;
+	float VSMMinVariance = 0.0001f;
+	float VSMLightBleedingReduction = 0.2f;
+
+	/** Main camera position for CSM (must match what CSMRenderer used) */
+	FVector CSMMainCameraPosition = FVector::ZeroVector;
 
 	/** Validity flag */
 	bool bIsValid = false;
@@ -91,10 +104,14 @@ struct IVSMOKE_API FIVSmokePackedRenderData
 		VolumeCount = 0;
 		bIsValid = false;
 
-		// External shadowing
-		bEnableExternalShadowing = false;
-		ShadowDepthTexture = nullptr;
-		LightViewProjectionMatrix = FMatrix::Identity;
+		// CSM
+		NumCascades = 0;
+		CSMDepthTextures.Empty();
+		CSMVSMTextures.Empty();
+		CSMViewProjectionMatrices.Empty();
+		CSMSplitDistances.Empty();
+		CSMLightCameraPositions.Empty();
+		CSMLightCameraForwards.Empty();
 	}
 };
 
@@ -109,6 +126,7 @@ public:
 
 	// ============================================================================
 	// Lifecycle
+
 	// ============================================================================
 
 	/** Initialize renderer resources. Called on first use or settings change. */
@@ -178,7 +196,8 @@ public:
 	);
 
 private:
-	FIVSmokeRenderer() = default;
+	FIVSmokeRenderer();   // Defined in cpp for TUniquePtr with forward-declared types
+	~FIVSmokeRenderer();
 
 	FIntVector GetAtlasTexCount(const FIntVector& TexSize, const int32 TexCount, const int32 TexturePackInterval, const int32 TexturePackMaxSize);
 	// ============================================================================
@@ -345,29 +364,29 @@ private:
 	float ElapsedTime = 0.0f;
 
 	// ============================================================================
-	// External Shadowing (Scene Capture)
+	// External Shadowing (CSM - Cascaded Shadow Maps)
 	// ============================================================================
 
-	/** Shadow capture component (global singleton, owned by ShadowCaptureOwner). */
-	TWeakObjectPtr<UIVSmokeShadowCaptureComponent> ShadowCaptureComponent;
+	/** CSM renderer (manages all cascade captures). */
+	TUniquePtr<FIVSmokeCSMRenderer> CSMRenderer;
 
-	/** Owner actor for shadow capture component. */
-	TWeakObjectPtr<AActor> ShadowCaptureOwner;
+	/** VSM processor (depth to variance conversion and blur). */
+	TUniquePtr<FIVSmokeVSMProcessor> VSMProcessor;
 
-	/** Frame counter for shadow update interval. */
-	int32 ShadowUpdateFrameCounter = 0;
+	/** Last frame number when CSM was updated (prevents multiple updates per frame). */
+	uint32 LastCSMUpdateFrameNumber = 0;
 
-	/** Last frame number when shadow was updated (prevents multiple updates per frame). */
-	uint32 LastShadowUpdateFrameNumber = 0;
+	/** Last frame number when VSM was processed (prevents duplicate processing per view). */
+	uint32 LastVSMProcessFrameNumber = 0;
 
 	/** Re-entry guard to prevent infinite recursion during shadow capture. */
 	bool bIsCapturingShadow = false;
 
-	/** Initialize shadow capture component if needed. */
-	void InitializeShadowCapture(UWorld* World);
+	/** Initialize CSM renderer if needed. */
+	void InitializeCSM(UWorld* World);
 
-	/** Clean up shadow capture resources. */
-	void CleanupShadowCapture();
+	/** Clean up CSM resources. */
+	void CleanupCSM();
 
 	/**
 	 * Find the main directional light (Atmosphere Sun Light) in the world.

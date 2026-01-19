@@ -130,7 +130,7 @@ public:
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|Appearance", meta = (ClampMin = "-1.0", ClampMax = "1.0"))
 	float VolumeEdgeNoiseFadeOffset = 0.04f;
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|Appearance", meta = (ClampMin = "0.1", ClampMax = "10.0"))
-	float VolumeEdgeFadeShapness = 3.5f;
+	float VolumeEdgeFadeSharpness = 3.5f;
 
 	// ============================================================================
 	// Animation
@@ -233,11 +233,6 @@ public:
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing")
 	bool bEnableExternalShadowing = false;
 
-	/** Shadow map resolution (power of 2). Higher = better quality, more memory.
-	 *  1024 recommended for most cases. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing", meta = (ClampMin = "256", ClampMax = "4096", EditCondition = "bEnableExternalShadowing"))
-	int32 ShadowMapResolution = 1024;
-
 	/** Shadow depth bias to prevent shadow acne.
 	 *  Increase if shadow artifacts appear on surfaces. */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing", meta = (ClampMin = "0.0", ClampMax = "100.0", EditCondition = "bEnableExternalShadowing"))
@@ -248,10 +243,75 @@ public:
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing", meta = (ClampMin = "0.0", ClampMax = "1.0", EditCondition = "bEnableExternalShadowing"))
 	float ExternalShadowAmbient = 0.3f;
 
-	/** Update shadow map every N frames (1 = every frame).
-	 *  Higher values improve performance for static scenes. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing", meta = (ClampMin = "1", ClampMax = "10", EditCondition = "bEnableExternalShadowing"))
-	int32 ShadowUpdateInterval = 1;
+	/** Include skeletal meshes (characters) in shadow capture.
+	 *  Disable if character shadows cause flickering or instability. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing", meta = (EditCondition = "bEnableExternalShadowing"))
+	bool bCaptureSkeletalMeshes = false;
+
+	// ============================================================================
+	// CSM (Cascaded Shadow Maps)
+	// ============================================================================
+
+	/** Number of shadow cascades (1-6). More cascades = smoother quality transitions. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing|CSM", meta = (ClampMin = "1", ClampMax = "6", EditCondition = "bEnableExternalShadowing"))
+	int32 NumShadowCascades = 4;
+
+	/** Shadow map resolution per cascade. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing|CSM", meta = (ClampMin = "256", ClampMax = "2048", EditCondition = "bEnableExternalShadowing"))
+	int32 CascadeResolution = 512;
+
+	/** Maximum shadow distance in centimeters. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing|CSM", meta = (ClampMin = "1000", ClampMax = "100000", EditCondition = "bEnableExternalShadowing"))
+	float ShadowMaxDistance = 50000.0f;
+
+	/** Log/Linear cascade split blend (0=linear, 1=logarithmic).
+	 *  Higher values give more resolution to near cascades. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing|CSM", meta = (ClampMin = "0.0", ClampMax = "1.0", EditCondition = "bEnableExternalShadowing"))
+	float CascadeLogLinearBlend = 0.85f;
+
+	/** Blend region at cascade boundaries (0-1).
+	 *  Higher values make cascade transitions smoother but may reduce quality. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing|CSM", meta = (ClampMin = "0.0", ClampMax = "0.3", EditCondition = "bEnableExternalShadowing"))
+	float CascadeBlendRange = 0.1f;
+
+	// ============================================================================
+	// VSM (Variance Shadow Maps)
+	// ============================================================================
+
+	/** Enable Variance Shadow Maps for soft shadows. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing|VSM", meta = (EditCondition = "bEnableExternalShadowing"))
+	bool bEnableVSM = true;
+
+	/** VSM blur kernel radius (0=no blur). Higher = softer shadows. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing|VSM", meta = (ClampMin = "0", ClampMax = "8", EditCondition = "bEnableExternalShadowing && bEnableVSM"))
+	int32 VSMBlurRadius = 2;
+
+	/** Minimum variance to prevent shadow acne artifacts (in cm² scale).
+	 *  Higher = softer shadows, Lower = sharper shadows. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing|VSM", meta = (ClampMin = "0.01", ClampMax = "100.0", EditCondition = "bEnableExternalShadowing && bEnableVSM"))
+	float VSMMinVariance = 1.0f;
+
+	/** Light Bleeding Reduction amount (0=none).
+	 *  Reduces artifacts where thin objects create incorrect soft shadows. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing|VSM", meta = (ClampMin = "0.0", ClampMax = "0.5", EditCondition = "bEnableExternalShadowing && bEnableVSM"))
+	float VSMLightBleedingReduction = 0.2f;
+
+	// ============================================================================
+	// Shadow Update Priority
+	// ============================================================================
+
+	/** Enable priority-based cascade updates (near=frequent, far=less frequent).
+	 *  Improves performance by updating distant cascades less often. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing|Update", meta = (EditCondition = "bEnableExternalShadowing"))
+	bool bEnablePriorityUpdate = true;
+
+	/** Near cascade update interval (frames). */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing|Update", meta = (ClampMin = "1", ClampMax = "4", EditCondition = "bEnableExternalShadowing && bEnablePriorityUpdate"))
+	int32 NearCascadeUpdateInterval = 1;
+
+	/** Far cascade update interval (frames). */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|ExternalShadowing|Update", meta = (ClampMin = "1", ClampMax = "16", EditCondition = "bEnableExternalShadowing && bEnablePriorityUpdate"))
+	int32 FarCascadeUpdateInterval = 4;
 
 	// ============================================================================
 	// Voxel FXAA

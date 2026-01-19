@@ -14,3 +14,6 @@ IMPLEMENT_GLOBAL_SHADER(FIVSmokeTranslucencyCompositePS, "/Plugin/IVSmoke/IVSmok
 IMPLEMENT_GLOBAL_SHADER(FIVSmokeDepthSortedCompositePS, "/Plugin/IVSmoke/IVSmokeDepthSortedCompositePS.usf", "MainPS", SF_Pixel);
 IMPLEMENT_GLOBAL_SHADER(FIVSmokeHoleCarveCS, "/Plugin/IVSmoke/IVSmokeHoleCarveCS.usf", "MainCS", SF_Compute);
 
+// VSM (Variance Shadow Map) Shaders
+IMPLEMENT_GLOBAL_SHADER(FIVSmokeDepthToVarianceCS, "/Plugin/IVSmoke/IVSmokeVSM.usf", "DepthToVarianceCS", SF_Compute);
+IMPLEMENT_GLOBAL_SHADER(FIVSmokeVSMBlurCS, "/Plugin/IVSmoke/IVSmokeVSM.usf", "BlurCS", SF_Compute);

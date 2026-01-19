@@ -7,7 +7,8 @@
 #include "IVSmokeShaders.h"
 #include "IVSmokeSmokePreset.h"
 #include "IVSmokeVoxelVolume.h"
-#include "IVSmokeShadowCaptureComponent.h"
+#include "IVSmokeCSMRenderer.h"
+#include "IVSmokeVSMProcessor.h"
 #include "Engine/TextureRenderTargetVolume.h"
 #include "PostProcess/PostProcessMaterialInputs.h"
 #include "SceneRenderTargetParameters.h"
@@ -24,6 +25,14 @@ FIVSmokeRenderer& FIVSmokeRenderer::Get()
 {
 	static FIVSmokeRenderer Instance;
 	return Instance;
+}
+
+FIVSmokeRenderer::FIVSmokeRenderer() = default;
+
+FIVSmokeRenderer::~FIVSmokeRenderer()
+{
+	// Destructor defined here where FIVSmokeCSMRenderer and FIVSmokeVSMProcessor are complete types
+	Shutdown();
 }
 
 // ============================================================================
@@ -51,7 +60,7 @@ void FIVSmokeRenderer::Shutdown()
 	}
 	ElapsedTime = 0.0f;
 
-	CleanupShadowCapture();
+	CleanupCSM();
 }
 FIntVector FIVSmokeRenderer::GetAtlasTexCount(const FIntVector& TexSize, const int32 TexCount, const int32 TexturePackInterval, const int32 TexturePackMaxSize)
 {
@@ -92,65 +101,58 @@ FIntVector FIVSmokeRenderer::GetAtlasTexCount(const FIntVector& TexSize, const i
 	return AtlasTexCount;
 }
 
-
-void FIVSmokeRenderer::InitializeShadowCapture(UWorld* World)
+void FIVSmokeRenderer::InitializeCSM(UWorld* World)
 {
-	// If owner actor was destroyed (e.g., PIE ended), the component pointer is dangling
-	if (!ShadowCaptureOwner.IsValid())
-	{
-		ShadowCaptureComponent.Reset();
-	}
-
-	if (ShadowCaptureComponent.IsValid() || !World)
+	if (!World)
 	{
 		return;
 	}
 
-	// Create owner actor for the shadow capture component
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Name = TEXT("IVSmokeShadowCaptureOwner");
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	AActor* OwnerActor = World->SpawnActor<AActor>(AActor::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
-	if (!OwnerActor)
+	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
+	if (!Settings || !Settings->bEnableExternalShadowing)
 	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[FIVSmokeRenderer::InitializeShadowCapture] Failed to spawn shadow capture owner actor"));
 		return;
 	}
 
-	ShadowCaptureOwner = OwnerActor;
-
-	// Create shadow capture component
-	ShadowCaptureComponent = NewObject<UIVSmokeShadowCaptureComponent>(OwnerActor, TEXT("ShadowCaptureComponent"));
-	if (ShadowCaptureComponent.IsValid())
+	// Create CSM renderer if not exists
+	if (!CSMRenderer)
 	{
-		// Set owner actor's root component if needed
-		if (!OwnerActor->GetRootComponent())
-		{
-			USceneComponent* RootComp = NewObject<USceneComponent>(OwnerActor, TEXT("RootComponent"));
-			OwnerActor->SetRootComponent(RootComp);
-			RootComp->RegisterComponentWithWorld(World);
-		}
-
-		// Attach to owner actor and register with world
-		ShadowCaptureComponent->AttachToComponent(OwnerActor->GetRootComponent(), FAttachmentTransformRules::KeepRelativeTransform);
-		ShadowCaptureComponent->RegisterComponentWithWorld(World);
-		UE_LOG(LogIVSmoke, Log, TEXT("[FIVSmokeRenderer::InitializeShadowCapture] Shadow capture component initialized"));
+		CSMRenderer = MakeUnique<FIVSmokeCSMRenderer>();
 	}
+
+	// Initialize with settings
+	if (!CSMRenderer->IsInitialized())
+	{
+		CSMRenderer->Initialize(
+			World,
+			Settings->NumShadowCascades,
+			Settings->CascadeResolution,
+			Settings->ShadowMaxDistance
+		);
+	}
+
+	// Create VSM processor if VSM is enabled
+	if (Settings->bEnableVSM && !VSMProcessor)
+	{
+		VSMProcessor = MakeUnique<FIVSmokeVSMProcessor>();
+	}
+
+	UE_LOG(LogIVSmoke, Log, TEXT("[FIVSmokeRenderer::InitializeCSM] CSM initialized with %d cascades"), Settings->NumShadowCascades);
 }
 
-void FIVSmokeRenderer::CleanupShadowCapture()
+void FIVSmokeRenderer::CleanupCSM()
 {
-	ShadowCaptureComponent.Reset();
-
-	if (AActor* Owner = ShadowCaptureOwner.Get())
+	if (CSMRenderer)
 	{
-		Owner->Destroy();
+		CSMRenderer->Shutdown();
+		CSMRenderer.Reset();
 	}
-	ShadowCaptureOwner.Reset();
 
-	ShadowUpdateFrameCounter = 0;
-	LastShadowUpdateFrameNumber = 0;
+	VSMProcessor.Reset();
+	LastCSMUpdateFrameNumber = 0;
+	LastVSMProcessFrameNumber = 0;
+
+	UE_LOG(LogIVSmoke, Log, TEXT("[FIVSmokeRenderer::CleanupCSM] CSM cleaned up"));
 }
 
 bool FIVSmokeRenderer::GetMainDirectionalLight(UWorld* World, FVector& OutDirection, FLinearColor& OutColor, float& OutIntensity)
@@ -480,7 +482,7 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		Result.WindDirection = Settings->WindDirection;
 		Result.VolumeRangeOffset = Settings->VolumeRangeOffset;
 		Result.VolumeEdgeNoiseFadeOffset = Settings->VolumeEdgeNoiseFadeOffset;
-		Result.VolumeEdgeFadeSharpness = Settings->VolumeEdgeFadeShapness;
+		Result.VolumeEdgeFadeSharpness = Settings->VolumeEdgeFadeSharpness;
 
 		// Scattering
 		Result.bEnableScattering = Settings->bEnableScattering;
@@ -535,79 +537,91 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		Result.LightMarchingExpFactor = Settings->LightMarchingExpFactor;
 		Result.ShadowAmbient = Settings->ShadowAmbient;
 
-		// External shadowing (Scene Capture Shadow Map)
-		Result.bEnableExternalShadowing = Settings->bEnableExternalShadowing;
+		// External shadowing (CSM - Cascaded Shadow Maps)
+		// Note: CSM is always used when external shadowing is enabled. NumCascades > 0 indicates active.
 		Result.ShadowDepthBias = Settings->ShadowDepthBias;
 		Result.ExternalShadowAmbient = Settings->ExternalShadowAmbient;
+
+		// VSM settings
+		Result.bEnableVSM = Settings->bEnableVSM;
+		Result.VSMMinVariance = Settings->VSMMinVariance;
+		Result.VSMLightBleedingReduction = Settings->VSMLightBleedingReduction;
+		Result.CascadeBlendRange = Settings->CascadeBlendRange;
 
 		// Skip shadow capture if we're already inside a shadow capture render pass (prevents infinite recursion)
 		if (Settings->bEnableExternalShadowing && InVolumes.Num() > 0 && !bIsCapturingShadow)
 		{
-			// Calculate combined AABB of all visible volumes
-			FBox CombinedAABB(ForceInit);
-			for (AIVSmokeVoxelVolume* Volume : InVolumes)
+			// Per-frame guard: Only update once per actual engine frame
+			// PrepareRenderData can be called multiple times per frame (multiple views)
+			const uint32 CurrentFrameNumber = GFrameNumber;
+			const bool bAlreadyUpdatedThisFrame = (LastCSMUpdateFrameNumber == CurrentFrameNumber);
+
+			if (!bAlreadyUpdatedThisFrame && World)
 			{
-				if (Volume)
+				LastCSMUpdateFrameNumber = CurrentFrameNumber;
+
+				// Initialize CSM if needed
+				InitializeCSM(World);
+
+				if (CSMRenderer && CSMRenderer->IsInitialized())
 				{
-					FBox VolumeAABB(Volume->GetVoxelWorldAABBMin(), Volume->GetVoxelWorldAABBMax());
-					if (CombinedAABB.IsValid)
+					// Set re-entry guard (safety measure)
+					bIsCapturingShadow = true;
+
+					// Get camera position from first volume's world (or use centroid of volumes)
+					FVector CameraPosition = FVector::ZeroVector;
+					FVector CameraForward = FVector(1.0f, 0.0f, 0.0f);
+
+					// Try to get player camera position
+					if (APlayerController* PC = World->GetFirstPlayerController())
 					{
-						CombinedAABB = CombinedAABB + VolumeAABB;
+						if (APlayerCameraManager* CameraManager = PC->PlayerCameraManager)
+						{
+							CameraPosition = CameraManager->GetCameraLocation();
+							CameraForward = CameraManager->GetCameraRotation().Vector();
+						}
 					}
-					else
-					{
-						CombinedAABB = VolumeAABB;
-					}
+
+					// Update CSM with current frame
+					CSMRenderer->Update(
+						CameraPosition,
+						CameraForward,
+						Result.LightDirection,
+						CurrentFrameNumber
+					);
+
+					bIsCapturingShadow = false;
 				}
 			}
 
-			// Update shadow capture if AABB is valid
-			if (CombinedAABB.IsValid)
+			// Populate CSM data for shader (even if not updated this frame)
+			if (CSMRenderer && CSMRenderer->IsInitialized() && CSMRenderer->HasValidShadowData())
 			{
-				// Per-frame guard: Only update once per actual engine frame
-				// PrepareRenderData can be called multiple times per frame (multiple views)
-				// but we must only do the double-buffer promotion once
-				const uint32 CurrentFrameNumber = GFrameNumber;
-				const bool bAlreadyUpdatedThisFrame = (LastShadowUpdateFrameNumber == CurrentFrameNumber);
+				Result.NumCascades = CSMRenderer->GetNumCascades();
 
-				// Frame interval check (only increment when not already updated this frame)
-				if (!bAlreadyUpdatedThisFrame && ++ShadowUpdateFrameCounter >= Settings->ShadowUpdateInterval)
+				// Get split distances
+				Result.CSMSplitDistances = CSMRenderer->GetSplitDistances();
+
+				// Get textures, matrices, and light camera data for each cascade
+				Result.CSMDepthTextures.SetNum(Result.NumCascades);
+				Result.CSMVSMTextures.SetNum(Result.NumCascades);
+				Result.CSMViewProjectionMatrices.SetNum(Result.NumCascades);
+				Result.CSMLightCameraPositions.SetNum(Result.NumCascades);
+				Result.CSMLightCameraForwards.SetNum(Result.NumCascades);
+
+				for (int32 i = 0; i < Result.NumCascades; i++)
 				{
-					ShadowUpdateFrameCounter = 0;
-					LastShadowUpdateFrameNumber = CurrentFrameNumber;
-
-					if (World)
-					{
-						// Initialize shadow capture if needed
-						InitializeShadowCapture(World);
-
-						if (ShadowCaptureComponent.IsValid())
-						{
-							// Initialize render target
-							ShadowCaptureComponent->InitializeRenderTarget(Settings->ShadowMapResolution);
-
-							// Set re-entry guard (safety measure)
-							bIsCapturingShadow = true;
-
-							// Update camera position/rotation for next frame's capture
-							// Note: We don't call CaptureScene() here. The component has bCaptureEveryFrame = true,
-							// so the engine handles capture timing automatically. The shader reads from the
-							// previous frame's captured texture, which is acceptable for shadow maps.
-							ShadowCaptureComponent->UpdateCapture(Result.LightDirection, CombinedAABB);
-
-							bIsCapturingShadow = false;
-						}
-					}
+					const FIVSmokeCascadeData& Cascade = CSMRenderer->GetCascade(i);
+					// Single-buffer: VP matrix and texture are from the SAME frame
+					Result.CSMViewProjectionMatrices[i] = Cascade.ViewProjectionMatrix;
+					Result.CSMDepthTextures[i] = CSMRenderer->GetDepthTexture(i);
+					Result.CSMVSMTextures[i] = CSMRenderer->GetVSMTexture(i);
+					Result.CSMLightCameraPositions[i] = Cascade.LightCameraPosition;
+					Result.CSMLightCameraForwards[i] = Cascade.LightCameraForward;
 				}
 
-				// Get shadow texture (even if not updated this frame)
-				if (ShadowCaptureComponent.IsValid() && ShadowCaptureComponent->IsReady())
-				{
-					Result.ShadowDepthTexture = ShadowCaptureComponent->GetShadowDepthTexture();
-					Result.LightViewProjectionMatrix = ShadowCaptureComponent->GetLightViewProjectionMatrix();
-					Result.ShadowCameraPosition = ShadowCaptureComponent->GetShadowCameraPosition();
-					Result.ShadowCameraForward = ShadowCaptureComponent->GetShadowCameraForward();
-				}
+				// Store the main camera position for consistent use in shader
+				Result.CSMMainCameraPosition = CSMRenderer->GetMainCameraPosition();
 			}
 		}
 	}
@@ -1007,8 +1021,8 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	);
 
 	// ============================================================================
-	// Voxel Fxaa Pass
-	// ============================================================================*/
+	// Voxel FXAA Pass
+	// ============================================================================
 	TShaderMapRef<FIVSmokeVoxelFXAACS> VoxelFXAAShader(ShaderMap);
 	auto* VoxelFXAAParams = GraphBuilder.AllocParameters<FIVSmokeVoxelFXAACS::FParameters>();
 
@@ -1086,8 +1100,6 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->PackedInterval = TexturePackInterval;
 	Parameters->PackedVoxelAtlas = GraphBuilder.CreateSRV(PackedVoxelAtlasFXAA);
 	Parameters->VoxelTexSize = VoxelResolution;
-	//Parameters->PackedVoxelAtlas = GraphBuilder.CreateSRV(PackedVoxelAtlas);
-	//Parameters->VoxelTexSize = VoxelResolution;
 	Parameters->PackedHoleAtlas = GraphBuilder.CreateSRV(PackedHoleAtlas);
 	Parameters->HoleTexSize = HoleResolution;
 	Parameters->PackedHoleTexSize = HoleAtlasResolution;
@@ -1106,7 +1118,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->WindDirection = FVector3f(RenderData.WindDirection);
 	Parameters->VolumeRangeOffset = RenderData.VolumeRangeOffset;
 	Parameters->VolumeEdgeNoiseFadeOffset = RenderData.VolumeEdgeNoiseFadeOffset;
-	Parameters->VolumeEdgeFadeShapness = RenderData.VolumeEdgeFadeSharpness;
+	Parameters->VolumeEdgeFadeSharpness = RenderData.VolumeEdgeFadeSharpness;
 
 	// Rayleigh Scattering (from RenderData)
 	// ScatterScale is multiplied by LightIntensity so that no directional light = no scattering = dark smoke
@@ -1123,39 +1135,196 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->LightMarchingExpFactor = RenderData.LightMarchingExpFactor;
 	Parameters->ShadowAmbient = RenderData.ShadowAmbient;
 
-	// External Shadowing (Scene Capture Shadow Map)
-	Parameters->bEnableExternalShadowing = RenderData.bEnableExternalShadowing ? 1 : 0;
+	// External Shadowing (CSM - Cascaded Shadow Maps)
+	// Note: CSM is always used when external shadowing is enabled. NumCascades > 0 indicates active.
 	Parameters->ShadowDepthBias = RenderData.ShadowDepthBias;
 	Parameters->ExternalShadowAmbient = RenderData.ExternalShadowAmbient;
-	Parameters->LightViewProjectionMatrix = FMatrix44f(RenderData.LightViewProjectionMatrix);
-	Parameters->ShadowCameraPosition = FVector3f(RenderData.ShadowCameraPosition);
-	Parameters->ShadowCameraForward = FVector3f(RenderData.ShadowCameraForward);
 
-	if (RenderData.bEnableExternalShadowing && RenderData.ShadowDepthTexture.IsValid())
+	// CSM (Cascaded Shadow Maps)
+	Parameters->NumCascades = RenderData.NumCascades;
+	Parameters->CascadeBlendRange = RenderData.CascadeBlendRange;
+	// ============================================================================
+	// CSMCameraPosition: Used for CASCADE SELECTION (not shadow sampling)
+	// ============================================================================
+	// MUST use the same camera position as ray marching (ViewMatrices origin).
+	// This ensures cascade selection matches actual ray positions.
+	//
+	// Single-buffer model: VP matrices and shadow textures are from the SAME frame.
+	// SceneCaptureComponent2D with bCaptureEveryFrame=true captures during the
+	// render pass, so the texture we sample matches the VP matrix we calculated.
+	// ============================================================================
+	Parameters->CSMCameraPosition = FVector3f(ViewMatrices.GetViewOrigin());
+	Parameters->bEnableVSM = RenderData.bEnableVSM ? 1 : 0;
+	Parameters->VSMMinVariance = RenderData.VSMMinVariance;
+	Parameters->VSMLightBleedingReduction = RenderData.VSMLightBleedingReduction;
+
+	// CSM cascade data
+	// ViewProjection matrices and light camera data
+	for (int32 i = 0; i < 8; i++)
 	{
-		FRDGTextureRef ShadowDepthRDG = GraphBuilder.RegisterExternalTexture(
-			CreateRenderTarget(RenderData.ShadowDepthTexture, TEXT("IVSmokeShadowDepth"))
+		if (i < RenderData.NumCascades && i < RenderData.CSMViewProjectionMatrices.Num())
+		{
+			Parameters->CSMViewProjectionMatrices[i] = FMatrix44f(RenderData.CSMViewProjectionMatrices[i]);
+			// Light camera position (for linear depth calculation in shader)
+			Parameters->CSMLightCameraPositions[i] = FVector4f(
+				FVector3f(RenderData.CSMLightCameraPositions[i]),
+				0.0f
+			);
+			// Light camera forward (for linear depth calculation in shader)
+			Parameters->CSMLightCameraForwards[i] = FVector4f(
+				FVector3f(RenderData.CSMLightCameraForwards[i]),
+				0.0f
+			);
+		}
+		else
+		{
+			Parameters->CSMViewProjectionMatrices[i] = FMatrix44f::Identity;
+			Parameters->CSMLightCameraPositions[i] = FVector4f(0.0f, 0.0f, 0.0f, 0.0f);
+			Parameters->CSMLightCameraForwards[i] = FVector4f(0.0f, 0.0f, -1.0f, 0.0f);
+		}
+	}
+
+	// Split distances (SHADER_PARAMETER_SCALAR_ARRAY packs 8 floats into 2 FVector4f)
+	{
+		float SplitDists[8];
+		for (int32 i = 0; i < 8; i++)
+		{
+			SplitDists[i] = (i < RenderData.CSMSplitDistances.Num()) ? RenderData.CSMSplitDistances[i] : 100000.0f;
+		}
+		Parameters->CSMSplitDistances[0] = FVector4f(SplitDists[0], SplitDists[1], SplitDists[2], SplitDists[3]);
+		Parameters->CSMSplitDistances[1] = FVector4f(SplitDists[4], SplitDists[5], SplitDists[6], SplitDists[7]);
+	}
+
+	// CSM texture arrays
+	if (RenderData.NumCascades > 0)
+	{
+		// Create texture arrays for CSM
+		const int32 CascadeCount = RenderData.NumCascades;
+		const FIntPoint CascadeResolution = RenderData.CSMDepthTextures.Num() > 0 && RenderData.CSMDepthTextures[0].IsValid()
+			? FIntPoint(RenderData.CSMDepthTextures[0]->GetSizeXYZ().X, RenderData.CSMDepthTextures[0]->GetSizeXYZ().Y)
+			: FIntPoint(512, 512);
+
+		// Create depth texture array (with UAV for initialization)
+		FRDGTextureDesc DepthArrayDesc = FRDGTextureDesc::Create2DArray(
+			CascadeResolution,
+			PF_R32_FLOAT,
+			FClearValueBinding(FLinearColor(1.0f, 0.0f, 0.0f, 0.0f)),
+			TexCreate_ShaderResource | TexCreate_UAV,
+			CascadeCount
 		);
-		Parameters->ShadowDepthTexture = ShadowDepthRDG;
+		FRDGTextureRef CSMDepthArray = GraphBuilder.CreateTexture(DepthArrayDesc, TEXT("IVSmokeCSMDepthArray"));
+
+		// Create VSM texture array (with UAV for initialization)
+		FRDGTextureDesc VSMArrayDesc = FRDGTextureDesc::Create2DArray(
+			CascadeResolution,
+			PF_G32R32F,
+			FClearValueBinding(FLinearColor(1.0f, 1.0f, 0.0f, 0.0f)),
+			TexCreate_ShaderResource | TexCreate_UAV,
+			CascadeCount
+		);
+		FRDGTextureRef CSMVSMArray = GraphBuilder.CreateTexture(VSMArrayDesc, TEXT("IVSmokeCSMVSMArray"));
+
+		// Initialize texture arrays (RDG requires write before read)
+		AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(CSMDepthArray), FVector4f(1.0f, 0.0f, 0.0f, 0.0f));
+		AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(CSMVSMArray), FVector4f(1.0f, 1.0f, 0.0f, 0.0f));
+
+		// Get VSM blur radius from settings
+		const int32 VSMBlurRadius = Settings ? Settings->VSMBlurRadius : 2;
+
+		// ============================================================================
+		// VSM Processing Optimization
+		// ============================================================================
+		// VSM processing (depth->variance + blur) is expensive.
+		// Multiple views in the same frame share the same depth textures,
+		// so we only need to process VSM ONCE per frame.
+		//
+		// Flow:
+		// 1. First view: Process VSM into persistent VSMRT textures
+		// 2. All views: Copy from VSMRT to RDG texture array (needed per-view)
+		// ============================================================================
+		const uint32 CurrentRenderFrameNumber = View.Family->FrameNumber;
+		const bool bNeedVSMProcessing = RenderData.bEnableVSM && VSMProcessor &&
+		                                (CurrentRenderFrameNumber != LastVSMProcessFrameNumber);
+
+		if (bNeedVSMProcessing)
+		{
+			LastVSMProcessFrameNumber = CurrentRenderFrameNumber;
+		}
+
+		// Copy each cascade to the array and optionally process VSM
+		for (int32 i = 0; i < CascadeCount; i++)
+		{
+			if (i < RenderData.CSMDepthTextures.Num() && RenderData.CSMDepthTextures[i].IsValid())
+			{
+				FRDGTextureRef SourceDepth = GraphBuilder.RegisterExternalTexture(
+					CreateRenderTarget(RenderData.CSMDepthTextures[i], TEXT("IVSmokeCSMDepthSource"))
+				);
+
+				// Copy depth to array
+				FRHICopyTextureInfo DepthCopyInfo;
+				DepthCopyInfo.Size = FIntVector(CascadeResolution.X, CascadeResolution.Y, 1);
+				DepthCopyInfo.SourcePosition = FIntVector::ZeroValue;
+				DepthCopyInfo.DestPosition = FIntVector::ZeroValue;
+				DepthCopyInfo.DestSliceIndex = i;
+				DepthCopyInfo.NumSlices = 1;
+				AddCopyTexturePass(GraphBuilder, SourceDepth, CSMDepthArray, DepthCopyInfo);
+
+				// Process VSM: depth → variance + blur (only once per frame)
+				if (RenderData.bEnableVSM && i < RenderData.CSMVSMTextures.Num() && RenderData.CSMVSMTextures[i].IsValid())
+				{
+					// Register persistent VSMRT as RDG texture
+					FRDGTextureRef VSMTexture = GraphBuilder.RegisterExternalTexture(
+						CreateRenderTarget(RenderData.CSMVSMTextures[i], TEXT("IVSmokeCSMVSMSource"))
+					);
+
+					// Process VSM only on first view of the frame
+					if (bNeedVSMProcessing && VSMProcessor)
+					{
+						VSMProcessor->Process(GraphBuilder, SourceDepth, VSMTexture, VSMBlurRadius);
+					}
+
+					// Copy from persistent VSMRT to array (needed for each view's RDG graph)
+					FRHICopyTextureInfo VSMCopyInfo;
+					VSMCopyInfo.Size = FIntVector(CascadeResolution.X, CascadeResolution.Y, 1);
+					VSMCopyInfo.SourcePosition = FIntVector::ZeroValue;
+					VSMCopyInfo.DestPosition = FIntVector::ZeroValue;
+					VSMCopyInfo.DestSliceIndex = i;
+					VSMCopyInfo.NumSlices = 1;
+					AddCopyTexturePass(GraphBuilder, VSMTexture, CSMVSMArray, VSMCopyInfo);
+				}
+			}
+		}
+
+		Parameters->CSMDepthTextureArray = CSMDepthArray;
+		Parameters->CSMVSMTextureArray = CSMVSMArray;
 	}
 	else
 	{
-		// Create dummy 1x1 texture with large depth value (no shadow) when shadow is disabled
-		// Must use UAV and clear it, since RDG requires write before read
-		FRDGTextureDesc DummyDesc = FRDGTextureDesc::Create2D(
+		// Create dummy 1x1x1 texture arrays when no cascades are active
+		FRDGTextureDesc DummyDepthArrayDesc = FRDGTextureDesc::Create2DArray(
 			FIntPoint(1, 1),
 			PF_R32_FLOAT,
-			FClearValueBinding(FLinearColor(1000000.0f, 0.0f, 0.0f, 0.0f)),
-			TexCreate_ShaderResource | TexCreate_UAV
+			FClearValueBinding(FLinearColor(1.0f, 0.0f, 0.0f, 0.0f)),
+			TexCreate_ShaderResource | TexCreate_UAV,
+			1
 		);
-		FRDGTextureRef DummyShadowTex = GraphBuilder.CreateTexture(DummyDesc, TEXT("IVSmokeShadowDepthDummy"));
+		FRDGTextureRef DummyDepthArray = GraphBuilder.CreateTexture(DummyDepthArrayDesc, TEXT("IVSmokeCSMDepthArrayDummy"));
+		AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(DummyDepthArray), FVector4f(1.0f, 0.0f, 0.0f, 0.0f));
 
-		// Clear the texture to far depth value (no occluders = no shadow)
-		AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(DummyShadowTex), FVector4f(1000000.0f, 0.0f, 0.0f, 0.0f));
+		FRDGTextureDesc DummyVSMArrayDesc = FRDGTextureDesc::Create2DArray(
+			FIntPoint(1, 1),
+			PF_G32R32F,
+			FClearValueBinding(FLinearColor(1.0f, 1.0f, 0.0f, 0.0f)),
+			TexCreate_ShaderResource | TexCreate_UAV,
+			1
+		);
+		FRDGTextureRef DummyVSMArray = GraphBuilder.CreateTexture(DummyVSMArrayDesc, TEXT("IVSmokeCSMVSMArrayDummy"));
+		AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(DummyVSMArray), FVector4f(1.0f, 1.0f, 0.0f, 0.0f));
 
-		Parameters->ShadowDepthTexture = DummyShadowTex;
+		Parameters->CSMDepthTextureArray = DummyDepthArray;
+		Parameters->CSMVSMTextureArray = DummyVSMArray;
 	}
-	Parameters->ShadowSampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
+	Parameters->CSMSampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
 
 	// Temporal (for TAA integration)
 	Parameters->FrameNumber = View.Family->FrameNumber;

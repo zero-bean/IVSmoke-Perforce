@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "IVSmokeShadowCaptureComponent.h"
+#include "IVSmokeSettings.h"
 #include "Engine/TextureRenderTarget2D.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogIVSmokeShadowCapture, Log, All);
@@ -278,10 +279,20 @@ void UIVSmokeShadowCaptureComponent::ConfigureCaptureSettings()
 	ShowFlags.SetDynamicShadows(false);
 	ShowFlags.SetContactShadows(false);
 
-	// Disable particles (not needed for depth-only shadow capture)
+	// Disable particles and unnecessary elements
 	ShowFlags.SetParticles(false);
-	ShowFlags.SetDecals(true);
 	ShowFlags.SetTranslucency(false);
+
+	// Disable elements that don't contribute meaningful shadows
+	ShowFlags.SetDecals(false);
+	ShowFlags.SetInstancedGrass(false);
+	ShowFlags.SetBillboardSprites(false);
+	ShowFlags.SetPaper2DSprites(false);
+
+	// Skeletal meshes (characters) - configurable due to potential flickering
+	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
+	bool bShowSkeletalMeshes = Settings ? Settings->bCaptureSkeletalMeshes : false;
+	ShowFlags.SetSkeletalMeshes(bShowSkeletalMeshes);
 
 	// Use scene primitives render mode (default behavior)
 	PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_RenderScenePrimitives;
