@@ -546,8 +546,8 @@ void AIVSmokeVoxelVolume::TryUpdateCollision(float CurrentProgress, bool bForceU
 	bool bShouldUpdateByProgress = CurrentProgress - LastCollisionUpdateProgress >= MinCollisionUpdateProgressInterval;
 	if (bForceUpdate || (bShouldUpdateByTime && bShouldUpdateByProgress))
 	{
-		CollisionComponent->UpdateCollisionWithOctree(VoxelArray, GridResolution, VoxelSize);
-		// CollisionComponent->UpdateCollision(VoxelBitArray, GridResolution, VoxelSize);
+		// CollisionComponent->UpdateCollisionWithOctree(VoxelArray, GridResolution, VoxelSize);
+		CollisionComponent->UpdateCollision(VoxelBitArray, GridResolution, VoxelSize);
 		LastCollisionUpdateTime = ElapsedTime;
 		LastCollisionUpdateProgress = CurrentProgress;
 	}
