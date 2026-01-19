@@ -558,6 +558,26 @@ void AIVSmokeVoxelVolume::TryUpdateCollision(float CurrentProgress, bool bForceU
 //~==============================================================================
 // Data Access
 #pragma region DataAccess
+TObjectPtr<UIVSmokeHoleGeneratorComponent> AIVSmokeVoxelVolume::GetHoleGeneratorComponent()
+{
+	if (!IsValid(HoleGeneratorComponent))
+	{
+		HoleGeneratorComponent = FindComponentByClass<UIVSmokeHoleGeneratorComponent>();
+	}
+
+	return HoleGeneratorComponent;
+}
+
+TObjectPtr<UIVSmokeCollisionComponent> AIVSmokeVoxelVolume::GetCollisionComponent()
+{
+	if (!IsValid(CollisionComponent))
+	{
+		CollisionComponent = FindComponentByClass<UIVSmokeCollisionComponent>();
+	}
+
+	return CollisionComponent;
+}
+
 FTextureRHIRef AIVSmokeVoxelVolume::GetHoleTexture() const
 {
 	if (HoleGeneratorComponent)

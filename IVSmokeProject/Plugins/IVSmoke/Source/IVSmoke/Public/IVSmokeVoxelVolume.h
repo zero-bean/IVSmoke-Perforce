@@ -119,10 +119,10 @@ protected:
 #pragma region Components
 public:
 	// @todo Documentation
-	FORCEINLINE UIVSmokeHoleGeneratorComponent* GetHoleGeneratorComponent() { return HoleGeneratorComponent; }
+	TObjectPtr<UIVSmokeHoleGeneratorComponent> GetHoleGeneratorComponent();
 
 	// @todo Documentation
-	FORCEINLINE UIVSmokeCollisionComponent* GetCollisionComponent() { return CollisionComponent; }
+	TObjectPtr<UIVSmokeCollisionComponent> GetCollisionComponent();
 
 private:
 	// @todo Documentation
