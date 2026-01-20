@@ -9,6 +9,10 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "IVSmokeHoleGeneratorComponent.h"
 
+#if ENABLE_VISUAL_LOG
+#include "VisualLogger/VisualLogger.h"
+#endif
+
 DECLARE_CYCLE_STAT(TEXT("Update Expansion"),	STAT_IVSmoke_UpdateExpansion,		STATGROUP_IVSmoke);
 DECLARE_CYCLE_STAT(TEXT("Update Sustain"),		STAT_IVSmoke_UpdateSustain,			STATGROUP_IVSmoke);
 DECLARE_CYCLE_STAT(TEXT("Update Dissipation"),	STAT_IVSmoke_UpdateDissipation,		STATGROUP_IVSmoke);
@@ -19,6 +23,7 @@ DECLARE_CYCLE_STAT(TEXT("Process Dissipation"),	STAT_IVSmoke_ProcessDissipation,
 DECLARE_DWORD_COUNTER_STAT(TEXT("Active Voxel Count"),					STAT_IVSmoke_ActiveVoxelCount,	STATGROUP_IVSmoke);
 DECLARE_DWORD_COUNTER_STAT(TEXT("Created Voxel Count (Per Frame)"),		STAT_IVSmoke_CreatedVoxel,		STATGROUP_IVSmoke);
 DECLARE_DWORD_COUNTER_STAT(TEXT("Destroyed Voxel Count (Per Frame)"),	STAT_IVSmoke_DestroyedVoxel,	STATGROUP_IVSmoke);
+
 
 static const FIntVector FloodFillDirections[] = {
 	FIntVector(1, 0, 0), FIntVector(-1, 0, 0),
@@ -106,6 +111,10 @@ void AIVSmokeVoxelVolume::Tick(float DeltaTime)
 	{
 		DrawDebugVisualization();
 	}
+#endif
+
+#if ENABLE_VISUAL_LOG
+	UpdateVisualLogger();
 #endif
 }
 
@@ -931,6 +940,59 @@ void AIVSmokeVoxelVolume::DrawDebugStatusText() const
 
 	DrawDebugString(World, TextPos, DebugMsg, nullptr, FColor::White, 0.0f, true, 1.2f);
 #endif
+}
+
+void AIVSmokeVoxelVolume::UpdateVisualLogger() const
+{
+#if ENABLE_VISUAL_LOG
+	const FVector MyLoc = GetActorLocation();
+	const uint32 Checksum = CalculateSimulationChecksum();
+
+	UE_VLOG(this, LogIVSmokeVis, Log,
+		TEXT("State: %d | Voxels: %d/%d | Heap: %d | Hash: 0x%08X"),
+		(int32)CurrentState,
+		ActiveVoxelCount,
+		GeneratedVoxelIndices.Num(),
+		MinHeap.Num(),
+		Checksum
+	);
+
+	if (ActiveVoxelCount > MaxVoxelNum)
+	{
+		UE_VLOG(this, LogIVSmokeVis, Error, TEXT("Active Voxel Count Exceeded Max Limit!"));
+	}
+
+	FBox VoxelBounds(VoxelWorldAABBMin, VoxelWorldAABBMax);
+
+	FColor DrawColor = FColor::White;
+	switch(CurrentState)
+	{
+	case EIVSmokeVoxelVolumeState::Expansion: DrawColor = FColor::Green; break;
+	case EIVSmokeVoxelVolumeState::Sustain:   DrawColor = FColor::Yellow; break;
+	case EIVSmokeVoxelVolumeState::Dissipation: DrawColor = FColor::Red; break;
+	}
+
+	UE_VLOG_BOX(this, LogIVSmokeVis, Log, VoxelBounds, DrawColor, TEXT("SmokeBounds"));
+
+	UE_VLOG_LOCATION(this, LogIVSmokeVis, Log, MyLoc, 30.0f, FColor::Blue, TEXT("Center"));
+#endif
+}
+
+uint32 AIVSmokeVoxelVolume::CalculateSimulationChecksum() const
+{
+	uint32 Checksum = 0;
+
+	Checksum = FCrc::MemCrc32(&ActiveVoxelCount, sizeof(int32), Checksum);
+
+	int32 StateInt = (int32)CurrentState;
+	Checksum = FCrc::MemCrc32(&StateInt, sizeof(int32), Checksum);
+
+	if (VoxelBitArray.Num() > 0)
+	{
+		Checksum = FCrc::MemCrc32(VoxelBitArray.GetData(), VoxelBitArray.Num() * sizeof(uint64), Checksum);
+	}
+
+	return Checksum;
 }
 
 #pragma endregion

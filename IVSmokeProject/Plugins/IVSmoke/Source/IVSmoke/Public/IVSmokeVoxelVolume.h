@@ -236,7 +236,14 @@ private:
 		int32 Index;
 		int32 ParentIndex;
 		float Cost;
-		bool operator<(const FIVSmokeVoxelNode& Other) const { return Cost < Other.Cost; }
+		bool operator<(const FIVSmokeVoxelNode& Other) const
+		{
+			if (FMath::IsNearlyEqual(Cost, Other.Cost))
+			{
+				return Index < Other.Index;
+			}
+			return Cost < Other.Cost;
+		}
 	};
 
 	FORCEINLINE static float GetCurveValue(float ElapsedTime, float Duration, const UCurveFloat* Curve)
@@ -464,6 +471,12 @@ private:
 
 	/** @todo Documentation */
 	void DrawDebugStatusText() const;
+
+	/** @todo Documentation */
+	void UpdateVisualLogger() const;
+
+	/** @todo Documentation */
+	uint32 CalculateSimulationChecksum() const;
 
 	// @todo Documentation
 	bool bIsEditorPreviewing = false;
