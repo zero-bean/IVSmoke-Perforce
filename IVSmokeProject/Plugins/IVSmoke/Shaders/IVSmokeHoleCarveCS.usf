@@ -7,7 +7,7 @@
 // Output
 // ============================================================================
 
-RWTexture3D<float> VolumeTexture;
+RWTexture3D<float4> VolumeTexture;
 
 // ============================================================================
 // Input Buffers
@@ -97,115 +97,87 @@ float ConeSDF(float3 P, float3 A, float3 B, float RadiusA, float RadiusB)
 // Utility Functions
 // ============================================================================
 
-float3 VoxelToLocal(int3 VoxelCoord)
+float3 GetWorldPos(int3 VoxelCoord)
 {
 	float3 NormalizedPos = (float3(VoxelCoord) + 0.5) / float3(Resolution);
 	return VolumeMin + NormalizedPos * (VolumeMax - VolumeMin);
+}
+float3 GetUVW(float3 WorldPos)
+{
+	return (WorldPos - VolumeMin) / (VolumeMax - VolumeMin);
 }
 
 // ============================================================================
 // Explosion Animation
 // ============================================================================
-
 /**
  * @brief Calculate explosion hole
- * @param LocalOffset   Vector from hole center to current point
+ * @param CurOffset		Vector from hole center to current point
+ * @param uvw			uvw (0 ~ 1)
  * @param Radius        Hole radius
  * @param NormalizedAge Hole lifetime progress (0=new, 1=expired)
- * @return Hole strength (0=no hole, 1=full hole)
+ * @return Hole distortion uvw offset
  */
-float CalculateExplosionStrength(float3 LocalOffset, float Radius, float NormalizedAge)
+float4 CalculateExplosionStrength(float3 CurOffset, float3 uvw, float Radius, float NormalizedAge)
 {
-	const float OpenEnd = 0.1;        // Opening phase
-	const float CloseStart = 0.8;     // Closing phase
-	const float SwirlStrength = 1.0;  // How much swirl affects the hole shape
-	const float UpwardBias = 0.4;     // How much upward force affects shape
-	const float EdgeSoft = 0.3;
-
-	// Basic measurements
-	float Dist = length(LocalOffset);
-	float NormalizedDist = Dist / Radius;
-
-	// XY plane angle (for tangent direction)
-	float Theta = atan2(LocalOffset.y, LocalOffset.x);
-
-	// Tangent direction (perpendicular to radial, counter-clockwise)
-	float2 Tangent = float2(-sin(Theta), cos(Theta));
-
-	// Force direction: tangent + upward
-	float3 ForceDir = normalize(float3(Tangent.x, Tangent.y, 1.0));
-
-	// How much this point aligns with the force direction
-	float3 PointDir = Dist > 0.001 ? normalize(LocalOffset) : float3(0, 0, 1);
-	float ForceAlignment = dot(PointDir, ForceDir);  // -1 to 1
-
-	// Normalized height (0=bottom, 1=top)
-	float NormalizedHeight = saturate((LocalOffset.z + Radius) / (2.0 * Radius));
-
-	float HoleStrength = 0.0;
-
-	if (NormalizedAge < OpenEnd)
+	const float ExtensionTime = 0.07f;
+	const float Softness = 0.3f;
+	float3 dir = normalize(CurOffset);
+	float dis = length(CurOffset);
+	float3 offset = float3(0, 0, 0);
+	float density = 1;
+	float heightDensity = 0;
+	float VolumeHeight = VolumeMax.z - VolumeMin.z;
+	float AlphaHeight = 100.0f;
+	
+	if (NormalizedAge < ExtensionTime)
 	{
-		// === Opening: Swirl outward + upward ===
-		float Progress = NormalizedAge / OpenEnd;
+		NormalizedAge = NormalizedAge / ExtensionTime;
+		const float distortionMax = 0.7f * Radius;
 
-		// Base threshold expands from center
-		float BaseThreshold = Progress;
+		float distortion = (1 - pow(saturate(dis / Radius), 1.5f)) * distortionMax * NormalizedAge;
+		if (dis < Radius)
+		{
+			distortion += distortionMax * NormalizedAge * 0.1f;
+		}
+		offset = -dir * distortion;
 
-		// Swirl bias: points aligned with force open faster
-		float SwirlBias = ForceAlignment * SwirlStrength * Progress;
+		//같은자리 두번 던지면 바닥 잔여연기 두번 퍼지는 아티팩트 눈에띔 그거 수정용
+		if (uvw.z * VolumeHeight < AlphaHeight)
+		{
+			offset = float3(0, 0, 0);
+		}
 
-		// Upward bias: higher points open slightly faster
-		float HeightBias = NormalizedHeight * UpwardBias * Progress;
+		const float DensityExtDelayTime = 0.07f;
 
-		float Threshold = BaseThreshold + SwirlBias + HeightBias;
-
-		HoleStrength = smoothstep(Threshold + EdgeSoft, Threshold - EdgeSoft, NormalizedDist);
-	}
-	else if (NormalizedAge < CloseStart)
-	{
-		// === Hold: Full hole with swirl shape ===
-		float SwirlBias = ForceAlignment * SwirlStrength;
-		float HeightBias = NormalizedHeight * UpwardBias;
-
-		float Threshold = 1.0 + SwirlBias + HeightBias;
-
-		HoleStrength = smoothstep(Threshold + EdgeSoft, Threshold - EdgeSoft, NormalizedDist);
+		float DensityExtTime = saturate((NormalizedAge - DensityExtDelayTime) / (1 - DensityExtDelayTime));
+		float curRadius = Radius * pow(DensityExtTime, 1.5f);
+		density = saturate((dis - curRadius) / (curRadius * max(0.05f, Softness)));
 	}
 	else
 	{
-		// === Closing: Propagate from bottom center (sphere expansion) ===
-		float Progress = (NormalizedAge - CloseStart) / (1.0 - CloseStart);
+		//남은 시간 정규화
+		float RemainderNormalizedTime = saturate((NormalizedAge - ExtensionTime) / (1 - ExtensionTime));
 
-		// --- Hold-style mask (for continuity at transition) ---
-		float HoldSwirlBias = ForceAlignment * SwirlStrength;
-		float HoldHeightBias = NormalizedHeight * UpwardBias;
-		float HoldThreshold = 1.0 + HoldSwirlBias + HoldHeightBias;
-		float HoldMask = smoothstep(HoldThreshold + EdgeSoft, HoldThreshold - EdgeSoft, NormalizedDist);
+		//확장 마지막 density
+		float lastDensity = saturate((dis - Radius) / (Radius * max(0.05f, Softness)));
+		float curDensity = saturate(pow(saturate(dis / Radius + 1), 2.0f) * RemainderNormalizedTime);
 
-		// --- Bottom center propagation (sphere expands from below) ---
-		float3 BottomCenter = float3(0, 0, -Radius);
-		float DistFromBottom = length(LocalOffset - BottomCenter);
-		float MaxDist = 2.0 * Radius;
-		float NormalizedDistFromBottom = DistFromBottom / MaxDist;
-
-		float PropagationThreshold = lerp(-0.2, 1.2, Progress);
-
-		float PropagationMask = smoothstep(PropagationThreshold - EdgeSoft, PropagationThreshold + EdgeSoft, NormalizedDistFromBottom);
-
-		float CloseMask = PropagationMask * HoldMask;
-
-		HoleStrength = lerp(HoldMask, CloseMask, Progress);
+		density = lerp(lastDensity, curDensity, RemainderNormalizedTime);
+		AlphaHeight = AlphaHeight + pow(RemainderNormalizedTime, 2.5f) * (VolumeHeight - AlphaHeight);
 	}
 
-	return HoleStrength;
+	float AlphaHeightUV_Z = AlphaHeight / VolumeHeight;
+	heightDensity = pow((1 - saturate(uvw.z / AlphaHeightUV_Z)), 1.2f);
+	
+	density = max(density, heightDensity);
+	return float4(offset, density);
 }
-
 // ============================================================================
 // Main Compute Shader
 // ============================================================================
 
-[numthreads(THREADGROUP_SIZE, THREADGROUP_SIZE, THREADGROUP_SIZE)]
+[numthreads(THREADGROUP_SIZEX, THREADGROUP_SIZEY, THREADGROUP_SIZEZ)]
 void MainCS(uint3 DTid : SV_DispatchThreadID)
 {
 	// Calculate actual voxel coordinate based on update region
@@ -217,12 +189,14 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
 		return;
 	}
 
-	float3 LocalPos = VoxelToLocal(VoxelCoord);
-
+	float3 WorldPos = GetWorldPos(VoxelCoord);
+	float3 uvw = GetUVW(WorldPos);
+	
 	// Start with full density
 	float Density = 1.0;
 
 	// Evaluate all holes
+	float4 result = float4(0, 0, 0, 1);
 	for (int HoleIdx = 0; HoleIdx < NumHoles; HoleIdx++)
 	{
 		FHoleGPU Hole = HoleBuffer[HoleIdx];
@@ -237,7 +211,7 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
 
 		if (Hole.HoleType == 0)  // Bullet (cone)
 		{
-			float Dist = ConeSDF(LocalPos, Hole.Position, Hole.EndPosition, Hole.Radius, Hole.EndRadius);
+			float Dist = ConeSDF(WorldPos, Hole.Position, Hole.EndPosition, Hole.Radius, Hole.EndRadius);
 
 			if (Dist < 0.0)
 			{
@@ -246,24 +220,17 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
 				float FadeOut = 1.0 - pow(Hole.NormalizedAge,3.5f);
 				HoleDensity = Falloff * Hole.DensityMultiplier * FadeOut;
 			}
+			result.a = min(result.a, (1.0 - saturate(HoleDensity)));
 		}
 		else  // Explosion (sphere)
 		{
-			float3 LocalOffset = LocalPos - Hole.Position;
-			float Dist = length(LocalOffset);
-
-			// Check if within extended radius (swirl can extend slightly)
-			if (Dist < Hole.Radius * 1.5)
-			{
-				float Strength = CalculateExplosionStrength(LocalOffset, Hole.Radius, Hole.NormalizedAge);
-				HoleDensity = Strength * Hole.DensityMultiplier;
-			}
+			float3 CurOffset = WorldPos - Hole.Position;
+			float4 holeInfo = CalculateExplosionStrength(CurOffset, uvw, Hole.Radius, Hole.NormalizedAge);
+			result.a = min(result.a, holeInfo.a);
+			result.rgb += holeInfo.rgb;
 		}
-
-		// Multiplicative blending (holes reduce density)
-		Density *= (1.0 - saturate(HoleDensity));
 	}
 
-	Density = saturate(Density);
-	VolumeTexture[VoxelCoord] = Density;
+	//Density = saturate(Density);
+	VolumeTexture[VoxelCoord] = result;
 }

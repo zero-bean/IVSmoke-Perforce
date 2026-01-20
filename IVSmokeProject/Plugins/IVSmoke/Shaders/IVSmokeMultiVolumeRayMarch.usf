@@ -59,7 +59,7 @@ uint NumActiveVolumes;
 // Packed Textures
 int PackedInterval;
 Texture3D<float> PackedVoxelAtlas;
-Texture3D<float> PackedHoleAtlas;
+Texture3D<float4> PackedHoleAtlas;
 int3 VoxelTexSize;
 int3 HoleTexSize;
 int3 PackedHoleTexSize;
@@ -177,7 +177,10 @@ float3 GetHoleUVW(float3 WorldPos, uint VolumeIdx)
 {
 	FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
 	float3 uvw = (WorldPos - Vol.VoxelWorldAABBMin) / (Vol.VoxelWorldAABBMax - Vol.VoxelWorldAABBMin);
-	uvw = saturate(uvw);
+	if (any(uvw < 0) || any(uvw > 1))
+	{
+		return float3(0, 0, 0);
+	}
 	int3 HoleAtlasID;
 	HoleAtlasID.x = VolumeIdx % HoleAtlasCount.x;
 	HoleAtlasID.y = (VolumeIdx / HoleAtlasCount.x) % HoleAtlasCount.y;
@@ -189,9 +192,10 @@ float3 GetHoleUVW(float3 WorldPos, uint VolumeIdx)
 	uvw = lerp(MinUV, MaxUV, uvw);
 	return uvw;
 }
-float GetHoleDensity(float3 WorldPos, uint VolumeIdx)
+
+float4 GetHoleSampling(float3 WorldPos, uint VolumeIdx)
 {
-	float3 uvw = GetHoleUVW(WorldPos, VolumeIdx);
+	float3 uvw = GetHoleUVW(WorldPos, VolumeIdx);	
 	return PackedHoleAtlas.Sample(LinearBorder_Sampler, uvw);
 }
 
@@ -212,8 +216,11 @@ float GetVoxelDensity(float3 WorldPos, uint VolumeIdx)
 float GetDensityForVolume(float3 Position, uint VolumeIdx)
 {
 	FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
-	float VoxelDensity = GetVoxelDensity(Position, VolumeIdx);
-	float Noise = GetNoise(Position);
+	float4 HoleInfo = GetHoleSampling(Position, VolumeIdx);
+	
+	float3 distortionPos = Position + HoleInfo.rgb;
+	float VoxelDensity = GetVoxelDensity(distortionPos, VolumeIdx);
+	float Noise = GetNoise(distortionPos);
 
 	// Adjust density based on noise range (0.7 threshold works well for typical noise values)
 	float CurDensity = saturate(0.7f - Noise) * VoxelDensity;
@@ -223,7 +230,7 @@ float GetDensityForVolume(float3 Position, uint VolumeIdx)
 	float NoiseWeight = 1 - InvDensity;
 	NoiseWeight = saturate(NoiseWeight - VolumeEdgeNoiseFadeOffset);
 	float result = Noise * NoiseWeight + CurDensity;
-	return result * Vol.DensityScale;
+	return result * Vol.DensityScale * HoleInfo.a;
 }
 
 // ============================================================================
@@ -248,8 +255,7 @@ float SampleTotalDensityAtPosition(float3 WorldPos)
 		// Check if position is within volume AABB
 		if (all(WorldPos >= Vol.VolumeWorldAABBMin) && all(WorldPos <= Vol.VolumeWorldAABBMax))
 		{
-			float HoleDensity = GetHoleDensity(WorldPos, v);
-			float Density = GetDensityForVolume(WorldPos, v) * HoleDensity;
+			float Density = GetDensityForVolume(WorldPos, v);
 			TotalDensity += Density;
 		}
 	}
@@ -480,9 +486,7 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 			if (T >= intersections[i].tNear && T <= intersections[i].tFar)
 			{
 				uint VolumeIdx = intersections[i].VolumeIndex;
-
-				float HoleDensity = GetHoleDensity(WorldPos, VolumeIdx);
-				float Density = GetDensityForVolume(WorldPos, VolumeIdx) * HoleDensity;
+				float Density = GetDensityForVolume(WorldPos, VolumeIdx);
 
 				if (Density > 0.001)
 				{

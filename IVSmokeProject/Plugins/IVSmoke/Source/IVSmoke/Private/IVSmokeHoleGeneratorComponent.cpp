@@ -13,6 +13,7 @@
 #include "GameFramework/GameStateBase.h"
 #include "Net/UnrealNetwork.h"
 #include "IVSmokeVoxelVolume.h"
+#include "IVSmokePostProcessPass.h"
 
 UIVSmokeHoleGeneratorComponent::UIVSmokeHoleGeneratorComponent()
 	: bHoleTextureDirty(false)
@@ -62,10 +63,15 @@ void UIVSmokeHoleGeneratorComponent::TickComponent(float DeltaTime, ELevelTick T
 		Authority_CleanupExpiredHoles();
 	}
 
+	// Join process
+	if (ActiveHoles.Num() > 0)
+	{
+		bHoleTextureDirty = true;
+	}
+
 	// Client / Standalone: Rebuild texture if dirty
 #if !UE_SERVER
 	SetBoxToVoxelAABB();
-
 	if (bHoleTextureDirty && ActiveHoles.Num() > 0)
 	{
 		Local_RebuildHoleTexture();
@@ -265,20 +271,10 @@ void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 			const TShaderMapRef<FIVSmokeHoleCarveCS> ComputeShader(GetGlobalShaderMap(GMaxRHIFeatureLevel));
 
 			const FIntVector DispatchSize = RegionMax - RegionMin + FIntVector(1, 1, 1);
-			const uint32 ThreadGroupSize = FIVSmokeHoleCarveCS::ThreadGroupSize;
-			const FIntVector GroupCount(
-				FMath::DivideAndRoundUp(DispatchSize.X, static_cast<int32>(ThreadGroupSize)),
-				FMath::DivideAndRoundUp(DispatchSize.Y, static_cast<int32>(ThreadGroupSize)),
-				FMath::DivideAndRoundUp(DispatchSize.Z, static_cast<int32>(ThreadGroupSize))
-			);
 
-			FComputeShaderUtils::AddPass(
-				GraphBuilder,
-				RDG_EVENT_NAME("IVSmokeHoleCarveCS_FullRebuild"),
-				ComputeShader,
-				Parameters,
-				GroupCount
-			);
+
+			FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeHoleCarveCS>(GraphBuilder, GetGlobalShaderMap(GMaxRHIFeatureLevel), ComputeShader, Parameters, DispatchSize);
+			
 
 			GraphBuilder.Execute();
 		}
@@ -392,7 +388,7 @@ void UIVSmokeHoleGeneratorComponent::InitializeHoleTexture()
 
 	// Create UTextureRenderTargetVolume
 	HoleTexture = NewObject<UTextureRenderTargetVolume>(this, TEXT("HoleTexture"));
-	HoleTexture->Init(VoxelResolution.X, VoxelResolution.Y, VoxelResolution.Z, PF_R16F);
+	HoleTexture->Init(VoxelResolution.X, VoxelResolution.Y, VoxelResolution.Z, PF_FloatRGBA);
 	HoleTexture->bCanCreateUAV = true;
 	HoleTexture->ClearColor = FLinearColor::White;
 	HoleTexture->SRGB = false;

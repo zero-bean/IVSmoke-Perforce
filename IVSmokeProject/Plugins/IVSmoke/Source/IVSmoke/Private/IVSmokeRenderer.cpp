@@ -938,7 +938,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 
 	FRDGTextureDesc HoleAtlasDesc = FRDGTextureDesc::Create3D(
 		HoleAtlasResolution,
-		PF_R16F,
+		PF_FloatRGBA,
 		FClearValueBinding::None,
 		TexCreate_ShaderResource | TexCreate_UAV
 	);

@@ -15,15 +15,19 @@
  */
 class IVSMOKE_API FIVSmokeHoleCarveCS : public FGlobalShader
 {
+public:
+	static constexpr uint32 ThreadGroupSizeX = 8;
+	static constexpr uint32 ThreadGroupSizeY = 8;
+	static constexpr uint32 ThreadGroupSizeZ = 8;
+	static constexpr const TCHAR* EventName = TEXT("IVSmokeHoleCarveCS");
 	DECLARE_GLOBAL_SHADER(FIVSmokeHoleCarveCS);
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeHoleCarveCS, FGlobalShader);
 
 public:
-	static constexpr uint32 ThreadGroupSize = 8;
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-		// Output: 3D Volume Texture (Read and Write) - R16F single channel
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>, VolumeTexture)
+		// Output: 3D Volume Texture (Read and Write) - R16G16B16A16_UNORM channel
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, VolumeTexture)
 
 		// Input: Hole data buffer (unified structure)
 		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<FIVSmokeHoleGPU>, HoleBuffer)
@@ -57,6 +61,8 @@ public:
 	)
 	{
 		FGlobalShader::ModifyCompilationEnvironment(Parameters, OutEnvironment);
-		OutEnvironment.SetDefine(TEXT("THREADGROUP_SIZE"), ThreadGroupSize);
+		OutEnvironment.SetDefine(TEXT("THREADGROUP_SIZEX"), ThreadGroupSizeX);
+		OutEnvironment.SetDefine(TEXT("THREADGROUP_SIZEY"), ThreadGroupSizeY);
+		OutEnvironment.SetDefine(TEXT("THREADGROUP_SIZEZ"), ThreadGroupSizeZ);
 	}
 };
