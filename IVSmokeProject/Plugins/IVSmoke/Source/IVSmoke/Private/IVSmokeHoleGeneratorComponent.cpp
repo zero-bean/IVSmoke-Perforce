@@ -401,7 +401,11 @@ TArray<FIVSmokeHoleGPU> UIVSmokeHoleGeneratorComponent::BuildGPUHoleBuffer() con
 {
 	const float CurrentServerTime = GetSyncedTime();
 
+	TArray<FIVSmokeHoleGPU> BulletBuffer;
+	TArray<FIVSmokeHoleGPU> GrenadeBuffer;
 	TArray<FIVSmokeHoleGPU> GPUBuffer;
+	BulletBuffer.Reserve(FMath::Max(ActiveHoles.Num(), 1));
+	GrenadeBuffer.Reserve(FMath::Max(ActiveHoles.Num(), 1));
 	GPUBuffer.Reserve(FMath::Max(ActiveHoles.Num(), 1));
 
 	for (const FIVSmokeHoleData& Hole : ActiveHoles.Items)
@@ -438,8 +442,18 @@ TArray<FIVSmokeHoleGPU> UIVSmokeHoleGeneratorComponent::BuildGPUHoleBuffer() con
 		const float ElapsedTime = Lifetime - RemainingTime;
 		GPUHole.NormalizedAge = FMath::Clamp(ElapsedTime / Lifetime, 0.0f, 1.0f);
 
-		GPUBuffer.Add(GPUHole);
+		if (Preset->HoleType == EIVSmokeHoleType::Penetration)
+		{
+			BulletBuffer.Add(GPUHole);
+		}
+		else if (Preset->HoleType == EIVSmokeHoleType::Explosion)
+		{
+			GrenadeBuffer.Add(GPUHole);
+		}
 	}
+
+	GPUBuffer.Append(GrenadeBuffer);
+	GPUBuffer.Append(BulletBuffer);
 
 	if (GPUBuffer.Num() == 0)
 	{

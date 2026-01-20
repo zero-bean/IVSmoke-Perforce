@@ -118,8 +118,9 @@ float3 GetUVW(float3 WorldPos)
  * @param NormalizedAge Hole lifetime progress (0=new, 1=expired)
  * @return Hole distortion uvw offset
  */
-float4 CalculateExplosionStrength(float3 CurOffset, float3 uvw, float Radius, float NormalizedAge)
+float4 CalculateExplosionStrength(float3 CurOffset, float3 uvw, float Radius, float NormalizedAge, out float GrenadeFade, out float FadeEndTime)
 {
+	const float GrenadeTime = 2.4f;
 	const float ExtensionTime = 0.07f;
 	const float Softness = 0.3f;
 	float3 dir = normalize(CurOffset);
@@ -129,7 +130,9 @@ float4 CalculateExplosionStrength(float3 CurOffset, float3 uvw, float Radius, fl
 	float heightDensity = 0;
 	float VolumeHeight = VolumeMax.z - VolumeMin.z;
 	float AlphaHeight = 100.0f;
-	
+	float GrenadeStartTime = -GrenadeTime * NormalizedAge;
+	GrenadeFade = saturate(NormalizedAge / ExtensionTime);
+	FadeEndTime = GrenadeStartTime + ExtensionTime * GrenadeTime;
 	if (NormalizedAge < ExtensionTime)
 	{
 		NormalizedAge = NormalizedAge / ExtensionTime;
@@ -155,14 +158,16 @@ float4 CalculateExplosionStrength(float3 CurOffset, float3 uvw, float Radius, fl
 		density = saturate((dis - curRadius) / (curRadius * max(0.05f, Softness)));
 	}
 	else
-	{
+	{	
 		//남은 시간 정규화
 		float RemainderNormalizedTime = saturate((NormalizedAge - ExtensionTime) / (1 - ExtensionTime));
 
 		//확장 마지막 density
 		float lastDensity = saturate((dis - Radius) / (Radius * max(0.05f, Softness)));
-		float curDensity = saturate(pow(saturate(dis / Radius + 1), 2.0f) * RemainderNormalizedTime);
 
+		float CurRadius = RemainderNormalizedTime * Radius;
+		float curDensity = saturate((dis + CurRadius - Radius) / Radius);
+		
 		density = lerp(lastDensity, curDensity, RemainderNormalizedTime);
 		AlphaHeight = AlphaHeight + pow(RemainderNormalizedTime, 2.5f) * (VolumeHeight - AlphaHeight);
 	}
@@ -196,7 +201,13 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
 	float Density = 1.0;
 
 	// Evaluate all holes
-	float4 result = float4(0, 0, 0, 1);
+	float4 grenadeResult = float4(0, 0, 0, 1);
+	float bulletResult = 1.0f;
+
+	const float BulletTime = 3.0f;
+
+	float BulletFadeFactor = 0.0f;
+	float FadeEndTime = 0.0f;
 	for (int HoleIdx = 0; HoleIdx < NumHoles; HoleIdx++)
 	{
 		FHoleGPU Hole = HoleBuffer[HoleIdx];
@@ -207,30 +218,51 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
 			continue;
 		}
 
-		float HoleDensity = 0.0;
+		float HoleDensity = 0.0f;
 
-		if (Hole.HoleType == 0)  // Bullet (cone)
+		if(Hole.HoleType == 1)
 		{
+			//grenade
+			float3 CurOffset = WorldPos - Hole.Position;
+			float CurGrenadeFade = 0.0f;
+			float CurFadeEndTime = 0.0f;
+			float4 holeInfo = CalculateExplosionStrength(CurOffset, uvw, Hole.Radius, Hole.NormalizedAge, CurGrenadeFade, CurFadeEndTime);
+			grenadeResult.a = min(grenadeResult.a, holeInfo.a);
+			grenadeResult.rgb += holeInfo.rgb;
+
+			if (CurGrenadeFade > BulletFadeFactor)
+			{
+				BulletFadeFactor = CurGrenadeFade;
+				FadeEndTime = CurFadeEndTime;
+			}
+		}
+		else
+		{
+			//bullet
 			float Dist = ConeSDF(WorldPos, Hole.Position, Hole.EndPosition, Hole.Radius, Hole.EndRadius);
 
 			if (Dist < 0.0)
 			{
 				float EdgeWidth = Hole.Radius * saturate(Hole.EdgeSoftness + 0.1);
 				float Falloff = saturate(-Dist / EdgeWidth);
-				float FadeOut = 1.0 - pow(Hole.NormalizedAge,3.5f);
+				float FadeOut = 1.0 - pow(Hole.NormalizedAge, 3.5f);
 				HoleDensity = Falloff * Hole.DensityMultiplier * FadeOut;
 			}
-			result.a = min(result.a, (1.0 - saturate(HoleDensity)));
-		}
-		else  // Explosion (sphere)
-		{
-			float3 CurOffset = WorldPos - Hole.Position;
-			float4 holeInfo = CalculateExplosionStrength(CurOffset, uvw, Hole.Radius, Hole.NormalizedAge);
-			result.a = min(result.a, holeInfo.a);
-			result.rgb += holeInfo.rgb;
+
+			float curBulletDensity = HoleDensity;
+			if (BulletFadeFactor > 0)
+			{
+				float bulletStartTime = -BulletTime * Hole.NormalizedAge;
+				if (bulletStartTime < FadeEndTime)
+				{
+					curBulletDensity = saturate(curBulletDensity * (1 - BulletFadeFactor));
+				}
+			}
+			curBulletDensity = 1.0 - saturate(curBulletDensity);
+			bulletResult = min(bulletResult, curBulletDensity);
 		}
 	}
 
 	//Density = saturate(Density);
-	VolumeTexture[VoxelCoord] = result;
+	VolumeTexture[VoxelCoord] = float4(grenadeResult.rgb, min(grenadeResult.a, bulletResult));
 }
