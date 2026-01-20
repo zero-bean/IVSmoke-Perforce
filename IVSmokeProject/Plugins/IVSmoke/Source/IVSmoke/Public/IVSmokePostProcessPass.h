@@ -27,6 +27,16 @@ public:
 	 * @param Parameters      Shader parameters (must have RenderTargets bound)
 	 * @param Output          Render target
 	 * @param Config          Pass configuration
+	 *
+	 * @warning Confirmed Engine Bug (UE 5.6 - UE 5.7)
+	 * The RDG Timeline View currently displays the raw format string (e.g., "IVSmoke::PixelShader: %s")
+	 * instead of the resolved variable name in Unreal Insights.
+	 *
+	 * Workaround:
+	 * 1. Select the event bar in Unreal Insights (Timing View).
+	 * 2. Check the Details Panel (Metadata) to view the correct shader name (e.g., MyShaderPS).
+	 *
+	 * https://issues.unrealengine.com/issue/UE-298245
 	 */
 	template<typename TShaderClass>
 	static void AddPixelShaderPass(
@@ -45,6 +55,12 @@ public:
 	 * @param Parameters      Shader parameters (must have UAV bound)
 	 * @param ViewportSize    Size of the viewport for thread dispatch
 	 * @param Config          Pass configuration
+	 *
+	 * @warning Confirmed Engine Bug (UE 5.6 - UE 5.7)
+	 * Similar to the Pixel Shader pass, the scope name appears as "IVSmoke::ComputeShader: %s"
+	 * in the Timing View due to the engine bug mentioned above.
+	 *
+	 * Please refer to the Details Panel in Unreal Insights for the correct shader name
 	 */
 	template<typename TShaderClass>
 	static void AddComputeShaderPass(
@@ -84,7 +100,7 @@ void FIVSmokePostProcessPass::AddPixelShaderPass(
 	typename TShaderClass::FParameters* Parameters,
 	const FScreenPassRenderTarget& Output)
 {
-	RDG_EVENT_SCOPE(GraphBuilder, "%s", TShaderClass::EventName);
+	RDG_EVENT_SCOPE(GraphBuilder, "IVSmoke::PixelShader: %s", TShaderClass::EventName);
 
 	FPixelShaderUtils::AddFullscreenPass(
 		GraphBuilder,
@@ -109,7 +125,7 @@ void FIVSmokePostProcessPass::AddComputeShaderPass(
 	const uint32 GroupCountY = FMath::DivideAndRoundUp((uint32)TotalThreadSize.Y, TShaderClass::ThreadGroupSizeY);
 	const uint32 GroupCountZ = FMath::DivideAndRoundUp((uint32)TotalThreadSize.Z, TShaderClass::ThreadGroupSizeZ);
 
-	RDG_EVENT_SCOPE(GraphBuilder, "%s", TShaderClass::EventName);
+	RDG_EVENT_SCOPE(GraphBuilder, "IVSmoke::ComputeShader: %s", TShaderClass::EventName);
 
 	FComputeShaderUtils::AddPass(
 		GraphBuilder,
