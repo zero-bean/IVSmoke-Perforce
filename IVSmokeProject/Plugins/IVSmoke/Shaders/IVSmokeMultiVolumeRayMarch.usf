@@ -298,13 +298,13 @@ float MarchTowardLight(float3 WorldPos, float3 LightDir, float MarchDistance, in
 		float3 SamplePos = WorldPos + LightDir * CurrentDist;
 		float Density = SampleTotalDensityAtPosition(SamplePos);
 
-		if (Density > 0.0001)
+		if (Density > 0.001)
 		{
 			LightTransmittance *= exp(-Density * StepSize * GlobalAbsorption);
 		}
 
 		// Early exit if fully shadowed
-		if (LightTransmittance < 0.01)
+		if (LightTransmittance < 0.05)
 		{
 			return 0.0;
 		}
@@ -463,7 +463,7 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	float Jitter = BlueNoiseScalar(PixelCoord, FrameNumber % 64);
 	float T = globalTMin + Jitter * StepSize;
 
-	for (int step = 0; step < MaxSteps && Transmittance > 0.01; step++)
+	for (int step = 0; step < MaxSteps && Transmittance > 0.05; step++)
 	{
 		// Fixed step size (no per-step jitter to avoid grain)
 		float JitteredStepSize = StepSize;
@@ -484,7 +484,7 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 				float HoleDensity = GetHoleDensity(WorldPos, VolumeIdx);
 				float Density = GetDensityForVolume(WorldPos, VolumeIdx) * HoleDensity;
 
-				if (Density > 0.0001)
+				if (Density > 0.001)
 				{
 					FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
 					TotalDensity += Density;
@@ -494,7 +494,7 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 		}
 
 		// Beer-Lambert integration (use jittered step size for correct integration)
-		if (TotalDensity > 0.0001)
+		if (TotalDensity > 0.001)
 		{
 			// Record first hit depth (for particle depth sorting)
 			if (FirstHitDepth == 0.0)
@@ -566,9 +566,14 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 		T += JitteredStepSize;
 	}
 
+	// Remap Transmittance: [THRESHOLD, 1.0] → [0.0, 1.0] to prevent HDR burn-through
+	// Early exit at 0.05 means we treat it as fully opaque (0 transmittance)
+	const float EARLY_EXIT_THRESHOLD = 0.05;
+	float RemappedTransmittance = saturate((Transmittance - EARLY_EXIT_THRESHOLD) / (1.0 - EARLY_EXIT_THRESHOLD));
+
 	// Output: Dual Render Target (Albedo + Mask separated)
 	// .r = Alpha (opacity), .g = FirstHitDepth (ray distance to first smoke)
-	float Alpha = 1.0 - Transmittance;
+	float Alpha = 1.0 - RemappedTransmittance;
 	SmokeAlbedoTex[PixelCoord] = float4(AccumulatedColor, 1.0);
 	SmokeMaskTex[PixelCoord] = float4(Alpha, FirstHitDepth, 0.0, 0.0);
 }
