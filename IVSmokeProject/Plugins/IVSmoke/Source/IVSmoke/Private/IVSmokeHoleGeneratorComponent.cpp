@@ -15,6 +15,7 @@
 #include "IVSmokeVoxelVolume.h"
 
 UIVSmokeHoleGeneratorComponent::UIVSmokeHoleGeneratorComponent()
+	: bHoleTextureDirty(false)
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	SetIsReplicatedByDefault(true);
@@ -24,7 +25,15 @@ void UIVSmokeHoleGeneratorComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Setup Fast TArray owner for replication callbacks
+	ActiveHoles.OwnerComponent = this;
 	ActiveHoles.Reserve(MaxHoles);
+
+	// Join process
+	if (ActiveHoles.Num() > 0)
+	{
+		bHoleTextureDirty = true;
+	}
 
 #if !UE_SERVER
 	InitializeHoleTexture();
@@ -53,13 +62,14 @@ void UIVSmokeHoleGeneratorComponent::TickComponent(float DeltaTime, ELevelTick T
 		Authority_CleanupExpiredHoles();
 	}
 
-	// Client / Standalone: Rebuild texture if holes exist
+	// Client / Standalone: Rebuild texture if dirty
 #if !UE_SERVER
 	SetBoxToVoxelAABB();
 
-	if (ActiveHoles.Num() > 0)
+	if (bHoleTextureDirty && ActiveHoles.Num() > 0)
 	{
 		Local_RebuildHoleTexture();
+		bHoleTextureDirty = false;
 	}
 #endif
 }
@@ -166,10 +176,13 @@ void UIVSmokeHoleGeneratorComponent::Authority_CreateHole(const FIVSmokeHoleData
 {
 	if (ActiveHoles.Num() >= MaxHoles)
 	{
-		ActiveHoles.RemoveAt(0);
+		ActiveHoles.RemoveAtSwap(0);
 	}
 
-	ActiveHoles.Add(InHoleData);
+	ActiveHoles.AddHole(InHoleData);
+
+	// Server/Standalone also needs texture update
+	bHoleTextureDirty = true;
 }
 
 void UIVSmokeHoleGeneratorComponent::Authority_CleanupExpiredHoles()
@@ -181,6 +194,7 @@ void UIVSmokeHoleGeneratorComponent::Authority_CleanupExpiredHoles()
 		if (ActiveHoles[i].IsExpired(CurrentServerTime))
 		{
 			ActiveHoles.RemoveAtSwap(i);
+			bHoleTextureDirty = true;
 		}
 	}
 }
@@ -394,7 +408,7 @@ TArray<FIVSmokeHoleGPU> UIVSmokeHoleGeneratorComponent::BuildGPUHoleBuffer() con
 	TArray<FIVSmokeHoleGPU> GPUBuffer;
 	GPUBuffer.Reserve(FMath::Max(ActiveHoles.Num(), 1));
 
-	for (const FIVSmokeHoleData& Hole : ActiveHoles)
+	for (const FIVSmokeHoleData& Hole : ActiveHoles.Items)
 	{
 		TObjectPtr<UIVSmokeHolePreset> Preset = UIVSmokeHolePreset::FindByID(Hole.PresetID);
 		if (!Preset)

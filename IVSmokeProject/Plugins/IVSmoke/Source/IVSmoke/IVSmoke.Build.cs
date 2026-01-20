@@ -27,7 +27,8 @@ public class IVSmoke : ModuleRules
 			{
 				"CoreUObject",
 				"Engine",
-				"DeveloperSettings"
+				"DeveloperSettings",
+				"NetCore"
 			}
 		);
 	}

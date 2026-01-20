@@ -75,14 +75,25 @@ public:
 	UFUNCTION(BlueprintPure, Category = "IVSmoke | Voxel")
 	FORCEINLINE FIntVector GetVoxelResolution() const { return VoxelResolution; }
 
+public:
+	// ============================================================================
+	// Fast TArray Replication Support
+	// ============================================================================
+
+	/** Called by replication callbacks to mark hole texture as dirty */
+	FORCEINLINE void MarkHoleTextureDirty() { bHoleTextureDirty = true; }
+
 protected:
 	// ============================================================================
 	// Replicated State
 	// ============================================================================
 
-	// Active holes array - replicated to all clients
+	// Active holes array - Fast TArray delta replication
 	UPROPERTY(Replicated, VisibleAnywhere, Category = "IVSmoke | Hole | Debug")
-	TArray<FIVSmokeHoleData> ActiveHoles;
+	FIVSmokeHoleArray ActiveHoles;
+
+	// Dirty flag for hole texture rebuild
+	uint8 bHoleTextureDirty : 1;
 
 private:
 	// ============================================================================
