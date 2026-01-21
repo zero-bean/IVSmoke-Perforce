@@ -131,7 +131,7 @@ float3 GetUVW(float3 WorldPos)
  * @param NormalizedAge Hole lifetime progress (0=new, 1=expired)
  * @return Hole distortion uvw offset
  */
-float4 CalculateExplosionStrength(float3 CurOffset, float3 uvw, int HoleIdx, out float GrenadeFade, out float FadeEndTime)
+float4 CalculateExplosionStrength(float3 CurOffset, float3 uvw, int HoleIdx, out float BulletFadeFactor, out float FadeEndTime)
 {
 	FHoleGPU HoleData = HoleBuffer[HoleIdx];
 	float CurTime = HoleData.NormalizedAge * HoleData.Lifetime;
@@ -140,15 +140,21 @@ float4 CalculateExplosionStrength(float3 CurOffset, float3 uvw, int HoleIdx, out
 	float Dis = length(CurOffset);
 	float VolumeHeight = VolumeMax.z - VolumeMin.z;
 	float AlphaHeight = 100.0f;
-	float GrenadeStartTime = -HoleData.Lifetime * HoleData.NormalizedAge;
 	
 	float3 Offset = float3(0, 0, 0);
 	float Density = 1;
 	float HeightDensity = 0;
 
-	GrenadeFade = saturate(CurTime / HoleData.ExtensionTime);
+	float GrenadeStartTime = -HoleData.Lifetime * HoleData.NormalizedAge;
+	if (Dis < HoleData.Radius)
+	{
+		BulletFadeFactor = saturate(CurTime / HoleData.ExtensionTime);
+	}
+	else
+	{
+		BulletFadeFactor = 0;
+	}
 	FadeEndTime = GrenadeStartTime + HoleData.ExtensionTime;
-	
 	if (CurTime < HoleData.ExtensionTime)
 	{
 		float ExtensionNormalizedTime = CurTime / HoleData.ExtensionTime;
@@ -239,15 +245,15 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
 		{
 			//grenade
 			float3 CurOffset = WorldPos - Hole.Position;
-			float CurGrenadeFade = 0.0f;
+			float CurBulletFadeFactor = 0.0f;
 			float CurFadeEndTime = 0.0f;
-			float4 HoleInfo = CalculateExplosionStrength(CurOffset, uvw, HoleIdx, CurGrenadeFade, CurFadeEndTime);
+			float4 HoleInfo = CalculateExplosionStrength(CurOffset, uvw, HoleIdx, CurBulletFadeFactor, CurFadeEndTime);
 			GrenadeResult.a = min(GrenadeResult.a, HoleInfo.a);
 			GrenadeResult.rgb += HoleInfo.rgb;
 
-			if (CurGrenadeFade > BulletFadeFactor)
+			if (CurBulletFadeFactor > BulletFadeFactor)
 			{
-				BulletFadeFactor = CurGrenadeFade;
+				BulletFadeFactor = CurBulletFadeFactor;
 				FadeEndTime = CurFadeEndTime;
 			}
 		}
@@ -264,6 +270,7 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
 				HoleDensity = Falloff * Hole.DensityMultiplier * FadeOut;
 			}
 
+			//여기선 Density 반대값으로 처리됨
 			float CurBulletDensity = HoleDensity;
 			if (BulletFadeFactor > 0)
 			{
@@ -273,6 +280,8 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
 					CurBulletDensity = saturate(CurBulletDensity * (1 - BulletFadeFactor));
 				}
 			}
+
+			//여기서 0은 투명 1은 불투명으로 바꿈
 			CurBulletDensity = 1.0 - saturate(CurBulletDensity);
 			BulletResult = min(BulletResult, CurBulletDensity);
 		}
