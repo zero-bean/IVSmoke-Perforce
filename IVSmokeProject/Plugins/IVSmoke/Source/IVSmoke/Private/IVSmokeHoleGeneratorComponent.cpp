@@ -234,13 +234,9 @@ void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 	const int32 NumHoles = ActiveHoles.Num();
 	FTextureRHIRef Texture = RenderTargetResource->GetRenderTargetTexture();
 
-	// Full rebuild: entire volume
-	const FIntVector RegionMin = FIntVector::ZeroValue;
-	const FIntVector RegionMax = VoxelResolution - FIntVector(1, 1, 1);
-
 	ENQUEUE_RENDER_COMMAND(IVSmokeHoleCarveFullRebuild)(
-		[Texture, GPUHoles = MoveTemp(GPUHoles), WorldVolumeMin, WorldVolumeMax, Resolution,
-		 RegionMin, RegionMax, NumHoles](FRHICommandListImmediate& RHICmdList)
+		[Texture, GPUHoles = MoveTemp(GPUHoles), WorldVolumeMin, WorldVolumeMax, Resolution, NumHoles]
+		(FRHICommandListImmediate& RHICmdList)
 		{
 			FRDGBuilder GraphBuilder(RHICmdList);
 
@@ -263,19 +259,10 @@ void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 			Parameters->VolumeMin = WorldVolumeMin;
 			Parameters->VolumeMax = WorldVolumeMax;
 			Parameters->Resolution = Resolution;
-			Parameters->UpdateRegionMin = RegionMin;
-			Parameters->UpdateRegionMax = RegionMax;
 			Parameters->NumHoles = NumHoles;
-			Parameters->bIsFullRebuild = 1;
 
 			const TShaderMapRef<FIVSmokeHoleCarveCS> ComputeShader(GetGlobalShaderMap(GMaxRHIFeatureLevel));
-
-			const FIntVector DispatchSize = RegionMax - RegionMin + FIntVector(1, 1, 1);
-
-
-			FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeHoleCarveCS>(GraphBuilder, GetGlobalShaderMap(GMaxRHIFeatureLevel), ComputeShader, Parameters, DispatchSize);
-			
-
+			FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeHoleCarveCS>(GraphBuilder, GetGlobalShaderMap(GMaxRHIFeatureLevel), ComputeShader, Parameters, Resolution);
 			GraphBuilder.Execute();
 		}
 	);
@@ -400,67 +387,7 @@ void UIVSmokeHoleGeneratorComponent::InitializeHoleTexture()
 TArray<FIVSmokeHoleGPU> UIVSmokeHoleGeneratorComponent::BuildGPUHoleBuffer() const
 {
 	const float CurrentServerTime = GetSyncedTime();
-
-	TArray<FIVSmokeHoleGPU> BulletBuffer;
-	TArray<FIVSmokeHoleGPU> GrenadeBuffer;
-	TArray<FIVSmokeHoleGPU> GPUBuffer;
-	BulletBuffer.Reserve(FMath::Max(ActiveHoles.Num(), 1));
-	GrenadeBuffer.Reserve(FMath::Max(ActiveHoles.Num(), 1));
-	GPUBuffer.Reserve(FMath::Max(ActiveHoles.Num(), 1));
-
-	for (const FIVSmokeHoleData& Hole : ActiveHoles.Items)
-	{
-		TObjectPtr<UIVSmokeHolePreset> Preset = UIVSmokeHolePreset::FindByID(Hole.PresetID);
-		if (!Preset)
-		{
-			continue;
-		}
-
-		FIVSmokeHoleGPU GPUHole;
-
-		GPUHole.Position = FVector3f(Hole.Position);
-		GPUHole.Radius = Preset->StartRadius;
-
-		if (Preset->HoleType == EIVSmokeHoleType::Penetration)
-		{
-			GPUHole.EndPosition = FVector3f(Hole.EndPosition);
-			GPUHole.EndRadius = Preset->EndRadius;
-		}
-		else if (Preset->HoleType == EIVSmokeHoleType::Explosion)
-		{
-			GPUHole.EndPosition = GPUHole.Position;
-			GPUHole.EndRadius = Preset->StartRadius;
-		}
-
-		GPUHole.EdgeSoftness = Preset->EdgeSoftness;
-		GPUHole.DensityMultiplier = Preset->DensityMultiplier;
-		GPUHole.HoleType = static_cast<int32>(Preset->HoleType);
-
-		// Calculate normalized age (with division by zero protection)
-		const float Lifetime = FMath::Max(Preset->Lifetime, SMALL_NUMBER);
-		const float RemainingTime = Hole.ExpirationServerTime - CurrentServerTime;
-		const float ElapsedTime = Lifetime - RemainingTime;
-		GPUHole.NormalizedAge = FMath::Clamp(ElapsedTime / Lifetime, 0.0f, 1.0f);
-
-		if (Preset->HoleType == EIVSmokeHoleType::Penetration)
-		{
-			BulletBuffer.Add(GPUHole);
-		}
-		else if (Preset->HoleType == EIVSmokeHoleType::Explosion)
-		{
-			GrenadeBuffer.Add(GPUHole);
-		}
-	}
-
-	GPUBuffer.Append(GrenadeBuffer);
-	GPUBuffer.Append(BulletBuffer);
-
-	if (GPUBuffer.Num() == 0)
-	{
-		GPUBuffer.AddDefaulted(1);
-	}
-
-	return GPUBuffer;
+	return ActiveHoles.GetHoleGPUDatas(CurrentServerTime);
 }
 #endif
 

@@ -8,7 +8,8 @@
 
 struct FIVSmokeHoleArray;
 class UIVSmokeHoleGeneratorComponent;
-
+class UIVSmokeHolePreset;
+struct FIVSmokeHoleGPU;
 /**
  * @struct FIVSmokeHoleData
  * @brief Network-optimized hole data structure.
@@ -90,6 +91,8 @@ struct IVSMOKE_API FIVSmokeHoleArray : public FFastArraySerializer
 	FORCEINLINE FIVSmokeHoleData& operator[](const int32 Index) { return Items[Index]; }
 	FORCEINLINE const FIVSmokeHoleData& operator[](const int32 Index) const { return Items[Index]; }
 	FORCEINLINE void Reserve(const int32 Number) { Items.Reserve(Number); }
+
+	TArray<FIVSmokeHoleGPU> GetHoleGPUDatas(const float CurrentServerTime) const;
 };
 
 // Enable delta serialization for FIVSmokeHoleArray
@@ -108,18 +111,41 @@ struct TStructOpsTypeTraits<FIVSmokeHoleArray> : public TStructOpsTypeTraitsBase
  */
 struct FIVSmokeHoleGPU
 {
-	// Position (16 bytes)
+	FIVSmokeHoleGPU() = default;
+	FIVSmokeHoleGPU(const FIVSmokeHoleData& DynamicHoleData, const UIVSmokeHolePreset& Preset);
+	void SetNormalizedAge(const float RemainingTime);
+	// ============================================================================
+	// Dynamic
+	// ============================================================================
+	// Common
 	FVector3f Position;
-	float Radius;
-
-	// Penetration-only (16 bytes)
-	FVector3f EndPosition;
-	float EndRadius;
-
-	// Parameters from Preset (16 bytes)
-	float EdgeSoftness;
-	float DensityMultiplier;
 	float NormalizedAge;
-	int32 HoleType;
 
-};  // Total: 48 bytes
+	//only grenade
+
+	//only bullet
+	FVector3f EndPosition;
+	float Dynamic_BulletPadding;
+
+	// ============================================================================
+	// Preset
+	// ============================================================================
+	// Common
+	int32 HoleType; // 0 = Bullet (cone), 1 = Explosion (sphere)
+	float Radius;
+	float Lifetime;
+	float EdgeSoftness;
+
+	//only grenade
+	float ExtensionTime; //0.07f * 2.4f;
+	float DensityExtDelayTime;
+	FVector2f Preset_GrenadePadding;
+
+	//only bullet
+	float EndRadius;
+	float DensityMultiplier;
+	FVector2f Preset_BulletPadding;
+
+
+
+};

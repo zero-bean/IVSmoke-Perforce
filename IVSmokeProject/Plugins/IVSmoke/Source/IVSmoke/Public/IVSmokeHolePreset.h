@@ -26,32 +26,64 @@ protected:
 	virtual void BeginDestroy() override;
 
 public:
+
+	// ============================================================================
+	// Common
+	// ============================================================================
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke")
 	EIVSmokeHoleType HoleType = EIVSmokeHoleType::Penetration;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
-		meta = (ClampMin = "0.0", ClampMax = "500.0"))
+		meta = (ClampMin = "0.1", ClampMax = "500.0"))
 	float StartRadius = 50.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
-		meta = (ClampMin = "0.0", ClampMax = "500.0", EditConditionHides,
-		EditCondition = "HoleType == EIVSmokeHoleType::Penetration"))
-	float EndRadius = 25.0f;
+		meta = (ClampMin = "0.01", ClampMax = "60.0",
+			Tooltip = "Define how long the hole will last within the smoke"))
+	float Lifetime = 3.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
 		meta = (ClampMin = "0.0", ClampMax = "1.0",
-		Tooltip = "0 = hard edge, 1 = soft gradient"))
+			Tooltip = "0 = hard edge, 1 = soft gradient"))
 	float EdgeSoftness = 0.3f;
 
+
+
+	// ============================================================================
+	// Only Grenade
+	// ============================================================================
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
-	meta = (ClampMin = "0.0", ClampMax = "1.0",
-	Tooltip = "0 = transparent, 1 = full hole"))
-	float DensityMultiplier = 1.0f;
+		meta = (ClampMin = "0.01", ClampMax = "10.0", EditConditionHides,
+			EditCondition = "HoleType == EIVSmokeHoleType::Explosion"))
+	float ExtensionTime;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
+		meta = (ClampMin = "0.0", ClampMax = "1.0", EditConditionHides,
+			EditCondition = "HoleType == EIVSmokeHoleType::Explosion"))
+	float DensityExtDelayTime;
+
+	// ============================================================================
+	// Only Bullet
+	// ============================================================================
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
+		meta = (ClampMin = "0.0", ClampMax = "500.0", EditConditionHides,
+			EditCondition = "HoleType == EIVSmokeHoleType::Penetration"))
+	float EndRadius = 25.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
-		meta = (ClampMin = "0.01", ClampMax = "60.0",
-		Tooltip = "Define how long the hole will last within the smoke"))
-	float Lifetime = 3.0f;
+		meta = (ClampMin = "0.0", ClampMax = "1.0", EditConditionHides,
+			EditCondition = "HoleType == EIVSmokeHoleType::Penetration",
+			Tooltip = "0 = transparent, 1 = full hole"))
+	float DensityMultiplier = 1.0f;
+
+
+
+
+
+
+
+
+
+
 
 	FORCEINLINE uint8 GetPresetID() const {return CachedID;}
 

@@ -39,15 +39,8 @@ public:
 		// Volume resolution
 		SHADER_PARAMETER(FIntVector, Resolution)
 
-		// Update region for partial dispatch (voxel coordinates)
-		SHADER_PARAMETER(FIntVector, UpdateRegionMin)
-		SHADER_PARAMETER(FIntVector, UpdateRegionMax)
-
 		// Hole parameters
 		SHADER_PARAMETER(int32, NumHoles)
-
-		// Flags (1 = clear then apply, 0 = apply only)
-		SHADER_PARAMETER(int32, bIsFullRebuild)
 	END_SHADER_PARAMETER_STRUCT()
 
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
