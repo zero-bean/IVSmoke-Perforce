@@ -8,6 +8,8 @@
 #include "IVSmokeRenderer.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "IVSmokeHoleGeneratorComponent.h"
+#include "GameFramework/GameStateBase.h"
+#include "Net/UnrealNetwork.h"
 
 #if ENABLE_VISUAL_LOG
 #include "VisualLogger/VisualLogger.h"
@@ -62,6 +64,14 @@ void AIVSmokeVoxelVolume::BeginPlay()
 	HoleGeneratorComponent = FindComponentByClass<UIVSmokeHoleGeneratorComponent>();
 
 	CollisionComponent = FindComponentByClass<UIVSmokeCollisionComponent>();
+
+	if (HasAuthority())
+	{
+		if (bAutoStart)
+		{
+			StartSimulation();
+		}
+	}
 }
 
 void AIVSmokeVoxelVolume::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -76,27 +86,38 @@ void AIVSmokeVoxelVolume::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void AIVSmokeVoxelVolume::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AIVSmokeVoxelVolume, ServerState);
 }
 
 void AIVSmokeVoxelVolume::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
-
-	if (ActiveVoxelCount > 0)
+	UWorld* World = GetWorld();
+	if (World && World->GetNetMode() == NM_Client)
 	{
-		INC_DWORD_STAT_BY(STAT_IVSmoke_ActiveVoxelCount, ActiveVoxelCount);
+		if (World->GetGameState() == nullptr)
+		{
+			return;
+		}
 	}
 
-	switch (CurrentState)
+	Super::Tick(DeltaTime);
+
+	if (ActiveVoxelNum > 0)
+	{
+		INC_DWORD_STAT_BY(STAT_IVSmoke_ActiveVoxelCount, ActiveVoxelNum);
+	}
+
+	switch (ServerState.State)
 	{
 	case EIVSmokeVoxelVolumeState::Expansion:
-		UpdateExpansion(DeltaTime);
+		UpdateExpansion();
 		break;
 	case EIVSmokeVoxelVolumeState::Sustain:
-		UpdateSustain(DeltaTime);
+		UpdateSustain();
 		break;
 	case EIVSmokeVoxelVolumeState::Dissipation:
-		UpdateDissipation(DeltaTime);
+		UpdateDissipation();
 		break;
 	case EIVSmokeVoxelVolumeState::Finished:
 		[[fallthrough]];
@@ -106,6 +127,8 @@ void AIVSmokeVoxelVolume::Tick(float DeltaTime)
 		break;
 	}
 
+	TryUpdateCollision();
+
 #if WITH_EDITOR
 	if (DebugSettings.bDebugEnabled)
 	{
@@ -114,7 +137,7 @@ void AIVSmokeVoxelVolume::Tick(float DeltaTime)
 #endif
 
 #if ENABLE_VISUAL_LOG
-	UpdateVisualLogger();
+	// UpdateVisualLogger();
 #endif
 }
 
@@ -138,8 +161,6 @@ void AIVSmokeVoxelVolume::PostEditChangeProperty(struct FPropertyChangedEvent& P
 			PropertyName == GET_MEMBER_NAME_CHECKED(AIVSmokeVoxelVolume, Radii)				||
 			PropertyName == GET_MEMBER_NAME_CHECKED(AIVSmokeVoxelVolume, VoxelSize)			||
 			PropertyName == GET_MEMBER_NAME_CHECKED(AIVSmokeVoxelVolume, MaxVoxelNum)		||
-			PropertyName == GET_MEMBER_NAME_CHECKED(AIVSmokeVoxelVolume, ExpansionCurve)	||
-			PropertyName == GET_MEMBER_NAME_CHECKED(AIVSmokeVoxelVolume, DissipationCurve)	||
 			PropertyName == GET_MEMBER_NAME_CHECKED(AIVSmokeVoxelVolume, ExpansionNoise)	||
 			PropertyName == GET_MEMBER_NAME_CHECKED(AIVSmokeVoxelVolume, DissipationNoise);
 
@@ -165,6 +186,214 @@ void AIVSmokeVoxelVolume::PostEditMove(bool bFinished)
 //~==============================================================================
 // Flood Fill Simulation
 #pragma region Simulation
+
+void AIVSmokeVoxelVolume::Initialize()
+{
+	GridResolution.X = FMath::Max(1, (VolumeExtent.X * 2) - 1);
+	GridResolution.Y = FMath::Max(1, (VolumeExtent.Y * 2) - 1);
+	GridResolution.Z = FMath::Max(1, (VolumeExtent.Z * 2) - 1);
+
+	CenterOffset = VolumeExtent - FIntVector(1, 1, 1);
+
+	const int32 TotalGridSizeYZ = GridResolution.Y * GridResolution.Z;
+	const int32 TotalGridSize = GridResolution.X * TotalGridSizeYZ;
+
+	if (VoxelBirthTimes.Num() != TotalGridSize)
+	{
+		VoxelBirthTimes.SetNumUninitialized(TotalGridSize);
+	}
+
+	if (VoxelDeathTimes.Num() != TotalGridSize)
+	{
+		VoxelDeathTimes.SetNumUninitialized(TotalGridSize);
+	}
+
+	if (VoxelCosts.Num() != TotalGridSize)
+	{
+		VoxelCosts.SetNumUninitialized(TotalGridSize);
+	}
+
+	if (VoxelBits.Num() != TotalGridSizeYZ)
+	{
+		VoxelBits.SetNumUninitialized(TotalGridSizeYZ);
+	}
+
+	GeneratedVoxelIndices.Reserve(MaxVoxelNum);
+
+	ExpansionHeap.Reserve(MaxVoxelNum);
+	DissipationHeap.Reserve(MaxVoxelNum);
+
+	bIsInitialized = true;
+}
+
+void AIVSmokeVoxelVolume::StartSimulation_Implementation()
+{
+	if (ServerState.State != EIVSmokeVoxelVolumeState::Idle &&
+		ServerState.State != EIVSmokeVoxelVolumeState::Finished)
+	{
+		return;
+	}
+
+	ServerState.Generation += 1;
+
+	ServerState.RandomSeed = FMath::Rand();
+	ServerState.ExpansionStartTime = GetSyncWorldTimeSeconds();
+
+	ServerState.SustainStartTime = 0.0f;
+	ServerState.DissipationStartTime = 0.0f;
+
+	ServerState.State = EIVSmokeVoxelVolumeState::Expansion;
+
+	HandleStateTransition(ServerState.State);
+}
+
+void AIVSmokeVoxelVolume::StopSimulation_Implementation(bool bImmediate)
+{
+	if (ServerState.State == EIVSmokeVoxelVolumeState::Finished)
+	{
+		return;
+	}
+
+	if (bImmediate)
+	{
+		ServerState.State = EIVSmokeVoxelVolumeState::Finished;
+	}
+	else if (ServerState.State == EIVSmokeVoxelVolumeState::Expansion ||
+			 ServerState.State == EIVSmokeVoxelVolumeState::Sustain)
+	{
+		ServerState.State = EIVSmokeVoxelVolumeState::Dissipation;
+		ServerState.DissipationStartTime = GetSyncWorldTimeSeconds();
+
+		HandleStateTransition(ServerState.State);
+	}
+}
+
+void AIVSmokeVoxelVolume::ResetSimulation_Implementation()
+{
+	if (ServerState.State == EIVSmokeVoxelVolumeState::Idle)
+	{
+		return;
+	}
+
+	ServerState.State = EIVSmokeVoxelVolumeState::Idle;
+
+	ServerState.Generation++;
+
+	ServerState.ExpansionStartTime = 0.0f;
+	ServerState.SustainStartTime = 0.0f;
+	ServerState.DissipationStartTime = 0.0f;
+
+	HandleStateTransition(ServerState.State);
+}
+
+void AIVSmokeVoxelVolume::OnRep_ServerState()
+{
+	if (!bIsInitialized)
+	{
+		Initialize();
+	}
+
+	if (LocalGeneration != ServerState.Generation)
+	{
+		FastForwardSimulation();
+
+		LocalGeneration = ServerState.Generation;
+
+		TryUpdateCollision(true);
+
+		return;
+	}
+
+	HandleStateTransition(ServerState.State);
+}
+
+void AIVSmokeVoxelVolume::HandleStateTransition(EIVSmokeVoxelVolumeState NewState)
+{
+	if (LocalState == NewState)
+	{
+		return;
+	}
+
+	SimTime = 0.0f;
+
+	switch (NewState)
+	{
+	case EIVSmokeVoxelVolumeState::Idle:
+		ClearSimulationData();
+		break;
+	case EIVSmokeVoxelVolumeState::Expansion:
+	{
+		if (LocalState != EIVSmokeVoxelVolumeState::Idle ||
+			LocalState != EIVSmokeVoxelVolumeState::Finished)
+		{
+			ClearSimulationData();
+		}
+
+		RandomStream.Initialize(ServerState.RandomSeed);
+
+		int32 CenterIndex = UIVSmokeGridLibrary::GridToIndex(CenterOffset, GridResolution);
+
+		if (VoxelCosts.IsValidIndex(CenterIndex))
+		{
+			VoxelCosts[CenterIndex] = 0.0f;
+			ExpansionHeap.HeapPush({CenterIndex, INDEX_NONE, 0.0f});
+		}
+		break;
+	}
+	case EIVSmokeVoxelVolumeState::Sustain:
+		TryUpdateCollision(true);
+		break;
+	case EIVSmokeVoxelVolumeState::Dissipation:
+		break;
+	case EIVSmokeVoxelVolumeState::Finished:
+		if (bDestroyOnFinish)
+		{
+			Destroy();
+		}
+		ClearSimulationData();
+		break;
+	}
+
+	LocalState = NewState;
+}
+
+void AIVSmokeVoxelVolume::ClearSimulationData()
+{
+	if (!bIsInitialized)
+	{
+		Initialize();
+	}
+
+	const int32 TotalGridSizeYZ = GridResolution.Y * GridResolution.Z;
+	const int32 TotalGridSize = GridResolution.X * TotalGridSizeYZ;
+
+	// @todo Assertion Message
+	check(VoxelBirthTimes.Num() == TotalGridSize)
+	FMemory::Memzero(VoxelBirthTimes.GetData(), VoxelBirthTimes.Num() * sizeof(float));
+
+	check(VoxelDeathTimes.Num() == TotalGridSize)
+	FMemory::Memzero(VoxelDeathTimes.GetData(), VoxelDeathTimes.Num() * sizeof(float));
+
+	check(VoxelBits.Num() == TotalGridSizeYZ);
+	FMemory::Memzero(VoxelBits.GetData(), VoxelBits.Num() * sizeof(uint64));
+
+	// @todo Change this to fixed point
+	VoxelCosts.Init(FLT_MAX, VoxelCosts.Num());
+
+	GeneratedVoxelIndices.Reset();
+
+	ExpansionHeap.Reset();
+	DissipationHeap.Reset();
+
+	ActiveVoxelNum = 0;
+	SimTime = 0.0f;
+	DirtyLevel = EIVSmokeDirtyLevel::Dirty;
+
+	if (CollisionComponent)
+	{
+		CollisionComponent->ResetCollision();
+	}
+}
 
 bool AIVSmokeVoxelVolume::IsVoxelBlocked(const UWorld* World, const FVector& WorldPos) const
 {
@@ -209,205 +438,164 @@ bool AIVSmokeVoxelVolume::IsConnectionBlocked(const UWorld* World, const FVector
 	);
 }
 
-void AIVSmokeVoxelVolume::Initialize()
+void AIVSmokeVoxelVolume::FastForwardSimulation()
 {
-	VoxelWorldAABBMin = GetActorLocation();
-	VoxelWorldAABBMax = GetActorLocation();
+	bIsFastForwarding = true;
 
-	GridResolution.X = FMath::Max(1, (VolumeExtent.X * 2) - 1);
-	GridResolution.Y = FMath::Max(1, (VolumeExtent.Y * 2) - 1);
-	GridResolution.Z = FMath::Max(1, (VolumeExtent.Z * 2) - 1);
-
-	CenterOffset = VolumeExtent - FIntVector(1, 1, 1);
-
-	int32 TotalGridSize = GridResolution.X * GridResolution.Y * GridResolution.Z;
-
-	if (VoxelArray.Num() != TotalGridSize)
+	if (ServerState.State == EIVSmokeVoxelVolumeState::Expansion	||
+		ServerState.State == EIVSmokeVoxelVolumeState::Sustain		||
+		ServerState.State == EIVSmokeVoxelVolumeState::Dissipation)
 	{
-		VoxelArray.Init(0.0f, TotalGridSize);
+		HandleStateTransition(EIVSmokeVoxelVolumeState::Expansion);
+		UpdateExpansion();
 	}
-	else
+	if (ServerState.State == EIVSmokeVoxelVolumeState::Sustain ||
+		ServerState.State == EIVSmokeVoxelVolumeState::Dissipation)
 	{
-		FMemory::Memzero(VoxelArray.GetData(), VoxelArray.Num() * sizeof(float));
+		HandleStateTransition(EIVSmokeVoxelVolumeState::Sustain);
+		UpdateSustain();
 	}
-
-	int32 TotalGridSizeYZ = GridResolution.Y * GridResolution.Z;
-
-	if (VoxelBitArray.Num() != TotalGridSizeYZ)
+	if (ServerState.State == EIVSmokeVoxelVolumeState::Dissipation)
 	{
-		VoxelBitArray.Init(0ULL, TotalGridSizeYZ);
-	}
-	else
-	{
-		FMemory::Memzero(VoxelBitArray.GetData(), TotalGridSizeYZ * sizeof(uint64));
+		HandleStateTransition(EIVSmokeVoxelVolumeState::Dissipation);
+		UpdateDissipation();
 	}
 
-	VoxelCostArray.Empty(TotalGridSize);
-	VoxelCostArray.Init(FLT_MAX, TotalGridSize);
+	HandleStateTransition(ServerState.State);
 
-	GeneratedVoxelIndices.Reset();
-	MinHeap.Empty();
-
-	ActiveVoxelCount = 0;
-	DirtyLevel = EIVSmokeDirtyLevel::Dirty;
-	CurrentState = EIVSmokeVoxelVolumeState::Idle;
-	bIsInitialized = true;
-
-	LastCollisionUpdateTime = 0.0f;
+	bIsFastForwarding = false;
 }
 
-void AIVSmokeVoxelVolume::RequestStartSimulation_Implementation()
-{
-	const int32 NewSeed = FMath::Rand();
-	StartSimulation(NewSeed);
-}
 
-void AIVSmokeVoxelVolume::StartSimulation_Implementation(int32 InRandomSeed)
-{
-	if (!bIsInitialized)
-	{
-		Initialize();
-	}
-
-	RandomStream.Initialize(InRandomSeed);
-
-	int32 CenterIndex = UIVSmokeGridLibrary::GridToIndex(CenterOffset, GridResolution);
-	if (VoxelCostArray.IsValidIndex(CenterIndex))
-	{
-		VoxelCostArray[CenterIndex] = 0.0f;
-		MinHeap.HeapPush({ CenterIndex, INDEX_NONE, 0.0f });
-	}
-
-	CurrentState = EIVSmokeVoxelVolumeState::Expansion;
-	ElapsedTime = 0.0f;
-	bIsInitialized = false;
-}
-
-void AIVSmokeVoxelVolume::UpdateExpansion(float DeltaTime)
+void AIVSmokeVoxelVolume::UpdateExpansion()
 {
 	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_UpdateExpansion);
-
 	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::AIVSmokeVoxelVolume::UpdateExpansion");
 
-	int32 TotalVoxelNum = GeneratedVoxelIndices.Num();
+	const float CurrentSyncTime = GetSyncWorldTimeSeconds();
+	const float CurrentSimTime = CurrentSyncTime - ServerState.ExpansionStartTime;
 
-	ElapsedTime += DeltaTime;
+	const float StartSimTime = SimTime;
+	const float EndSimTime = CurrentSimTime;
 
-	float CurveValue = 1.0f;
-	if (ElapsedTime <= ExpansionDuration)
+	SimTime = CurrentSimTime;
+
+	int32 TargetSpawnNum = 0;
+
+	if (CurrentSimTime < ExpansionDuration)
 	{
-		CurveValue = GetCurveValue(ElapsedTime, ExpansionDuration, ExpansionCurve);
+		float CurveValue = GetCurveValue(CurrentSimTime, ExpansionDuration, ExpansionCurve);
+		TargetSpawnNum = FMath::FloorToInt(MaxVoxelNum * CurveValue);
+	}
+	else
+	{
+		TargetSpawnNum = MaxVoxelNum;
 	}
 
-	int32 TargetSpawnNum = FMath::FloorToInt(MaxVoxelNum * CurveValue);
-	int32 SpawnNum = TargetSpawnNum - TotalVoxelNum;
+	int32 SpawnNum = TargetSpawnNum - ActiveVoxelNum;
 
-	if (!MinHeap.IsEmpty() && SpawnNum > 0)
+	if (!ExpansionHeap.IsEmpty() && SpawnNum > 0)
 	{
-		ProcessExpansion(SpawnNum);
+		ProcessExpansion(SpawnNum, StartSimTime, EndSimTime);
 	}
 
-	float CurrentProgress = (MaxVoxelNum > 0) ? (static_cast<float>(TotalVoxelNum) / MaxVoxelNum) : 0.0f;
-
-	bool bIsTimeOver = ElapsedTime >= ExpansionDuration + FadeInDuration;
-
-	TryUpdateCollision(CurrentProgress, bIsTimeOver);
-
-	if (bIsTimeOver)
+	if (CurrentSimTime >= ExpansionDuration + FadeInDuration)
 	{
-		ElapsedTime = 0.0f;
-		LastCollisionUpdateTime = 0.0f;
-		LastCollisionUpdateProgress = 0.0f;
-		MinHeap.Empty();
+		if (HasAuthority())
+		{
+			ServerState.State = EIVSmokeVoxelVolumeState::Sustain;
+			ServerState.SustainStartTime = GetSyncWorldTimeSeconds();
 
-		CurrentState = EIVSmokeVoxelVolumeState::Sustain;
+			HandleStateTransition(ServerState.State);
+		}
 	}
 }
 
-void AIVSmokeVoxelVolume::UpdateSustain(float DeltaTime)
+void AIVSmokeVoxelVolume::UpdateSustain()
 {
 	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_UpdateSustain);
-
 	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::AIVSmokeVoxelVolume::UpdateSustain");
 
-	ElapsedTime += DeltaTime;
+	const float CurrentSyncTime = GetSyncWorldTimeSeconds();
+	const float CurrentSimTime = CurrentSyncTime - ServerState.SustainStartTime;
 
-	float CurveValue = GetCurveValue(ElapsedTime, SustainDuration, nullptr);
+	SimTime = CurrentSimTime;
 
-	bool bIsTimeOver = ElapsedTime >= SustainDuration;
-
-	int32 TotalVoxelNum = GeneratedVoxelIndices.Num();
-	int32 TargetVoxelNum = bIsTimeOver ? TotalVoxelNum : FMath::FloorToInt(TotalVoxelNum * CurveValue);
-	int32 VoxelNum = TargetVoxelNum - MinHeap.Num();
-	if (VoxelNum > 0)
+	if (!bIsInfinite && CurrentSimTime >= SustainDuration)
 	{
-		PrepareDissipation(VoxelNum);
-	}
+		if (HasAuthority())
+		{
+			ServerState.State = EIVSmokeVoxelVolumeState::Dissipation;
+			ServerState.DissipationStartTime = GetSyncWorldTimeSeconds();
 
-	if (bIsTimeOver)
-	{
-		ElapsedTime = 0.0f;
-
-		CurrentState = EIVSmokeVoxelVolumeState::Dissipation;
+			HandleStateTransition(ServerState.State);
+		}
 	}
 }
 
-void AIVSmokeVoxelVolume::UpdateDissipation(float DeltaTime)
+void AIVSmokeVoxelVolume::UpdateDissipation()
 {
 	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_UpdateDissipation);
-
 	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::AIVSmokeVoxelVolume::UpdateDissipation");
 
-	int32 TotalVoxelNum = GeneratedVoxelIndices.Num();
+	const float CurrentSyncTime = GetSyncWorldTimeSeconds();
+	const float CurrentSimTime = CurrentSyncTime - ServerState.DissipationStartTime;
 
-	ElapsedTime += DeltaTime;
+	const float StartSimTime = SimTime;
+	const float EndSimTime = CurrentSimTime;
 
-	float CurveValue = 1.0f;
-	if (ElapsedTime <= DissipationDuration)
+	SimTime = CurrentSimTime;
+
+	int32 TargetAliveNum = GeneratedVoxelIndices.Num();
+
+	if (CurrentSimTime < DissipationDuration)
 	{
-		CurveValue = GetCurveValue(ElapsedTime, DissipationDuration, DissipationCurve);
+		float CurveValue = GetCurveValue(CurrentSimTime, DissipationDuration, DissipationCurve);
+		TargetAliveNum = FMath::FloorToInt(GeneratedVoxelIndices.Num() * CurveValue);
+	}
+	else
+	{
+		TargetAliveNum = 0;
 	}
 
-	int32 TargetVoxelNum = FMath::FloorToInt(TotalVoxelNum * (1.0f - CurveValue));
-	int32 VoxelNum = FMath::Max(ActiveVoxelCount - TargetVoxelNum, 0);
-	if (!MinHeap.IsEmpty() && VoxelNum > 0)
+	int32 RemoveNum = DissipationHeap.Num() - TargetAliveNum;
+	UE_LOG(LogIVSmoke, Log, TEXT("Remove Num: %d"), RemoveNum);
+
+	if (RemoveNum > 0)
 	{
-		checkf(VoxelNum <= MinHeap.Num(), TEXT("[AIVSmokeVoxelVolume::UpdateDissipation] : MinHeap not enough elements to dissipate - Heap: %d, Request: %d"), MinHeap.Num(), VoxelNum);
-		ProcessDissipation(VoxelNum);
+		ProcessDissipation(RemoveNum, StartSimTime, EndSimTime);
 	}
 
-	float CurrentProgress = (TotalVoxelNum > 0) ? 1.0f - (static_cast<float>(ActiveVoxelCount) / TotalVoxelNum) : 0.0f;
-
-	bool bIsTimeOver = ElapsedTime >= DissipationDuration + FadeOutDuration;
-	if (!bIsTimeOver)
+	if (CurrentSimTime >= DissipationDuration + FadeOutDuration)
 	{
-		TryUpdateCollision(CurrentProgress, false);
-	}
+		SimTime = 0.0f;
 
-	if (bIsTimeOver)
-	{
-		GeneratedVoxelIndices.Empty();
-		MinHeap.Empty();
-		FMemory::Memzero(VoxelArray.GetData(), VoxelArray.Num() * sizeof(float));
-		ActiveVoxelCount = 0;
-		DirtyLevel = EIVSmokeDirtyLevel::Dirty;
+		TryUpdateCollision(true);
 
-		if (CollisionComponent)
+		if (HasAuthority())
 		{
-			CollisionComponent->ResetCollision();
-		}
+			ServerState.State = EIVSmokeVoxelVolumeState::Finished;
 
-		CurrentState = EIVSmokeVoxelVolumeState::Finished;
+			HandleStateTransition(ServerState.State);
+		}
 	}
 }
 
-void AIVSmokeVoxelVolume::ProcessExpansion(int32 VoxelNum)
+void AIVSmokeVoxelVolume::ProcessExpansion(int32 SpawnNum, float StartSimTime, float EndSimTime)
 {
 	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_ProcessExpansion);
-
 	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::AIVSmokeVoxelVolume::ProcessExpansion");
 
+	if (SpawnNum <= 0)
+	{
+		return;
+	}
+
 	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
 
 	FTransform ActorTrans = GetActorTransform();
 
@@ -418,12 +606,14 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 VoxelNum)
 	InvRadii.Y = 1.0f / FMath::Max(UE_KINDA_SMALL_NUMBER, Radii.Y);
 	InvRadii.Z = 1.0f / FMath::Max(UE_KINDA_SMALL_NUMBER, Radii.Z);
 
-	while (SpawnCount < VoxelNum && !MinHeap.IsEmpty())
+	const float InvSpawnNum = 1.0f / SpawnNum;
+
+	while (SpawnCount < SpawnNum && !ExpansionHeap.IsEmpty())
 	{
 		FIVSmokeVoxelNode CurrentNode;
-		MinHeap.HeapPop(CurrentNode);
+		ExpansionHeap.HeapPop(CurrentNode);
 
-		if (CurrentNode.Cost > VoxelCostArray[CurrentNode.Index])
+		if (CurrentNode.Cost > VoxelCosts[CurrentNode.Index])
 		{
 			continue;
 		}
@@ -433,11 +623,17 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 VoxelNum)
 			continue;
 		}
 
+		float Alpha = SpawnCount * InvSpawnNum;
+		float BirthTime = ServerState.ExpansionStartTime + FMath::Lerp(StartSimTime, EndSimTime, Alpha);
+		SetVoxelBirthTime(CurrentNode.Index, BirthTime);
+
 		GeneratedVoxelIndices.Add(CurrentNode.Index);
-		SetVoxelStateByIndex(CurrentNode.Index, true);
 		++SpawnCount;
 
-		if (GeneratedVoxelIndices.Num() >= MaxVoxelNum)
+		float DissipationCost = VoxelCosts[CurrentNode.Index] + RandomStream.FRandRange(0.0f, DissipationNoise);
+		DissipationHeap.HeapPush({CurrentNode.Index, INDEX_NONE, DissipationCost});
+
+		if (GetActiveVoxelNum() >= MaxVoxelNum)
 		{
 			return;
 		}
@@ -471,7 +667,7 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 VoxelNum)
 			}
 
 			int32 NextIndex = UIVSmokeGridLibrary::GridToIndex(NextGrid, GridResolution);
-			if (VoxelCostArray[NextIndex] != FLT_MAX)
+			if (VoxelCosts[NextIndex] != FLT_MAX)
 			{
 				continue;
 			}
@@ -484,84 +680,81 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 VoxelNum)
 			float DistCost = FMath::Sqrt((NormX * NormX) + (NormY * NormY) + (NormZ * NormZ));
 			float NoiseCost = RandomStream.FRandRange(0.0f, ExpansionNoise);
 
-			float NewCost = DistCost + NoiseCost;
-			if (NewCost < VoxelCostArray[NextIndex])
+			float ExpansionCost = DistCost + NoiseCost;
+			if (ExpansionCost < VoxelCosts[NextIndex])
 			{
-				VoxelCostArray[NextIndex] = NewCost;
-				MinHeap.HeapPush({ NextIndex, CurrentNode.Index, NewCost });
+				VoxelCosts[NextIndex] = ExpansionCost;
+				ExpansionHeap.HeapPush({ NextIndex, CurrentNode.Index, ExpansionCost });
 			}
 		}
 	}
 }
 
-void AIVSmokeVoxelVolume::PrepareDissipation(int32 VoxelNum)
+void AIVSmokeVoxelVolume::ProcessDissipation(int32 RemoveNum, float StartSimTime, float EndSimTime)
 {
-	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_PrepareDissipation);
+	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_ProcessDissipation);
+	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::AIVSmokeVoxelVolume::ProcessDissipation");
 
-	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::AIVSmokeVoxelVolume::PrepareDissipation");
-
-	if (GeneratedVoxelIndices.IsEmpty())
+	if (RemoveNum <= 0)
 	{
 		return;
 	}
 
-	int32 BeginIndex = MinHeap.Num();
-	int32 EndIndex = FMath::Min(BeginIndex + VoxelNum, GeneratedVoxelIndices.Num());
-	for (int32 i = BeginIndex; i < EndIndex; ++i)
-	{
-		int32 VoxelIndex = GeneratedVoxelIndices[i];
-		if (VoxelCostArray.IsValidIndex(VoxelIndex))
-		{
-			float DissipationPriority = VoxelCostArray[VoxelIndex] + RandomStream.FRandRange(0.0f, DissipationNoise);
-			MinHeap.HeapPush({ VoxelIndex, INDEX_NONE, -DissipationPriority });
-		}
-	}
-}
-
-void AIVSmokeVoxelVolume::ProcessDissipation(int32 VoxelNum)
-{
-	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_ProcessDissipation);
-
-	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::AIVSmokeVoxelVolume::ProcessDissipation");
+	float InvRemoveNum = 1.0f / RemoveNum;
 
 	int32 RemoveCount = 0;
-	while (RemoveCount < VoxelNum && !MinHeap.IsEmpty())
+	while (RemoveCount < RemoveNum && !DissipationHeap.IsEmpty())
 	{
 		FIVSmokeVoxelNode CurrentNode;
-		MinHeap.HeapPop(CurrentNode);
+		DissipationHeap.HeapPop(CurrentNode);
 
-		if (VoxelArray.IsValidIndex(CurrentNode.Index))
-		{
-			SetVoxelStateByIndex(CurrentNode.Index, false);
-		}
+		float Alpha = RemoveCount * InvRemoveNum;
+		float DeathTime = ServerState.DissipationStartTime + FMath::Lerp(StartSimTime, EndSimTime, Alpha);
+
+		SetVoxelDeathTime(CurrentNode.Index, DeathTime);
+
 		++RemoveCount;
 	}
 }
 
-#pragma endregion
-
-//~==============================================================================
-// Collision
-#pragma region Collision
-
-void AIVSmokeVoxelVolume::TryUpdateCollision(float CurrentProgress, bool bForceUpdate)
+void AIVSmokeVoxelVolume::TryUpdateCollision(bool bForce)
 {
-	if (!CollisionComponent)
+	if (bIsFastForwarding)
 	{
 		return;
 	}
 
-	bool bShouldUpdateByTime = ElapsedTime - LastCollisionUpdateTime >= MinCollisionUpdateTimeInterval;
-	bool bShouldUpdateByProgress = CurrentProgress - LastCollisionUpdateProgress >= MinCollisionUpdateProgressInterval;
-	if (bForceUpdate || (bShouldUpdateByTime && bShouldUpdateByProgress))
+	if (CollisionComponent)
 	{
-		// CollisionComponent->UpdateCollisionWithOctree(VoxelArray, GridResolution, VoxelSize);
-		CollisionComponent->UpdateCollision(VoxelBitArray, GridResolution, VoxelSize);
-		LastCollisionUpdateTime = ElapsedTime;
-		LastCollisionUpdateProgress = CurrentProgress;
+		CollisionComponent->TryUpdateCollision(
+			VoxelBits,
+			GridResolution,
+			VoxelSize,
+			ActiveVoxelNum,
+			GetSyncWorldTimeSeconds(),
+			bForce
+		);
 	}
 }
 
+float AIVSmokeVoxelVolume::GetSyncWorldTimeSeconds() const
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return 0.0f;
+	}
+
+	if (World->GetNetMode() == NM_Client)
+	{
+		if (AGameStateBase* GameState = World->GetGameState())
+		{
+			return GameState->GetServerWorldTimeSeconds();
+		}
+	}
+
+	return World->GetTimeSeconds();
+}
 #pragma endregion
 
 //~==============================================================================
@@ -596,90 +789,61 @@ FTextureRHIRef AIVSmokeVoxelVolume::GetHoleTexture() const
 	return nullptr;
 }
 
-void AIVSmokeVoxelVolume::SetVoxelDensity(const FIntVector& GridPos, float Density)
+void AIVSmokeVoxelVolume::SetVoxelBirthTime(int32 Index, float BirthTime)
 {
-	int32 LinearIndex = UIVSmokeGridLibrary::GridToIndex(GridPos, GridResolution);
-	SetVoxelDensityByIndex(LinearIndex, Density);
-}
-
-void AIVSmokeVoxelVolume::SetVoxelDensityByIndex(int32 LinearIndex, float Density)
-{
-	if (!VoxelArray.IsValidIndex(LinearIndex))
+	if (!VoxelBirthTimes.IsValidIndex(Index))
 	{
 		return;
 	}
 
-	const float OldDensity = VoxelArray[LinearIndex];
-	const bool bWasActive = OldDensity > 0.0f;
-	const bool bIsActive = Density > 0.0f;
-
-	VoxelArray[LinearIndex] = Density;
-
-	if (bIsActive && !bWasActive)
+	if (VoxelBirthTimes[Index] > 0.0f)
 	{
-		++ActiveVoxelCount;
+		return;
+	}
 
-		INC_DWORD_STAT(STAT_IVSmoke_CreatedVoxel);
-		const FIntVector GridPos = UIVSmokeGridLibrary::IndexToGrid(LinearIndex, GridResolution);
-		const FVector LocalPos = UIVSmokeGridLibrary::GridToLocal(GridPos, VoxelSize, CenterOffset);
-		const FVector WorldPos = GetActorTransform().TransformPosition(LocalPos);
-		VoxelWorldAABBMin = FVector::Min(WorldPos, VoxelWorldAABBMin);
-		VoxelWorldAABBMax = FVector::Max(WorldPos, VoxelWorldAABBMax);
-	}
-	else if (!bIsActive && bWasActive)
+	float SafeBirthTime = FMath::Max(BirthTime, 0.001f);
+	VoxelBirthTimes[Index] = SafeBirthTime;
+
+	if (VoxelDeathTimes.IsValidIndex(Index))
 	{
-		--ActiveVoxelCount;
-		INC_DWORD_STAT(STAT_IVSmoke_DestroyedVoxel);
+		VoxelDeathTimes[Index] = 0.0f;
 	}
+
+	UIVSmokeGridLibrary::SetVoxelBit(VoxelBits, Index, GridResolution, true);
+
+	++ActiveVoxelNum;
+	INC_DWORD_STAT(STAT_IVSmoke_CreatedVoxel);
 
 	DirtyLevel = EIVSmokeDirtyLevel::Dirty;
+
+	const FIntVector GridPos = UIVSmokeGridLibrary::IndexToGrid(Index, GridResolution);
+	const FVector LocalPos = UIVSmokeGridLibrary::GridToLocal(GridPos, VoxelSize, CenterOffset);
+	const FVector WorldPos = GetActorTransform().TransformPosition(LocalPos);
+	VoxelWorldAABBMin = FVector::Min(WorldPos, VoxelWorldAABBMin);
+	VoxelWorldAABBMax = FVector::Max(WorldPos, VoxelWorldAABBMax);
 }
 
-void AIVSmokeVoxelVolume::SetVoxelState(const FIntVector& GridPos, bool bIsActive)
+void AIVSmokeVoxelVolume::SetVoxelDeathTime(int32 Index, float DeathTime)
 {
-	int32 LinearIndex = UIVSmokeGridLibrary::GridToIndex(GridPos, GridResolution);
-	SetVoxelStateByIndex(LinearIndex, bIsActive);
-}
-
-void AIVSmokeVoxelVolume::SetVoxelStateByIndex(int32 LinearIndex, bool bIsActive)
-{
-	if (!VoxelArray.IsValidIndex(LinearIndex))
+	if (!VoxelDeathTimes.IsValidIndex(Index))
 	{
 		return;
 	}
 
-	const float CurrentWorldTime = FMath::Max(GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0f, 0.001f);
-
-	const float NewValue = bIsActive ? CurrentWorldTime : -CurrentWorldTime;
-	const float OldValue = VoxelArray[LinearIndex];
-
-	if (OldValue != NewValue)
+	if (VoxelDeathTimes[Index] > 0.0f)
 	{
-		VoxelArray[LinearIndex] = NewValue;
-
-		UIVSmokeGridLibrary::SetVoxelBit(VoxelBitArray, LinearIndex, GridResolution, bIsActive);
-
-		const bool bWasActive = OldValue > 0.0f;
-
-		if (bIsActive && !bWasActive)
-		{
-			++ActiveVoxelCount;
-			INC_DWORD_STAT(STAT_IVSmoke_CreatedVoxel);
-
-			const FIntVector GridPos = UIVSmokeGridLibrary::IndexToGrid(LinearIndex, GridResolution);
-			const FVector LocalPos = UIVSmokeGridLibrary::GridToLocal(GridPos, VoxelSize, CenterOffset);
-			const FVector WorldPos = GetActorTransform().TransformPosition(LocalPos);
-			VoxelWorldAABBMin = FVector::Min(WorldPos, VoxelWorldAABBMin);
-			VoxelWorldAABBMax = FVector::Max(WorldPos, VoxelWorldAABBMax);
-		}
-		else if (!bIsActive && bWasActive)
-		{
-			--ActiveVoxelCount;
-			INC_DWORD_STAT(STAT_IVSmoke_DestroyedVoxel);
-		}
-
-		DirtyLevel = EIVSmokeDirtyLevel::Dirty;
+		return;
 	}
+
+	const float SafeDeathTime = FMath::Max(DeathTime, 0.001f);
+	VoxelDeathTimes[Index] = SafeDeathTime;
+
+	UIVSmokeGridLibrary::SetVoxelBit(VoxelBits, Index, GridResolution, false);
+
+	--ActiveVoxelNum;
+	INC_DWORD_STAT(STAT_IVSmoke_DestroyedVoxel)
+
+	DirtyLevel = EIVSmokeDirtyLevel::Dirty;
 }
 
 #pragma endregion
@@ -690,28 +854,21 @@ void AIVSmokeVoxelVolume::SetVoxelStateByIndex(int32 LinearIndex, bool bIsActive
 
 void AIVSmokeVoxelVolume::PreviewSimulation()
 {
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
 	bIsEditorPreviewing = true;
-	ResetSimulation();
-	StartSimulation(RandomSeed);
-}
+	ClearSimulationData();
 
-void AIVSmokeVoxelVolume::ResetSimulation()
-{
-	Initialize();
+	ServerState.RandomSeed = RandomSeed;
+	ServerState.State = EIVSmokeVoxelVolumeState::Expansion;
+	ServerState.ExpansionStartTime = World->GetTimeSeconds();
+	ServerState.Generation += 1;
 
-	FlushPersistentDebugLines(GetWorld());
-
-	if (CollisionComponent)
-	{
-		CollisionComponent->ResetCollision();
-	}
-
-#if WITH_EDITOR
-	if (DebugMeshComponent)
-	{
-		DebugMeshComponent->ClearInstances();
-	}
-#endif
+	OnRep_ServerState();
 }
 
 void AIVSmokeVoxelVolume::DrawDebugVisualization() const
@@ -787,7 +944,7 @@ void AIVSmokeVoxelVolume::DrawDebugVoxelWireframes() const
 	for (int32 i = 0; i < MaxVisibleIndex; ++i)
 	{
 		int32 VoxelIndex = GeneratedVoxelIndices[i];
-		if (!VoxelArray.IsValidIndex(VoxelIndex) || !IsVoxelActive(VoxelIndex))
+		if (!IsVoxelActive(VoxelIndex))
 		{
 			continue;
 		}
@@ -854,7 +1011,7 @@ void AIVSmokeVoxelVolume::DrawDebugVoxelMeshes() const
 	{
 		int32 VoxelIndex = GeneratedVoxelIndices[i];
 
-		if (!VoxelArray.IsValidIndex(VoxelIndex) || !IsVoxelActive(VoxelIndex))
+		if (!IsVoxelActive(VoxelIndex))
 		{
 			continue;
 		}
@@ -913,7 +1070,7 @@ void AIVSmokeVoxelVolume::DrawDebugStatusText() const
 	}
 
 	FString StateStr;
-	switch (CurrentState)
+	switch (ServerState.State)
 	{
 	case EIVSmokeVoxelVolumeState::Idle:		StateStr = TEXT("Idle"); break;
 	case EIVSmokeVoxelVolumeState::Expansion:	StateStr = TEXT("Expansion"); break;
@@ -923,16 +1080,16 @@ void AIVSmokeVoxelVolume::DrawDebugStatusText() const
 	default:									StateStr = TEXT("Unknown"); break;
 	}
 
-	float Percent = MaxVoxelNum > 0 ? (static_cast<float>(ActiveVoxelCount) / MaxVoxelNum * 100.0f) : 0.0f;
+	float Percent = MaxVoxelNum > 0 ? (static_cast<float>(ActiveVoxelNum) / MaxVoxelNum * 100.0f) : 0.0f;
 
 	FString DebugMsg = FString::Printf(
 		TEXT("State: %s\nTime: %.2fs\nVoxels: %d / %d (%.1f%%)\nHeap: %d"),
 		*StateStr,
-		ElapsedTime,
-		ActiveVoxelCount,
+		SimTime,
+		ActiveVoxelNum,
 		MaxVoxelNum,
 		Percent,
-		MinHeap.Num()
+		ExpansionHeap.Num()
 	);
 
 	FVector TextPos = GetActorLocation();
@@ -950,14 +1107,14 @@ void AIVSmokeVoxelVolume::UpdateVisualLogger() const
 
 	UE_VLOG(this, LogIVSmokeVis, Log,
 		TEXT("State: %d | Voxels: %d/%d | Heap: %d | Hash: 0x%08X"),
-		(int32)CurrentState,
-		ActiveVoxelCount,
+		(int32)ServerState.State,
+		ActiveVoxelNum,
 		GeneratedVoxelIndices.Num(),
-		MinHeap.Num(),
+		ExpansionHeap.Num(),
 		Checksum
 	);
 
-	if (ActiveVoxelCount > MaxVoxelNum)
+	if (ActiveVoxelNum > MaxVoxelNum)
 	{
 		UE_VLOG(this, LogIVSmokeVis, Error, TEXT("Active Voxel Count Exceeded Max Limit!"));
 	}
@@ -965,7 +1122,7 @@ void AIVSmokeVoxelVolume::UpdateVisualLogger() const
 	FBox VoxelBounds(VoxelWorldAABBMin, VoxelWorldAABBMax);
 
 	FColor DrawColor = FColor::White;
-	switch(CurrentState)
+	switch(ServerState.State)
 	{
 	case EIVSmokeVoxelVolumeState::Expansion: DrawColor = FColor::Green; break;
 	case EIVSmokeVoxelVolumeState::Sustain:   DrawColor = FColor::Yellow; break;
@@ -982,14 +1139,14 @@ uint32 AIVSmokeVoxelVolume::CalculateSimulationChecksum() const
 {
 	uint32 Checksum = 0;
 
-	Checksum = FCrc::MemCrc32(&ActiveVoxelCount, sizeof(int32), Checksum);
+	Checksum = FCrc::MemCrc32(&ActiveVoxelNum, sizeof(int32), Checksum);
 
-	int32 StateInt = (int32)CurrentState;
+	int32 StateInt = (int32)ServerState.State;
 	Checksum = FCrc::MemCrc32(&StateInt, sizeof(int32), Checksum);
 
-	if (VoxelBitArray.Num() > 0)
+	if (VoxelBits.Num() > 0)
 	{
-		Checksum = FCrc::MemCrc32(VoxelBitArray.GetData(), VoxelBitArray.Num() * sizeof(uint64), Checksum);
+		Checksum = FCrc::MemCrc32(VoxelBits.GetData(), VoxelBits.Num() * sizeof(uint64), Checksum);
 	}
 
 	return Checksum;

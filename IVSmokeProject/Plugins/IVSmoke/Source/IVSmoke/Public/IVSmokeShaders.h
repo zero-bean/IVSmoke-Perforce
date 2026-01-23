@@ -98,7 +98,8 @@ public:
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeStructuredToTextureCS, FGlobalShader);
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>, Desti)
-		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<float>, Source)
+		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<float>, BirthTimes)
+		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<float>, DeathTimes)
 		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<FIVSmokeVolumeGPUData>, VolumeDataBuffer)
 
 		SHADER_PARAMETER(FIntVector, TexSize)

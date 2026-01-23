@@ -2,13 +2,19 @@
 #include "IVSmokeCommon.ush"
 
 RWTexture3D<float> Desti;
-StructuredBuffer<float> Source;
+StructuredBuffer<float> BirthTimes;
+StructuredBuffer<float> DeathTimes;
 StructuredBuffer<FVolumeGPUData> VolumeDataBuffer;
 
 int3 TexSize;
 int3 VoxelResolution;
 int PackedInterval;
 float GameTime;
+
+bool IsValidTime(float t)
+{
+	return t >= 0.001 && t <= GameTime;
+}
 
 float GetExpansionCurve(float t)
 {
@@ -44,25 +50,23 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	uint LocalIdx = PixelCoord.x + VoxelResolution.x * PixelCoord.y + VoxelResolution.x * VoxelResolution.y * LocalZ;
 	uint SourceIdx = VolumeData.VoxelBufferOffset + LocalIdx;
 
-	float FinalDensity = 0.0;
-	float StoredTime = Source[SourceIdx];
-	if (abs(StoredTime) > 0.001)
-	{
-		if (StoredTime > 0.0)
-		{
-			float Progress = saturate((GameTime - StoredTime) / VolumeData.FadeInDuration);
-			FinalDensity = GetExpansionCurve(Progress);
-		}
-		else
-		{
-			float Progress = saturate((GameTime + StoredTime) / VolumeData.FadeOutDuration);
-			FinalDensity = GetDissipationCurve(Progress);
-		}
-
-		Desti[PixelCoord] = FinalDensity;
-	}
-	else
+	float BirthTime = BirthTimes[SourceIdx];
+	if (!IsValidTime(BirthTime))
 	{
 		Desti[PixelCoord] = 0.0f;
+		return;
 	}
+
+	float ExpansionProgress = saturate((GameTime - BirthTime) / VolumeData.FadeInDuration);
+	float ExpansionDensity = GetExpansionCurve(ExpansionProgress);
+
+	float DeathTime = DeathTimes[SourceIdx];
+	float DissipationDensity = 1.0f;
+	if (IsValidTime(DeathTime))
+	{
+		float DissipationProgress = saturate((GameTime - DeathTime) / VolumeData.FadeOutDuration);
+		DissipationDensity = GetDissipationCurve(DissipationProgress);
+	}
+
+	Desti[PixelCoord] = ExpansionDensity * DissipationDensity;
 }

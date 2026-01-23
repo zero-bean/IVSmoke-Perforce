@@ -367,7 +367,8 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		Result.VoxelResolution.Z * Result.VolumeCount + TexturePackInterval * (Result.VolumeCount - 1)
 	);
 	int32 TotalVoxelSize = VoxelAtlasResolution.X * VoxelAtlasResolution.Y * VoxelAtlasResolution.Z;
-	Result.PackedVoxelData.Reserve(TotalVoxelSize);
+	Result.PackedVoxelBirthTimes.Reserve(TotalVoxelSize);
+	Result.PackedVoxelDeathTimes.Reserve(TotalVoxelSize);
 
 	// Collect data from all volumes (Game Thread - safe to access)
 	for (int32 i = 0; i < InVolumes.Num(); ++i)
@@ -381,11 +382,16 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		// ============================================
 		// Copy VoxelArray data (Game Thread safe)
 		// ============================================
-		const TArray<float>& VoxelArray = Volume->GetVoxelArray();
-		Result.PackedVoxelData.Append(VoxelArray);
+		const TArray<float>& VoxelBirthTimes = Volume->GetVoxelBirthTimes();
+		Result.PackedVoxelBirthTimes.Append(VoxelBirthTimes);
+
+		const TArray<float>& VoxelDeathTimes = Volume->GetVoxelDeathTimes();
+		Result.PackedVoxelDeathTimes.Append(VoxelDeathTimes);
+
 		if (i < InVolumes.Num() - 1)
 		{
-			Result.PackedVoxelData.Append(VoxelIntervalData);
+			Result.PackedVoxelBirthTimes.Append(VoxelIntervalData);
+			Result.PackedVoxelDeathTimes.Append(VoxelIntervalData);
 		}
 
 		// ============================================
@@ -436,7 +442,7 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		GPUData.VoxelBufferOffset = Result.VoxelResolution.X * Result.VoxelResolution.Y *
 			(Result.VoxelResolution.Z + TexturePackInterval) * i;
 		GPUData.GridResolution = FIntVector3(GridRes.X, GridRes.Y, GridRes.Z);
-		GPUData.VoxelCount = VoxelArray.Num();
+		GPUData.VoxelCount = VoxelBirthTimes.Num();
 		GPUData.CenterOffset = FVector3f(CenterOff.X, CenterOff.Y, CenterOff.Z);
 		GPUData.VolumeWorldAABBMin = FVector3f(WorldBox.Min);
 		GPUData.VolumeWorldAABBMax = FVector3f(WorldBox.Max);
@@ -625,11 +631,12 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		}
 	}
 
-	Result.bIsValid = Result.VolumeDataArray.Num() > 0 && Result.PackedVoxelData.Num() > 0;
+	Result.bIsValid = Result.VolumeDataArray.Num() && Result.PackedVoxelBirthTimes.Num() > 0 && Result.PackedVoxelDeathTimes.Num() > 0;
 
 	if (InVolumes.Num() > 0 && InVolumes[0])
 	{
-		Result.GameTime = InVolumes[0]->GetWorld()->GetTimeSeconds();
+		Result.GameTime = InVolumes[0]->GetSyncWorldTimeSeconds();
+		UE_LOG(LogIVSmoke, Log, TEXT("Render Time: %f"), Result.GameTime);
 	}
 	else
 	{
@@ -1139,9 +1146,13 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	// Create GPU buffers
 	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
 
-	FRDGBufferDesc PackedVoxelBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(float), RenderData.PackedVoxelData.Num());
-	FRDGBufferRef PackedVoxelBuffer = GraphBuilder.CreateBuffer(PackedVoxelBufferDesc, TEXT("IVSmoke_PackedVoxelBuffer"));
-	GraphBuilder.QueueBufferUpload(PackedVoxelBuffer, RenderData.PackedVoxelData.GetData(), RenderData.PackedVoxelData.Num() * sizeof(float));
+	FRDGBufferDesc BirthBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(float), RenderData.PackedVoxelBirthTimes.Num());
+	FRDGBufferRef BirthBuffer = GraphBuilder.CreateBuffer(BirthBufferDesc, TEXT("IVSmoke_PackedBirthBuffer"));
+	GraphBuilder.QueueBufferUpload(BirthBuffer, RenderData.PackedVoxelBirthTimes.GetData(), RenderData.PackedVoxelBirthTimes.Num() * sizeof(float));
+
+	FRDGBufferDesc DeathBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(float), RenderData.PackedVoxelDeathTimes.Num());
+	FRDGBufferRef DeathBuffer = GraphBuilder.CreateBuffer(DeathBufferDesc, TEXT("IVSmoke_PackedDeathBuffer"));
+	GraphBuilder.QueueBufferUpload(DeathBuffer, RenderData.PackedVoxelDeathTimes.GetData(), RenderData.PackedVoxelDeathTimes.Num() * sizeof(float));
 
 	FRDGBufferDesc VolumeBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FIVSmokeVolumeGPUData), RenderData.VolumeDataArray.Num());
 	FRDGBufferRef VolumeBuffer = GraphBuilder.CreateBuffer(VolumeBufferDesc, TEXT("IVSmokeVolumeDataBuffer"));
@@ -1151,7 +1162,8 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	TShaderMapRef<FIVSmokeStructuredToTextureCS> StructuredCopyShader(ShaderMap);
 	auto* StructuredCopyParams = GraphBuilder.AllocParameters<FIVSmokeStructuredToTextureCS::FParameters>();
 	StructuredCopyParams->Desti = GraphBuilder.CreateUAV(PackedVoxelAtlas);
-	StructuredCopyParams->Source = GraphBuilder.CreateSRV(PackedVoxelBuffer);
+	StructuredCopyParams->BirthTimes = GraphBuilder.CreateSRV(BirthBuffer);
+	StructuredCopyParams->DeathTimes = GraphBuilder.CreateSRV(DeathBuffer);
 	StructuredCopyParams->VolumeDataBuffer = GraphBuilder.CreateSRV(VolumeBuffer);
 	StructuredCopyParams->TexSize = VoxelAtlasResolution;
 	StructuredCopyParams->VoxelResolution = RenderData.VoxelResolution;

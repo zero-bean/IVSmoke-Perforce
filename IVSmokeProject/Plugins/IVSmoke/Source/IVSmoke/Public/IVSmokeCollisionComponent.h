@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "IVSmokeOctree.h"
 #include "Components/PrimitiveComponent.h"
 #include "IVSmokeCollisionComponent.generated.h"
 
@@ -30,16 +29,10 @@ protected:
 #pragma region Collision
 public:
 	/** @todo Documentation */
-	void UpdateCollisionWithOctree(const TArray<float>& VoxelArray, const FIntVector& GridResolution, float VoxelSize);
-
-	/** @todo Documentation */
-	void UpdateCollision(const TArray<uint64>& VoxelBitArray, const FIntVector& GridResolution, float VoxelSize);
+	void TryUpdateCollision(const TArray<uint64>& VoxelBitArray, const FIntVector& GridResolution, float VoxelSize, int32 ActiveVoxelNum, float SyncTime, bool bForce = false);
 
 	/** @todo Documentation */
 	void ResetCollision();
-
-	/** @todo Documentation */
-	FORCEINLINE const FIVSmokeOctree& GetOctree() const { return Octree; }
 
 	// @todo Documentation
 	UPROPERTY(EditAnywhere, Category = "IVSmoke | Config")
@@ -53,22 +46,31 @@ public:
 	UPROPERTY(EditAnywhere, Category = "IVSmoke | Config")
 	TArray<TEnumAsByte<ECollisionChannel>> BlockChannelArray;
 
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Config", meta = (ClampMin = "1"))
+	int32 MinCollisionUpdateVoxelNum = 50;
+
+	// @todo Documentation
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Config", meta = (ClampMin = "0.0"))
+	float MinCollisionUpdateInterval = 0.25f;
+
 private:
+	/** @todo Documentation */
+	void UpdateCollision(const TArray<uint64>& VoxelBitArray, const FIntVector& GridResolution, float VoxelSize);
+
 	/** @todo Documentation */
 	void ApplyCollisionSettings();
 
 	/** @todo Documentation */
 	void FinalizePhysicsUpdate();
 
-	/** @todo Documentation */
-	void RebuildPhysicsGeometryWithOctree();
-
 	// @todo Documentation
 	UPROPERTY(Transient)
 	TObjectPtr<UBodySetup> VoxelBodySetup;
 
-	// @todo Documentation
-	FIVSmokeOctree Octree;
+	float LastSyncTime = 0.0f;
+
+	int32 LastActiveVoxelNum = 0;
 #pragma endregion
 
 	//~==============================================================================

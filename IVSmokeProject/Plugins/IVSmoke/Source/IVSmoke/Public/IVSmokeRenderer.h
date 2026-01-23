@@ -27,8 +27,11 @@ struct FIVSmokeOccupancyResources;
  */
 struct IVSMOKE_API FIVSmokePackedRenderData
 {
-	/** All Volume VoxelArrays packed into one array (Game Thread에서 패킹) */
-	TArray<float> PackedVoxelData;
+	/** @todo Documentation */
+	TArray<float> PackedVoxelBirthTimes;
+
+	/** @todo Documentation */
+	TArray<float> PackedVoxelDeathTimes;
 
 	/** Per-volume GPU metadata */
 	TArray<FIVSmokeVolumeGPUData> VolumeDataArray;
@@ -98,7 +101,8 @@ struct IVSMOKE_API FIVSmokePackedRenderData
 	/** Reset to invalid state */
 	void Reset()
 	{
-		PackedVoxelData.Empty();
+		PackedVoxelBirthTimes.Empty();
+		PackedVoxelDeathTimes.Empty();
 		VolumeDataArray.Empty();
 		HoleTextures.Empty();
 		HoleTextureSizes.Empty();
@@ -155,7 +159,7 @@ public:
 	FCriticalSection& GetVolumesMutex() const { return VolumesMutex; }
 
 	// ============================================================================
-	// Thread-Safe Render Data (Game Thread → Render Thread)
+	// Thread-Safe Render Data (Game Thread Render Thread)
 	// ============================================================================
 
 	/**
@@ -272,7 +276,7 @@ private:
 
 	/**
 	 * Copy/Resize Pass using bilinear sampling.
-	 * Used for progressive upscaling (1/4 → 1/2 → Full) to improve quality.
+	 * Used for progressive upscaling (1/4 1/2 Full) to improve quality.
 	 *
 	 * @param GraphBuilder       RDG builder
 	 * @param View               Current scene view

@@ -39,27 +39,39 @@ void UIVSmokeCollisionComponent::OnCreatePhysicsState()
 	Super::OnCreatePhysicsState();
 }
 
-#pragma endregion
-
-//~==============================================================================
-// Collision Management
-#pragma region Collision
-
-void UIVSmokeCollisionComponent::UpdateCollisionWithOctree(const TArray<float>& VoxelArray, const FIntVector& GridResolution, float VoxelSize)
+void UIVSmokeCollisionComponent::TryUpdateCollision(const TArray<uint64>& VoxelBitArray, const FIntVector& GridResolution, float VoxelSize, int32 ActiveVoxelNum, float SyncTime, bool bForce)
 {
-	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_UpdateCollisionWithOctree);
-
-	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::UIVSmokeCollisionComponent::UpdateCollisionWithOctree");
-
 	if (!bCollisionEnabled)
 	{
 		return;
 	}
 
-	Octree.Build(VoxelArray, GridResolution, VoxelSize);
+	if (!bForce)
+	{
+		if (LastSyncTime > 0.0f && (SyncTime - LastSyncTime) < MinCollisionUpdateInterval)
+		{
+			return;
+		}
 
-	RebuildPhysicsGeometryWithOctree();
+		int32 Diff = FMath::Abs(ActiveVoxelNum - LastActiveVoxelNum);
+
+		if (Diff < MinCollisionUpdateVoxelNum)
+		{
+			return;
+		}
+	}
+
+	UpdateCollision(VoxelBitArray, GridResolution, VoxelSize);
+
+	LastSyncTime = SyncTime;
+	LastActiveVoxelNum = ActiveVoxelNum;
 }
+
+#pragma endregion
+
+//~==============================================================================
+// Collision Management
+#pragma region Collision
 
 void UIVSmokeCollisionComponent::UpdateCollision(const TArray<uint64>& VoxelBitArray, const FIntVector& GridResolution, float VoxelSize)
 {
@@ -175,8 +187,6 @@ void UIVSmokeCollisionComponent::UpdateCollision(const TArray<uint64>& VoxelBitA
 
 void UIVSmokeCollisionComponent::ResetCollision()
 {
-	Octree.Reset();
-
 	if (VoxelBodySetup)
 	{
 		VoxelBodySetup->AggGeom.EmptyElements();
@@ -185,52 +195,6 @@ void UIVSmokeCollisionComponent::ResetCollision()
 	}
 
 	RecreatePhysicsState();
-}
-
-void UIVSmokeCollisionComponent::RebuildPhysicsGeometryWithOctree()
-{
-	SCOPE_CYCLE_COUNTER(STAT_IVSmoke_RebuildPhysicsGeometry);
-
-	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::UIVSmokeCollisionComponent::RebuildPhysicsGeometry");
-
-	UBodySetup* BodySetup = GetBodySetup();
-	if (!BodySetup)
-	{
-		return;
-	}
-
-	BodySetup->AggGeom.EmptyElements();
-
-	const TArray<FIVSmokeOctreeNode>& NodeArray = Octree.GetNodeArray();
-	const TArray<int32>& ActiveLeafIndexArray = Octree.GetActiveLeafIndexArray();
-
-	for (int32 NodeIndex : ActiveLeafIndexArray)
-	{
-		if (!NodeArray.IsValidIndex(NodeIndex))
-		{
-			continue;
-		}
-
-		const FIVSmokeOctreeNode& Node = NodeArray[NodeIndex];
-		if (!Node.bIsOccupied)
-		{
-			continue;
-		}
-
-		FKBoxElem BoxElem;
-		BoxElem.Center = Node.Center;
-
-		float Diameter = Node.Extent * 2.0f;
-		BoxElem.X = Diameter;
-		BoxElem.Y = Diameter;
-		BoxElem.Z = Diameter;
-
-		BoxElem.Rotation = FRotator::ZeroRotator;
-
-		BodySetup->AggGeom.BoxElems.Add(BoxElem);
-	}
-
-	FinalizePhysicsUpdate();
 }
 
 void UIVSmokeCollisionComponent::ApplyCollisionSettings()
