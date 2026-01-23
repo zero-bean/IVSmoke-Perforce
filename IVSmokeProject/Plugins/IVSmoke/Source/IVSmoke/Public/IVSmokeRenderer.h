@@ -16,9 +16,8 @@ class FIVSmokeCSMRenderer;
 class FIVSmokeVSMProcessor;
 struct FIVSmokeOccupancyResources;
 
-// ============================================================================
+//~==============================================================================
 // Render Data Structures (Thread-Safe Data Transfer)
-// ============================================================================
 
 /**
  * Packed render data for all smoke volumes.
@@ -129,10 +128,8 @@ class IVSMOKE_API FIVSmokeRenderer
 public:
 	static FIVSmokeRenderer& Get();
 
-	// ============================================================================
+	//~==============================================================================
 	// Lifecycle
-
-	// ============================================================================
 
 	/** Initialize renderer resources. Called on first use or settings change. */
 	void Initialize();
@@ -143,13 +140,16 @@ public:
 	/** Check if renderer is initialized with valid resources. */
 	bool IsInitialized() const { return NoiseVolume != nullptr; }
 
-	// ============================================================================
+	//~==============================================================================
 	// Volume Management
-	// ============================================================================
 
+	/** Register a smoke volume for rendering. */
 	void AddVolume(AIVSmokeVoxelVolume* Volume);
+
+	/** Unregister a smoke volume from rendering. */
 	void RemoveVolume(AIVSmokeVoxelVolume* Volume);
 
+	/** Check if any volumes are registered for rendering. */
 	bool HasVolumes() const;
 
 	/** Access to volumes array (for PrepareRenderData). */
@@ -158,9 +158,8 @@ public:
 	/** Access to volumes mutex (for thread-safe iteration). */
 	FCriticalSection& GetVolumesMutex() const { return VolumesMutex; }
 
-	// ============================================================================
+	//~==============================================================================
 	// Thread-Safe Render Data (Game Thread Render Thread)
-	// ============================================================================
 
 	/**
 	 * Prepare render data from all registered volumes.
@@ -182,9 +181,8 @@ public:
 		CachedRenderData = MoveTemp(InRenderData);
 	}
 
-	// ============================================================================
+	//~==============================================================================
 	// Rendering
-	// ============================================================================
 
 	/**
 	 * Main render entry point called from SceneViewExtension.
@@ -205,9 +203,8 @@ private:
 	~FIVSmokeRenderer();
 
 	FIntVector GetAtlasTexCount(const FIntVector& TexSize, const int32 TexCount, const int32 TexturePackInterval, const int32 TexturePackMaxSize);
-	// ============================================================================
+	//~==============================================================================
 	// Resource Management
-	// ============================================================================
 
 	/** Create noise volume texture using settings from UIVSmokeSettings. */
 	void CreateNoiseVolume();
@@ -215,9 +212,8 @@ private:
 	/** Get the effective preset for a volume (override or default). */
 	const UIVSmokeSmokePreset* GetEffectivePreset(const AIVSmokeVoxelVolume* Volume) const;
 
-	// ============================================================================
+	//~==============================================================================
 	// Pass Functions
-	// ============================================================================
 
 	/**
 	 * Multi-Volume Ray Marching with Occupancy Optimization (Three-Pass Pipeline).
@@ -276,7 +272,7 @@ private:
 
 	/**
 	 * Copy/Resize Pass using bilinear sampling.
-	 * Used for progressive upscaling (1/4 1/2 Full) to improve quality.
+	 * Used for upscaling (1/2 resolution to Full) to improve quality.
 	 *
 	 * @param GraphBuilder       RDG builder
 	 * @param View               Current scene view
@@ -361,9 +357,8 @@ private:
 		float Sharpness
 	);
 
-	// ============================================================================
+	//~==============================================================================
 	// State
-	// ============================================================================
 
 	TArray<TWeakObjectPtr<AIVSmokeVoxelVolume>> Volumes;
 	mutable FCriticalSection VolumesMutex;
@@ -374,9 +369,8 @@ private:
 	/** Elapsed time for animation. */
 	float ElapsedTime = 0.0f;
 
-	// ============================================================================
+	//~==============================================================================
 	// External Shadowing (CSM - Cascaded Shadow Maps)
-	// ============================================================================
 
 	/** CSM renderer (manages all cascade captures). */
 	TUniquePtr<FIVSmokeCSMRenderer> CSMRenderer;
@@ -411,9 +405,8 @@ private:
 	 */
 	bool GetMainDirectionalLight(UWorld* World, FVector& OutDirection, FLinearColor& OutColor, float& OutIntensity);
 
-	// ============================================================================
+	//~==============================================================================
 	// Thread-Safe Render Data Cache
-	// ============================================================================
 
 	/** Cached render data prepared on Game Thread, consumed on Render Thread. */
 	FIVSmokePackedRenderData CachedRenderData;

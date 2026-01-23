@@ -12,9 +12,8 @@
 // Forward declarations
 struct FIVSmokeVolumeGPUData;
 
-// ============================================================================
+//~==============================================================================
 // Occupancy System Configuration
-// ============================================================================
 
 /**
  * Occupancy system configuration constants.
@@ -49,9 +48,8 @@ struct FIVSmokeOccupancyConfig
 	static constexpr uint32 OccupancyBuildThreadsZ = 4;
 };
 
-// ============================================================================
+//~==============================================================================
 // GPU Data Structures
-// ============================================================================
 
 /**
  * Per-tile metadata computed in Pass 0.
@@ -96,9 +94,8 @@ struct FIVSmokeTileData
 
 static_assert(sizeof(FIVSmokeTileData) == 48, "FIVSmokeTileData must be 48 bytes");
 
-// ============================================================================
+//~==============================================================================
 // Pass 0: Tile Setup Compute Shader
-// ============================================================================
 
 /**
  * Tile Setup compute shader (Pass 0).
@@ -169,9 +166,8 @@ public:
 	}
 };
 
-// ============================================================================
+//~==============================================================================
 // Pass 1: Occupancy Build Compute Shader
-// ============================================================================
 
 /**
  * Occupancy Build compute shader (Pass 1).
@@ -238,9 +234,8 @@ public:
 	}
 };
 
-// ============================================================================
+//~==============================================================================
 // Pass 2: Ray March with Occupancy Compute Shader
-// ============================================================================
 
 /**
  * Multi-Volume Ray March compute shader with Occupancy optimization.
@@ -394,15 +389,14 @@ public:
 	}
 };
 
-// ============================================================================
+//~==============================================================================
 // Occupancy Resources Container
-// ============================================================================
 
 /**
  * Container for occupancy resources created per frame.
  * Holds tile data buffer and occupancy textures.
  */
-struct IVSMOKE_API FIVSmokeOccupancyResources
+struct FIVSmokeOccupancyResources
 {
 	/** Per-tile metadata buffer. */
 	FRDGBufferRef TileDataBuffer;
@@ -423,26 +417,25 @@ struct IVSMOKE_API FIVSmokeOccupancyResources
 	bool IsValid() const;
 };
 
-// ============================================================================
+//~==============================================================================
 // Occupancy Renderer Namespace
-// ============================================================================
 
 namespace IVSmokeOccupancy
 {
 	/**
 	 * Compute tile count from viewport size.
 	 */
-	IVSMOKE_API FIntPoint ComputeTileCount(const FIntPoint& ViewportSize);
+	FIntPoint ComputeTileCount(const FIntPoint& ViewportSize);
 
 	/**
 	 * Compute step slice count from max steps.
 	 */
-	IVSMOKE_API uint32 ComputeStepSliceCount(int32 MaxSteps);
+	uint32 ComputeStepSliceCount(int32 MaxSteps);
 
 	/**
 	 * Create occupancy resources for a frame.
 	 */
-	IVSMOKE_API FIVSmokeOccupancyResources CreateOccupancyResources(
+	FIVSmokeOccupancyResources CreateOccupancyResources(
 		FRDGBuilder& GraphBuilder,
 		const FIntPoint& TileCount,
 		uint32 StepSliceCount);
@@ -451,7 +444,7 @@ namespace IVSmokeOccupancy
 	 * Add Pass 0: Tile Setup.
 	 * Computes per-tile depth range and quick volume mask.
 	 */
-	IVSMOKE_API void AddTileSetupPass(
+	void AddTileSetupPass(
 		FRDGBuilder& GraphBuilder,
 		const FSceneView& View,
 		FRDGBufferRef VolumeDataBuffer,
@@ -467,7 +460,7 @@ namespace IVSmokeOccupancy
 	 * Add Pass 1: Occupancy Build.
 	 * Builds View and Light occupancy 3D textures.
 	 */
-	IVSMOKE_API void AddOccupancyBuildPass(
+	void AddOccupancyBuildPass(
 		FRDGBuilder& GraphBuilder,
 		const FSceneView& View,
 		FRDGBufferRef TileDataBuffer,

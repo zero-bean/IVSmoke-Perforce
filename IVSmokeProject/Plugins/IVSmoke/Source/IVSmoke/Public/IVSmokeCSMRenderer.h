@@ -9,9 +9,8 @@ class USceneCaptureComponent2D;
 class AActor;
 class UWorld;
 
-// ============================================================================
+//~==============================================================================
 // Cascade Data Structure
-// ============================================================================
 
 /**
  * Data for a single shadow cascade.
@@ -43,9 +42,8 @@ struct IVSMOKE_API FIVSmokeCascadeData
 	float NearPlane = 0.0f;
 	float FarPlane = 0.0f;
 
-	// ============================================================================
+	//~==============================================================================
 	// Current Frame Values (used for both capture and shader sampling)
-	// ============================================================================
 
 	/** Orthographic projection width for this cascade. */
 	float OrthoWidth = 0.0f;
@@ -59,9 +57,8 @@ struct IVSMOKE_API FIVSmokeCascadeData
 	/** Light camera forward direction (light travel direction, opposite of light source). */
 	FVector LightCameraForward = FVector(0.0f, 0.0f, -1.0f);
 
-	// ============================================================================
+	//~==============================================================================
 	// Resources
-	// ============================================================================
 
 	/** Depth render target (R32F). */
 	TObjectPtr<UTextureRenderTarget2D> DepthRT = nullptr;
@@ -97,9 +94,8 @@ struct IVSMOKE_API FIVSmokeCSMGPUData
 
 static_assert(sizeof(FIVSmokeCSMGPUData) == 80, "FIVSmokeCSMGPUData size must be 80 bytes");
 
-// ============================================================================
+//~==============================================================================
 // CSM Renderer
-// ============================================================================
 
 /**
  * Cascaded Shadow Map renderer for volumetric smoke.
@@ -118,9 +114,8 @@ public:
 	FIVSmokeCSMRenderer();
 	~FIVSmokeCSMRenderer();
 
-	// ============================================================================
+	//~==============================================================================
 	// Lifecycle
-	// ============================================================================
 
 	/**
 	 * Initialize CSM renderer with specified settings.
@@ -139,9 +134,8 @@ public:
 	/** Check if renderer is initialized. */
 	bool IsInitialized() const { return bIsInitialized; }
 
-	// ============================================================================
+	//~==============================================================================
 	// Update
-	// ============================================================================
 
 	/**
 	 * Update shadow cascades for current frame.
@@ -159,9 +153,8 @@ public:
 		uint32 FrameNumber
 	);
 
-	// ============================================================================
+	//~==============================================================================
 	// Accessors
-	// ============================================================================
 
 	/** Get number of active cascades. */
 	int32 GetNumCascades() const { return Cascades.Num(); }
@@ -185,21 +178,19 @@ public:
 	bool HasValidShadowData() const;
 
 	/**
-	 * Get relative camera position for a cascade (relative to main camera).
-	 * Used for camera-relative rendering to avoid floating-point precision issues.
+	 * Get light camera position for a cascade.
 	 *
 	 * @param CascadeIndex Index of cascade.
-	 * @return Light camera position relative to main camera.
+	 * @return Light camera world position for the specified cascade.
 	 */
-	FVector GetRelativeCameraPosition(int32 CascadeIndex) const;
+	FVector GetLightCameraPosition(int32 CascadeIndex) const;
 
 	/** Get main camera position. */
 	FVector GetMainCameraPosition() const { return MainCameraPosition; }
 
 private:
-	// ============================================================================
+	//~==============================================================================
 	// Internal Methods
-	// ============================================================================
 
 	/**
 	 * Calculate cascade split distances using log/linear blend.
@@ -272,9 +263,8 @@ private:
 	 */
 	void ConfigureCaptureComponent(USceneCaptureComponent2D* CaptureComponent);
 
-	// ============================================================================
+	//~==============================================================================
 	// Member Variables
-	// ============================================================================
 
 	/** All cascade data. */
 	TArray<FIVSmokeCascadeData> Cascades;

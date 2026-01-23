@@ -16,9 +16,8 @@
 #include "/Plugin/IVSmoke/IVSmokeCommon.ush"
 #include "/Plugin/IVSmoke/IVSmokeRayMarchUtils.ush"
 
-// ============================================================================
+//~==============================================================================
 // Thread Group Configuration
-// ============================================================================
 
 #ifndef THREADGROUP_SIZE_X
 #define THREADGROUP_SIZE_X 8
@@ -36,9 +35,8 @@
 #define MAX_VOLUMES 128
 #endif
 
-// ============================================================================
+//~==============================================================================
 // Shader Parameters
-// ============================================================================
 
 // Output (Dual Render Target)
 RWTexture2D<float4> SmokeAlbedoTex;
@@ -158,9 +156,8 @@ uint FrameNumber;
 // Include CSM sampling functions (must come after uniform declarations)
 #include "/Plugin/IVSmoke/IVSmokeCSM.usf"
 
-// ============================================================================
+//~==============================================================================
 // Helper Functions
-// ============================================================================
 
 float BlueNoiseScalar(uint2 ScreenCoord, uint FrameIndex)
 {
@@ -241,9 +238,8 @@ float GetDensityForVolume(float3 Position, uint VolumeIdx)
 	return result * Vol.DensityScale * HoleInfo.a;
 }
 
-// ============================================================================
+//~==============================================================================
 // Light Marching with Occupancy
-// ============================================================================
 
 /**
  * Sample total density at a position using light occupancy mask.
@@ -335,9 +331,8 @@ float MarchTowardLightWithOccupancy(
 	return LightTransmittance;
 }
 
-// ============================================================================
+//~==============================================================================
 // Main Compute Shader
-// ============================================================================
 
 [numthreads(THREADGROUP_SIZE_X, THREADGROUP_SIZE_Y, 1)]
 void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
@@ -350,9 +345,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 		return;
 	}
 
-	// ========================================================================
+	//~======================================================================
 	// Tile and Ray Setup
-	// ========================================================================
 
 	// Compute tile coordinate
 	// Map from reduced resolution (TexSize) to full resolution (ViewportSize), then to tile space
@@ -387,9 +381,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	);
 	float3 RayOrigin = CameraPosition;
 
-	// ========================================================================
+	//~======================================================================
 	// Scene Depth
-	// ========================================================================
 
 	// Use same depth sampling as original ray march (without +0.5 offset)
 	int3 ScenePixelCoord = int3(0, 0, 0);
@@ -402,9 +395,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	float SceneRayDistance = SceneDepthWorld / max(ViewDirDot, 0.001);
 	SceneRayDistance -= 5.0;  // Depth bias
 
-	// ========================================================================
+	//~======================================================================
 	// Ray March Bounds (Tile-based)
-	// ========================================================================
 
 	// Convert tile linear depth to ray distance
 	// Tile.Near/Far are in linear depth space, convert to ray distance
@@ -418,9 +410,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 		return;
 	}
 
-	// ========================================================================
+	//~======================================================================
 	// Ray March with Occupancy-Based Sparse Iteration
-	// ========================================================================
 
 	float3 AccumulatedColor = float3(0.0, 0.0, 0.0);
 	float Transmittance = 1.0;
@@ -454,9 +445,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	[loop]
 	while (Step < MaxSteps && Transmittance > 0.05 && T <= TMax)
 	{
-		// ====================================================================
+		//~==================================================================
 		// Compute current slice for occupancy lookup (with caching)
-		// ====================================================================
 
 		float LinearDepth = T * ViewDirDotCached;
 		uint Slice = uint(max(0.0, (LinearDepth - Tile.Near) / SliceDepthSize));
@@ -490,9 +480,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 
 		float3 WorldPos = RayOrigin + RayDir * T;
 
-		// ================================================================
+		//~==================================================================
 		// Sample Density from Occupied Volumes Only (Sparse Iteration)
-		// ================================================================
 
 		float TotalDensity = 0.0;
 		float3 WeightedColor = float3(0.0, 0.0, 0.0);
@@ -520,9 +509,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 			AdvanceVolumeMaskIterator(It);
 		}
 
-		// ================================================================
+		//~==================================================================
 		// Beer-Lambert Integration
-		// ================================================================
 
 		if (TotalDensity > 0.001)
 		{
@@ -536,9 +524,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 			float SampleTransmittance = exp(-Extinction);
 			float3 SampleColor = WeightedColor / TotalDensity;
 
-			// ============================================================
+			//~==========================================================
 			// Self-Shadowing with Light Occupancy
-			// ============================================================
 
 			// Calculate per-pixel light march distance using GlobalAABB ray-box intersection
 			// This is the same approach as the original shader, ensuring smooth variation
@@ -576,9 +563,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 			// Apply shadow to base color
 			float3 LitSampleColor = SampleColor * lerp(ShadowAmbient, 1.0, LightTransmittance);
 
-			// ============================================================
+			//~==========================================================
 			// In-Scattering
-			// ============================================================
 
 			float3 InScatter = float3(0, 0, 0);
 			if (ScatterScale > 0.0)
@@ -607,9 +593,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 		Step++;
 	}
 
-	// ========================================================================
+	//~======================================================================
 	// Output
-	// ========================================================================
 
 	// Remap transmittance to prevent HDR burn-through
 	const float EARLY_EXIT_THRESHOLD = 0.05;

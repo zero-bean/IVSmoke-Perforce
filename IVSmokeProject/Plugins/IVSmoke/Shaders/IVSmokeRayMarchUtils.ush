@@ -2,9 +2,8 @@
 
 #pragma once
 
-// ============================================================================
+//~==============================================================================
 // Occupancy System Shader Utilities
-// ============================================================================
 //
 // Tile-based occupancy for efficient empty space skipping in volumetric rendering.
 // Uses W/16 × H/16 × S/4 resolution for optimal warp coherence.
@@ -13,8 +12,6 @@
 //   - TileData: Per-tile depth range and quick volume mask
 //   - ViewOccupancy: 3D texture with 128-bit bitmask per cell (which volumes are present)
 //   - LightOccupancy: 3D texture with 128-bit bitmask per cell (which volumes affect light)
-//
-// ============================================================================
 
 #ifndef TILE_SIZE_X
 #define TILE_SIZE_X 16
@@ -28,9 +25,8 @@
 #define MAX_VOLUMES 128
 #endif
 
-// ============================================================================
+//~==============================================================================
 // GPU Data Structures (must match C++ FIVSmokeTileData)
-// ============================================================================
 
 /**
  * Per-tile metadata computed in Pass 0.
@@ -49,9 +45,8 @@ struct FTileData
 	float Padding2;
 };
 
-// ============================================================================
+//~==============================================================================
 // Occupancy Lookup Helpers
-// ============================================================================
 
 /**
  * Load tile data from structured buffer.
@@ -145,9 +140,8 @@ void SetVolumeBit(inout uint4 Mask, uint VolumeIndex)
 	}
 }
 
-// ============================================================================
+//~==============================================================================
 // Sparse Volume Iteration
-// ============================================================================
 
 /**
  * Iterator state for sparse volume iteration using bitmask.
@@ -264,9 +258,8 @@ void AdvanceVolumeMaskIterator(inout FVolumeMaskIterator It)
 	}
 }
 
-// ============================================================================
+//~==============================================================================
 // Frustum Cell Utilities
-// ============================================================================
 
 /**
  * Compute world-space AABB for a frustum cell (tile + depth slice).
@@ -362,9 +355,8 @@ void ComputeFrustumCellAABB(
 	}
 }
 
-// ============================================================================
+//~==============================================================================
 // AABB Intersection Tests
-// ============================================================================
 
 /**
  * Test if two AABBs intersect.
@@ -469,9 +461,8 @@ bool LightRayIntersectsVolume(
 		&& TempNear < MaxLightDist;
 }
 
-// ============================================================================
+//~==============================================================================
 // Depth Conversion Utilities
-// ============================================================================
 
 /**
  * Convert device Z to linear world depth.
@@ -509,9 +500,8 @@ uint ComputeSliceIndex(
 	return clamp(uint(SliceDepth), 0, StepSliceCount - 1);
 }
 
-// ============================================================================
+//~==============================================================================
 // Interval Merging for Accurate TotalVolumeLength
-// ============================================================================
 //
 // When volumes overlap, simple sum of intersection lengths overcounts.
 // Interval merging solves this by:
@@ -522,7 +512,6 @@ uint ComputeSliceIndex(
 //
 // Performance: O(N log²N) for sort + O(N) for merge, where N = volume count
 // Memory: MAX_SORT_INTERVALS * 2 floats in registers
-//
 
 /** Maximum intervals to sort (limited for register pressure). Increase if 32+ volumes overlap on a single ray. */
 #ifndef MAX_SORT_INTERVALS

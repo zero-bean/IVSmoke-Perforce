@@ -10,9 +10,8 @@
 
 #include "/Engine/Private/Common.ush"
 
-// ============================================================================
+//~==============================================================================
 // Depth to Variance Compute Shader
-// ============================================================================
 
 Texture2D<float> DepthTexture;
 RWTexture2D<float2> VarianceTexture;
@@ -33,9 +32,8 @@ void DepthToVarianceCS(uint3 DTid : SV_DispatchThreadID)
 	VarianceTexture[DTid.xy] = float2(Depth, Depth * Depth);
 }
 
-// ============================================================================
+//~==============================================================================
 // Gaussian Blur Compute Shader
-// ============================================================================
 
 Texture2D<float2> SourceTexture;
 RWTexture2D<float2> DestTexture;

@@ -16,9 +16,8 @@
 #include "/Plugin/IVSmoke/IVSmokeCommon.ush"
 #include "/Plugin/IVSmoke/IVSmokeRayMarchUtils.ush"
 
-// ============================================================================
+//~==============================================================================
 // Thread Group Configuration
-// ============================================================================
 
 #ifndef THREADGROUP_SIZE_X
 #define THREADGROUP_SIZE_X 8
@@ -42,9 +41,8 @@
 // Thread group total size
 #define GROUP_SIZE (THREADGROUP_SIZE_X * THREADGROUP_SIZE_Y * THREADGROUP_SIZE_Z)
 
-// ============================================================================
+//~==============================================================================
 // Shared Memory for Volume AABB Caching
-// ============================================================================
 
 // Cache volume AABBs in shared memory to reduce global memory traffic
 // Each volume needs 6 floats (min xyz, max xyz) = 24 bytes
@@ -52,9 +50,8 @@
 groupshared float3 SharedVolumeMin[MAX_VOLUMES];
 groupshared float3 SharedVolumeMax[MAX_VOLUMES];
 
-// ============================================================================
+//~==============================================================================
 // Shader Parameters
-// ============================================================================
 
 // Input: Tile data from Pass 0
 StructuredBuffer<FTileData> TileDataBuffer;
@@ -84,9 +81,8 @@ float AspectRatio;
 float3 LightDirection;
 float MaxLightMarchDistance;
 
-// ============================================================================
+//~==============================================================================
 // Main Compute Shader
-// ============================================================================
 
 [numthreads(THREADGROUP_SIZE_X, THREADGROUP_SIZE_Y, THREADGROUP_SIZE_Z)]
 void MainCS(
@@ -95,9 +91,8 @@ void MainCS(
 	uint3 DispatchThreadId : SV_DispatchThreadID,
 	uint GroupIndex : SV_GroupIndex)
 {
-	// ========================================================================
+	//~======================================================================
 	// Phase 1: Cooperative loading of volume AABB data to shared memory
-	// ========================================================================
 	//
 	// Each thread loads multiple volumes to fill shared memory.
 	// This reduces global memory traffic significantly when processing
@@ -125,9 +120,8 @@ void MainCS(
 	// Ensure all threads have finished loading
 	GroupMemoryBarrierWithGroupSync();
 
-	// ========================================================================
+	//~======================================================================
 	// Phase 2: Bounds check and early exit
-	// ========================================================================
 
 	uint3 TexelCoord = DispatchThreadId;
 
@@ -139,9 +133,8 @@ void MainCS(
 		return;
 	}
 
-	// ========================================================================
+	//~======================================================================
 	// Phase 3: Load tile data and compute cell bounds
-	// ========================================================================
 
 	uint TileIndex = TexelCoord.y * uint(TileCount.x) + TexelCoord.x;
 	FTileData Tile = TileDataBuffer[TileIndex];
@@ -190,9 +183,8 @@ void MainCS(
 		CellMax
 	);
 
-	// ========================================================================
+	//~======================================================================
 	// Phase 4: Build View Occupancy (Sparse Iteration)
-	// ========================================================================
 	//
 	// Only iterate over volumes present in this tile (from TileVolumeMask).
 	// Uses firstbitlow for efficient sparse iteration.
@@ -217,9 +209,8 @@ void MainCS(
 		AdvanceVolumeMaskIterator(ViewIt);
 	}
 
-	// ========================================================================
+	//~======================================================================
 	// Phase 5: Build Light Occupancy (Sparse Iteration)
-	// ========================================================================
 	//
 	// Only iterate over volumes present in this tile (from TileVolumeMask).
 	// For light marching optimization, we need to know which volumes
@@ -259,9 +250,8 @@ void MainCS(
 		}
 	}
 
-	// ========================================================================
+	//~======================================================================
 	// Phase 6: Write output
-	// ========================================================================
 
 	ViewOccupancyRW[TexelCoord] = ViewMask;
 	LightOccupancyRW[TexelCoord] = LightMask;

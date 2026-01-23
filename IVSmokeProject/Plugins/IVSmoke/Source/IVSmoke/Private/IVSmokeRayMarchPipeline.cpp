@@ -9,17 +9,15 @@
 #include "SceneRenderTargetParameters.h"
 #include "SystemTextures.h"
 
-// ============================================================================
+//~==============================================================================
 // Shader Implementations
-// ============================================================================
 
 IMPLEMENT_GLOBAL_SHADER(FIVSmokeTileSetupCS, "/Plugin/IVSmoke/IVSmokeTileSetupCS.usf", "MainCS", SF_Compute);
 IMPLEMENT_GLOBAL_SHADER(FIVSmokeOccupancyBuildCS, "/Plugin/IVSmoke/IVSmokeOccupancyBuildCS.usf", "MainCS", SF_Compute);
 IMPLEMENT_GLOBAL_SHADER(FIVSmokeMultiVolumeRayMarchCS, "/Plugin/IVSmoke/IVSmokeMultiVolumeRayMarch.usf", "MainCS", SF_Compute);
 
-// ============================================================================
+//~==============================================================================
 // Occupancy Renderer Implementation
-// ============================================================================
 
 namespace IVSmokeOccupancy
 {
@@ -210,9 +208,8 @@ namespace IVSmokeOccupancy
 
 } // namespace IVSmokeOccupancy
 
-// ============================================================================
+//~==============================================================================
 // Occupancy Resources Structure
-// ============================================================================
 
 FIVSmokeOccupancyResources::FIVSmokeOccupancyResources()
 	: TileDataBuffer(nullptr)

@@ -5,7 +5,7 @@ Texture3D<float> Source;
 SamplerState LinearBorder_Sampler;
 int3 TexSize;
 
-//FXAA
+// FXAA
 float FXAASpanMax;
 float FXAARange;
 float FXAASharpness;
@@ -23,9 +23,9 @@ float GetFXAA(float3 uvw)
 	float v110 = Source.Sample(LinearBorder_Sampler, uvw + int3(1, 1, -1) * VoxelTexRCP);
 	float v111 = Source.Sample(LinearBorder_Sampler, uvw + int3(1, 1, 1) * VoxelTexRCP);
 
-	//abs(dir) == spanmax => offset = 0
-	//abs(dir) == 0 => offset = FXAARange
-	//sharpness => nonlinear
+	// abs(dir) == spanmax => offset = 0
+	// abs(dir) == 0 => offset = FXAARange
+	// sharpness => nonlinear
 	
 	float3 Dir;
 	Dir.x = (v000 + v001 + v010 + v011) - (v100 + v101 + v110 + v111);
@@ -41,7 +41,7 @@ float GetFXAA(float3 uvw)
 	Dir.y = pow(saturate(1 - Dir.y), FXAASharpness);
 	Dir.z = pow(saturate(1 - Dir.z), FXAASharpness);
 	
-	//diff small = dir small
+	// diff small = dir small
 	Dir = FXAARange * Dir * VoxelTexRCP;
 
 	float v0 = Source.Sample(LinearBorder_Sampler, uvw + int3(-1, -1, -1) * Dir);
@@ -71,9 +71,9 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	float3 pixelUVW = PixelCoord + float3(0.5f, 0.5f, 0.5f);
 	float3 uvw = pixelUVW / TexSize;
 
-	//FXAA sampling
+	// FXAA sampling
 	Desti[PixelCoord] = GetFXAA(uvw);
 
-	//trilinear sampling
+	// trilinear sampling
 	//Desti[PixelCoord] = Source.Sample(LinearBorder_Sampler, uvw);
 }

@@ -22,9 +22,8 @@ class IVSMOKE_API UIVSmokeShadowCaptureComponent : public USceneCaptureComponent
 public:
 	UIVSmokeShadowCaptureComponent();
 
-	// ============================================================================
+	//~==============================================================================
 	// Public Interface
-	// ============================================================================
 
 	/**
 	 * Initialize or resize render target for shadow depth capture.
@@ -64,9 +63,8 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
-	// ============================================================================
+	//~==============================================================================
 	// Internal Methods
-	// ============================================================================
 
 	/**
 	 * Calculate orthographic view-projection matrix from light direction and bounds.
@@ -80,9 +78,8 @@ private:
 	 */
 	void ConfigureCaptureSettings();
 
-	// ============================================================================
+	//~==============================================================================
 	// Member Variables
-	// ============================================================================
 
 	/** Render target for shadow depth capture. */
 	UPROPERTY(Transient)
@@ -94,11 +91,10 @@ private:
 	/** Current render target resolution. */
 	int32 CurrentResolution = 0;
 
-	// ============================================================================
+	//~==============================================================================
 	// Double-buffered values to match texture timing
 	// "Active" values = match current texture (returned by getters)
 	// "Pending" values = for next frame's capture
-	// ============================================================================
 
 	/** Active camera forward direction (light travel direction, FROM light source).
 	 *  Used in shader for linear depth calculation. Returned by GetShadowCameraForward(). */

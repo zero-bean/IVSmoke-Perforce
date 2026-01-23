@@ -36,9 +36,8 @@ FIVSmokeRenderer::~FIVSmokeRenderer()
 	Shutdown();
 }
 
-// ============================================================================
+//~==============================================================================
 // Lifecycle
-// ============================================================================
 
 void FIVSmokeRenderer::Initialize()
 {
@@ -92,7 +91,7 @@ FIntVector FIVSmokeRenderer::GetAtlasTexCount(const FIntVector& TexSize, const i
 	CurTexCount = CurTexCount / QuotientY + (CurTexCount % QuotientY == 0 ? 0 : 1);
 	if (QuotientZ < CurTexCount)
 	{
-		//warning size full
+		// Warning: atlas size full
 		AtlasTexCount.Z = QuotientZ;
 	}
 	else
@@ -284,9 +283,8 @@ const UIVSmokeSmokePreset* FIVSmokeRenderer::GetEffectivePreset(const AIVSmokeVo
 	return GetDefault<UIVSmokeSmokePreset>();
 }
 
-// ============================================================================
+//~==============================================================================
 // Volume Management
-// ============================================================================
 
 void FIVSmokeRenderer::AddVolume(AIVSmokeVoxelVolume* Volume)
 {
@@ -312,9 +310,8 @@ bool FIVSmokeRenderer::HasVolumes() const
 	return Volumes.Num() > 0;
 }
 
-// ============================================================================
+//~==============================================================================
 // Thread-Safe Render Data Preparation
-// ============================================================================
 
 FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmokeVoxelVolume*>& InVolumes)
 {
@@ -379,9 +376,8 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 			continue;
 		}
 
-		// ============================================
+		//~==========================================================================
 		// Copy VoxelArray data (Game Thread safe)
-		// ============================================
 		const TArray<float>& VoxelBirthTimes = Volume->GetVoxelBirthTimes();
 		Result.PackedVoxelBirthTimes.Append(VoxelBirthTimes);
 
@@ -394,9 +390,8 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 			Result.PackedVoxelDeathTimes.Append(VoxelIntervalData);
 		}
 
-		// ============================================
+		//~==========================================================================
 		// Hole Texture reference (RHI resources are thread-safe)
-		// ============================================
 		if (UIVSmokeHoleGeneratorComponent* HoleComp = Volume->GetHoleGeneratorComponent())
 		{
 			FTextureRHIRef HoleTex = HoleComp->GetHoleTextureRHI();
@@ -416,9 +411,8 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 			Result.HoleTextureSizes.Add(FIntVector::ZeroValue);
 		}
 
-		// ============================================
+		//~==========================================================================
 		// Build GPU metadata
-		// ============================================
 		const FIntVector GridRes = Volume->GetGridResolution();
 		const FIntVector CenterOff = Volume->GetCenterOffset();
 		const float VoxelSz = Volume->GetVoxelSize();
@@ -467,9 +461,8 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		Result.VolumeDataArray.Add(GPUData);
 	}
 
-	// ============================================
+	//~==========================================================================
 	// Copy global settings parameters
-	// ============================================
 	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
 
 	if (Settings)
@@ -646,9 +639,8 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 	return Result;
 }
 
-// ============================================================================
+//~==============================================================================
 // Rendering
-// ============================================================================
 
 FScreenPassTexture FIVSmokeRenderer::Render(
 	FRDGBuilder& GraphBuilder,
@@ -686,9 +678,8 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	const FIntPoint ViewportSize = SceneColor.ViewRect.Size();
 	const FIntPoint ViewRectMin = SceneColor.ViewRect.Min;
 
-	// ============================================================================
-	// Upscaling Pipeline (1/2 Full)
-	// ============================================================================
+	//~==========================================================================
+	// Upscaling Pipeline (1/2 to Full)
 	//
 	// Ray March at 1/2 resolution for quality/performance balance.
 	// Single-step upscaling with bilinear filtering smooths IGN grain.
@@ -729,9 +720,8 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 		return SceneColor;
 	}
 
-	// ============================================================================
+	//~==========================================================================
 	// Ray March Pass (1/2 Resolution)
-	// ============================================================================
 	// Multi-Volume Ray Marching with Occupancy Optimization (Three-Pass Pipeline).
 	// Uses tile-based occupancy grid for efficient empty space skipping.
 	AddMultiVolumeRayMarchPass(
@@ -745,9 +735,8 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 		ViewRectMin
 	);
 
-	// ============================================================================
-	// Upscaling (1/2 Full)
-	// ============================================================================
+	//~==========================================================================
+	// Upscaling (1/2 to Full)
 	// Single-step bilinear upscaling smooths IGN grain patterns.
 
 	// Albedo: 1/2 Full
@@ -768,9 +757,8 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 		TEXT("IVSmokeMaskTex_Full")
 	);
 
-	// ============================================================================
+	//~==========================================================================
 	// Composite Pass
-	// ============================================================================
 	const float Sharpness = RenderData.Sharpness;
 	const bool bUseCustomDepthBasedSorting = Settings->bUseCustomDepthBasedSorting;
 
@@ -778,9 +766,8 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	const bool bTranslucencyMode = (Settings->RenderPass == EIVSmokeRenderPass::TranslucencyAfterDOF);
 	FScreenPassTextureSlice SeparateTranslucencySlice = Inputs.GetInput(EPostProcessMaterialInput::SeparateTranslucency);
 
-	// ============================================================================
+	//~==========================================================================
 	// Depth-Sorted Composite: Proper smoke/particle sorting using CustomDepth
-	// ============================================================================
 	if (bUseCustomDepthBasedSorting && bTranslucencyMode && SeparateTranslucencySlice.IsValid())
 	{
 		FScreenPassTexture ParticlesTex(SeparateTranslucencySlice);
@@ -816,9 +803,8 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 
 		return FScreenPassTexture(SortedOutput);
 	}
-	// ============================================================================
+	//~==========================================================================
 	// Standard TranslucencyAfterDOF Mode: Smoke OVER particles (no depth sorting)
-	// ============================================================================
 	else if (bTranslucencyMode && SeparateTranslucencySlice.IsValid())
 	{
 		// TranslucencyAfterDOF mode: Composite smoke OVER particles
@@ -860,9 +846,8 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 
 		return FScreenPassTexture(TranslucencyOutput);
 	}
-	// ============================================================================
+	//~==========================================================================
 	// Standard Mode: Composite smoke with scene color
-	// ============================================================================
 	else
 	{
 		AddSharpenCompositePass(
@@ -880,9 +865,8 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	}
 }
 
-// ============================================================================
+//~==============================================================================
 // Pass Functions
-// ============================================================================
 
 void FIVSmokeRenderer::AddSharpenCompositePass(
 	FRDGBuilder& GraphBuilder,
@@ -910,9 +894,8 @@ void FIVSmokeRenderer::AddSharpenCompositePass(
 	FIVSmokePostProcessPass::AddPixelShaderPass<FIVSmokeSharpenCompositePS>(GraphBuilder, ShaderMap, PixelShader, Parameters, Output);
 }
 
-// ============================================================================
+//~==============================================================================
 // Copy Pass (Progressive Upscaling)
-// ============================================================================
 
 FRDGTextureRef FIVSmokeRenderer::AddCopyPass(
 	FRDGBuilder& GraphBuilder,
@@ -1030,9 +1013,8 @@ void FIVSmokeRenderer::AddDepthSortedCompositePass(
 	FIVSmokePostProcessPass::AddPixelShaderPass<FIVSmokeDepthSortedCompositePS>(GraphBuilder, ShaderMap, PixelShader, Parameters, Output);
 }
 
-// ============================================================================
+//~==============================================================================
 // Multi-Volume Ray March Pass (Occupancy-Based Three-Pass Pipeline)
-// ============================================================================
 
 void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	FRDGBuilder& GraphBuilder,
@@ -1054,9 +1036,8 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	// Get global settings
 	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
 
-	// ============================================================================
+	//~==========================================================================
 	// Phase 0: Setup common resources (same as standard ray march)
-	// ============================================================================
 
 	const int32 TexturePackInterval = 4;
 	const int32 TexturePackMaxSize = 2048;
@@ -1198,9 +1179,8 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 		VoxelAtlasFXAAResolution
 	);
 
-	// ============================================================================
+	//~==========================================================================
 	// Phase 1: Create Occupancy Resources
-	// ============================================================================
 
 	const FIntPoint TileCount = IVSmokeOccupancy::ComputeTileCount(ViewportSize);
 	const uint32 StepSliceCount = IVSmokeOccupancy::ComputeStepSliceCount(RenderData.MaxSteps);
@@ -1229,9 +1209,8 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	// MinStepSize from settings (minimum world units per step, TotalVolumeLength computed per-tile in shader)
 	const float MinStepSize = Settings->MinStepSize;
 
-	// ============================================================================
+	//~==========================================================================
 	// Phase 2: Pass 0 - Tile Setup
-	// ============================================================================
 
 	IVSmokeOccupancy::AddTileSetupPass(
 		GraphBuilder,
@@ -1246,9 +1225,8 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 		ViewRectMin
 	);
 
-	// ============================================================================
+	//~==========================================================================
 	// Phase 3: Pass 1 - Occupancy Build
-	// ============================================================================
 
 	IVSmokeOccupancy::AddOccupancyBuildPass(
 		GraphBuilder,
@@ -1265,9 +1243,8 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 		ViewportSize
 	);
 
-	// ============================================================================
+	//~==========================================================================
 	// Phase 4: Pass 2 - Ray March with Occupancy
-	// ============================================================================
 
 	TShaderMapRef<FIVSmokeMultiVolumeRayMarchCS> ComputeShader(ShaderMap);
 	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeMultiVolumeRayMarchCS::FParameters>();

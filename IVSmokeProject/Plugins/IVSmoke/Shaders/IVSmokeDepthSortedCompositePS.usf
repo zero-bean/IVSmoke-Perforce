@@ -7,9 +7,8 @@
 #include "/Engine/Private/ScreenPass.ush"
 #include "/Engine/Private/DeferredShadingCommon.ush"
 
-// ============================================================================
+//~==============================================================================
 // Input Textures
-// ============================================================================
 
 // Smoke layer (from ray marching CS)
 Texture2D SmokeAlbedoTex;
@@ -22,9 +21,8 @@ Texture2D SeparateTranslucencyTex;
 SamplerState PointClamp_Sampler;
 SamplerState LinearClamp_Sampler;
 
-// ============================================================================
+//~==============================================================================
 // Viewport - Texture Extents for UV calculation
-// ============================================================================
 
 // Texture Extents (UV = SvPosition / TexExtent)
 float2 SmokeTexExtent;
@@ -34,9 +32,8 @@ float Sharpness;
 
 float4 InvDeviceZToWorldZTransform;
 
-// ============================================================================
+//~==============================================================================
 // Helper Functions
-// ============================================================================
 
 /**
  * Check if CustomDepth contains valid data at this pixel.
@@ -48,17 +45,15 @@ bool HasValidCustomDepth(float CustomDeviceZ)
 	return CustomDeviceZ > 0.0001 && CustomDeviceZ < 0.9999;
 }
 
-// ============================================================================
+//~==============================================================================
 // Main Depth-Sorted Composite Pixel Shader
-// ============================================================================
 
 void MainPS(
 	float4 SvPosition : SV_POSITION,
 	out float4 OutColor : SV_Target0)
 {
-	// ========================================================================
+	//~======================================================================
 	// UV Calculation - Extent based
-	// ========================================================================
 	// UV = SvPosition / TexExtent (direct texel-to-UV mapping)
 
 	float2 SmokeUV = SvPosition.xy / SmokeTexExtent;
@@ -68,9 +63,8 @@ void MainPS(
 	SeparateTranslucencyTex.GetDimensions(TranslucencyWidth, TranslucencyHeight);
 	float2 TranslucencyUV = SvPosition.xy / float2(TranslucencyWidth, TranslucencyHeight);
 
-	// ========================================================================
+	//~======================================================================
 	// Sample Input Textures with Sharpness Filtering
-	// ========================================================================
 
 	// Texel size for filtering
 	float2 TexelSize = 2.0f / SmokeTexExtent;
@@ -140,9 +134,8 @@ void MainPS(
 	float ParticleTransmittance = ParticleData.a;
 	float ParticleAlpha = 1.0 - ParticleTransmittance;
 
-	// ========================================================================
+	//~======================================================================
 	// Calculate Transmittance
-	// ========================================================================
 
 	// SmokeAlpha from SmokeMaskTex = opacity (0 = transparent, 1 = opaque)
 	// SmokeTransmittance = how much background shows through (1 - alpha)
@@ -155,9 +148,8 @@ void MainPS(
 		SmokeTransmittance = max(0.0, (SmokeTransmittance - 0.01) * 2.0);
 	}
 
-	// ========================================================================
+	//~======================================================================
 	// Depth Comparison
-	// ========================================================================
 	// SmokeRayDepth = linear distance from camera to first smoke hit (from ray marching)
 	// We need to compare this with particle depth.
 	//
@@ -185,17 +177,15 @@ void MainPS(
 	// SmokeInFront = true if smoke is closer than particles
 	bool bSmokeInFront = (SmokeLinearDepth > 0.0) && (SmokeLinearDepth < ParticleLinearDepth);
 
-	// ========================================================================
+	//~======================================================================
 	// Particle presence check (supports both opaque and additive particles)
-	// ========================================================================
 	// Additive particles have Transmittance = 1.0, so ParticleAlpha = 0
 	// Use luminance to detect additive particles that have color but no alpha
 	float ParticleLuminance = dot(ParticleColorPremul, float3(0.299, 0.587, 0.114));
 	bool bHasParticles = (ParticleAlpha > 0.001) || (ParticleLuminance > 0.001);
 
-	// ========================================================================
+	//~======================================================================
 	// Composite (pre-multiplied alpha blending)
-	// ========================================================================
 	//
 	// IMPORTANT: In TranslucencyAfterDOF mode, engine composites as:
 	//   Final = SceneColor * OutputAlpha + OutputRGB

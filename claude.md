@@ -266,13 +266,7 @@ void SetHealth(float NewHealth);
 
 **전략 B: 복합 클래스 (Monolithic)** - 500줄+, 다수 하위 시스템
 - `#pragma region` 사용, 기능별 구역 분리, 관련 변수/함수 물리적 근접 배치
-
-**섹션 디바이더:**
-```cpp
-// ============================================================================
-// Section Name
-// ============================================================================
-```
+- 섹션 디바이더 및 Region 사용법은 "주석" 섹션 참조
 
 ### 오류 처리 & 로깅
 
@@ -312,7 +306,9 @@ UPROPERTY(EditAnywhere, Category = "IVSmoke|Rendering")
 float SmokeDensity = 0.5f;
 ```
 
-### 주석 (Documentation Comments)
+### 주석 (Comments)
+
+기본적으로 **최신 Unreal Engine 코딩 스타일**을 따른다.
 
 **Doxygen 형식** - 모든 public API에 적용:
 
@@ -323,6 +319,23 @@ float SmokeDensity = 0.5f;
  * @param ParamName Description of parameter
  * @return Description of return value
  */
+```
+
+**섹션 디바이더** - 코드 내 논리적 구역 구분:
+
+```cpp
+//~==============================================================================
+// Section Name (예: Flood Fill Simulation)
+```
+
+**Region 사용** - 소스코드가 길어질 경우 (500줄+):
+
+```cpp
+#pragma region Section Name
+
+// ... code ...
+
+#pragma endregion
 ```
 
 ### 콘솔 커맨드 (Console Commands)

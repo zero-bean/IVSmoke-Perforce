@@ -30,17 +30,15 @@
 #ifndef IVSMOKE_CSM_USF
 #define IVSMOKE_CSM_USF
 
-// ============================================================================
+//~==============================================================================
 // Constants
-// ============================================================================
 
 #ifndef CSM_MAX_CASCADES
 #define CSM_MAX_CASCADES 8
 #endif
 
-// ============================================================================
+//~==============================================================================
 // Internal: Cascade Selection
-// ============================================================================
 
 /**
  * Select the appropriate cascade index based on view distance.
@@ -60,9 +58,8 @@ int IVSmoke_SelectCascade(float ViewDepth)
 	return NumCascades - 1;
 }
 
-// ============================================================================
+//~==============================================================================
 // Internal: VSM Shadow Calculation
-// ============================================================================
 
 /**
  * Calculate shadow using Variance Shadow Map (Chebyshev's inequality).
@@ -97,9 +94,8 @@ float IVSmoke_CalculateHardShadow(float ShadowDepth, float FragmentDepth)
 	return lerp(ExternalShadowAmbient, 1.0, IsLit);
 }
 
-// ============================================================================
+//~==============================================================================
 // Internal: Single Cascade Sampling
-// ============================================================================
 
 /**
  * Sample shadow from a single cascade.
@@ -161,9 +157,8 @@ float IVSmoke_SampleCascade(float3 WorldPos, int CascadeIndex)
 	return IVSmoke_SampleCascade(WorldPos, CascadeIndex, DebugUV, DebugDepths);
 }
 
-// ============================================================================
+//~==============================================================================
 // Public API: SampleExternalShadow
-// ============================================================================
 
 /**
  * Sample CSM shadow with cascade blending.

@@ -90,8 +90,8 @@ void MainPS(
 	// smokeMask = Transmittance (1 - Alpha)
 	float smokeMask = 1.0 - saturate(filteredMask);
 
-	// HDR burn-through 방지: 0.02 이하에서 0.01→0, 0.02→0.02로 선형 매핑
-	// Ray marching early termination (Transmittance > 0.01)으로 인한 HDR 누출 차단
+	// HDR burn-through prevention: Linear mapping below 0.02 (0.01→0, 0.02→0.02)
+	// Blocks HDR leakage caused by ray marching early termination (Transmittance > 0.01)
 	if (smokeMask < 0.02)
 	{
 		smokeMask = max(0.0, (smokeMask - 0.01) * 2.0);

@@ -9,9 +9,8 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogIVSmokeCSM, Log, All);
 
-// ============================================================================
+//~==============================================================================
 // Constructor / Destructor
-// ============================================================================
 
 FIVSmokeCSMRenderer::FIVSmokeCSMRenderer()
 {
@@ -22,9 +21,8 @@ FIVSmokeCSMRenderer::~FIVSmokeCSMRenderer()
 	Shutdown();
 }
 
-// ============================================================================
+//~==============================================================================
 // Lifecycle
-// ============================================================================
 
 void FIVSmokeCSMRenderer::Initialize(UWorld* World, int32 NumCascades, int32 Resolution, float MaxDistance)
 {
@@ -131,9 +129,8 @@ void FIVSmokeCSMRenderer::Shutdown()
 	UE_LOG(LogIVSmokeCSM, Log, TEXT("[FIVSmokeCSMRenderer::Shutdown] CSM renderer shut down"));
 }
 
-// ============================================================================
+//~==============================================================================
 // Update
-// ============================================================================
 
 void FIVSmokeCSMRenderer::Update(
 	const FVector& CameraPosition,
@@ -149,9 +146,8 @@ void FIVSmokeCSMRenderer::Update(
 	// Store main camera position for camera-relative calculations
 	MainCameraPosition = CameraPosition;
 
-	// ============================================================================
+	//~==========================================================================
 	// Validity Check - PIE restart can invalidate capture components
-	// ============================================================================
 	// Check CaptureOwner first (all components are attached to it).
 	// If owner is destroyed, all components are invalid.
 	if (!CaptureOwner.IsValid())
@@ -245,9 +241,9 @@ void FIVSmokeCSMRenderer::UpdateCascadeCapture(
 		return;
 	}
 
-	// ============================================================================
+	//~==========================================================================
 	// SINGLE-BUFFER TIMING MODEL
-	// ============================================================================
+	//
 	// SceneCaptureComponent2D with bCaptureEveryFrame=true captures during the
 	// SAME frame's render pass. Therefore:
 	// 1. We calculate VP matrix and set CaptureComponent transform here
@@ -255,7 +251,6 @@ void FIVSmokeCSMRenderer::UpdateCascadeCapture(
 	// 3. The ray march shader samples the captured texture with our VP matrix
 	//
 	// All operations use the SAME values in the SAME frame - no buffering needed.
-	// ============================================================================
 
 	// Normalize light direction
 	FVector NormalizedLightDir = LightDirection.GetSafeNormal();
@@ -264,12 +259,11 @@ void FIVSmokeCSMRenderer::UpdateCascadeCapture(
 		NormalizedLightDir = FVector(0.0f, 0.0f, 1.0f);
 	}
 
-	// ============================================================================
+	//~==========================================================================
 	// CSM Camera Positioning
-	// ============================================================================
+	//
 	// OrthoWidth covers the cascade's view frustum at its far distance.
 	// For a reasonable FOV (~90°), width at distance D is roughly 2*D.
-	// ============================================================================
 	float NewOrthoWidth = Cascade.FarPlane * 2.0f;
 
 	// Calculate light view axes
@@ -286,16 +280,15 @@ void FIVSmokeCSMRenderer::UpdateCascadeCapture(
 	float CaptureDistance = MaxShadowDistance * 1.5f;
 	FVector BaseCapturePosition = CameraPosition + NormalizedLightDir * CaptureDistance;
 
-	// ============================================================================
+	//~==========================================================================
 	// Texel Snapping - Use SMALLEST cascade's texel size for ALL cascades
-	// ============================================================================
+	//
 	// CRITICAL: All cascades must snap to the SAME grid to ensure:
 	// 1. Same WorldPos maps to same relative UV across cascades
 	// 2. Minimal shadow shimmer during camera movement
 	// 3. Smooth cascade transitions without edge artifacts
 	//
 	// Uses cascade 0's texel size (smallest = finest grid) for consistency.
-	// ============================================================================
 	double SmallestOrthoWidth = (double)Cascades[0].FarPlane * 2.0;
 	double TexelSize = SmallestOrthoWidth / (double)CurrentResolution;
 
@@ -313,9 +306,8 @@ void FIVSmokeCSMRenderer::UpdateCascadeCapture(
 
 	FVector SnappedPosition = BaseCapturePosition + SnapAdjustment;
 
-	// ============================================================================
+	//~==========================================================================
 	// Store current frame values (used by both capture and shader)
-	// ============================================================================
 	Cascade.OrthoWidth = NewOrthoWidth;
 	Cascade.LightCameraPosition = SnappedPosition;
 	Cascade.LightCameraForward = LightForward;
@@ -332,9 +324,8 @@ void FIVSmokeCSMRenderer::UpdateCascadeCapture(
 		CascadeIndex, Cascade.NearPlane, Cascade.FarPlane, NewOrthoWidth);
 }
 
-// ============================================================================
+//~==============================================================================
 // Cascade Split Calculation
-// ============================================================================
 
 void FIVSmokeCSMRenderer::CalculateCascadeSplits(float NearPlane, float FarPlane, float LogLinearBlendFactor)
 {
@@ -371,9 +362,8 @@ void FIVSmokeCSMRenderer::CalculateCascadeSplits(float NearPlane, float FarPlane
 	}
 }
 
-// ============================================================================
+//~==============================================================================
 // Texel Snapping
-// ============================================================================
 
 FVector FIVSmokeCSMRenderer::ApplyTexelSnapping(
 	const FVector& LightViewOrigin,
@@ -408,21 +398,19 @@ FVector FIVSmokeCSMRenderer::ApplyTexelSnapping(
 	return Snapped;
 }
 
-// ============================================================================
+//~==============================================================================
 // View-Projection Matrix
-// ============================================================================
 
 void FIVSmokeCSMRenderer::CalculateViewProjectionMatrix(FIVSmokeCascadeData& Cascade)
 {
-	// ============================================================================
+	//~==========================================================================
 	// Calculate VP Matrix to MATCH SceneCaptureComponent2D's actual rendering
-	// ============================================================================
+	//
 	// We must use the EXACT same method that UE uses for SceneCaptureComponent2D
 	// to ensure our VP matrix matches the captured texture.
 	//
 	// This is read from CaptureComponent to ensure we use the exact same values
 	// that the capture will use (after any engine-side adjustments).
-	// ============================================================================
 
 	if (!IsValid(Cascade.CaptureComponent))
 	{
@@ -433,13 +421,12 @@ void FIVSmokeCSMRenderer::CalculateViewProjectionMatrix(FIVSmokeCascadeData& Cas
 	FVector CameraLocation = Cascade.CaptureComponent->GetComponentLocation();
 	FRotator CameraRotation = Cascade.CaptureComponent->GetComponentRotation();
 
-	// ============================================================================
+	//~==========================================================================
 	// View Matrix - Match UE's FSceneView calculation
-	// ============================================================================
+	//
 	// UE calculates view matrix from component transform using:
 	// 1. Translation matrix (negative location)
 	// 2. Rotation matrix (inverse rotation + axis swap for UE coordinate system)
-	// ============================================================================
 	FMatrix ViewRotationMatrix = FInverseRotationMatrix(CameraRotation) * FMatrix(
 		FPlane(0, 0, 1, 0),
 		FPlane(1, 0, 0, 0),
@@ -448,9 +435,8 @@ void FIVSmokeCSMRenderer::CalculateViewProjectionMatrix(FIVSmokeCascadeData& Cas
 	);
 	FMatrix ViewMatrix = FTranslationMatrix(-CameraLocation) * ViewRotationMatrix;
 
-	// ============================================================================
+	//~==========================================================================
 	// Projection Matrix - Orthographic
-	// ============================================================================
 	float OrthoWidth = Cascade.CaptureComponent->OrthoWidth;
 	float HalfWidth = OrthoWidth * 0.5f;
 	float HalfHeight = HalfWidth; // Square projection
@@ -470,9 +456,8 @@ void FIVSmokeCSMRenderer::CalculateViewProjectionMatrix(FIVSmokeCascadeData& Cas
 	Cascade.LightCameraForward = CameraRotation.Vector();
 }
 
-// ============================================================================
+//~==============================================================================
 // Render Target Creation
-// ============================================================================
 
 void FIVSmokeCSMRenderer::CreateCascadeRenderTargets(FIVSmokeCascadeData& Cascade, int32 Resolution)
 {
@@ -531,12 +516,11 @@ void FIVSmokeCSMRenderer::ConfigureCaptureComponent(USceneCaptureComponent2D* Ca
 	// Persist rendering state for quality
 	CaptureComponent->bAlwaysPersistRenderingState = true;
 
-	// ============================================================================
+	//~==========================================================================
 	// ShowFlags Optimization for Depth-Only Shadow Capture
-	// ============================================================================
+	//
 	// NOTE: Nanite must stay ENABLED - fallback meshes don't write depth properly.
 	// Disable only rendering features that don't affect depth output.
-	// ============================================================================
 
 	// --- Disable lighting/shading (not needed for depth) ---
 	CaptureComponent->ShowFlags.SetLighting(false);
@@ -573,9 +557,8 @@ void FIVSmokeCSMRenderer::ConfigureCaptureComponent(USceneCaptureComponent2D* Ca
 	CaptureComponent->ShowFlags.SetDecals(false);
 }
 
-// ============================================================================
+//~==============================================================================
 // Accessors
-// ============================================================================
 
 TArray<float> FIVSmokeCSMRenderer::GetSplitDistances() const
 {
@@ -623,13 +606,12 @@ bool FIVSmokeCSMRenderer::HasValidShadowData() const
 	return Cascades[0].DepthRT != nullptr && Cascades[0].DepthRT->GetResource() != nullptr;
 }
 
-FVector FIVSmokeCSMRenderer::GetRelativeCameraPosition(int32 CascadeIndex) const
+FVector FIVSmokeCSMRenderer::GetLightCameraPosition(int32 CascadeIndex) const
 {
 	if (!Cascades.IsValidIndex(CascadeIndex))
 	{
 		return FVector::ZeroVector;
 	}
 
-	// Return absolute light camera position
 	return Cascades[CascadeIndex].LightCameraPosition;
 }

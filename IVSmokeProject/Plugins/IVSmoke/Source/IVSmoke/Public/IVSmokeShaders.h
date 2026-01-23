@@ -9,9 +9,8 @@
 #include "SceneTexturesConfig.h"
 #include "SceneView.h"
 
-// ============================================================================
+//~==============================================================================
 // GPU Data Structures for Multi-Volume Rendering
-// ============================================================================
 
 /**
  * GPU-side volume metadata for single-pass multi-volume ray marching.
@@ -130,7 +129,7 @@ public:
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearBorder_Sampler)
 		SHADER_PARAMETER(FIntVector, TexSize)
 
-		//FXAA
+		// FXAA
 		SHADER_PARAMETER(float, FXAASpanMax)
 		SHADER_PARAMETER(float, FXAARange)
 		SHADER_PARAMETER(float, FXAASharpness)
@@ -274,9 +273,8 @@ public:
 	}
 };
 
-// ============================================================================
+//~==============================================================================
 // VSM (Variance Shadow Map) Shaders
-// ============================================================================
 
 /**
  * Depth to Variance compute shader.
