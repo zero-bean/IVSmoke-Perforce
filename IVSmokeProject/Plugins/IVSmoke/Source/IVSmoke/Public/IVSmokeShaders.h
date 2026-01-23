@@ -103,7 +103,6 @@ public:
 
 		SHADER_PARAMETER(FIntVector, TexSize)
 		SHADER_PARAMETER(FIntVector, VoxelResolution)
-		SHADER_PARAMETER(FIntVector, VoxelAtlasCount)
 		SHADER_PARAMETER(int32, PackedInterval)
 		SHADER_PARAMETER(float, GameTime)
 	END_SHADER_PARAMETER_STRUCT()
