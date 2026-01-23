@@ -14,6 +14,7 @@ class UTextureRenderTargetVolume;
 struct FPostProcessMaterialInputs;
 class FIVSmokeCSMRenderer;
 class FIVSmokeVSMProcessor;
+struct FIVSmokeOccupancyResources;
 
 // ============================================================================
 // Render Data Structures (Thread-Safe Data Transfer)
@@ -215,9 +216,15 @@ private:
 	// ============================================================================
 
 	/**
-	 * Multi-Volume Ray Marching CS Pass (Single-Pass).
-	 * Processes all volumes in a single pass with correct Beer-Lambert integration.
+	 * Multi-Volume Ray Marching with Occupancy Optimization (Three-Pass Pipeline).
+	 * Uses tile-based occupancy grid for efficient empty space skipping.
+	 * Processes all volumes with correct Beer-Lambert integration.
 	 * Outputs to Dual Render Targets (Albedo + Mask) at reduced resolution.
+	 *
+	 * Pipeline:
+	 *   Pass 0: Tile Setup - Compute per-tile depth range and quick volume mask
+	 *   Pass 1: Occupancy Build - Build View and Light occupancy 3D textures
+	 *   Pass 2: Ray March - Use occupancy for efficient skipping
 	 *
 	 * @param GraphBuilder       RDG builder
 	 * @param View               Current scene view

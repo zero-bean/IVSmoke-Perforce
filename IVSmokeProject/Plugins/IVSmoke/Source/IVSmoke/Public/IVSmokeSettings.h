@@ -356,6 +356,13 @@ public:
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|Performance", meta = (ClampMin = "0", ClampMax = "2"))
 	int32 QualityLevel = 2;
 
+	/** Minimum step size for ray marching (in world units).
+	 *  Each ray march step will be at least this size.
+	 *  Lower = better quality (finer sampling), Higher = better performance.
+	 *  Example: 50 means each step advances at least 50 units. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke|Performance", meta = (ClampMin = "1.0", ClampMax = "500.0"))
+	float MinStepSize = 50.0f;
+
 	// ============================================================================
 	// Debug
 	// ============================================================================

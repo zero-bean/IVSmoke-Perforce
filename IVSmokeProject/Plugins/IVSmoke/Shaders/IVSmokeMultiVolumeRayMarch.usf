@@ -1,10 +1,23 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
+//
+// Multi-Volume Ray March Compute Shader (Occupancy-Optimized)
+// Uses precomputed occupancy textures for efficient empty space skipping.
+//
+// Key Optimizations:
+// - Slice-level early-out: Skip 4 steps at once if slice is empty
+// - Sparse volume iteration: Only process volumes in occupancy mask
+// - Light occupancy: Skip light march samples for empty volumes
+// - Tile-coherent step size: Reduces warp divergence
+//
+// Dispatch: ceil(TexSize.x/8) x ceil(TexSize.y/8) x 1
+//
 
 #include "/Engine/Private/Common.ush"
 #include "/Plugin/IVSmoke/IVSmokeCommon.ush"
+#include "/Plugin/IVSmoke/IVSmokeRayMarchUtils.ush"
 
 // ============================================================================
-// Thread Group Size
+// Thread Group Configuration
 // ============================================================================
 
 #ifndef THREADGROUP_SIZE_X
@@ -13,9 +26,15 @@
 #ifndef THREADGROUP_SIZE_Y
 #define THREADGROUP_SIZE_Y 8
 #endif
-
-// Maximum volumes to process per pixel (stack array limit)
-#define MAX_VOLUME_INTERSECTIONS 64
+#ifndef TILE_SIZE_X
+#define TILE_SIZE_X 16
+#endif
+#ifndef TILE_SIZE_Y
+#define TILE_SIZE_Y 16
+#endif
+#ifndef MAX_VOLUMES
+#define MAX_VOLUMES 128
+#endif
 
 // ============================================================================
 // Shader Parameters
@@ -24,6 +43,16 @@
 // Output (Dual Render Target)
 RWTexture2D<float4> SmokeAlbedoTex;
 RWTexture2D<float4> SmokeMaskTex;
+
+// Occupancy inputs
+StructuredBuffer<FTileData> TileDataBuffer;
+Texture3D<uint4> ViewOccupancy;
+Texture3D<uint4> LightOccupancy;
+
+// Tile configuration
+int2 TileCount;
+uint StepSliceCount;
+uint StepDivisor;
 
 // Input Textures
 Texture3D<half> NoiseVolume;
@@ -51,6 +80,7 @@ float AspectRatio;
 
 // Ray Marching
 int MaxSteps;
+float MinStepSize;
 
 // Multi-Volume Data
 StructuredBuffer<FVolumeGPUData> VolumeDataBuffer;
@@ -72,9 +102,9 @@ float4 InvDeviceZToWorldZTransform;
 float GlobalAbsorption;
 float SmokeSize;
 float3 WindDirection;
-float VolumeRangeOffset; //0.1
-float VolumeEdgeNoiseFadeOffset; //0.04
-float VolumeEdgeFadeSharpness; //3.5
+float VolumeRangeOffset;
+float VolumeEdgeNoiseFadeOffset;
+float VolumeEdgeFadeSharpness;
 
 // Rayleigh Scattering
 float3 LightDirection;
@@ -88,24 +118,22 @@ float LightMarchingDistance;
 float LightMarchingExpFactor;
 float ShadowAmbient;
 
-// ============================================================================
-// External Shadowing (CSM - Cascaded Shadow Maps)
-// ============================================================================
-// Note: CSM is always enabled when external shadowing is used.
-// VSM (Variance Shadow Maps) can be toggled for soft/hard shadows.
+// Global AABB for per-pixel light march distance calculation
+float3 GlobalAABBMin;
+float3 GlobalAABBMax;
 
+// External Shadowing (CSM)
 #define CSM_MAX_CASCADES 8
-
 int NumCascades;
 Texture2DArray<float> CSMDepthTextureArray;
 Texture2DArray<float2> CSMVSMTextureArray;
 SamplerState CSMSampler;
 float4x4 CSMViewProjectionMatrices[CSM_MAX_CASCADES];
-float4 CSMSplitDistances[2];  // 8 floats packed into 2 float4s (SHADER_PARAMETER_SCALAR_ARRAY)
+float4 CSMSplitDistances[2];  // 8 floats packed into 2 float4s
 float3 CSMCameraPosition;
 float CascadeBlendRange;
-float4 CSMLightCameraPositions[CSM_MAX_CASCADES];  // xyz = position, w = unused
-float4 CSMLightCameraForwards[CSM_MAX_CASCADES];   // xyz = forward direction, w = unused
+float4 CSMLightCameraPositions[CSM_MAX_CASCADES];
+float4 CSMLightCameraForwards[CSM_MAX_CASCADES];
 
 // Helper to unpack split distances from float4 array
 float GetCSMSplitDistance(int CascadeIndex)
@@ -124,7 +152,7 @@ float VSMLightBleedingReduction;
 float ShadowDepthBias;
 float ExternalShadowAmbient;
 
-// Temporal (for TAA integration)
+// Temporal
 uint FrameNumber;
 
 // Include CSM sampling functions (must come after uniform declarations)
@@ -134,11 +162,6 @@ uint FrameNumber;
 // Helper Functions
 // ============================================================================
 
-/**
- * Spatiotemporal Blue Noise lookup (from View Uniform Buffer).
- * Returns uniformly distributed value in [0, 1) with blue noise distribution.
- * Blue noise is visually superior to white noise - same variance but less perceptible.
- */
 float BlueNoiseScalar(uint2 ScreenCoord, uint FrameIndex)
 {
 	uint3 WrappedCoordinate = uint3(ScreenCoord, FrameIndex) & View.BlueNoiseModuloMasks;
@@ -146,12 +169,6 @@ float BlueNoiseScalar(uint2 ScreenCoord, uint FrameIndex)
 	return View.BlueNoiseScalarTexture.Load(TextureCoordinate, 0).x;
 }
 
-/**
- * Sample noise at a world position.
- *
- * @param Position   World space position to sample
- * @return           Noise value [0, 1]
- */
 float GetNoise(float3 WorldPos)
 {
 	float3 uvw = WorldPos / SmokeSize;
@@ -167,8 +184,8 @@ float3 GetVoxelUVW(float3 WorldPos, uint VolumeIdx, int TexZSize)
 	int AtlasTexZSize = TexZSize * NumActiveVolumes + PackedInterval * (NumActiveVolumes - 1);
 	int zMinTex = (TexZSize + PackedInterval) * VolumeIdx;
 	int zMaxTex = zMinTex + TexZSize;
-	float zMinUV = (float) zMinTex / AtlasTexZSize;
-	float zMaxUV = (float) zMaxTex / AtlasTexZSize;
+	float zMinUV = (float)zMinTex / AtlasTexZSize;
+	float zMaxUV = (float)zMaxTex / AtlasTexZSize;
 	uvw.z = lerp(zMinUV, zMaxUV, uvw.z);
 	return uvw;
 }
@@ -187,15 +204,15 @@ float3 GetHoleUVW(float3 WorldPos, uint VolumeIdx)
 	HoleAtlasID.z = VolumeIdx / (HoleAtlasCount.x * HoleAtlasCount.y);
 	int3 MinTexPos = HoleAtlasID * (HoleTexSize + PackedInterval);
 	int3 MaxTexPos = MinTexPos + HoleTexSize;
-	float3 MinUV = (float3) MinTexPos / PackedHoleTexSize;
-	float3 MaxUV = (float3) MaxTexPos / PackedHoleTexSize;
+	float3 MinUV = (float3)MinTexPos / PackedHoleTexSize;
+	float3 MaxUV = (float3)MaxTexPos / PackedHoleTexSize;
 	uvw = lerp(MinUV, MaxUV, uvw);
 	return uvw;
 }
 
 float4 GetHoleSampling(float3 WorldPos, uint VolumeIdx)
 {
-	float3 uvw = GetHoleUVW(WorldPos, VolumeIdx);	
+	float3 uvw = GetHoleUVW(WorldPos, VolumeIdx);
 	return PackedHoleAtlas.Sample(LinearBorder_Sampler, uvw);
 }
 
@@ -205,28 +222,19 @@ float GetVoxelDensity(float3 WorldPos, uint VolumeIdx)
 	return PackedVoxelAtlas.Sample(LinearBorder_Sampler, uvw);
 }
 
-/**
- * Calculate final smoke density at a position for a specific volume.
- * Combines voxel density, edge falloff, and noise.
- *
- * @param Position    World space sample position
- * @param VolumeIdx   Index into VolumeDataBuffer
- * @return            Final density value
- */
 float GetDensityForVolume(float3 Position, uint VolumeIdx)
 {
 	FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
 	float4 HoleInfo = GetHoleSampling(Position, VolumeIdx);
-	
+
 	float3 distortionPos = Position + HoleInfo.rgb;
 	float VoxelDensity = GetVoxelDensity(distortionPos, VolumeIdx);
 	float Noise = GetNoise(distortionPos);
 
-	// Adjust density based on noise range (0.7 threshold works well for typical noise values)
 	float CurDensity = saturate(0.7f - Noise) * VoxelDensity;
 	CurDensity = saturate((CurDensity - VolumeRangeOffset) / (1 - VolumeRangeOffset));
 	float InvDensity = saturate(1 - CurDensity);
-	InvDensity = pow(InvDensity, VolumeEdgeFadeSharpness); // Higher = sharper voxel edge fade
+	InvDensity = pow(InvDensity, VolumeEdgeFadeSharpness);
 	float NoiseWeight = 1 - InvDensity;
 	NoiseWeight = saturate(NoiseWeight - VolumeEdgeNoiseFadeOffset);
 	float result = Noise * NoiseWeight + CurDensity;
@@ -234,82 +242,88 @@ float GetDensityForVolume(float3 Position, uint VolumeIdx)
 }
 
 // ============================================================================
-// Self-Shadowing (Light Marching)
+// Light Marching with Occupancy
 // ============================================================================
 
 /**
- * Sample total density at a position from all intersecting volumes.
- * Used for light marching to calculate shadow transmittance.
- *
- * @param WorldPos      World space position to sample
- * @return              Total combined density from all volumes
+ * Sample total density at a position using light occupancy mask.
+ * Only samples volumes that are present in the light occupancy.
  */
-float SampleTotalDensityAtPosition(float3 WorldPos)
+float SampleTotalDensityWithOccupancy(float3 WorldPos, uint4 LightMask)
 {
 	float TotalDensity = 0.0;
 
-	for (uint v = 0; v < NumActiveVolumes; v++)
-	{
-		FVolumeGPUData Vol = VolumeDataBuffer[v];
+	// Sparse iteration over light-occupied volumes
+	FVolumeMaskIterator It = InitVolumeMaskIterator(LightMask);
 
-		// Check if position is within volume AABB
+	while (It.bValid)
+	{
+		uint VolumeIdx = GetCurrentVolumeIndex(It);
+		FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
+
+		// Point-in-AABB check (occupancy is conservative)
 		if (all(WorldPos >= Vol.VolumeWorldAABBMin) && all(WorldPos <= Vol.VolumeWorldAABBMax))
 		{
-			float Density = GetDensityForVolume(WorldPos, v);
+			float Density = GetDensityForVolume(WorldPos, VolumeIdx);
 			TotalDensity += Density;
 		}
+
+		AdvanceVolumeMaskIterator(It);
 	}
 
 	return TotalDensity;
 }
 
 /**
- * Calculate light transmittance by marching toward light source.
- * Uses exponential step distribution for better quality with fewer samples.
- * More samples near the surface, fewer far away (where they matter less).
- *
- * @param WorldPos          Current sample position
- * @param LightDir          Direction toward light (normalized)
- * @param MarchDistance     Distance to march (auto-calculated or user-specified)
- * @param Steps             Number of marching steps
- * @param ExpFactor         Exponential distribution factor (1.0 = uniform, higher = more near samples)
- * @return                  Transmittance [0,1] - 0=fully shadowed, 1=fully lit
+ * Light marching with occupancy-based optimization.
+ * Uses light occupancy from the starting cell and samples along the ray.
  */
-float MarchTowardLight(float3 WorldPos, float3 LightDir, float MarchDistance, int Steps, float ExpFactor)
+float MarchTowardLightWithOccupancy(
+	float3 WorldPos,
+	float3 LightDir,
+	float MarchDistance,
+	int Steps,
+	float ExpFactor,
+	uint2 TileCoord,
+	uint StartSlice)
 {
 	if (Steps <= 0)
 	{
-		return 1.0;  // Self-shadowing disabled
+		return 1.0;
+	}
+
+	// Get light occupancy from starting position
+	// Note: Light occupancy at this cell tells us which volumes might be hit
+	// along the light ray from this cell
+	uint4 LightMask = SampleLightOccupancy(LightOccupancy, TileCoord, StartSlice);
+
+	// Early exit if no volumes in light path
+	if (!AnyVolumePresent(LightMask))
+	{
+		return 1.0;
 	}
 
 	float LightTransmittance = 1.0;
-
-	// Exponential distribution: exp(t * ExpFactor) maps [0,1] to [1, e^ExpFactor]
-	// Normalize to [0,1] range for distance calculation
 	float ExpDenom = exp(ExpFactor) - 1.0;
 	float PrevDist = 0.0;
 
+	[loop]
 	for (int i = 1; i <= Steps; i++)
 	{
-		// Normalized position [0, 1]
 		float t = (float)i / (float)Steps;
-
-		// Exponential mapping: more samples near origin, fewer far away
-		// ExpFactor = 1.0 → nearly uniform
-		// ExpFactor = 2.0~3.0 → moderate concentration near origin
-		// ExpFactor = 4.0+ → strong concentration near origin
 		float CurrentDist = MarchDistance * (exp(t * ExpFactor) - 1.0) / ExpDenom;
 		float StepSize = CurrentDist - PrevDist;
 
 		float3 SamplePos = WorldPos + LightDir * CurrentDist;
-		float Density = SampleTotalDensityAtPosition(SamplePos);
+
+		// Use occupancy-filtered density sampling
+		float Density = SampleTotalDensityWithOccupancy(SamplePos, LightMask);
 
 		if (Density > 0.001)
 		{
 			LightTransmittance *= exp(-Density * StepSize * GlobalAbsorption);
 		}
 
-		// Early exit if fully shadowed
 		if (LightTransmittance < 0.05)
 		{
 			return 0.0;
@@ -322,7 +336,7 @@ float MarchTowardLight(float3 WorldPos, float3 LightDir, float MarchDistance, in
 }
 
 // ============================================================================
-// Multi-Volume Ray Marching CS
+// Main Compute Shader
 // ============================================================================
 
 [numthreads(THREADGROUP_SIZE_X, THREADGROUP_SIZE_Y, 1)]
@@ -330,14 +344,38 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 {
 	uint2 PixelCoord = DispatchThreadId.xy;
 
-	// Bounds check (use TexSize for reduced resolution rendering)
+	// Bounds check
 	if (PixelCoord.x >= TexSize.x || PixelCoord.y >= TexSize.y)
 	{
 		return;
 	}
 
-	// Calculate screen position (use TexSize for UV calculation)
-	float2 PixelUV = (float2(PixelCoord) + 0.5) / TexSize;
+	// ========================================================================
+	// Tile and Ray Setup
+	// ========================================================================
+
+	// Compute tile coordinate
+	// Map from reduced resolution (TexSize) to full resolution (ViewportSize), then to tile space
+	float2 PixelUV = (float2(PixelCoord) + 0.5) / float2(TexSize);
+	float2 FullResPixelCoord = PixelUV * ViewportSize;
+	uint2 TileCoord = uint2(FullResPixelCoord) / uint2(TILE_SIZE_X, TILE_SIZE_Y);
+	TileCoord = min(TileCoord, uint2(TileCount) - 1);
+
+	// Load tile data
+	uint TileIndex = TileCoord.y * uint(TileCount.x) + TileCoord.x;
+	FTileData Tile = TileDataBuffer[TileIndex];
+
+	// Quick rejection: no volumes intersect this tile
+	// TotalVolumeLength == 0 means no ray-volume intersections computed in TileSetup
+	// This works correctly regardless of volume count (unlike VolumeMask which only covers first 32)
+	if (Tile.TotalVolumeLength <= 0.0)
+	{
+		SmokeAlbedoTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		SmokeMaskTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		return;
+	}
+
+	// Screen position
 	float2 ScreenPos = PixelUV * 2.0 - 1.0;
 	ScreenPos.y *= -1.0;
 
@@ -349,234 +387,234 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	);
 	float3 RayOrigin = CameraPosition;
 
-	// ============================================================================
-	// Scene Depth (ratio-based coordinate for reduced resolution)
-	// ============================================================================
+	// ========================================================================
+	// Scene Depth
+	// ========================================================================
 
+	// Use same depth sampling as original ray march (without +0.5 offset)
 	int3 ScenePixelCoord = int3(0, 0, 0);
 	ScenePixelCoord.x = ceil((float)PixelCoord.x / TexSize.x * ViewportSize.x + ViewRectMin.x);
 	ScenePixelCoord.y = ceil((float)PixelCoord.y / TexSize.y * ViewportSize.y + ViewRectMin.y);
 	float DeviceZ = SceneTexturesStruct.SceneDepthTexture.Load(ScenePixelCoord).r;
-	float SceneDepthWorld = DeviceZ * InvDeviceZToWorldZTransform.x
-		+ InvDeviceZToWorldZTransform.y
-		+ 1.0 / (DeviceZ * InvDeviceZToWorldZTransform.z - InvDeviceZToWorldZTransform.w);
+	float SceneDepthWorld = DeviceZToLinearDepth(DeviceZ, InvDeviceZToWorldZTransform);
 
 	float ViewDirDot = dot(RayDir, CameraForward);
 	float SceneRayDistance = SceneDepthWorld / max(ViewDirDot, 0.001);
-	SceneRayDistance -= 5.0; // Depth bias
+	SceneRayDistance -= 5.0;  // Depth bias
 
-	// ============================================================================
-	// Compute Global AABB (union of all volumes)
-	// ============================================================================
+	// ========================================================================
+	// Ray March Bounds (Tile-based)
+	// ========================================================================
 
-	float3 GlobalAABBMin = float3(1e10, 1e10, 1e10);
-	float3 GlobalAABBMax = float3(-1e10, -1e10, -1e10);
+	// Convert tile linear depth to ray distance
+	// Tile.Near/Far are in linear depth space, convert to ray distance
+	float TMin = Tile.Near / max(ViewDirDot, 0.001);
+	float TMax = min(Tile.Far / max(ViewDirDot, 0.001), SceneRayDistance);
 
-	for (uint v = 0; v < NumActiveVolumes; v++)
-	{
-		FVolumeGPUData Vol = VolumeDataBuffer[v];
-		GlobalAABBMin = min(GlobalAABBMin, Vol.VolumeWorldAABBMin);
-		GlobalAABBMax = max(GlobalAABBMax, Vol.VolumeWorldAABBMax);
-	}
-
-	// Global AABB diagonal length for fixed step size calculation
-	float3 GlobalAABBSize = GlobalAABBMax - GlobalAABBMin;
-	float GlobalDiagonal = length(GlobalAABBSize);
-
-	// ============================================================================
-	// Ray-GlobalAABB Intersection for consistent ray bounds
-	// ============================================================================
-
-	float globalTMin, globalTMax;
-	if (!RayBoxIntersection(RayOrigin, RayDir, GlobalAABBMin, GlobalAABBMax, globalTMin, globalTMax))
+	if (TMax <= TMin)
 	{
 		SmokeAlbedoTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
 		SmokeMaskTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
 		return;
 	}
 
-	globalTMin = max(0.0, globalTMin);
-	globalTMax = min(SceneRayDistance, globalTMax);
-
-	if (globalTMax <= globalTMin)
-	{
-		SmokeAlbedoTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
-		SmokeMaskTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
-		return;
-	}
-
-	// ============================================================================
-	// Collect Individual Volume Intersections (for per-sample volume checks)
-	// ============================================================================
-
-	FVolumeIntersection intersections[MAX_VOLUME_INTERSECTIONS];
-	uint numIntersections = 0;
-
-	for (uint vi = 0; vi < NumActiveVolumes && numIntersections < MAX_VOLUME_INTERSECTIONS; vi++)
-	{
-		FVolumeGPUData Vol = VolumeDataBuffer[vi];
-
-		float tNear, tFar;
-		if (RayBoxIntersection(RayOrigin, RayDir, Vol.VolumeWorldAABBMin, Vol.VolumeWorldAABBMax, tNear, tFar))
-		{
-			tNear = max(0.0, tNear);
-			tFar = min(SceneRayDistance, tFar);
-
-			if (tFar > tNear)
-			{
-				intersections[numIntersections].VolumeIndex = vi;
-				intersections[numIntersections].tNear = tNear;
-				intersections[numIntersections].tFar = tFar;
-				numIntersections++;
-			}
-		}
-	}
-
-	// Early exit if no intersections
-	if (numIntersections == 0)
-	{
-		SmokeAlbedoTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
-		SmokeMaskTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
-		return;
-	}
-
-	// ============================================================================
-	// Unified Ray March
-	// ============================================================================
-	//
-	// Front-to-back ray marching with pre-multiplied alpha accumulation.
-	// Output is pre-multiplied: AccumulatedColor already contains transmittance weighting.
-	// Composite formula: FinalColor = SceneColor * Transmittance + AccumulatedColor
-	//
-	// ============================================================================
+	// ========================================================================
+	// Ray March with Occupancy-Based Sparse Iteration
+	// ========================================================================
 
 	float3 AccumulatedColor = float3(0.0, 0.0, 0.0);
 	float Transmittance = 1.0;
-	float RayLength = globalTMax - globalTMin;
-	float FirstHitDepth = 0.0;  // Track depth for particle sorting
+	float FirstHitDepth = 0.0;
 
-	// Step size calculation:
-	// Use FIXED step size based on GlobalAABB diagonal, not RayLength.
-	// This ensures StepSize is independent of camera position, preventing flickering.
-	const float MinStepSize = 1.0;
-	float StepSize = max(MinStepSize, GlobalDiagonal / (float)MaxSteps);
+	// StepSize: Use MinStepSize as the quality baseline, with safety limit from MaxSteps.
+	// - MinStepSize (world units): Minimum distance per step (lower = better quality)
+	// - TotalVolumeLength / MaxSteps: Safety limit to prevent exceeding MaxSteps
+	// Slice skip handles empty space jumps, so steps are used for actual volume content.
+	float StepSize = max(MinStepSize, Tile.TotalVolumeLength / float(MaxSteps));
 
-	// Blue Noise Jitter:
-	// - Spatiotemporal blue noise from View UB (128x128x64 texture)
-	// - Blue noise is visually superior to white noise (less perceptible grain)
-	// - Temporal variation: different slice each frame for TAA accumulation
-	// - Blue noise texture has 64 temporal slices, so we use FrameNumber % 64
+	// Blue Noise Jitter
 	float Jitter = BlueNoiseScalar(PixelCoord, FrameNumber % 64);
-	float T = globalTMin + Jitter * StepSize;
+	float T = TMin + Jitter * StepSize;
 
-	for (int step = 0; step < MaxSteps && Transmittance > 0.05; step++)
+	// Slice parameters for occupancy lookup
+	// Ensure SliceDepthSize is never zero to prevent division by zero in slice calculation
+	float SliceDepthSize = max(Tile.StepSize * float(StepDivisor), 0.001);
+	float ViewDirDotCached = dot(RayDir, CameraForward);
+
+	// Cache for slice-based occupancy (avoid sampling every step)
+	uint CachedSlice = 0xFFFFFFFF;  // Invalid initial value
+	uint4 CachedViewMask = uint4(0, 0, 0, 0);
+
+	// Ray march loop with occupancy-based slice skipping.
+	// Step is only incremented when actually sampling volumes (not when skipping empty slices).
+	// This ensures MaxSteps are used for actual volume content, not wasted on empty space.
+	// Warp divergence: Pixels in same tile share occupancy data, so slice skips are coherent.
+	int Step = 0;
+
+	[loop]
+	while (Step < MaxSteps && Transmittance > 0.05 && T <= TMax)
 	{
-		// Fixed step size (no per-step jitter to avoid grain)
-		float JitteredStepSize = StepSize;
+		// ====================================================================
+		// Compute current slice for occupancy lookup (with caching)
+		// ====================================================================
+
+		float LinearDepth = T * ViewDirDotCached;
+		uint Slice = uint(max(0.0, (LinearDepth - Tile.Near) / SliceDepthSize));
+		Slice = min(Slice, StepSliceCount - 1);
+
+		// Only sample occupancy when slice changes (reduces 3D texture reads by ~4x)
+		if (Slice != CachedSlice)
+		{
+			CachedSlice = Slice;
+			CachedViewMask = SampleViewOccupancy(ViewOccupancy, TileCoord, Slice);
+		}
+
+		// If this slice is empty, skip to next slice boundary (no Step increment)
+		if (!AnyVolumePresent(CachedViewMask))
+		{
+			// Safety: Check if we've exhausted all slices
+			uint NextSlice = Slice + 1;
+			if (NextSlice >= StepSliceCount)
+			{
+				break;  // No more slices to check
+			}
+
+			float NextSliceDepth = Tile.Near + float(NextSlice) * SliceDepthSize;
+			float NextSliceT = NextSliceDepth / max(ViewDirDotCached, 0.001);
+
+			// Apply jitter after slice skip to prevent banding artifacts
+			// Without jitter, all pixels in same tile start at exact slice boundary
+			T = max(T + 0.01, NextSliceT + Jitter * StepSize);
+			continue;
+		}
 
 		float3 WorldPos = RayOrigin + RayDir * T;
 
-		// Sum density from all intersecting volumes at this position
+		// ================================================================
+		// Sample Density from Occupied Volumes Only (Sparse Iteration)
+		// ================================================================
+
 		float TotalDensity = 0.0;
 		float3 WeightedColor = float3(0.0, 0.0, 0.0);
 
-		for (uint i = 0; i < numIntersections; i++)
+		// Sparse iteration over view-occupied volumes using firstbitlow
+		FVolumeMaskIterator It = InitVolumeMaskIterator(CachedViewMask);
+
+		while (It.bValid)
 		{
-			// Check if current T is within this volume's range
-			if (T >= intersections[i].tNear && T <= intersections[i].tFar)
+			uint VolumeIdx = GetCurrentVolumeIndex(It);
+			FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
+
+			// Point-in-AABB check (occupancy is conservative)
+			if (all(WorldPos >= Vol.VolumeWorldAABBMin) && all(WorldPos <= Vol.VolumeWorldAABBMax))
 			{
-				uint VolumeIdx = intersections[i].VolumeIndex;
 				float Density = GetDensityForVolume(WorldPos, VolumeIdx);
 
 				if (Density > 0.001)
 				{
-					FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
 					TotalDensity += Density;
 					WeightedColor += Vol.SmokeColor * Density;
 				}
 			}
+
+			AdvanceVolumeMaskIterator(It);
 		}
 
-		// Beer-Lambert integration (use jittered step size for correct integration)
+		// ================================================================
+		// Beer-Lambert Integration
+		// ================================================================
+
 		if (TotalDensity > 0.001)
 		{
-			// Record first hit depth (for particle depth sorting)
+			// Record first hit depth
 			if (FirstHitDepth == 0.0)
 			{
-				FirstHitDepth = T;  // Distance along ray to first smoke
+				FirstHitDepth = T;
 			}
 
-			float Extinction = TotalDensity * GlobalAbsorption * JitteredStepSize;
+			float Extinction = TotalDensity * GlobalAbsorption * StepSize;
 			float SampleTransmittance = exp(-Extinction);
 			float3 SampleColor = WeightedColor / TotalDensity;
 
-			// Self-shadowing: march toward light to calculate attenuation
-			// Calculate distance to exit GlobalAABB, capped by LightMarchingDistance (max limit)
+			// ============================================================
+			// Self-Shadowing with Light Occupancy
+			// ============================================================
+
+			// Calculate per-pixel light march distance using GlobalAABB ray-box intersection
+			// This is the same approach as the original shader, ensuring smooth variation
+			// across pixels (no tile boundary artifacts)
 			float LightMarchDist = 0.0;
 			float lightTMin, lightTMax;
-			if (RayBoxIntersection(WorldPos, LightDirection, GlobalAABBMin, GlobalAABBMax, lightTMin, lightTMax))
+			if (RayAABBIntersection(WorldPos, LightDirection, GlobalAABBMin, GlobalAABBMax, lightTMin, lightTMax))
 			{
 				LightMarchDist = lightTMax;
-				// Cap at maximum distance for performance (0 = no limit)
+
+				// Apply user-specified limit if set (0 = no limit)
 				if (LightMarchingDistance > 0.0)
 				{
 					LightMarchDist = min(LightMarchDist, LightMarchingDistance);
 				}
 			}
 
-			float LightTransmittance = MarchTowardLight(
+			// Ensure minimum distance for valid light marching
+			LightMarchDist = max(LightMarchDist, 1.0);
+
+			float LightTransmittance = MarchTowardLightWithOccupancy(
 				WorldPos,
 				LightDirection,
 				LightMarchDist,
 				LightMarchingSteps,
-				LightMarchingExpFactor
+				LightMarchingExpFactor,
+				TileCoord,
+				CachedSlice
 			);
 
-			// External shadowing: apply shadow from external objects (trees, buildings, etc.)
-			// Uses CSM (Cascaded Shadow Maps) for high-quality directional shadows
+			// External shadowing (CSM)
 			float ExternalShadow = SampleExternalShadow(WorldPos);
 			LightTransmittance *= ExternalShadow;
 
-			// Apply self-shadow to base color (ShadowAmbient = minimum brightness)
+			// Apply shadow to base color
 			float3 LitSampleColor = SampleColor * lerp(ShadowAmbient, 1.0, LightTransmittance);
 
-			// Henyey-Greenstein in-scattering with self-shadowing
+			// ============================================================
+			// In-Scattering
+			// ============================================================
+
 			float3 InScatter = float3(0, 0, 0);
 			if (ScatterScale > 0.0)
 			{
-				// Henyey-Greenstein phase function with shadow attenuation
 				InScatter = HenyeyGreensteinInScattering(
 					RayDir,
 					LightDirection,
-					LightColor * LightTransmittance,  // Apply self-shadow
+					LightColor * LightTransmittance,
 					TotalDensity,
 					ScatterScale,
 					ScatteringAnisotropy
 				);
 
-				// Dark smoke absorbs scattered light (black smoke → no blue tint)
 				float AlbedoLuminance = dot(SampleColor, float3(0.2126, 0.7152, 0.0722));
 				InScatter *= saturate(AlbedoLuminance * 2.0);
 			}
 
-			// Combine volume color with in-scattered light
-			// Use fixed StepSize for InScatter to avoid grain amplification from jitter
-			float3 TotalSampleColor = LitSampleColor + InScatter * StepSize;
-
+			// Combine and accumulate
+			float3 TotalSampleColor = LitSampleColor + InScatter;
 			AccumulatedColor += Transmittance * (1.0 - SampleTransmittance) * TotalSampleColor;
 			Transmittance *= SampleTransmittance;
 		}
 
-		T += JitteredStepSize;
+		// Advance ray position and step counter
+		T += StepSize;
+		Step++;
 	}
 
-	// Remap Transmittance: [THRESHOLD, 1.0] → [0.0, 1.0] to prevent HDR burn-through
-	// Early exit at 0.05 means we treat it as fully opaque (0 transmittance)
+	// ========================================================================
+	// Output
+	// ========================================================================
+
+	// Remap transmittance to prevent HDR burn-through
 	const float EARLY_EXIT_THRESHOLD = 0.05;
 	float RemappedTransmittance = saturate((Transmittance - EARLY_EXIT_THRESHOLD) / (1.0 - EARLY_EXIT_THRESHOLD));
 
-	// Output: Dual Render Target (Albedo + Mask separated)
-	// .r = Alpha (opacity), .g = FirstHitDepth (ray distance to first smoke)
 	float Alpha = 1.0 - RemappedTransmittance;
 	SmokeAlbedoTex[PixelCoord] = float4(AccumulatedColor, 1.0);
 	SmokeMaskTex[PixelCoord] = float4(Alpha, FirstHitDepth, 0.0, 0.0);

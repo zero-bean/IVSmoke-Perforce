@@ -9,6 +9,7 @@
 #include "IVSmokeVoxelVolume.h"
 #include "IVSmokeCSMRenderer.h"
 #include "IVSmokeVSMProcessor.h"
+#include "IVSmokeRayMarchPipeline.h"
 #include "Engine/TextureRenderTargetVolume.h"
 #include "PostProcess/PostProcessMaterialInputs.h"
 #include "SceneRenderTargetParameters.h"
@@ -136,8 +137,6 @@ void FIVSmokeRenderer::InitializeCSM(UWorld* World)
 	{
 		VSMProcessor = MakeUnique<FIVSmokeVSMProcessor>();
 	}
-
-	UE_LOG(LogIVSmoke, Log, TEXT("[FIVSmokeRenderer::InitializeCSM] CSM initialized with %d cascades"), Settings->NumShadowCascades);
 }
 
 void FIVSmokeRenderer::CleanupCSM()
@@ -726,6 +725,8 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	// ============================================================================
 	// Ray March Pass (1/2 Resolution)
 	// ============================================================================
+	// Multi-Volume Ray Marching with Occupancy Optimization (Three-Pass Pipeline).
+	// Uses tile-based occupancy grid for efficient empty space skipping.
 	AddMultiVolumeRayMarchPass(
 		GraphBuilder,
 		View,
@@ -876,469 +877,6 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 // Pass Functions
 // ============================================================================
 
-void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
-	FRDGBuilder& GraphBuilder,
-	const FSceneView& View,
-	const FIVSmokePackedRenderData& RenderData,
-	FRDGTextureRef SmokeAlbedoTex,
-	FRDGTextureRef SmokeMaskTex,
-	const FIntPoint& TexSize,
-	const FIntPoint& ViewportSize,
-	const FIntPoint& ViewRectMin)
-{
-	const int32 VolumeCount = RenderData.VolumeCount;
-
-	if (VolumeCount == 0 || !NoiseVolume || !RenderData.bIsValid)
-	{
-		return;
-	}
-
-	// Performance warning for too many volumes
-	if (VolumeCount > 8)
-	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[FIVSmokeRenderer] Performance warning: %d volumes active (recommended: 8 or fewer)"), VolumeCount);
-	}
-
-	// ============================================================================
-	// Use Pre-Packed Data from RenderData (prepared on Game Thread)
-	// ============================================================================
-
-	const int32 TexturePackInterval = 4;
-	const int32 TexturePackMaxSize = 2048;
-	const FIntVector VoxelResolution = RenderData.VoxelResolution;
-	const FIntVector HoleResolution = RenderData.HoleResolution;
-	const FIntVector HoleAtlasCount = GetAtlasTexCount(HoleResolution, VolumeCount, TexturePackInterval, TexturePackMaxSize);
-
-	const FIntVector VoxelAtlasResolution = FIntVector(
-		VoxelResolution.X,
-		VoxelResolution.Y,
-		VoxelResolution.Z * VolumeCount + TexturePackInterval * (VolumeCount - 1));
-	const FIntVector VoxelAtlasFXAAResolution = VoxelAtlasResolution * 1;
-	const FIntVector HoleAtlasResolution = FIntVector(
-		HoleResolution.X * HoleAtlasCount.X + TexturePackInterval * (HoleAtlasCount.X - 1),
-		HoleResolution.Y * HoleAtlasCount.Y + TexturePackInterval * (HoleAtlasCount.Y - 1),
-		HoleResolution.Z * HoleAtlasCount.Z + TexturePackInterval * (HoleAtlasCount.Z - 1));
-
-	// Create atlas textures
-	FRDGTextureDesc VoxelAtlasDesc = FRDGTextureDesc::Create3D(
-		VoxelAtlasResolution,
-		PF_R32_FLOAT,
-		FClearValueBinding::None,
-		TexCreate_ShaderResource | TexCreate_UAV
-	);
-	FRDGTextureRef PackedVoxelAtlas = GraphBuilder.CreateTexture(VoxelAtlasDesc, TEXT("IVSmoke_PackedVoxelAtlas"));
-
-	FRDGTextureDesc VoxelAtlasFXAAResDesc = FRDGTextureDesc::Create3D(
-		VoxelAtlasFXAAResolution,
-		PF_R32_FLOAT,
-		FClearValueBinding::None,
-		TexCreate_ShaderResource | TexCreate_UAV
-	);
-	FRDGTextureRef PackedVoxelAtlasFXAA = GraphBuilder.CreateTexture(VoxelAtlasFXAAResDesc, TEXT("IVSmoke_PackedVoxelAtlasFXAA"));
-
-	FRDGTextureDesc HoleAtlasDesc = FRDGTextureDesc::Create3D(
-		HoleAtlasResolution,
-		PF_FloatRGBA,
-		FClearValueBinding::None,
-		TexCreate_ShaderResource | TexCreate_UAV
-	);
-	FRDGTextureRef PackedHoleAtlas = GraphBuilder.CreateTexture(HoleAtlasDesc, TEXT("IVSmoke_PackedHoleAtlas"));
-
-	// ============================================================================
-	// Clear Hole Atlas first (ensures uninitialized regions are zero, not garbage)
-	// ============================================================================
-	AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(PackedHoleAtlas), 0.0f);
-
-	// ============================================================================
-	// Copy Hole Textures to Atlas (using pre-collected RHI references)
-	// ============================================================================
-	FRHICopyTextureInfo HoleCpyInfo;
-	HoleCpyInfo.Size = HoleResolution;
-	HoleCpyInfo.SourcePosition = FIntVector::ZeroValue;
-
-	for (int z = 0; z < HoleAtlasCount.Z; ++z)
-	{
-		for (int y = 0; y < HoleAtlasCount.Y; ++y)
-		{
-			for (int x = 0; x < HoleAtlasCount.X; ++x)
-			{
-				int i = x + HoleAtlasCount.X * y + z * HoleAtlasCount.X * HoleAtlasCount.Y;
-
-				if (i >= RenderData.HoleTextures.Num())
-				{
-					break;
-				}
-
-				FTextureRHIRef SourceRHI = RenderData.HoleTextures[i];
-				if (!SourceRHI)
-				{
-					continue;
-				}
-
-				FRDGTextureRef SourceTexture = GraphBuilder.RegisterExternalTexture(
-					CreateRenderTarget(SourceRHI, TEXT("IVSmoke_CopyHoleSource"))
-				);
-
-				HoleCpyInfo.DestPosition.X = x * (HoleResolution.X + TexturePackInterval);
-				HoleCpyInfo.DestPosition.Y = y * (HoleResolution.Y + TexturePackInterval);
-				HoleCpyInfo.DestPosition.Z = z * (HoleResolution.Z + TexturePackInterval);
-				AddCopyTexturePass(GraphBuilder, SourceTexture, PackedHoleAtlas, HoleCpyInfo);
-			}
-		}
-	}
-
-	// Get global settings for FXAA parameters
-	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
-
-	// ============================================================================
-	// StructuredToTexture Pass
-	// ============================================================================
-	FRDGBufferDesc PackedVoxelBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(float), RenderData.PackedVoxelData.Num());
-	FRDGBufferRef PackedVoxelBuffer = GraphBuilder.CreateBuffer(PackedVoxelBufferDesc, TEXT("IVSmoke_PackedVoxelBuffer"));
-	GraphBuilder.QueueBufferUpload(PackedVoxelBuffer, RenderData.PackedVoxelData.GetData(), RenderData.PackedVoxelData.Num() * sizeof(float));
-
-	FRDGBufferDesc VolumeBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FIVSmokeVolumeGPUData), RenderData.VolumeDataArray.Num());
-	FRDGBufferRef VolumeBuffer = GraphBuilder.CreateBuffer(VolumeBufferDesc, TEXT("IVSmokeVolumeDataBuffer"));
-	GraphBuilder.QueueBufferUpload(VolumeBuffer, RenderData.VolumeDataArray.GetData(), RenderData.VolumeDataArray.Num() * sizeof(FIVSmokeVolumeGPUData));
-
-	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
-	TShaderMapRef<FIVSmokeStructuredToTextureCS> StructuredCopyShader(ShaderMap);
-	auto* StructuredCopyParams = GraphBuilder.AllocParameters<FIVSmokeStructuredToTextureCS::FParameters>();
-	StructuredCopyParams->Desti = GraphBuilder.CreateUAV(PackedVoxelAtlas);
-	StructuredCopyParams->Source = GraphBuilder.CreateSRV(PackedVoxelBuffer);
-	StructuredCopyParams->VolumeDataBuffer = GraphBuilder.CreateSRV(VolumeBuffer);
-	StructuredCopyParams->TexSize = VoxelAtlasResolution;
-	StructuredCopyParams->VoxelResolution = RenderData.VoxelResolution;
-	StructuredCopyParams->PackedInterval = TexturePackInterval;
-	StructuredCopyParams->GameTime = RenderData.GameTime;
-
-	FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeStructuredToTextureCS>(
-		GraphBuilder,
-		ShaderMap,
-		StructuredCopyShader,
-		StructuredCopyParams,
-		VoxelAtlasResolution  // Dispatch at reduced resolution
-	);
-
-	// ============================================================================
-	// Voxel FXAA Pass
-	// ============================================================================
-	TShaderMapRef<FIVSmokeVoxelFXAACS> VoxelFXAAShader(ShaderMap);
-	auto* VoxelFXAAParams = GraphBuilder.AllocParameters<FIVSmokeVoxelFXAACS::FParameters>();
-
-	VoxelFXAAParams->Desti = GraphBuilder.CreateUAV(PackedVoxelAtlasFXAA);
-	VoxelFXAAParams->Source = GraphBuilder.CreateSRV(PackedVoxelAtlas);
-	VoxelFXAAParams->LinearBorder_Sampler = TStaticSamplerState<SF_Bilinear, AM_Border, AM_Border, AM_Border>::GetRHI();
-	VoxelFXAAParams->TexSize = VoxelAtlasFXAAResolution;
-	VoxelFXAAParams->FXAASpanMax = Settings->FXAASpanMax;
-	VoxelFXAAParams->FXAARange = Settings->FXAARange;
-	VoxelFXAAParams->FXAASharpness = Settings->FXAASharpness;
-
-	FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeVoxelFXAACS>(
-		GraphBuilder,
-		ShaderMap,
-		VoxelFXAAShader,
-		VoxelFXAAParams,
-		VoxelAtlasFXAAResolution );
-
-	// ============================================================================
-	// Create GPU Buffers
-	// ============================================================================
-
-	TShaderMapRef<FIVSmokeMultiVolumeRayMarchCS> ComputeShader(ShaderMap);
-
-	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeMultiVolumeRayMarchCS::FParameters>();
-
-	// Output (Dual Render Target)
-	Parameters->SmokeAlbedoTex = GraphBuilder.CreateUAV(FRDGTextureUAVDesc(SmokeAlbedoTex));
-	Parameters->SmokeMaskTex = GraphBuilder.CreateUAV(FRDGTextureUAVDesc(SmokeMaskTex));
-
-	// Noise Volume
-	FTextureRHIRef TextureRHI = NoiseVolume->GetRenderTargetResource()->GetRenderTargetTexture();
-	FRDGTextureRef NoiseVolumeRDG = GraphBuilder.RegisterExternalTexture(
-		CreateRenderTarget(TextureRHI, TEXT("IVSmokeNoiseVolume"))
-	);
-	Parameters->NoiseVolume = NoiseVolumeRDG;
-	Parameters->NoiseUVMul = Settings->NoiseUVMul;
-
-	// Sampler
-	Parameters->LinearBorder_Sampler = TStaticSamplerState<SF_Trilinear, AM_Border, AM_Border, AM_Border>::GetRHI();
-	Parameters->LinearRepeat_Sampler = TStaticSamplerState<SF_Trilinear, AM_Wrap, AM_Wrap, AM_Wrap>::GetRHI();
-
-	// Time (use RealTimeSeconds to keep jitter working during pause)
-	ElapsedTime = View.Family->Time.GetRealTimeSeconds();
-	Parameters->ElapsedTime = ElapsedTime;
-
-	// Viewport (TexSize = reduced resolution, ViewportSize = full resolution for depth)
-	Parameters->TexSize = FIntPoint(TexSize.X, TexSize.Y);
-	Parameters->ViewportSize = FVector2f(ViewportSize);
-	Parameters->ViewRectMin = FVector2f(ViewRectMin);
-
-	// Camera
-	const FViewMatrices& ViewMatrices = View.ViewMatrices;
-	Parameters->CameraPosition = FVector3f(ViewMatrices.GetViewOrigin());
-	Parameters->CameraForward = FVector3f(View.GetViewDirection());
-	Parameters->CameraRight = FVector3f(View.GetViewRight());
-	Parameters->CameraUp = FVector3f(View.GetViewUp());
-
-	// Calculate FOV and aspect ratio based on full viewport (not reduced)
-	const FMatrix& ProjMatrix = ViewMatrices.GetProjectionMatrix();
-	float TanHalfFOV = 1.0f / ProjMatrix.M[1][1];
-	float AspectRatio = (float)ViewportSize.X / (float)ViewportSize.Y;
-
-	Parameters->TanHalfFOV = TanHalfFOV;
-	Parameters->AspectRatio = AspectRatio;
-
-	// Ray Marching
-	Parameters->MaxSteps = RenderData.MaxSteps;
-
-	// Volume Data Buffer (use pre-built data from RenderData)
-	Parameters->VolumeDataBuffer = GraphBuilder.CreateSRV(VolumeBuffer);
-	Parameters->NumActiveVolumes = RenderData.VolumeDataArray.Num();
-
-	// Packed Textures
-	Parameters->PackedInterval = TexturePackInterval;
-	Parameters->PackedVoxelAtlas = GraphBuilder.CreateSRV(PackedVoxelAtlasFXAA);
-	Parameters->VoxelTexSize = VoxelResolution;
-	Parameters->PackedHoleAtlas = GraphBuilder.CreateSRV(PackedHoleAtlas);
-	Parameters->HoleTexSize = HoleResolution;
-	Parameters->PackedHoleTexSize = HoleAtlasResolution;
-	Parameters->HoleAtlasCount = HoleAtlasCount;
-
-	// Scene Textures
-	Parameters->SceneTexturesStruct = GetSceneTextureShaderParameters(View).SceneTextures;
-	Parameters->InvDeviceZToWorldZTransform = FVector4f(View.InvDeviceZToWorldZTransform);
-
-	// View (for BlueNoise access)
-	Parameters->View = View.ViewUniformBuffer;
-
-	// Global Smoke Parameters (from RenderData - prepared on Game Thread)
-	Parameters->GlobalAbsorption = RenderData.GlobalAbsorption;
-	Parameters->SmokeSize = RenderData.SmokeSize;
-	Parameters->WindDirection = FVector3f(RenderData.WindDirection);
-	Parameters->VolumeRangeOffset = RenderData.VolumeRangeOffset;
-	Parameters->VolumeEdgeNoiseFadeOffset = RenderData.VolumeEdgeNoiseFadeOffset;
-	Parameters->VolumeEdgeFadeSharpness = RenderData.VolumeEdgeFadeSharpness;
-
-	// Rayleigh Scattering (from RenderData)
-	// ScatterScale is multiplied by LightIntensity so that no directional light = no scattering = dark smoke
-	Parameters->LightDirection = FVector3f(RenderData.LightDirection);
-	Parameters->LightColor = FVector3f(RenderData.LightColor.R, RenderData.LightColor.G, RenderData.LightColor.B);
-	Parameters->ScatterScale = RenderData.bEnableScattering ? (RenderData.ScatterScale * RenderData.LightIntensity) : 0.0f;
-
-	// Henyey-Greenstein Anisotropy
-	Parameters->ScatteringAnisotropy = RenderData.ScatteringAnisotropy;
-
-	// Self-Shadowing (Light Marching) - from RenderData
-	Parameters->LightMarchingSteps = RenderData.bEnableSelfShadowing ? RenderData.LightMarchingSteps : 0;
-	Parameters->LightMarchingDistance = RenderData.LightMarchingDistance;
-	Parameters->LightMarchingExpFactor = RenderData.LightMarchingExpFactor;
-	Parameters->ShadowAmbient = RenderData.ShadowAmbient;
-
-	// External Shadowing (CSM - Cascaded Shadow Maps)
-	// Note: CSM is always used when external shadowing is enabled. NumCascades > 0 indicates active.
-	Parameters->ShadowDepthBias = RenderData.ShadowDepthBias;
-	Parameters->ExternalShadowAmbient = RenderData.ExternalShadowAmbient;
-
-	// CSM (Cascaded Shadow Maps)
-	Parameters->NumCascades = RenderData.NumCascades;
-	Parameters->CascadeBlendRange = RenderData.CascadeBlendRange;
-	// ============================================================================
-	// CSMCameraPosition: Used for CASCADE SELECTION (not shadow sampling)
-	// ============================================================================
-	// MUST use the same camera position as ray marching (ViewMatrices origin).
-	// This ensures cascade selection matches actual ray positions.
-	//
-	// Single-buffer model: VP matrices and shadow textures are from the SAME frame.
-	// SceneCaptureComponent2D with bCaptureEveryFrame=true captures during the
-	// render pass, so the texture we sample matches the VP matrix we calculated.
-	// ============================================================================
-	Parameters->CSMCameraPosition = FVector3f(ViewMatrices.GetViewOrigin());
-	Parameters->bEnableVSM = RenderData.bEnableVSM ? 1 : 0;
-	Parameters->VSMMinVariance = RenderData.VSMMinVariance;
-	Parameters->VSMLightBleedingReduction = RenderData.VSMLightBleedingReduction;
-
-	// CSM cascade data
-	// ViewProjection matrices and light camera data
-	for (int32 i = 0; i < 8; i++)
-	{
-		if (i < RenderData.NumCascades && i < RenderData.CSMViewProjectionMatrices.Num())
-		{
-			Parameters->CSMViewProjectionMatrices[i] = FMatrix44f(RenderData.CSMViewProjectionMatrices[i]);
-			// Light camera position (for linear depth calculation in shader)
-			Parameters->CSMLightCameraPositions[i] = FVector4f(
-				FVector3f(RenderData.CSMLightCameraPositions[i]),
-				0.0f
-			);
-			// Light camera forward (for linear depth calculation in shader)
-			Parameters->CSMLightCameraForwards[i] = FVector4f(
-				FVector3f(RenderData.CSMLightCameraForwards[i]),
-				0.0f
-			);
-		}
-		else
-		{
-			Parameters->CSMViewProjectionMatrices[i] = FMatrix44f::Identity;
-			Parameters->CSMLightCameraPositions[i] = FVector4f(0.0f, 0.0f, 0.0f, 0.0f);
-			Parameters->CSMLightCameraForwards[i] = FVector4f(0.0f, 0.0f, -1.0f, 0.0f);
-		}
-	}
-
-	// Split distances (SHADER_PARAMETER_SCALAR_ARRAY packs 8 floats into 2 FVector4f)
-	{
-		float SplitDists[8];
-		for (int32 i = 0; i < 8; i++)
-		{
-			SplitDists[i] = (i < RenderData.CSMSplitDistances.Num()) ? RenderData.CSMSplitDistances[i] : 100000.0f;
-		}
-		Parameters->CSMSplitDistances[0] = FVector4f(SplitDists[0], SplitDists[1], SplitDists[2], SplitDists[3]);
-		Parameters->CSMSplitDistances[1] = FVector4f(SplitDists[4], SplitDists[5], SplitDists[6], SplitDists[7]);
-	}
-
-	// CSM texture arrays
-	if (RenderData.NumCascades > 0)
-	{
-		// Create texture arrays for CSM
-		const int32 CascadeCount = RenderData.NumCascades;
-		const FIntPoint CascadeResolution = RenderData.CSMDepthTextures.Num() > 0 && RenderData.CSMDepthTextures[0].IsValid()
-			? FIntPoint(RenderData.CSMDepthTextures[0]->GetSizeXYZ().X, RenderData.CSMDepthTextures[0]->GetSizeXYZ().Y)
-			: FIntPoint(512, 512);
-
-		// Create depth texture array (with UAV for initialization)
-		FRDGTextureDesc DepthArrayDesc = FRDGTextureDesc::Create2DArray(
-			CascadeResolution,
-			PF_R32_FLOAT,
-			FClearValueBinding(FLinearColor(1.0f, 0.0f, 0.0f, 0.0f)),
-			TexCreate_ShaderResource | TexCreate_UAV,
-			CascadeCount
-		);
-		FRDGTextureRef CSMDepthArray = GraphBuilder.CreateTexture(DepthArrayDesc, TEXT("IVSmokeCSMDepthArray"));
-
-		// Create VSM texture array (with UAV for initialization)
-		FRDGTextureDesc VSMArrayDesc = FRDGTextureDesc::Create2DArray(
-			CascadeResolution,
-			PF_G32R32F,
-			FClearValueBinding(FLinearColor(1.0f, 1.0f, 0.0f, 0.0f)),
-			TexCreate_ShaderResource | TexCreate_UAV,
-			CascadeCount
-		);
-		FRDGTextureRef CSMVSMArray = GraphBuilder.CreateTexture(VSMArrayDesc, TEXT("IVSmokeCSMVSMArray"));
-
-		// Initialize texture arrays (RDG requires write before read)
-		AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(CSMDepthArray), FVector4f(1.0f, 0.0f, 0.0f, 0.0f));
-		AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(CSMVSMArray), FVector4f(1.0f, 1.0f, 0.0f, 0.0f));
-
-		// Get VSM blur radius from settings
-		const int32 VSMBlurRadius = Settings ? Settings->VSMBlurRadius : 2;
-
-		// ============================================================================
-		// VSM Processing Optimization
-		// ============================================================================
-		// VSM processing (depth->variance + blur) is expensive.
-		// Multiple views in the same frame share the same depth textures,
-		// so we only need to process VSM ONCE per frame.
-		//
-		// Flow:
-		// 1. First view: Process VSM into persistent VSMRT textures
-		// 2. All views: Copy from VSMRT to RDG texture array (needed per-view)
-		// ============================================================================
-		const uint32 CurrentRenderFrameNumber = View.Family->FrameNumber;
-		const bool bNeedVSMProcessing = RenderData.bEnableVSM && VSMProcessor &&
-		                                (CurrentRenderFrameNumber != LastVSMProcessFrameNumber);
-
-		if (bNeedVSMProcessing)
-		{
-			LastVSMProcessFrameNumber = CurrentRenderFrameNumber;
-		}
-
-		// Copy each cascade to the array and optionally process VSM
-		for (int32 i = 0; i < CascadeCount; i++)
-		{
-			if (i < RenderData.CSMDepthTextures.Num() && RenderData.CSMDepthTextures[i].IsValid())
-			{
-				FRDGTextureRef SourceDepth = GraphBuilder.RegisterExternalTexture(
-					CreateRenderTarget(RenderData.CSMDepthTextures[i], TEXT("IVSmokeCSMDepthSource"))
-				);
-
-				// Copy depth to array
-				FRHICopyTextureInfo DepthCopyInfo;
-				DepthCopyInfo.Size = FIntVector(CascadeResolution.X, CascadeResolution.Y, 1);
-				DepthCopyInfo.SourcePosition = FIntVector::ZeroValue;
-				DepthCopyInfo.DestPosition = FIntVector::ZeroValue;
-				DepthCopyInfo.DestSliceIndex = i;
-				DepthCopyInfo.NumSlices = 1;
-				AddCopyTexturePass(GraphBuilder, SourceDepth, CSMDepthArray, DepthCopyInfo);
-
-				// Process VSM: depth → variance + blur (only once per frame)
-				if (RenderData.bEnableVSM && i < RenderData.CSMVSMTextures.Num() && RenderData.CSMVSMTextures[i].IsValid())
-				{
-					// Register persistent VSMRT as RDG texture
-					FRDGTextureRef VSMTexture = GraphBuilder.RegisterExternalTexture(
-						CreateRenderTarget(RenderData.CSMVSMTextures[i], TEXT("IVSmokeCSMVSMSource"))
-					);
-
-					// Process VSM only on first view of the frame
-					if (bNeedVSMProcessing && VSMProcessor)
-					{
-						VSMProcessor->Process(GraphBuilder, SourceDepth, VSMTexture, VSMBlurRadius);
-					}
-
-					// Copy from persistent VSMRT to array (needed for each view's RDG graph)
-					FRHICopyTextureInfo VSMCopyInfo;
-					VSMCopyInfo.Size = FIntVector(CascadeResolution.X, CascadeResolution.Y, 1);
-					VSMCopyInfo.SourcePosition = FIntVector::ZeroValue;
-					VSMCopyInfo.DestPosition = FIntVector::ZeroValue;
-					VSMCopyInfo.DestSliceIndex = i;
-					VSMCopyInfo.NumSlices = 1;
-					AddCopyTexturePass(GraphBuilder, VSMTexture, CSMVSMArray, VSMCopyInfo);
-				}
-			}
-		}
-
-		Parameters->CSMDepthTextureArray = CSMDepthArray;
-		Parameters->CSMVSMTextureArray = CSMVSMArray;
-	}
-	else
-	{
-		// Create dummy 1x1x1 texture arrays when no cascades are active
-		FRDGTextureDesc DummyDepthArrayDesc = FRDGTextureDesc::Create2DArray(
-			FIntPoint(1, 1),
-			PF_R32_FLOAT,
-			FClearValueBinding(FLinearColor(1.0f, 0.0f, 0.0f, 0.0f)),
-			TexCreate_ShaderResource | TexCreate_UAV,
-			1
-		);
-		FRDGTextureRef DummyDepthArray = GraphBuilder.CreateTexture(DummyDepthArrayDesc, TEXT("IVSmokeCSMDepthArrayDummy"));
-		AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(DummyDepthArray), FVector4f(1.0f, 0.0f, 0.0f, 0.0f));
-
-		FRDGTextureDesc DummyVSMArrayDesc = FRDGTextureDesc::Create2DArray(
-			FIntPoint(1, 1),
-			PF_G32R32F,
-			FClearValueBinding(FLinearColor(1.0f, 1.0f, 0.0f, 0.0f)),
-			TexCreate_ShaderResource | TexCreate_UAV,
-			1
-		);
-		FRDGTextureRef DummyVSMArray = GraphBuilder.CreateTexture(DummyVSMArrayDesc, TEXT("IVSmokeCSMVSMArrayDummy"));
-		AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(DummyVSMArray), FVector4f(1.0f, 1.0f, 0.0f, 0.0f));
-
-		Parameters->CSMDepthTextureArray = DummyDepthArray;
-		Parameters->CSMVSMTextureArray = DummyVSMArray;
-	}
-	Parameters->CSMSampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
-
-	// Temporal (for TAA integration)
-	Parameters->FrameNumber = View.Family->FrameNumber;
-
-	// Dispatch at reduced resolution (TexSize)
-	FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeMultiVolumeRayMarchCS>(
-		GraphBuilder,
-		ShaderMap,
-		ComputeShader,
-		Parameters,
-		FIntVector(TexSize.X, TexSize.Y, 1) // Dispatch at reduced resolution
-	);
-}
-
 void FIVSmokeRenderer::AddSharpenCompositePass(
 	FRDGBuilder& GraphBuilder,
 	const FSceneView& View,
@@ -1483,5 +1021,499 @@ void FIVSmokeRenderer::AddDepthSortedCompositePass(
 	Parameters->RenderTargets[0] = Output.GetRenderTargetBinding();
 
 	FIVSmokePostProcessPass::AddPixelShaderPass<FIVSmokeDepthSortedCompositePS>(GraphBuilder, ShaderMap, PixelShader, Parameters, Output);
+}
+
+// ============================================================================
+// Multi-Volume Ray March Pass (Occupancy-Based Three-Pass Pipeline)
+// ============================================================================
+
+void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
+	FRDGBuilder& GraphBuilder,
+	const FSceneView& View,
+	const FIVSmokePackedRenderData& RenderData,
+	FRDGTextureRef SmokeAlbedoTex,
+	FRDGTextureRef SmokeMaskTex,
+	const FIntPoint& TexSize,
+	const FIntPoint& ViewportSize,
+	const FIntPoint& ViewRectMin)
+{
+	const int32 VolumeCount = RenderData.VolumeCount;
+
+	if (VolumeCount == 0 || !NoiseVolume || !RenderData.bIsValid)
+	{
+		return;
+	}
+
+	// Get global settings
+	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
+
+	// ============================================================================
+	// Phase 0: Setup common resources (same as standard ray march)
+	// ============================================================================
+
+	const int32 TexturePackInterval = 4;
+	const int32 TexturePackMaxSize = 2048;
+	const FIntVector VoxelResolution = RenderData.VoxelResolution;
+	const FIntVector HoleResolution = RenderData.HoleResolution;
+	const FIntVector VoxelAtlasCount = GetAtlasTexCount(VoxelResolution, VolumeCount, TexturePackInterval, TexturePackMaxSize);
+	const FIntVector HoleAtlasCount = GetAtlasTexCount(HoleResolution, VolumeCount, TexturePackInterval, TexturePackMaxSize);
+
+	const FIntVector VoxelAtlasResolution = FIntVector(
+		VoxelResolution.X * VoxelAtlasCount.X + TexturePackInterval * (VoxelAtlasCount.X - 1),
+		VoxelResolution.Y * VoxelAtlasCount.Y + TexturePackInterval * (VoxelAtlasCount.Y - 1),
+		VoxelResolution.Z * VoxelAtlasCount.Z + TexturePackInterval * (VoxelAtlasCount.Z - 1)
+	);
+	const FIntVector VoxelAtlasFXAAResolution = VoxelAtlasResolution * 1;
+	const FIntVector HoleAtlasResolution = FIntVector(
+		HoleResolution.X * HoleAtlasCount.X + TexturePackInterval * (HoleAtlasCount.X - 1),
+		HoleResolution.Y * HoleAtlasCount.Y + TexturePackInterval * (HoleAtlasCount.Y - 1),
+		HoleResolution.Z * HoleAtlasCount.Z + TexturePackInterval * (HoleAtlasCount.Z - 1)
+	);
+
+	// Create atlas textures
+	FRDGTextureDesc VoxelAtlasDesc = FRDGTextureDesc::Create3D(
+		VoxelAtlasResolution,
+		PF_R32_FLOAT,
+		FClearValueBinding::None,
+		TexCreate_ShaderResource | TexCreate_UAV
+	);
+	FRDGTextureRef PackedVoxelAtlas = GraphBuilder.CreateTexture(VoxelAtlasDesc, TEXT("IVSmoke_PackedVoxelAtlas"));
+
+	FRDGTextureDesc VoxelAtlasFXAAResDesc = FRDGTextureDesc::Create3D(
+		VoxelAtlasFXAAResolution,
+		PF_R32_FLOAT,
+		FClearValueBinding::None,
+		TexCreate_ShaderResource | TexCreate_UAV
+	);
+	FRDGTextureRef PackedVoxelAtlasFXAA = GraphBuilder.CreateTexture(VoxelAtlasFXAAResDesc, TEXT("IVSmoke_PackedVoxelAtlasFXAA"));
+
+	FRDGTextureDesc HoleAtlasDesc = FRDGTextureDesc::Create3D(
+		HoleAtlasResolution,
+		PF_FloatRGBA,
+		FClearValueBinding::None,
+		TexCreate_ShaderResource | TexCreate_UAV
+	);
+	FRDGTextureRef PackedHoleAtlas = GraphBuilder.CreateTexture(HoleAtlasDesc, TEXT("IVSmoke_PackedHoleAtlas"));
+
+	// Clear Hole Atlas
+	AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(PackedHoleAtlas), 0.0f);
+
+	// Copy Hole Textures to Atlas
+	FRHICopyTextureInfo HoleCpyInfo;
+	HoleCpyInfo.Size = HoleResolution;
+	HoleCpyInfo.SourcePosition = FIntVector::ZeroValue;
+
+	for (int z = 0; z < HoleAtlasCount.Z; ++z)
+	{
+		for (int y = 0; y < HoleAtlasCount.Y; ++y)
+		{
+			for (int x = 0; x < HoleAtlasCount.X; ++x)
+			{
+				int i = x + HoleAtlasCount.X * y + z * HoleAtlasCount.X * HoleAtlasCount.Y;
+
+				if (i >= RenderData.HoleTextures.Num())
+				{
+					break;
+				}
+
+				FTextureRHIRef SourceRHI = RenderData.HoleTextures[i];
+				if (!SourceRHI)
+				{
+					continue;
+				}
+
+				FRDGTextureRef SourceTexture = GraphBuilder.RegisterExternalTexture(
+					CreateRenderTarget(SourceRHI, TEXT("IVSmoke_CopyHoleSource"))
+				);
+
+				HoleCpyInfo.DestPosition.X = x * (HoleResolution.X + TexturePackInterval);
+				HoleCpyInfo.DestPosition.Y = y * (HoleResolution.Y + TexturePackInterval);
+				HoleCpyInfo.DestPosition.Z = z * (HoleResolution.Z + TexturePackInterval);
+				AddCopyTexturePass(GraphBuilder, SourceTexture, PackedHoleAtlas, HoleCpyInfo);
+			}
+		}
+	}
+
+	// Create GPU buffers
+	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
+
+	FRDGBufferDesc PackedVoxelBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(float), RenderData.PackedVoxelData.Num());
+	FRDGBufferRef PackedVoxelBuffer = GraphBuilder.CreateBuffer(PackedVoxelBufferDesc, TEXT("IVSmoke_PackedVoxelBuffer"));
+	GraphBuilder.QueueBufferUpload(PackedVoxelBuffer, RenderData.PackedVoxelData.GetData(), RenderData.PackedVoxelData.Num() * sizeof(float));
+
+	FRDGBufferDesc VolumeBufferDesc = FRDGBufferDesc::CreateStructuredDesc(sizeof(FIVSmokeVolumeGPUData), RenderData.VolumeDataArray.Num());
+	FRDGBufferRef VolumeBuffer = GraphBuilder.CreateBuffer(VolumeBufferDesc, TEXT("IVSmokeVolumeDataBuffer"));
+	GraphBuilder.QueueBufferUpload(VolumeBuffer, RenderData.VolumeDataArray.GetData(), RenderData.VolumeDataArray.Num() * sizeof(FIVSmokeVolumeGPUData));
+
+	// StructuredToTexture Pass
+	TShaderMapRef<FIVSmokeStructuredToTextureCS> StructuredCopyShader(ShaderMap);
+	auto* StructuredCopyParams = GraphBuilder.AllocParameters<FIVSmokeStructuredToTextureCS::FParameters>();
+	StructuredCopyParams->Desti = GraphBuilder.CreateUAV(PackedVoxelAtlas);
+	StructuredCopyParams->Source = GraphBuilder.CreateSRV(PackedVoxelBuffer);
+	StructuredCopyParams->VolumeDataBuffer = GraphBuilder.CreateSRV(VolumeBuffer);
+	StructuredCopyParams->TexSize = VoxelAtlasResolution;
+	StructuredCopyParams->VoxelResolution = RenderData.VoxelResolution;
+	StructuredCopyParams->PackedInterval = TexturePackInterval;
+	StructuredCopyParams->GameTime = RenderData.GameTime;
+
+	FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeStructuredToTextureCS>(
+		GraphBuilder,
+		ShaderMap,
+		StructuredCopyShader,
+		StructuredCopyParams,
+		VoxelAtlasResolution
+	);
+
+	// Voxel FXAA Pass
+	TShaderMapRef<FIVSmokeVoxelFXAACS> VoxelFXAAShader(ShaderMap);
+	auto* VoxelFXAAParams = GraphBuilder.AllocParameters<FIVSmokeVoxelFXAACS::FParameters>();
+
+	VoxelFXAAParams->Desti = GraphBuilder.CreateUAV(PackedVoxelAtlasFXAA);
+	VoxelFXAAParams->Source = GraphBuilder.CreateSRV(PackedVoxelAtlas);
+	VoxelFXAAParams->LinearBorder_Sampler = TStaticSamplerState<SF_Bilinear, AM_Border, AM_Border, AM_Border>::GetRHI();
+	VoxelFXAAParams->TexSize = VoxelAtlasFXAAResolution;
+	VoxelFXAAParams->FXAASpanMax = Settings->FXAASpanMax;
+	VoxelFXAAParams->FXAARange = Settings->FXAARange;
+	VoxelFXAAParams->FXAASharpness = Settings->FXAASharpness;
+
+	FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeVoxelFXAACS>(
+		GraphBuilder,
+		ShaderMap,
+		VoxelFXAAShader,
+		VoxelFXAAParams,
+		VoxelAtlasFXAAResolution
+	);
+
+	// ============================================================================
+	// Phase 1: Create Occupancy Resources
+	// ============================================================================
+
+	const FIntPoint TileCount = IVSmokeOccupancy::ComputeTileCount(ViewportSize);
+	const uint32 StepSliceCount = IVSmokeOccupancy::ComputeStepSliceCount(RenderData.MaxSteps);
+
+	FIVSmokeOccupancyResources OccResources = IVSmokeOccupancy::CreateOccupancyResources(
+		GraphBuilder,
+		TileCount,
+		StepSliceCount
+	);
+
+	// Calculate max ray distance and GlobalAABB based on volumes
+	float MaxRayDistance = 0.0f;
+	FVector3f GlobalAABBMin(1e10f, 1e10f, 1e10f);
+	FVector3f GlobalAABBMax(-1e10f, -1e10f, -1e10f);
+	for (const FIVSmokeVolumeGPUData& VolData : RenderData.VolumeDataArray)
+	{
+		FVector3f Extent = VolData.VolumeWorldAABBMax - VolData.VolumeWorldAABBMin;
+		MaxRayDistance = FMath::Max(MaxRayDistance, Extent.Size());
+
+		// Accumulate GlobalAABB
+		GlobalAABBMin = FVector3f::Min(GlobalAABBMin, VolData.VolumeWorldAABBMin);
+		GlobalAABBMax = FVector3f::Max(GlobalAABBMax, VolData.VolumeWorldAABBMax);
+	}
+	MaxRayDistance = FMath::Max(MaxRayDistance, 10000.0f); // Minimum reasonable distance
+
+	// MinStepSize from settings (minimum world units per step, TotalVolumeLength computed per-tile in shader)
+	const float MinStepSize = Settings->MinStepSize;
+
+	// ============================================================================
+	// Phase 2: Pass 0 - Tile Setup
+	// ============================================================================
+
+	IVSmokeOccupancy::AddTileSetupPass(
+		GraphBuilder,
+		View,
+		VolumeBuffer,
+		RenderData.VolumeDataArray.Num(),
+		OccResources.TileDataBuffer,
+		TileCount,
+		StepSliceCount,
+		MaxRayDistance,
+		ViewportSize,
+		ViewRectMin
+	);
+
+	// ============================================================================
+	// Phase 3: Pass 1 - Occupancy Build
+	// ============================================================================
+
+	IVSmokeOccupancy::AddOccupancyBuildPass(
+		GraphBuilder,
+		View,
+		OccResources.TileDataBuffer,
+		VolumeBuffer,
+		RenderData.VolumeDataArray.Num(),
+		OccResources.ViewOccupancy,
+		OccResources.LightOccupancy,
+		TileCount,
+		StepSliceCount,
+		FVector3f(RenderData.LightDirection),
+		RenderData.LightMarchingDistance > 0.0f ? RenderData.LightMarchingDistance : MaxRayDistance,
+		ViewportSize
+	);
+
+	// ============================================================================
+	// Phase 4: Pass 2 - Ray March with Occupancy
+	// ============================================================================
+
+	TShaderMapRef<FIVSmokeMultiVolumeRayMarchCS> ComputeShader(ShaderMap);
+	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeMultiVolumeRayMarchCS::FParameters>();
+
+	// Output (Dual Render Target)
+	Parameters->SmokeAlbedoTex = GraphBuilder.CreateUAV(FRDGTextureUAVDesc(SmokeAlbedoTex));
+	Parameters->SmokeMaskTex = GraphBuilder.CreateUAV(FRDGTextureUAVDesc(SmokeMaskTex));
+
+	// Occupancy inputs
+	Parameters->TileDataBuffer = GraphBuilder.CreateSRV(OccResources.TileDataBuffer);
+	Parameters->ViewOccupancy = GraphBuilder.CreateSRV(OccResources.ViewOccupancy);
+	Parameters->LightOccupancy = GraphBuilder.CreateSRV(OccResources.LightOccupancy);
+
+	// Tile configuration
+	Parameters->TileCount = TileCount;
+	Parameters->StepSliceCount = StepSliceCount;
+	Parameters->StepDivisor = FIVSmokeOccupancyConfig::StepDivisor;
+
+	// Noise Volume
+	FTextureRHIRef TextureRHI = NoiseVolume->GetRenderTargetResource()->GetRenderTargetTexture();
+	FRDGTextureRef NoiseVolumeRDG = GraphBuilder.RegisterExternalTexture(
+		CreateRenderTarget(TextureRHI, TEXT("IVSmokeNoiseVolume"))
+	);
+	Parameters->NoiseVolume = NoiseVolumeRDG;
+	Parameters->NoiseUVMul = Settings->NoiseUVMul;
+
+	// Sampler
+	Parameters->LinearBorder_Sampler = TStaticSamplerState<SF_Trilinear, AM_Border, AM_Border, AM_Border>::GetRHI();
+	Parameters->LinearRepeat_Sampler = TStaticSamplerState<SF_Trilinear, AM_Wrap, AM_Wrap, AM_Wrap>::GetRHI();
+
+	// Time
+	ElapsedTime = View.Family->Time.GetRealTimeSeconds();
+	Parameters->ElapsedTime = ElapsedTime;
+
+	// Viewport
+	Parameters->TexSize = FIntPoint(TexSize.X, TexSize.Y);
+	Parameters->ViewportSize = FVector2f(ViewportSize);
+	Parameters->ViewRectMin = FVector2f(ViewRectMin);
+
+	// Camera
+	const FViewMatrices& ViewMatrices = View.ViewMatrices;
+	Parameters->CameraPosition = FVector3f(ViewMatrices.GetViewOrigin());
+	Parameters->CameraForward = FVector3f(View.GetViewDirection());
+	Parameters->CameraRight = FVector3f(View.GetViewRight());
+	Parameters->CameraUp = FVector3f(View.GetViewUp());
+
+	const FMatrix& ProjMatrix = ViewMatrices.GetProjectionMatrix();
+	Parameters->TanHalfFOV = 1.0f / ProjMatrix.M[1][1];
+	Parameters->AspectRatio = (float)ViewportSize.X / (float)ViewportSize.Y;
+
+	// Ray Marching
+	Parameters->MaxSteps = RenderData.MaxSteps;
+	Parameters->MinStepSize = MinStepSize;
+
+	// Volume Data Buffer
+	Parameters->VolumeDataBuffer = GraphBuilder.CreateSRV(VolumeBuffer);
+	Parameters->NumActiveVolumes = RenderData.VolumeDataArray.Num();
+
+	// Packed Textures
+	Parameters->PackedInterval = TexturePackInterval;
+	Parameters->PackedVoxelAtlas = GraphBuilder.CreateSRV(PackedVoxelAtlasFXAA);
+	Parameters->VoxelTexSize = VoxelResolution;
+	Parameters->PackedHoleAtlas = GraphBuilder.CreateSRV(PackedHoleAtlas);
+	Parameters->HoleTexSize = HoleResolution;
+	Parameters->PackedHoleTexSize = HoleAtlasResolution;
+	Parameters->HoleAtlasCount = HoleAtlasCount;
+
+	// Scene Textures
+	Parameters->SceneTexturesStruct = GetSceneTextureShaderParameters(View).SceneTextures;
+	Parameters->InvDeviceZToWorldZTransform = FVector4f(View.InvDeviceZToWorldZTransform);
+
+	// View (for BlueNoise access)
+	Parameters->View = View.ViewUniformBuffer;
+
+	// Global Smoke Parameters
+	Parameters->GlobalAbsorption = RenderData.GlobalAbsorption;
+	Parameters->SmokeSize = RenderData.SmokeSize;
+	Parameters->WindDirection = FVector3f(RenderData.WindDirection);
+	Parameters->VolumeRangeOffset = RenderData.VolumeRangeOffset;
+	Parameters->VolumeEdgeNoiseFadeOffset = RenderData.VolumeEdgeNoiseFadeOffset;
+	Parameters->VolumeEdgeFadeSharpness = RenderData.VolumeEdgeFadeSharpness;
+
+	// Rayleigh Scattering
+	Parameters->LightDirection = FVector3f(RenderData.LightDirection);
+	Parameters->LightColor = FVector3f(RenderData.LightColor.R, RenderData.LightColor.G, RenderData.LightColor.B);
+	Parameters->ScatterScale = RenderData.bEnableScattering ? (RenderData.ScatterScale * RenderData.LightIntensity) : 0.0f;
+	Parameters->ScatteringAnisotropy = RenderData.ScatteringAnisotropy;
+
+	// Self-Shadowing
+	Parameters->LightMarchingSteps = RenderData.bEnableSelfShadowing ? RenderData.LightMarchingSteps : 0;
+	Parameters->LightMarchingDistance = RenderData.LightMarchingDistance;
+	Parameters->LightMarchingExpFactor = RenderData.LightMarchingExpFactor;
+	Parameters->ShadowAmbient = RenderData.ShadowAmbient;
+
+	// Global AABB for per-pixel light march distance calculation
+	Parameters->GlobalAABBMin = GlobalAABBMin;
+	Parameters->GlobalAABBMax = GlobalAABBMax;
+
+	// External Shadowing (CSM)
+	Parameters->ShadowDepthBias = RenderData.ShadowDepthBias;
+	Parameters->ExternalShadowAmbient = RenderData.ExternalShadowAmbient;
+	Parameters->NumCascades = RenderData.NumCascades;
+	Parameters->CascadeBlendRange = RenderData.CascadeBlendRange;
+	Parameters->CSMCameraPosition = FVector3f(ViewMatrices.GetViewOrigin());
+	Parameters->bEnableVSM = RenderData.bEnableVSM ? 1 : 0;
+	Parameters->VSMMinVariance = RenderData.VSMMinVariance;
+	Parameters->VSMLightBleedingReduction = RenderData.VSMLightBleedingReduction;
+
+	// CSM cascade data
+	for (int32 i = 0; i < 8; i++)
+	{
+		if (i < RenderData.NumCascades && i < RenderData.CSMViewProjectionMatrices.Num())
+		{
+			Parameters->CSMViewProjectionMatrices[i] = FMatrix44f(RenderData.CSMViewProjectionMatrices[i]);
+			Parameters->CSMLightCameraPositions[i] = FVector4f(
+				FVector3f(RenderData.CSMLightCameraPositions[i]),
+				0.0f
+			);
+			Parameters->CSMLightCameraForwards[i] = FVector4f(
+				FVector3f(RenderData.CSMLightCameraForwards[i]),
+				0.0f
+			);
+		}
+		else
+		{
+			Parameters->CSMViewProjectionMatrices[i] = FMatrix44f::Identity;
+			Parameters->CSMLightCameraPositions[i] = FVector4f(0.0f, 0.0f, 0.0f, 0.0f);
+			Parameters->CSMLightCameraForwards[i] = FVector4f(0.0f, 0.0f, -1.0f, 0.0f);
+		}
+	}
+
+	// Split distances
+	{
+		float SplitDists[8];
+		for (int32 i = 0; i < 8; i++)
+		{
+			SplitDists[i] = (i < RenderData.CSMSplitDistances.Num()) ? RenderData.CSMSplitDistances[i] : 100000.0f;
+		}
+		Parameters->CSMSplitDistances[0] = FVector4f(SplitDists[0], SplitDists[1], SplitDists[2], SplitDists[3]);
+		Parameters->CSMSplitDistances[1] = FVector4f(SplitDists[4], SplitDists[5], SplitDists[6], SplitDists[7]);
+	}
+
+	// CSM texture arrays
+	if (RenderData.NumCascades > 0)
+	{
+		const int32 CascadeCount = RenderData.NumCascades;
+		const FIntPoint CascadeResolution = RenderData.CSMDepthTextures.Num() > 0 && RenderData.CSMDepthTextures[0].IsValid()
+			? FIntPoint(RenderData.CSMDepthTextures[0]->GetSizeXYZ().X, RenderData.CSMDepthTextures[0]->GetSizeXYZ().Y)
+			: FIntPoint(512, 512);
+
+		FRDGTextureDesc DepthArrayDesc = FRDGTextureDesc::Create2DArray(
+			CascadeResolution,
+			PF_R32_FLOAT,
+			FClearValueBinding(FLinearColor(1.0f, 0.0f, 0.0f, 0.0f)),
+			TexCreate_ShaderResource | TexCreate_UAV,
+			CascadeCount
+		);
+		FRDGTextureRef CSMDepthArray = GraphBuilder.CreateTexture(DepthArrayDesc, TEXT("IVSmokeCSMDepthArray"));
+
+		FRDGTextureDesc VSMArrayDesc = FRDGTextureDesc::Create2DArray(
+			CascadeResolution,
+			PF_G32R32F,
+			FClearValueBinding(FLinearColor(1.0f, 1.0f, 0.0f, 0.0f)),
+			TexCreate_ShaderResource | TexCreate_UAV,
+			CascadeCount
+		);
+		FRDGTextureRef CSMVSMArray = GraphBuilder.CreateTexture(VSMArrayDesc, TEXT("IVSmokeCSMVSMArray"));
+
+		AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(CSMDepthArray), FVector4f(1.0f, 0.0f, 0.0f, 0.0f));
+		AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(CSMVSMArray), FVector4f(1.0f, 1.0f, 0.0f, 0.0f));
+
+		const int32 VSMBlurRadius = Settings ? Settings->VSMBlurRadius : 2;
+
+		const uint32 CurrentRenderFrameNumber = View.Family->FrameNumber;
+		const bool bNeedVSMProcessing = RenderData.bEnableVSM && VSMProcessor &&
+		                                (CurrentRenderFrameNumber != LastVSMProcessFrameNumber);
+
+		if (bNeedVSMProcessing)
+		{
+			LastVSMProcessFrameNumber = CurrentRenderFrameNumber;
+		}
+
+		for (int32 i = 0; i < CascadeCount; i++)
+		{
+			if (i < RenderData.CSMDepthTextures.Num() && RenderData.CSMDepthTextures[i].IsValid())
+			{
+				FRDGTextureRef SourceDepth = GraphBuilder.RegisterExternalTexture(
+					CreateRenderTarget(RenderData.CSMDepthTextures[i], TEXT("IVSmokeCSMDepthSource"))
+				);
+
+				FRHICopyTextureInfo DepthCopyInfo;
+				DepthCopyInfo.Size = FIntVector(CascadeResolution.X, CascadeResolution.Y, 1);
+				DepthCopyInfo.SourcePosition = FIntVector::ZeroValue;
+				DepthCopyInfo.DestPosition = FIntVector::ZeroValue;
+				DepthCopyInfo.DestSliceIndex = i;
+				DepthCopyInfo.NumSlices = 1;
+				AddCopyTexturePass(GraphBuilder, SourceDepth, CSMDepthArray, DepthCopyInfo);
+
+				if (RenderData.bEnableVSM && i < RenderData.CSMVSMTextures.Num() && RenderData.CSMVSMTextures[i].IsValid())
+				{
+					FRDGTextureRef VSMTexture = GraphBuilder.RegisterExternalTexture(
+						CreateRenderTarget(RenderData.CSMVSMTextures[i], TEXT("IVSmokeCSMVSMSource"))
+					);
+
+					if (bNeedVSMProcessing && VSMProcessor)
+					{
+						VSMProcessor->Process(GraphBuilder, SourceDepth, VSMTexture, VSMBlurRadius);
+					}
+
+					FRHICopyTextureInfo VSMCopyInfo;
+					VSMCopyInfo.Size = FIntVector(CascadeResolution.X, CascadeResolution.Y, 1);
+					VSMCopyInfo.SourcePosition = FIntVector::ZeroValue;
+					VSMCopyInfo.DestPosition = FIntVector::ZeroValue;
+					VSMCopyInfo.DestSliceIndex = i;
+					VSMCopyInfo.NumSlices = 1;
+					AddCopyTexturePass(GraphBuilder, VSMTexture, CSMVSMArray, VSMCopyInfo);
+				}
+			}
+		}
+
+		Parameters->CSMDepthTextureArray = CSMDepthArray;
+		Parameters->CSMVSMTextureArray = CSMVSMArray;
+	}
+	else
+	{
+		FRDGTextureDesc DummyDepthArrayDesc = FRDGTextureDesc::Create2DArray(
+			FIntPoint(1, 1),
+			PF_R32_FLOAT,
+			FClearValueBinding(FLinearColor(1.0f, 0.0f, 0.0f, 0.0f)),
+			TexCreate_ShaderResource | TexCreate_UAV,
+			1
+		);
+		FRDGTextureRef DummyDepthArray = GraphBuilder.CreateTexture(DummyDepthArrayDesc, TEXT("IVSmokeCSMDepthArrayDummy"));
+		AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(DummyDepthArray), FVector4f(1.0f, 0.0f, 0.0f, 0.0f));
+
+		FRDGTextureDesc DummyVSMArrayDesc = FRDGTextureDesc::Create2DArray(
+			FIntPoint(1, 1),
+			PF_G32R32F,
+			FClearValueBinding(FLinearColor(1.0f, 1.0f, 0.0f, 0.0f)),
+			TexCreate_ShaderResource | TexCreate_UAV,
+			1
+		);
+		FRDGTextureRef DummyVSMArray = GraphBuilder.CreateTexture(DummyVSMArrayDesc, TEXT("IVSmokeCSMVSMArrayDummy"));
+		AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(DummyVSMArray), FVector4f(1.0f, 1.0f, 0.0f, 0.0f));
+
+		Parameters->CSMDepthTextureArray = DummyDepthArray;
+		Parameters->CSMVSMTextureArray = DummyVSMArray;
+	}
+	Parameters->CSMSampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
+
+	// Temporal
+	Parameters->FrameNumber = View.Family->FrameNumber;
+
+	// Dispatch
+	FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeMultiVolumeRayMarchCS>(
+		GraphBuilder,
+		ShaderMap,
+		ComputeShader,
+		Parameters,
+		FIntVector(TexSize.X, TexSize.Y, 1)
+	);
 }
 #endif

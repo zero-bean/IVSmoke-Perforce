@@ -35,30 +35,27 @@ struct FVolumeGPUData
 	float Reserved[4];
 };
 
-/**
- * Cached intersection data for a single volume.
- */
-struct FVolumeIntersection
-{
-	uint VolumeIndex;
-	float tNear;
-	float tFar;
-};
-
 // ============================================================================
 // Ray-Box Intersection
 // ============================================================================
 
 /**
- * Ray-AABB intersection using slab method.
+ * Ray-AABB intersection for VIEW RAY marching.
+ * Uses slab method with CLAMPED tNear (returns 0 if ray starts inside box).
+ *
+ * USE THIS for view ray marching where you want to start at the box surface
+ * or at ray origin if already inside. OutTMin is guaranteed >= 0.
+ *
+ * For occupancy/culling tests where you need the raw intersection distances
+ * (including negative tNear when inside), use RayAABBIntersection in IVSmokeRayMarchUtils.ush.
  *
  * @param RayOrigin    Ray origin in world space
  * @param RayDir       Normalized ray direction
  * @param BoxMin       AABB minimum corner
  * @param BoxMax       AABB maximum corner
- * @param OutTMin      Entry distance (negative if inside box)
+ * @param OutTMin      Entry distance (CLAMPED to 0 if inside box)
  * @param OutTMax      Exit distance
- * @return             True if ray intersects box
+ * @return             True if ray intersects box (OutTMax >= 0)
  */
 bool RayBoxIntersection(
 	float3 RayOrigin,
@@ -79,7 +76,7 @@ bool RayBoxIntersection(
 	OutTMin = max(max(TMin.x, TMin.y), TMin.z);
 	OutTMax = min(min(TMax.x, TMax.y), TMax.z);
 
-	// If TMin < 0, ray starts inside box
+	// Clamp tNear to 0: if ray starts inside box, start at origin
 	OutTMin = max(OutTMin, 0.0);
 
 	return OutTMax >= OutTMin;

@@ -1,0 +1,250 @@
+// Copyright Epic Games, Inc. All Rights Reserved.
+//
+// Pass 0: Tile Setup Compute Shader
+// Computes per-tile depth range from volume bounds and quick volume mask.
+//
+// Dispatch: One thread group per tile (TileCountX × TileCountY × 1)
+// Only first lane performs work (volume intersection + output).
+//
+// Key Features:
+// - Volume-based depth range (not scene depth) for consistent StepSize
+// - Interval merging for accurate TotalVolumeLength (handles overlapping volumes)
+// - 32-bit quick rejection mask for first 32 volumes
+//
+
+#include "/Engine/Private/Common.ush"
+#include "/Plugin/IVSmoke/IVSmokeCommon.ush"
+#include "/Plugin/IVSmoke/IVSmokeRayMarchUtils.ush"
+
+// ============================================================================
+// Thread Group Configuration
+// ============================================================================
+
+#ifndef THREADGROUP_SIZE_X
+#define THREADGROUP_SIZE_X 8
+#endif
+#ifndef THREADGROUP_SIZE_Y
+#define THREADGROUP_SIZE_Y 8
+#endif
+#ifndef TILE_SIZE_X
+#define TILE_SIZE_X 16
+#endif
+#ifndef TILE_SIZE_Y
+#define TILE_SIZE_Y 16
+#endif
+#ifndef MAX_VOLUMES
+#define MAX_VOLUMES 128
+#endif
+#ifndef STEP_DIVISOR
+#define STEP_DIVISOR 4
+#endif
+
+// ============================================================================
+// Shader Parameters
+// ============================================================================
+
+// Output
+RWStructuredBuffer<FTileData> TileDataBufferRW;
+
+// Volume data
+StructuredBuffer<FVolumeGPUData> VolumeDataBuffer;
+uint NumActiveVolumes;
+
+// Tile configuration
+int2 TileCount;
+uint StepSliceCount;
+float MaxRayDistance;
+
+// Viewport info (unused in shader, kept for C++ struct compatibility)
+int2 ViewportSize;
+int2 ViewRectMin;
+
+// Camera parameters
+float3 CameraPosition;
+float3 CameraForward;
+float3 CameraRight;
+float3 CameraUp;
+float TanHalfFOV;
+float AspectRatio;
+
+// Depth conversion (unused in shader, kept for C++ struct compatibility)
+float4 InvDeviceZToWorldZTransform;
+
+// ============================================================================
+// Main Compute Shader
+// ============================================================================
+
+[numthreads(THREADGROUP_SIZE_X, THREADGROUP_SIZE_Y, 1)]
+void MainCS(
+	uint3 GroupId : SV_GroupID,
+	uint3 GroupThreadId : SV_GroupThreadID,
+	uint GroupIndex : SV_GroupIndex)
+{
+	// ========================================================================
+	// Only first lane performs all work (volume intersection + output)
+	// ========================================================================
+	//
+	// Note: Scene depth is NOT sampled here. Depth range comes from volume
+	// bounds only. Per-pixel scene depth clamping happens in RayMarchCS.
+
+	if (!WaveIsFirstLane())
+	{
+		return;
+	}
+
+	// ========================================================================
+	// Phase 1: Compute depth range from VOLUME BOUNDS
+	// ========================================================================
+	//
+	// Near/Far based on volume bounds only (not scene depth).
+	// This ensures consistent StepSize regardless of background geometry.
+	// Test 4 corner rays + center for conservative bounds.
+
+	// Compute tile screen bounds for ray-volume intersection
+	float2 TileUVMin = float2(GroupId.xy) / float2(TileCount);
+	float2 TileUVMax = float2(GroupId.xy + 1) / float2(TileCount);
+	float2 TileScreenMin = TileUVMin * 2.0 - 1.0;
+	float2 TileScreenMax = TileUVMax * 2.0 - 1.0;
+	TileScreenMin.y *= -1.0;
+	TileScreenMax.y *= -1.0;
+
+	// Compute all 4 corner rays + center ray for conservative bounds
+	float2 CornerScreenPos[5];
+	CornerScreenPos[0] = float2(TileScreenMin.x, TileScreenMin.y);  // Top-Left
+	CornerScreenPos[1] = float2(TileScreenMax.x, TileScreenMin.y);  // Top-Right
+	CornerScreenPos[2] = float2(TileScreenMin.x, TileScreenMax.y);  // Bottom-Left
+	CornerScreenPos[3] = float2(TileScreenMax.x, TileScreenMax.y);  // Bottom-Right
+	CornerScreenPos[4] = (TileScreenMin + TileScreenMax) * 0.5;     // Center
+
+	float3 CornerRayDirs[5];
+	float CornerViewDirDots[5];
+
+	[unroll]
+	for (uint c = 0; c < 5; c++)
+	{
+		CornerRayDirs[c] = normalize(
+			CameraForward
+			+ CornerScreenPos[c].x * CameraRight * TanHalfFOV * AspectRatio
+			+ CornerScreenPos[c].y * CameraUp * TanHalfFOV
+		);
+		CornerViewDirDots[c] = max(dot(CornerRayDirs[c], CameraForward), 0.001);
+	}
+
+	// Compute depth range from volume bounds ONLY (not scene depth)
+	float VolumeMinDepth = 1e30;
+	float VolumeMaxDepth = 0.0;
+
+	// Clamp to MAX_VOLUMES to prevent out-of-bounds access
+	uint ClampedVolumeCount = min(NumActiveVolumes, uint(MAX_VOLUMES));
+
+	// Test all volumes against all 5 corner rays
+	[loop]
+	for (uint v = 0; v < ClampedVolumeCount; v++)
+	{
+		FVolumeGPUData Vol = VolumeDataBuffer[v];
+
+		[unroll]
+		for (uint c = 0; c < 5; c++)
+		{
+			float EntryT, ExitT;
+
+			if (RayAABBIntersection(CameraPosition, CornerRayDirs[c], Vol.VolumeWorldAABBMin, Vol.VolumeWorldAABBMax, EntryT, ExitT))
+			{
+				float VolumeNearDepth = max(EntryT, 0.0) * CornerViewDirDots[c];
+				float VolumeFarDepth = ExitT * CornerViewDirDots[c];
+
+				VolumeMinDepth = min(VolumeMinDepth, VolumeNearDepth);
+				VolumeMaxDepth = max(VolumeMaxDepth, VolumeFarDepth);
+			}
+		}
+	}
+
+	// Compute TotalVolumeLength using interval merging (center ray only)
+	// This correctly handles overlapping volumes (no double-counting)
+	float TotalVolumeLength = ComputeMergedVolumeLength(
+		CameraPosition,
+		CornerRayDirs[4],  // Center ray
+		VolumeDataBuffer,
+		ClampedVolumeCount
+	);
+
+	// Determine tile depth range from volume bounds
+	float TileMinDepth, TileMaxDepth;
+
+	if (VolumeMaxDepth > 0.0)
+	{
+		// Volumes found: use volume bounds
+		TileMinDepth = VolumeMinDepth;
+		TileMaxDepth = VolumeMaxDepth;
+	}
+	else
+	{
+		// No volumes intersect this tile: set invalid range to skip
+		TileMinDepth = 0.0;
+		TileMaxDepth = 0.0;
+	}
+
+	// Ensure valid range
+	TileMinDepth = max(TileMinDepth, 0.1);  // Minimum near plane
+	TileMaxDepth = min(TileMaxDepth, MaxRayDistance);
+
+	if (TileMaxDepth <= TileMinDepth)
+	{
+		TileMaxDepth = TileMinDepth + 1.0;
+	}
+
+	// ========================================================================
+	// Phase 2: Compute tile frustum AABB and 128-bit volume mask
+	// ========================================================================
+
+	float3 TileFrustumMin, TileFrustumMax;
+	ComputeFrustumCellAABB(
+		GroupId.xy,
+		uint2(TileCount),
+		TileMinDepth,
+		TileMaxDepth,
+		CameraPosition,
+		CameraForward,
+		CameraRight,
+		CameraUp,
+		TanHalfFOV,
+		AspectRatio,
+		TileFrustumMin,
+		TileFrustumMax
+	);
+
+	// Build 128-bit volume mask for all volumes
+	uint4 VolumeMask128 = uint4(0, 0, 0, 0);
+
+	[loop]
+	for (uint vm = 0; vm < ClampedVolumeCount; vm++)
+	{
+		FVolumeGPUData Vol = VolumeDataBuffer[vm];
+
+		// Conservative AABB-AABB intersection
+		if (AABBIntersects(TileFrustumMin, TileFrustumMax,
+		                   Vol.VolumeWorldAABBMin, Vol.VolumeWorldAABBMax))
+		{
+			SetVolumeBit(VolumeMask128, vm);
+		}
+	}
+
+	// ========================================================================
+	// Phase 3: Write tile data
+	// ========================================================================
+
+	uint TileIndex = GroupId.y * uint(TileCount.x) + GroupId.x;
+
+	FTileData OutTile;
+	OutTile.Near = TileMinDepth;
+	OutTile.Far = TileMaxDepth;
+	OutTile.StepSize = (TileMaxDepth - TileMinDepth) / float(StepSliceCount * STEP_DIVISOR);
+	OutTile.TotalVolumeLength = TotalVolumeLength;
+	OutTile.VolumeMask128 = VolumeMask128;
+	OutTile.MaxLightMarchDistance = 0.0;  // Unused - light march uses GlobalAABB per-pixel
+	OutTile.Padding0 = 0.0;
+	OutTile.Padding1 = 0.0;
+	OutTile.Padding2 = 0.0;
+
+	TileDataBufferRW[TileIndex] = OutTile;
+}

@@ -3,7 +3,7 @@
 #include "IVSmokeShaders.h"
 #include "IVSmokeHoleCarveCS.h"
 
-IMPLEMENT_GLOBAL_SHADER(FIVSmokeMultiVolumeRayMarchCS, "/Plugin/IVSmoke/IVSmokeMultiVolumeRayMarch.usf", "MainCS", SF_Compute);
+// Note: FIVSmokeMultiVolumeRayMarchCS is now implemented in IVSmokeOccupancy.cpp
 IMPLEMENT_GLOBAL_SHADER(FIVSmokeNoiseGeneratorGlobalCS, "/Plugin/IVSmoke/IVSmokeNoiseGeneratorCS.usf", "GenerateNoise", SF_Compute);
 IMPLEMENT_GLOBAL_SHADER(FIVSmokeStructuredToTextureCS, "/Plugin/IVSmoke/IVSmokeStructuredToTextureCS.usf", "MainCS", SF_Compute);
 IMPLEMENT_GLOBAL_SHADER(FIVSmokeVoxelFXAACS, "/Plugin/IVSmoke/IVSmokeVoxelFXAACS.usf", "MainCS", SF_Compute);
