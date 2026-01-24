@@ -35,7 +35,7 @@ protected:
 	virtual void BeginDestroy() override;
 
 public:
-	// ============================================================================
+	//~============================================================================
 	// Common
 
 	/**
@@ -64,8 +64,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke", meta = (ClampMin = "0.0", ClampMax = "1.0", Tooltip = "0 = hard edge, 1 = soft gradient"))
 	float Softness = 0.3f;
 
-	// ============================================================================
-	// Only Explosion
+	//~============================================================================
+	// Explosion
 
 	/**
 	 * Expansion time. The expansion time is used for expansion-related curve values.
@@ -124,8 +124,8 @@ public:
 		Tooltip = "Distortion degree curve over distance to explosion point. Use normalized x axis(distance) between 0 and 1"))
 	TObjectPtr<UCurveFloat> DistortionCurveOverDistance;
 
-	// ============================================================================
-	// Only Penetration
+	//~============================================================================
+	// Penetration
 
 	/**
 	 * EndRadius represents the radius at the EndPosition in a penetration hole.
@@ -134,8 +134,8 @@ public:
 		Tooltip = "EndRadius represents the radius at the EndPosition in a penetration hole."))
 	float EndRadius = 25.0f;
 
-	// ============================================================================
-	// Only Dynamic
+	//~============================================================================
+	// Dynamic
 	
 	/**
 	* The size of a hole

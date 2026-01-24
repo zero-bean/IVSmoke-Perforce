@@ -1,4 +1,4 @@
-// Copyright SDB. All Rights Reserved.
+// Copyright (c) 2026, Team SDB. All rights reserved.
 
 #pragma once
 
@@ -94,10 +94,12 @@ struct IVSMOKE_API FIVSmokeHoleArray : public FFastArraySerializer
 
 	FIVSmokeHoleArray() : OwnerComponent(nullptr) {}
 
+private:
 	/** Hole data array. */
 	UPROPERTY(Transient, VisibleAnywhere)
 	TArray<FIVSmokeHoleData> Items;
 
+public:
 	/** Owner component reference for replication callbacks. */
 	UPROPERTY(Transient, NotReplicated)
 	TObjectPtr<UIVSmokeHoleGeneratorComponent> OwnerComponent;
@@ -172,7 +174,7 @@ struct alignas(16) FIVSmokeHoleGPU
 	 */
 	FIVSmokeHoleGPU(const FIVSmokeHoleData& DynamicHoleData, const UIVSmokeHolePreset& Preset, const float CurrentServerTime);
 
-	// ============================================================================
+	//~============================================================================
 	// Common
 
 	/** The central point of hole creation. */
@@ -193,7 +195,7 @@ struct alignas(16) FIVSmokeHoleGPU
 	/** Edge smooth range. */
 	float Softness;
 
-	// ============================================================================
+	//~============================================================================
 	// Dynamic
 
 	/** the size of a hole. */
@@ -201,7 +203,7 @@ struct alignas(16) FIVSmokeHoleGPU
 
 	float DynamicPadding;
 
-	// ============================================================================
+	//~============================================================================
 	// Explosion
 
 	/** Expansion time used only for Explosion. */
@@ -227,7 +229,7 @@ struct alignas(16) FIVSmokeHoleGPU
 	/** These values sampled from DistanceCurveOverDistance. */
 	float DistortionCurveOverDistance[FIVSmokeHoleCarveCS::CurveSampleCount];
 
-	// ============================================================================
+	//~============================================================================
 	// Penetration
 
 	/** The point at which the trajectory of the penetration ends. */
