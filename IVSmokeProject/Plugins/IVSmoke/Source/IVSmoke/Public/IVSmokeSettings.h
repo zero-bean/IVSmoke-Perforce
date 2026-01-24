@@ -16,31 +16,31 @@ struct IVSMOKE_API FIVSmokeNoiseSettings
 	GENERATED_BODY()
 
 	/** Random seed for noise generation. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Noise")
 	int32 Seed = 0;
 
 	/** Texture resolution (TexSize x TexSize x TexSize). */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin = "16", ClampMax = "512"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Noise", meta = (ClampMin = "16", ClampMax = "512"))
 	int32 TexSize = 128;
 
 	/** Number of noise octaves for detail. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin = "1", ClampMax = "8"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Noise", meta = (ClampMin = "1", ClampMax = "8"))
 	int32 Octaves = 6;
 
 	/** Noise wrap factor. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Noise", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float Wrap = 0.76f;
 
 	/** Noise amplitude. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Noise", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float Amplitude = 0.62f;
 
 	/** Number of cells per axis for Worley noise. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin = "1", ClampMax = "16"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Noise", meta = (ClampMin = "1", ClampMax = "16"))
 	int32 AxisCellCount = 4;
 
 	/** Size of each cell. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ClampMin = "8", ClampMax = "128"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Noise", meta = (ClampMin = "8", ClampMax = "128"))
 	int32 CellSize = 32;
 };
 

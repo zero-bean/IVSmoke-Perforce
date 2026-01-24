@@ -96,7 +96,7 @@ struct IVSMOKE_API FIVSmokeHoleArray : public FFastArraySerializer
 
 private:
 	/** Hole data array. */
-	UPROPERTY(Transient, VisibleAnywhere)
+	UPROPERTY(Transient, VisibleAnywhere, Category = "IVSmoke | Hole")
 	TArray<FIVSmokeHoleData> Items;
 
 public:
