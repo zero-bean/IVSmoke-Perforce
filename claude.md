@@ -295,15 +295,20 @@ UE_LOG(LogIVSmoke, Error, TEXT("[FIVSmokeRenderer::Render] Volume is invalid : V
 ### 프로퍼티 & 함수 카테고리
 
 - **루트:** `IVSmoke`로 시작
-- **계층:** 파이프라인 `|`로 구분, 최대 3단계
-- **형식:** `Category = "IVSmoke|MainCategory|SubCategory"`
+- **계층:** 파이프 `|`로 구분, 최대 3단계
+- **띄어쓰기:** 파이프 양쪽에 공백 필수 (` | `)
+- **형식:** `Category = "IVSmoke | MainCategory | SubCategory"`
 
 ```cpp
-UPROPERTY(EditAnywhere, Category = "IVSmoke|Volume")
+// [Good]
+UPROPERTY(EditAnywhere, Category = "IVSmoke | Volume")
 float VoxelSize = 10.0f;
 
-UPROPERTY(EditAnywhere, Category = "IVSmoke|Rendering")
+UPROPERTY(EditAnywhere, Category = "IVSmoke | Rendering")
 float SmokeDensity = 0.5f;
+
+// [Bad]
+UPROPERTY(EditAnywhere, Category = "IVSmoke|Volume")  // 공백 없음
 ```
 
 ### 주석 (Comments)

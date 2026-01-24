@@ -471,7 +471,7 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		Result.Sharpness = Settings->Sharpness;
 
 		// Ray marching
-		Result.MaxSteps = Settings->MaxSteps;
+		Result.MaxSteps = Settings->GetEffectiveMaxSteps();
 
 		// Appearance
 		Result.GlobalAbsorption = 0.1f;  // Default, per-volume absorption from preset
@@ -1207,7 +1207,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	MaxRayDistance = FMath::Max(MaxRayDistance, 10000.0f); // Minimum reasonable distance
 
 	// MinStepSize from settings (minimum world units per step, TotalVolumeLength computed per-tile in shader)
-	const float MinStepSize = Settings->MinStepSize;
+	const float MinStepSize = Settings->GetEffectiveMinStepSize();
 
 	//~==========================================================================
 	// Phase 2: Pass 0 - Tile Setup
