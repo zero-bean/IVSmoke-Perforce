@@ -5,24 +5,38 @@
 #include "CoreMinimal.h"
 #include "IVSmokeGridLibrary.generated.h"
 
-/** @todo Documentation */
+/**
+ * Utility library for smoke grid calculations and voxel bit operations.
+ */
 UCLASS()
 class IVSMOKE_API UIVSmokeGridLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
 public:
-	// @todo Documentation
+	/** Invalid grid pos (-1, -1, -1) */
 	static const FIntVector InvalidGridPos;
 
-	/** @todo Documentation */
+	/**
+	 * 3D grid coordinate to 1D index.
+	 *
+	 * @param GridPos			3D grid coordinate.
+	 * @param Resolution		3D grid resolution.
+	 * @return					1D flattened index
+	 */
 	UFUNCTION(BlueprintPure, Category = "IVSmoke | Math")
 	static FORCEINLINE int32 GridToIndex(const FIntVector& GridPos, const FIntVector& Resolution)
 	{
 		return GridPos.X + (GridPos.Y * Resolution.X) + (GridPos.Z * Resolution.X * Resolution.Y);
 	}
 
-	/** @todo Documentation */
+	/**
+	 * 1D flattened index to 3D grid coordinate.
+	 *
+	 * @param Index				1D flattened index.
+	 * @param Resolution		3D grid resolution.
+	 * @return					3D grid coordinate.
+	 */
 	UFUNCTION(BlueprintPure, Category = "IVSmoke | Math")
 	static FORCEINLINE FIntVector IndexToGrid(int32 Index, const FIntVector& Resolution)
 	{
@@ -40,7 +54,14 @@ public:
 		return FIntVector(X, Y, Z);
 	}
 
-	/** @todo Documentation */
+	/**
+	 * Converts 3D grid coordinate to local space position.
+	 *
+	 * @param GridPos			3D grid coordinate.
+	 * @param VoxelSize			Size of each voxel.
+	 * @param CenterOffset		Grid center offset.
+	 * @return					Local space position.
+	 */
 	UFUNCTION(BlueprintPure, Category = "IVSmoke | Math")
 	static FORCEINLINE FVector GridToLocal(const FIntVector& GridPos, float VoxelSize, const FIntVector& CenterOffset)
 	{
@@ -51,14 +72,17 @@ public:
 		);
 	}
 
-	/** @todo Documentation */
+	/**
+	 * Converts local space position to 3D grid coordinate.
+	 *
+	 * @param LocalPos			Local space position.
+	 * @param VoxelSize			Size of each voxel.
+	 * @param CenterOffset		Grid center offset.
+	 * @param Resolution		3D grid resolution.
+	 * @return					3D grid coordinate, or InvalidGridPos if out of bounds.
+	 */
 	UFUNCTION(BlueprintPure, Category = "IVSmoke | Math")
-	static FORCEINLINE FIntVector LocalToGrid(
-		const FVector& LocalPos,
-		float VoxelSize,
-		const FIntVector& CenterOffset,
-		const FIntVector& Resolution
-	)
+	static FORCEINLINE FIntVector LocalToGrid(const FVector& LocalPos, float VoxelSize, const FIntVector& CenterOffset, const FIntVector& Resolution)
 	{
 		if (VoxelSize <= UE_SMALL_NUMBER)
 		{
@@ -82,19 +106,43 @@ public:
 	//~==============================================================================
 	// Bitmask Helpers
 
+	/**
+	 * Converts 3D grid coordinate to voxel bit index.
+	 *
+	 * @param GridPos			3D grid coordinate.
+	 * @param Resolution		3D grid resolution.
+	 * @return					Voxel bit index.
+	 */
 	static FORCEINLINE int32 GridToVoxelBitIndex(const FIntVector& GridPos, const FIntVector& Resolution)
 	{
 		return GridToVoxelBitIndex(GridPos.Y, GridPos.Z, Resolution.Y);
 	}
 
+	/**
+	 * Converts Y and Z coordinates to voxel bit index.
+	 *
+	 * @param Y					Y coordinate.
+	 * @param Z					Z coordinate.
+	 * @param ResolutionY		Y resolution.
+	 * @return					Voxel bit index.
+	 */
 	static FORCEINLINE int32 GridToVoxelBitIndex(int32 Y, int32 Z, int32 ResolutionY)
 	{
 		return Y + (Z * ResolutionY);
 	}
 
+	/**
+	 * Checks if a voxel occupancy bit is set at the given 3D grid position.
+	 * Internally, X is stored as a bit index in a uint64, while Y and Z are mapped to the array index.
+	 *
+	 * @param VoxelBitArray     Bit-packed voxel occupancy array (uint64 per YZ slice).
+	 * @param GridPos           3D grid coordinate.
+	 * @param Resolution        3D grid resolution (each axis < 64).
+	 * @return                  True if the voxel bit is set, false otherwise.
+	 */
 	static FORCEINLINE bool IsVoxelBitSet(const TArray<uint64>& VoxelBitArray, const FIntVector& GridPos, const FIntVector& Resolution)
 	{
-		// @todo Comment
+		// Resolution must be less than 64 for each axis to fit in uint64 bitfield
 		check(Resolution.X >= 0 && Resolution.X < 64 &&
 			  Resolution.Y >= 0 && Resolution.Y < 64 &&
 			  Resolution.Z >= 0 && Resolution.Z < 64);
@@ -109,15 +157,32 @@ public:
 		return VoxelBitArray[Index] & (1ULL << GridPos.X);
 	}
 
+	/**
+	 * Sets a voxel bit value at the given 1D index.
+	 *
+	 * @param VoxelBitArray		Bit-packed voxel occupancy array (uint64 per YZ slice).
+	 * @param Index				1D flattened index.
+	 * @param Resolution		3D grid resolution (each axis < 64).
+	 * @param bValue			Value to set (true or false).
+	 */
 	static FORCEINLINE void SetVoxelBit(TArray<uint64>& VoxelBitArray, int32 Index, const FIntVector& Resolution, bool bValue)
 	{
 		const FIntVector GridPos = IndexToGrid(Index, Resolution);
 		SetVoxelBit(VoxelBitArray, GridPos, Resolution, bValue);
 	}
 
+	/**
+	 * Sets a voxel bit value at the given 3D grid position.
+	 * Internally, X is stored as a bit index in a uint64, while Y and Z are mapped to the array index.
+	 *
+	 * @param VoxelBitArray		Bit-packed voxel occupancy array (uint64 per YZ slice).
+	 * @param GridPos			3D grid coordinate.
+	 * @param Resolution		3D grid resolution (each axis < 64).
+	 * @param bValue			Value to set (true or false).
+	 */
 	static FORCEINLINE void SetVoxelBit(TArray<uint64>& VoxelBitArray, const FIntVector& GridPos, const FIntVector& Resolution, bool bValue)
 	{
-		// @todo Comment
+		// Resolution must be less than 64 for each axis to fit in uint64 bitfield
 		check(Resolution.X >= 0 && Resolution.X < 64 &&
 			  Resolution.Y >= 0 && Resolution.Y < 64 &&
 			  Resolution.Z >= 0 && Resolution.Z < 64);
@@ -139,15 +204,30 @@ public:
 		}
 	}
 
+	/**
+	 * Toggles a voxel bit value at the given 1D index.
+	 *
+	 * @param VoxelBitArray		Bit-packed voxel occupancy array (uint64 per YZ slice).
+	 * @param Index				1D flattened index.
+	 * @param Resolution		3D grid resolution (each axis < 64).
+	 */
 	static FORCEINLINE void ToggleVoxelBit(TArray<uint64>& VoxelBitArray, int32 Index, const FIntVector& Resolution)
 	{
 		const FIntVector GridPos = IndexToGrid(Index, Resolution);
 		ToggleVoxelBit(VoxelBitArray, GridPos, Resolution);
 	}
 
+	/**
+	 * Toggles a voxel bit value at the given 3D grid position.
+	 * Internally, X is stored as a bit index in a uint64, while Y and Z are mapped to the array index.
+	 *
+	 * @param VoxelBitArray		Bit-packed voxel occupancy array (uint64 per YZ slice).
+	 * @param GridPos			3D grid coordinate.
+	 * @param Resolution		3D grid resolution (each axis < 64).
+	 */
 	static FORCEINLINE void ToggleVoxelBit(TArray<uint64>& VoxelBitArray, const FIntVector& GridPos, const FIntVector& Resolution)
 	{
-		// @todo Comment
+		// Resolution must be less than 64 for each axis to fit in uint64 bitfield
 		check(Resolution.X >= 0 && Resolution.X < 64 &&
 			  Resolution.Y >= 0 && Resolution.Y < 64 &&
 			  Resolution.Z >= 0 && Resolution.Z < 64);
