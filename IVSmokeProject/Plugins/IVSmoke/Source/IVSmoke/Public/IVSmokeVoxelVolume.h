@@ -125,10 +125,10 @@ struct FIVSmokeDebugSettings
 	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled", UIMin = 0.0, UIMax = 1.0, ClampMin = 0.0))
 	FColor DebugWireframeColor = FColor(20, 20, 20);
 
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (UIMin=0.0, UIMax=1.0))
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled", UIMin=0.0, UIMax=1.0))
 	float SliceHeight = 1.0f;
 
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (ClampMin=0, ClampMax=100))
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled", ClampMin=0, ClampMax=100))
 	int32 VisibleStepCountPercent = 100;
 };
 
@@ -461,6 +461,25 @@ private:
 	bool IsConnectionBlocked(const UWorld* World, const FVector& BeginPos, const FVector& EndPos) const;
 
 	/**
+	 * Core logic for starting the simulation.
+	 * Separated from the RPC to allow execution in both Editor-Preview and Networked-Server contexts.
+	 */
+	void StartSimulationInternal();
+
+	/**
+	 * Core logic for stopping or dissipating the smoke.
+	 *
+	 * @param bImmediate	If true, skips the dissipation phase and instantly transitions to `Finished`, clearing all voxels.
+	 */
+	void StopSimulationInternal(bool bImmediate = false);
+
+	/**
+	 * Core logic for resetting the entire simulation state.
+	 * Clears buffers, resets generation, and returns the actor to an Idle state.
+	 */
+	void ResetSimulationInternal();
+
+	/**
 	 * Simulates frames rapidly to catch up with the server's current state.
 	 * Called on clients when they detect a `Generation` mismatch (late join or reset).
 	 */
@@ -688,7 +707,14 @@ public:
 	 * @note This resets the current simulation state.
 	 */
 	UFUNCTION(CallInEditor, Category = "IVSmoke | Debug")
-	void PreviewSimulation();
+	void StartPreviewSimulation();
+
+	/**
+	 * Stops the current editor preview simulation and clears all generated voxel data.
+	 * Returns the actor to an Idle state.
+	 */
+	UFUNCTION(CallInEditor, Category = "IVSmoke | Debug")
+	void StopPreviewSimulation();
 
 	/** Configuration settings for visual debugging tools. */
 	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (ShowOnlyInnerProperties))
@@ -717,9 +743,6 @@ private:
 
 	/** Displays world-space text showing the current State, Voxel Count, and Simulation Time. */
 	void DrawDebugStatusText() const;
-
-	/** Records simulation state snapshots to the Unreal Visual Logger (VisLog). */
-	void UpdateVisualLogger() const;
 
 	/** Calculates a CRC32 checksum of the current voxel state to verify deterministic sync between Server and Client. */
 	uint32 CalculateSimulationChecksum() const;

@@ -11,10 +11,6 @@
 #include "GameFramework/GameStateBase.h"
 #include "Net/UnrealNetwork.h"
 
-#if ENABLE_VISUAL_LOG
-#include "VisualLogger/VisualLogger.h"
-#endif
-
 DECLARE_CYCLE_STAT(TEXT("Update Expansion"),	STAT_IVSmoke_UpdateExpansion,		STATGROUP_IVSmoke);
 DECLARE_CYCLE_STAT(TEXT("Update Sustain"),		STAT_IVSmoke_UpdateSustain,			STATGROUP_IVSmoke);
 DECLARE_CYCLE_STAT(TEXT("Update Dissipation"),	STAT_IVSmoke_UpdateDissipation,		STATGROUP_IVSmoke);
@@ -135,10 +131,6 @@ void AIVSmokeVoxelVolume::Tick(float DeltaTime)
 		DrawDebugVisualization();
 	}
 #endif
-
-#if ENABLE_VISUAL_LOG
-	// UpdateVisualLogger();
-#endif
 }
 
 bool AIVSmokeVoxelVolume::ShouldTickIfViewportsOnly() const
@@ -166,7 +158,7 @@ void AIVSmokeVoxelVolume::PostEditChangeProperty(struct FPropertyChangedEvent& P
 
 	if (bShouldResetSimulation && DebugSettings.bDebugEnabled)
 	{
-		PreviewSimulation();
+		StartPreviewSimulation();
 	}
 }
 
@@ -176,7 +168,7 @@ void AIVSmokeVoxelVolume::PostEditMove(bool bFinished)
 
 	if (bFinished && DebugSettings.bDebugEnabled)
 	{
-		PreviewSimulation();
+		StartPreviewSimulation();
 	}
 }
 #endif
@@ -224,62 +216,17 @@ void AIVSmokeVoxelVolume::Initialize()
 
 void AIVSmokeVoxelVolume::StartSimulation_Implementation()
 {
-	if (ServerState.State != EIVSmokeVoxelVolumeState::Idle &&
-		ServerState.State != EIVSmokeVoxelVolumeState::Finished)
-	{
-		return;
-	}
-
-	ServerState.Generation += 1;
-
-	ServerState.RandomSeed = FMath::Rand();
-	ServerState.ExpansionStartTime = GetSyncWorldTimeSeconds();
-
-	ServerState.SustainStartTime = 0.0f;
-	ServerState.DissipationStartTime = 0.0f;
-
-	ServerState.State = EIVSmokeVoxelVolumeState::Expansion;
-
-	HandleStateTransition(ServerState.State);
+	StartSimulationInternal();
 }
 
 void AIVSmokeVoxelVolume::StopSimulation_Implementation(bool bImmediate)
 {
-	if (ServerState.State == EIVSmokeVoxelVolumeState::Finished)
-	{
-		return;
-	}
-
-	if (bImmediate)
-	{
-		ServerState.State = EIVSmokeVoxelVolumeState::Finished;
-	}
-	else if (ServerState.State == EIVSmokeVoxelVolumeState::Expansion ||
-			 ServerState.State == EIVSmokeVoxelVolumeState::Sustain)
-	{
-		ServerState.State = EIVSmokeVoxelVolumeState::Dissipation;
-		ServerState.DissipationStartTime = GetSyncWorldTimeSeconds();
-
-		HandleStateTransition(ServerState.State);
-	}
+	StopSimulationInternal();
 }
 
 void AIVSmokeVoxelVolume::ResetSimulation_Implementation()
 {
-	if (ServerState.State == EIVSmokeVoxelVolumeState::Idle)
-	{
-		return;
-	}
-
-	ServerState.State = EIVSmokeVoxelVolumeState::Idle;
-
-	ServerState.Generation++;
-
-	ServerState.ExpansionStartTime = 0.0f;
-	ServerState.SustainStartTime = 0.0f;
-	ServerState.DissipationStartTime = 0.0f;
-
-	HandleStateTransition(ServerState.State);
+	ResetSimulationInternal();
 }
 
 void AIVSmokeVoxelVolume::OnRep_ServerState()
@@ -344,7 +291,15 @@ void AIVSmokeVoxelVolume::HandleStateTransition(EIVSmokeVoxelVolumeState NewStat
 	case EIVSmokeVoxelVolumeState::Finished:
 		if (bDestroyOnFinish)
 		{
-			Destroy();
+			if (GetWorld() && GetWorld()->IsGameWorld())
+			{
+				Destroy();
+			}
+			else
+			{
+				ClearSimulationData();
+				bIsEditorPreviewing = false;
+			}
 		}
 		ClearSimulationData();
 		break;
@@ -416,6 +371,59 @@ bool AIVSmokeVoxelVolume::IsConnectionBlocked(const UWorld* World, const FVector
 		VoxelCollisionChannel,
 		CollisionParams
 	);
+}
+
+void AIVSmokeVoxelVolume::StartSimulationInternal()
+{
+	if (!bIsInitialized)
+	{
+		Initialize();
+	}
+
+	ResetSimulationInternal();
+
+	ServerState.RandomSeed = FMath::Rand();
+	ServerState.ExpansionStartTime = GetSyncWorldTimeSeconds();
+
+	ServerState.SustainStartTime = 0.0f;
+	ServerState.DissipationStartTime = 0.0f;
+
+	ServerState.State = EIVSmokeVoxelVolumeState::Expansion;
+
+	HandleStateTransition(ServerState.State);
+}
+
+void AIVSmokeVoxelVolume::StopSimulationInternal(bool bImmediate)
+{
+	if (ServerState.State == EIVSmokeVoxelVolumeState::Finished)
+	{
+		return;
+	}
+
+	if (bImmediate)
+	{
+		ServerState.State = EIVSmokeVoxelVolumeState::Finished;
+	}
+	else if (ServerState.State == EIVSmokeVoxelVolumeState::Expansion ||
+			 ServerState.State == EIVSmokeVoxelVolumeState::Sustain)
+	{
+		ServerState.State = EIVSmokeVoxelVolumeState::Dissipation;
+		ServerState.DissipationStartTime = GetSyncWorldTimeSeconds();
+	}
+
+	HandleStateTransition(ServerState.State);
+}
+
+void AIVSmokeVoxelVolume::ResetSimulationInternal()
+{
+	ServerState.State = EIVSmokeVoxelVolumeState::Idle;
+	ServerState.Generation += 1;
+
+	ServerState.ExpansionStartTime = 0.0f;
+	ServerState.SustainStartTime = 0.0f;
+	ServerState.DissipationStartTime = 0.0f;
+
+	HandleStateTransition(ServerState.State);
 }
 
 void AIVSmokeVoxelVolume::FastForwardSimulation()
@@ -539,7 +547,6 @@ void AIVSmokeVoxelVolume::UpdateDissipation()
 	}
 
 	int32 RemoveNum = DissipationHeap.Num() - TargetAliveNum;
-	UE_LOG(LogIVSmoke, Log, TEXT("Remove Num: %d"), RemoveNum);
 
 	if (RemoveNum > 0)
 	{
@@ -847,11 +854,32 @@ float AIVSmokeVoxelVolume::GetSyncWorldTimeSeconds() const
 // Debug
 #pragma region Debug
 
-void AIVSmokeVoxelVolume::PreviewSimulation()
+void AIVSmokeVoxelVolume::StartPreviewSimulation()
 {
+#if WITH_EDITOR
+	if (!DebugSettings.bDebugEnabled)
+	{
+		return;
+	}
+
 	bIsEditorPreviewing = true;
 
-	StartSimulation();
+	StartSimulationInternal();
+#endif
+}
+
+void AIVSmokeVoxelVolume::StopPreviewSimulation()
+{
+#if WITH_EDITOR
+	bIsEditorPreviewing = false;
+
+	ResetSimulationInternal();
+
+	if (DebugMeshComponent)
+	{
+		DebugMeshComponent->ClearInstances();
+	}
+#endif
 }
 
 void AIVSmokeVoxelVolume::DrawDebugVisualization() const
@@ -1089,42 +1117,6 @@ void AIVSmokeVoxelVolume::DrawDebugStatusText() const
 	TextPos.Z += (GridResolution.Z * VoxelSize * 0.5f) + 50.0f;
 
 	DrawDebugString(World, TextPos, DebugMsg, nullptr, FColor::White, 0.0f, true, 1.2f);
-#endif
-}
-
-void AIVSmokeVoxelVolume::UpdateVisualLogger() const
-{
-#if ENABLE_VISUAL_LOG
-	const FVector MyLoc = GetActorLocation();
-	const uint32 Checksum = CalculateSimulationChecksum();
-
-	UE_VLOG(this, LogIVSmokeVis, Log,
-		TEXT("State: %d | Voxels: %d/%d | Heap: %d | Hash: 0x%08X"),
-		(int32)ServerState.State,
-		ActiveVoxelNum,
-		GeneratedVoxelIndices.Num(),
-		ExpansionHeap.Num(),
-		Checksum
-	);
-
-	if (ActiveVoxelNum > MaxVoxelNum)
-	{
-		UE_VLOG(this, LogIVSmokeVis, Error, TEXT("Active Voxel Count Exceeded Max Limit!"));
-	}
-
-	FBox VoxelBounds(VoxelWorldAABBMin, VoxelWorldAABBMax);
-
-	FColor DrawColor = FColor::White;
-	switch(ServerState.State)
-	{
-	case EIVSmokeVoxelVolumeState::Expansion: DrawColor = FColor::Green; break;
-	case EIVSmokeVoxelVolumeState::Sustain:   DrawColor = FColor::Yellow; break;
-	case EIVSmokeVoxelVolumeState::Dissipation: DrawColor = FColor::Red; break;
-	}
-
-	UE_VLOG_BOX(this, LogIVSmokeVis, Log, VoxelBounds, DrawColor, TEXT("SmokeBounds"));
-
-	UE_VLOG_LOCATION(this, LogIVSmokeVis, Log, MyLoc, 30.0f, FColor::Blue, TEXT("Center"));
 #endif
 }
 
