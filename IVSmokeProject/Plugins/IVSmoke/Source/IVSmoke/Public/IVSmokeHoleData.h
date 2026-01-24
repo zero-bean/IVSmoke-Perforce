@@ -10,6 +10,27 @@ struct FIVSmokeHoleArray;
 class UIVSmokeHoleGeneratorComponent;
 class UIVSmokeHolePreset;
 struct FIVSmokeHoleGPU;
+
+USTRUCT()
+struct IVSMOKE_API FIVSmokeHoleDynamicSubject
+{
+	GENERATED_BODY()
+
+	UPROPERTY(Transient)
+	TWeakObjectPtr<AActor> TargetActor;
+
+	UPROPERTY(Transient)
+	uint8 PresetID = 0;
+
+	UPROPERTY(Transient)
+	FVector3f LastWorldPosition = FVector3f::ZeroVector;
+
+	UPROPERTY(Transient)
+	FQuat LastWorldRotation = FQuat::Identity;
+
+	FORCEINLINE bool IsValid() const { return TargetActor.IsValid(); }
+};
+
 /**
  * @struct FIVSmokeHoleData
  * @brief Network-optimized hole data structure.
@@ -27,19 +48,19 @@ struct IVSMOKE_API FIVSmokeHoleData : public FFastArraySerializerItem
 
 public:
 	// World position where the hole starts
-	UPROPERTY()
-	FVector Position = FVector::ZeroVector;
+	UPROPERTY(Transient)
+	FVector3f Position = FVector3f::ZeroVector;
 
 	// World position where the penetration exits (Penetration only)
-	UPROPERTY()
-	FVector EndPosition = FVector::ZeroVector;
+	UPROPERTY(Transient)
+	FVector3f EndPosition = FVector3f::ZeroVector;
 
 	// Hole expiration time (server based)
-	UPROPERTY()
+	UPROPERTY(Transient)
 	float ExpirationServerTime = 0.0f;
 
 	// Preset ID
-	UPROPERTY()
+	UPROPERTY(Transient)
 	uint8 PresetID = 0;
 
 	// Check if this hole has expired
@@ -57,11 +78,11 @@ struct IVSMOKE_API FIVSmokeHoleArray : public FFastArraySerializer
 
 	FIVSmokeHoleArray() : OwnerComponent(nullptr) {}
 
-	UPROPERTY()
+	UPROPERTY(Transient, VisibleAnywhere)
 	TArray<FIVSmokeHoleData> Items;
 
 	// Owner component reference for replication callbacks
-	UPROPERTY(NotReplicated)
+	UPROPERTY(Transient, NotReplicated)
 	TObjectPtr<UIVSmokeHoleGeneratorComponent> OwnerComponent;
 
 	bool NetDeltaSerialize(FNetDeltaSerializeInfo& DeltaParms)
@@ -92,7 +113,7 @@ struct IVSMOKE_API FIVSmokeHoleArray : public FFastArraySerializer
 	FORCEINLINE const FIVSmokeHoleData& operator[](const int32 Index) const { return Items[Index]; }
 	FORCEINLINE void Reserve(const int32 Number) { Items.Reserve(Number); }
 
-	TArray<FIVSmokeHoleGPU> GetHoleGPUDatas(const float CurrentServerTime) const;
+	TArray<FIVSmokeHoleGPU> GetHoleGPUData(const float CurrentServerTime) const;
 };
 
 // Enable delta serialization for FIVSmokeHoleArray
@@ -109,43 +130,36 @@ struct TStructOpsTypeTraits<FIVSmokeHoleArray> : public TStructOpsTypeTraitsBase
  * @struct FIVSmokeHoleGPU
  * @brief Built from FIVSmokeHoleData + UIVSmokeHolePreset at render time.
  */
-struct FIVSmokeHoleGPU
+struct alignas(16) FIVSmokeHoleGPU
 {
 	FIVSmokeHoleGPU() = default;
-	FIVSmokeHoleGPU(const FIVSmokeHoleData& DynamicHoleData, const UIVSmokeHolePreset& Preset);
-	void SetNormalizedAge(const float RemainingTime);
-	// ============================================================================
-	// Dynamic
+	FIVSmokeHoleGPU(const FIVSmokeHoleData& HoleData, const UIVSmokeHolePreset& Preset);
+
 	// ============================================================================
 	// Common
+
 	FVector3f Position;
-	float NormalizedAge;
-
-	//only grenade
-
-	//only bullet
-	FVector3f EndPosition;
-	float Dynamic_BulletPadding;
-
-	// ============================================================================
-	// Preset
-	// ============================================================================
-	// Common
-	int32 HoleType; // 0 = Bullet (cone), 1 = Explosion (sphere)
+	int32 HoleType;
 	float Radius;
 	float Lifetime;
 	float EdgeSoftness;
+	float NormalizedAge;
 
-	//only grenade
+	// ============================================================================
+	// Dynamic
+
+	FVector3f Extent;
+
+	// ============================================================================
+	// Explosion
+
 	float ExtensionTime; //0.07f * 2.4f;
 	float DensityExtDelayTime;
-	FVector2f Preset_GrenadePadding;
 
-	//only bullet
-	float EndRadius;
-	float DensityMultiplier;
-	FVector2f Preset_BulletPadding;
+	// ============================================================================
+	// Penetration
 
+	FVector3f EndPosition;
 
-
+	void SetNormalizedAge(const float RemainingTime);
 };

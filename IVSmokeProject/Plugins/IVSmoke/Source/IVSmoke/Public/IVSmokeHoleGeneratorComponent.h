@@ -21,124 +21,108 @@ class IVSMOKE_API UIVSmokeHoleGeneratorComponent : public UBoxComponent
 public:
 	UIVSmokeHoleGeneratorComponent();
 
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
 protected:
 	virtual void BeginPlay() override;
+	virtual void TickComponent(const float DeltaTime, const ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	//~============================================================================
+	// Public API (Blueprint & C++)
+#pragma region API
 public:
-	// ============================================================================
-	// Public API (Server RPC)
-	// ============================================================================
+	/** @brief Request a penetration hole such as bullet, projectile and hitscan */
+	UFUNCTION(BlueprintCallable, Category = "IVSmoke | Hole | API")
+	void RequestPenetrationHole(const FVector3f Origin, const FVector3f Direction, UIVSmokeHolePreset* Preset);
 
-	/** @brief Request a penetration hole (bullet, projectile, hitscan) */
-	UFUNCTION(BlueprintCallable, Category = "IVSmoke | Hole")
-	void RequestPenetrationHole(FVector Origin, FVector Direction, UIVSmokeHolePreset* Preset);
+	/** @brief Request an explosion hole at the specified origin. such as grenade (todo: must be refactored) */
+	UFUNCTION(BlueprintCallable, Category = "IVSmoke | Hole | API")
+	void RequestExplosionHole(const FVector3f Origin, UIVSmokeHolePreset* Preset);
 
-	/** @brief Request an explosion hole at the specified origin. */
-	UFUNCTION(BlueprintCallable, Category = "IVSmoke | Hole")
-	void RequestExplosionHole(FVector Origin, UIVSmokeHolePreset* Preset);
+	/** @brief Request registration of tracking dynamic object such as human and vehicle */
+	UFUNCTION(BlueprintCallable, Category = "IVSmoke | Hole | API")
+	void RequestTrackDynamicObject(AActor* TargetActor, UIVSmokeHolePreset* Preset);
+#pragma endregion
 
-private:
-	// ============================================================================
+	//~============================================================================
 	// Internal Server RPC
-	// ============================================================================
+#pragma region Server RPC
+private:
+	UFUNCTION(Server, Reliable)
+	void Internal_RequestPenetrationHole(const FVector3f& Origin, const FVector3f& Direction, const uint8 PresetID);
 
 	UFUNCTION(Server, Reliable)
-	void Internal_RequestPenetrationHole(FVector Origin, FVector Direction, uint8 PresetID);
+	void Internal_RequestExplosionHole(const FVector3f& Origin, const uint8 PresetID);
 
 	UFUNCTION(Server, Reliable)
-	void Internal_RequestExplosionHole(FVector Origin, uint8 PresetID);
+	void Internal_RequestDynamicHole(AActor* TargetActor, const uint8 PresetID);
+#pragma endregion
 
+	//~============================================================================
+	// Authority Only (Server & Standalone)
+#pragma region Authority Only
+private:
+	UPROPERTY(Transient)
+	TArray<FIVSmokeHoleDynamicSubject> DynamicSubjectList;
+
+	 // Create hole data to be rendered by GPU (todo: must be refactored)
+	void Authority_CreateHole(const FIVSmokeHoleData& HoleData);
+
+	// Clean up expired hole data and notify GPU to be updated
+	void Authority_CleanupExpiredHoles();
+
+	// Calculate penetration entry & exit points via raycast
+	bool Authority_CalculatePenetrationPoints(const FVector3f& Origin, const FVector3f& Direction, const float Radius, FVector3f& OutEntry, FVector3f& OutExit);
+
+	// Manage the dynamic object's life cycle and update dynamic hole
+	void Authority_UpdateDynamicSubjectList();
+#pragma endregion
+
+	//~============================================================================
+	// Local Only (Client & Standalone)
+#pragma region Local Only
+private:
+	UPROPERTY(Transient)
+	TObjectPtr<UTextureRenderTargetVolume> HoleTexture = nullptr;
+
+	// Initialize 3D texture for hole data
+	void Local_InitializeHoleTexture();
+
+	// Rebuild entire hole texture from ActiveHoles (todo: must be refactored)
+	void Local_RebuildHoleTexture();
+#pragma endregion
+
+	//~============================================================================
+	// Common
+#pragma region Common
 public:
-	// ============================================================================
-	// Configuration
-	// ============================================================================
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Hole | Optimization",
-		meta = (ClampMin = "1", ClampMax = "256"))
-	int32 MaxHoles = 128;
+		meta = (ClampMin = "1", ClampMax = "1024"))
+	int32 MaxHoles = 256;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Hole | Optimization")
+	FIntVector VoxelResolution = FIntVector(64, 64, 64);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Hole | Configuration",
 		meta = (ToolTip = "Select the type of obstacle that will block the penetration hole"))
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObstacleObjectTypes;
 
-	// ============================================================================
-	// Texture Access
-	// ============================================================================
-
-	// Get hole texture RHI for shader binding
-	FTextureRHIRef GetHoleTextureRHI() const;
-
-	UFUNCTION(BlueprintPure, Category = "IVSmoke | Voxel")
-	FORCEINLINE FIntVector GetVoxelResolution() const { return VoxelResolution; }
-
-public:
-	// ============================================================================
-	// Fast TArray Replication Support
-	// ============================================================================
-
-	/** Called by replication callbacks to mark hole texture as dirty */
-	FORCEINLINE void MarkHoleTextureDirty() { bHoleTextureDirty = true; }
-
-protected:
-	// ============================================================================
-	// Replicated State
-	// ============================================================================
-
-	// Active holes array - Fast TArray delta replication
-	UPROPERTY(Replicated, VisibleAnywhere, Category = "IVSmoke | Hole | Debug")
-	FIVSmokeHoleArray ActiveHoles;
-
-	// Dirty flag for hole texture rebuild
-	uint8 bHoleTextureDirty : 1;
-
-private:
-	// ============================================================================
-	// Authority Only (Server / Standalone)
-	// ============================================================================
-
-	// Create a hole and add to ActiveHoles (Authority only)
-	void Authority_CreateHole(const FIVSmokeHoleData& HoleData);
-
-	// Remove expired holes from ActiveHoles (Authority only)
-	void Authority_CleanupExpiredHoles();
-
-	// ============================================================================
-	// Local Only (Client / Standalone)
-	// ============================================================================
-
-	// Rebuild entire hole texture from ActiveHoles
-	void Local_RebuildHoleTexture();
-
-	// ============================================================================
-	// Helper
-	// ============================================================================
-
 	// Get synchronized server time
 	float GetSyncedTime() const;
 
-	// Calculate penetration entry/exit points via raycast
-	bool CalculatePenetrationPoints(FVector Origin, FVector Direction, float EndRadius, FVector& OutEntry, FVector& OutExit);
-
-	// Initialize 3D texture for hole data
-	void InitializeHoleTexture();
-
-	// Build GPU buffer from ActiveHoles
-	TArray<FIVSmokeHoleGPU> BuildGPUHoleBuffer() const;
-
-	// ============================================================================
-	// Local State (Not Replicated)
-	// ============================================================================
+	// Get Texture as a UTextureRenderTargetVolume to write by renderer
+	FTextureRHIRef GetHoleTextureRHI() const;
 
 	// Set BoxExtent and Component Position to VoxelAABB Center
 	void SetBoxToVoxelAABB();
 
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Hole | Optimization")
-	FIntVector VoxelResolution = FIntVector(64, 64, 64);
+	// Set Dirty flag whether GPU updates the texure
+	FORCEINLINE void MarkHoleTextureDirty(const bool bIsDirty = true) { bHoleTextureDirty = bIsDirty; }
 
-	UPROPERTY(Transient)
-	TObjectPtr<UTextureRenderTargetVolume> HoleTexture = nullptr;
+private:
+	UPROPERTY(Transient, Replicated, VisibleAnywhere, Category = "IVSmoke | Hole | Debug")
+	FIVSmokeHoleArray ActiveHoles;
+
+	uint8 bHoleTextureDirty : 1;
+#pragma endregion
 };

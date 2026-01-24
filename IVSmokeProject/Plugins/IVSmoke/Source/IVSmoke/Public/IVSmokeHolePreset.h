@@ -10,6 +10,7 @@ enum class EIVSmokeHoleType : uint8
 {
 	Penetration,
 	Explosion,
+	Dynamic,
 };
 
 /**
@@ -26,16 +27,16 @@ protected:
 	virtual void BeginDestroy() override;
 
 public:
-
 	// ============================================================================
 	// Common
-	// ============================================================================
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke")
 	EIVSmokeHoleType HoleType = EIVSmokeHoleType::Penetration;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
-		meta = (ClampMin = "0.1", ClampMax = "500.0"))
-	float StartRadius = 50.0f;
+		meta = (ClampMin = "0.1", ClampMax = "500.0", EditConditionHides,
+			EditCondition = "HoleType != EIVSmokeHoleType::Dynamic"))
+	float Radius = 50.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
 		meta = (ClampMin = "0.01", ClampMax = "60.0",
@@ -47,11 +48,9 @@ public:
 			Tooltip = "0 = hard edge, 1 = soft gradient"))
 	float EdgeSoftness = 0.3f;
 
-
-
 	// ============================================================================
-	// Only Grenade
-	// ============================================================================
+	// Explosion
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
 		meta = (ClampMin = "0.01", ClampMax = "10.0", EditConditionHides,
 			EditCondition = "HoleType == EIVSmokeHoleType::Explosion"))
@@ -62,36 +61,21 @@ public:
 	float DensityExtDelayTime;
 
 	// ============================================================================
-	// Only Bullet
+	// Dynamic
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
+		meta = (EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Dynamic"))
+	FVector3f Extent = FVector3f(50.0f, 50.0f, 50.0f);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
+		meta = (ClampMin = "10.0", ClampMax = "500.0", EditConditionHides,
+			EditCondition = "HoleType == EIVSmokeHoleType::Dynamic"))
+	float DistanceThreshold = 50.0f;
+
 	// ============================================================================
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
-		meta = (ClampMin = "0.0", ClampMax = "500.0", EditConditionHides,
-			EditCondition = "HoleType == EIVSmokeHoleType::Penetration"))
-	float EndRadius = 25.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
-		meta = (ClampMin = "0.0", ClampMax = "1.0", EditConditionHides,
-			EditCondition = "HoleType == EIVSmokeHoleType::Penetration",
-			Tooltip = "0 = transparent, 1 = full hole"))
-	float DensityMultiplier = 1.0f;
-
-
-
-
-
-
-
-
-
-
-
-	FORCEINLINE uint8 GetPresetID() const {return CachedID;}
-
-	/**
-	 * @brief Find preset by ID from global registry.
-	 * @return Preset if found, nullptr otherwise.
-	 */
 	static TObjectPtr<UIVSmokeHolePreset> FindByID(const uint8 InPresetID);
+	FORCEINLINE uint8 GetPresetID() const {return CachedID;}
 
 private:
 	uint8 CachedID = 0;

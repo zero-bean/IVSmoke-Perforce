@@ -15,37 +15,23 @@ RWTexture3D<float4> VolumeTexture;
 
 struct FHoleGPU
 {
-	// ============================================================================
-	// Dynamic
-	// ============================================================================
-	//common
-	float3 Position;
-	float NormalizedAge;
-	
-	//only grenade
+	// Block 1 (16 bytes)
+    float3 Position;
+    int HoleType;           // 0=Bullet, 1=Explosion, 2=Dynamic
 
-	//only bullet
-	float3 EndPosition;
-	float Dynamic_BulletPadding;
+    // Block 2 (16 bytes)
+    float Radius;
+    float Lifetime;
+    float EdgeSoftness;
+    float NormalizedAge;
 
-	// ============================================================================
-	// Preset
-	// ============================================================================
-	// Common
-	int HoleType; // 0 = Bullet (cone), 1 = Explosion (sphere)
-	float Radius;
-	float Lifetime;
-	float EdgeSoftness;
+    // Block 3 (16 bytes)
+    float3 Extent;
+    float ExtensionTime;
 
-	//only grenade
-	float ExtensionTime; //0.07f * 2.4f;
-	float DensityExtDelayTime;
-	float2 Preset_GrenadePadding;
-	
-	//only bullet
-	float EndRadius;
-	float DensityMultiplier;
-	float2 Preset_BulletPadding;
+    // Block 4 (16 bytes)
+    float DensityExtDelayTime;
+    float3 EndPosition;
 };
 
 StructuredBuffer<FHoleGPU> HoleBuffer;
@@ -60,50 +46,27 @@ int3 Resolution;
 int NumHoles;
 
 // ============================================================================
-// SDF Functions
+// Signed Distance Field Utility Functions
 // ============================================================================
 
-/**
- * @brief Signed distance to a cone defined by two endpoints and radii.
- *        This creates a capsule-like shape that tapers from one radius to another.
- *
- * @param P         Query point
- * @param A         Start position
- * @param B         End position
- * @param RadiusA   Radius at start
- * @param RadiusB   Radius at end
- * @return Signed distance (negative = inside)
- */
-float ConeSDF(float3 P, float3 A, float3 B, float RadiusA, float RadiusB)
+float SegmentSdf(float3 p, float3 a, float3 b, float r) {
+	float3 pa = p - a, ba = b - a;
+	float h = saturate(dot(pa, ba) / dot(ba, ba));
+	return length(pa - ba * h) - r;
+}
+
+float SphereSdf(float3 Point, float3 Center, float SphereRadius)
 {
-	float3 AB = B - A;
-	float3 AP = P - A;
+	return length(Point - Center) - SphereRadius;
+}
 
-	float LengthAB = length(AB);
-	if (LengthAB < 0.0001)
-	{
-		// Degenerate case: A and B are the same point
-		return length(P - A) - RadiusA;
-	}
+float BoxSdf(float3 Point, float3 BoxHalfExtent)
+{
+	float3 PointMinusExtent = abs(Point) - BoxHalfExtent;
+	float DistOutside = length(max(PointMinusExtent, 0.0));
+	float DistInside = min(max(PointMinusExtent.x, max(PointMinusExtent.y, PointMinusExtent.z)), 0.0);
 
-	float3 Dir = AB / LengthAB;
-
-	// Project P onto line AB
-	float t = dot(AP, Dir);
-
-	// Clamp to segment [0, LengthAB]
-	float tClamped = saturate(t / LengthAB);
-
-	// Interpolate radius along the cone
-	float RadiusAtT = lerp(RadiusA, RadiusB, tClamped);
-
-	// Closest point on the axis
-	float3 ClosestPoint = A + Dir * (tClamped * LengthAB);
-
-	// Distance from P to the cone surface
-	float DistToAxis = length(P - ClosestPoint);
-
-	return DistToAxis - RadiusAtT;
+	return DistOutside + DistInside;
 }
 
 // ============================================================================
@@ -140,7 +103,7 @@ float4 CalculateExplosionStrength(float3 CurOffset, float3 uvw, int HoleIdx, out
 	float Dis = length(CurOffset);
 	float VolumeHeight = VolumeMax.z - VolumeMin.z;
 	float AlphaHeight = 100.0f;
-	
+
 	float3 Offset = float3(0, 0, 0);
 	float Density = 1;
 	float HeightDensity = 0;
@@ -175,12 +138,12 @@ float4 CalculateExplosionStrength(float3 CurOffset, float3 uvw, int HoleIdx, out
 
 		float Bottom = max(HoleData.ExtensionTime - HoleData.DensityExtDelayTime, 0.001f);
 		float DensityExtNormalizedTime = saturate((CurTime - HoleData.DensityExtDelayTime) / Bottom);
-		
+
 		float CurRadius = HoleData.Radius * pow(DensityExtNormalizedTime, 1.5f);
 		Density = saturate((Dis - CurRadius) / (CurRadius * max(0.05f, HoleData.EdgeSoftness)));
 	}
 	else
-	{	
+	{
 		//남은 시간 정규화
 		float Bottom = max(HoleData.Lifetime - HoleData.ExtensionTime, 0.001f);
 		float RemainderNormalizedTime = saturate((CurTime - HoleData.ExtensionTime) / Bottom);
@@ -190,14 +153,14 @@ float4 CalculateExplosionStrength(float3 CurOffset, float3 uvw, int HoleIdx, out
 
 		float CurRadius = RemainderNormalizedTime * HoleData.Radius;
 		float CurDensity = saturate((Dis + CurRadius - HoleData.Radius) / HoleData.Radius);
-		
+
 		Density = lerp(LastDensity, CurDensity, RemainderNormalizedTime);
 		AlphaHeight = AlphaHeight + pow(RemainderNormalizedTime, 2.5f) * (VolumeHeight - AlphaHeight);
 	}
 
 	float AlphaHeightUV_Z = max(0.01f, AlphaHeight / VolumeHeight);
 	HeightDensity = pow((1 - saturate(uvw.z / AlphaHeightUV_Z)), 1.2f);
-	
+
 	Density = max(Density, HeightDensity);
 	return float4(Offset, Density);
 }
@@ -219,13 +182,11 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
 
 	float3 WorldPos = GetWorldPos(VoxelCoord);
 	float3 uvw = GetUVW(WorldPos);
-	
-	// Start with full density
-	float Density = 1.0;
 
 	// Evaluate all holes
 	float4 GrenadeResult = float4(0, 0, 0, 1);
 	float BulletResult = 1.0f;
+	float DynamicResult = 1.0f;
 
 	float BulletFadeFactor = 0.0f;
 	float FadeEndTime = 0.0f;
@@ -257,17 +218,17 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
 				FadeEndTime = CurFadeEndTime;
 			}
 		}
-		else
+		else if (Hole.HoleType == 0)
 		{
 			//bullet
-			float Dist = ConeSDF(WorldPos, Hole.Position, Hole.EndPosition, Hole.Radius, Hole.EndRadius);
+			float Dist = SegmentSdf(WorldPos, Hole.Position, Hole.EndPosition, Hole.Radius);
 
 			if (Dist < 0.0)
 			{
 				float EdgeWidth = Hole.Radius * saturate(Hole.EdgeSoftness + 0.1);
 				float Falloff = saturate(-Dist / EdgeWidth);
 				float FadeOut = 1.0 - pow(Hole.NormalizedAge, 3.5f);
-				HoleDensity = Falloff * Hole.DensityMultiplier * FadeOut;
+				HoleDensity = Falloff * FadeOut;
 			}
 
 			//여기선 Density 반대값으로 처리됨
@@ -285,8 +246,46 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
 			CurBulletDensity = 1.0 - saturate(CurBulletDensity);
 			BulletResult = min(BulletResult, CurBulletDensity);
 		}
+		else
+		{
+			// 1. 진행 방향 정렬 및 좌표 변환 (기존 궤적 로직 유지)
+			float3 Diff = Hole.EndPosition - Hole.Position;
+			float MoveLen = length(Diff);
+			float3 Forward = (MoveLen > 0.1) ? Diff / MoveLen : float3(0, 0, 1);
+			float3 Up = abs(Forward.z) < 0.999 ? float3(0, 0, 1) : float3(1, 0, 0);
+			float3 Right = normalize(cross(Up, Forward));
+			Up = cross(Forward, Right);
+			float3 LocalPos = WorldPos - (Hole.Position + Hole.EndPosition) * 0.5;
+			float3 P = float3(dot(LocalPos, Right), dot(LocalPos, Forward), dot(LocalPos, Up));
+
+			// 2. Extent 기반 설계 (구 + AABB + 구)
+			float3 h = Hole.Extent * 0.5; // 절반 크기(Half-Extent) 사용
+			h.y += MoveLen * 0.5;         // 이동 궤적에 따른 Y축 길이 연장
+
+			// [핵심] 박스의 너비(h.x)와 구체의 반지름을 일치시켜 너비 차이를 해결
+			float CapRadius = h.x;
+
+			// 몸통(Body) 높이를 Z축 전체의 80% 비율로 설정
+			float BodyHalfHeight = h.z * 0.8;
+
+			// 헬퍼 SDF 함수를 사용하여 형태 합성
+			// 구체의 중심을 박스의 상/하단 끝점(BodyHalfHeight)에 배치하여 절반이 겹치게 함
+			float DBox = BoxSdf(P, float3(h.x, h.y, BodyHalfHeight));
+			float DSphereTop = SphereSdf(P, float3(0, 0,  BodyHalfHeight), CapRadius);
+			float DSphereBot = SphereSdf(P, float3(0, 0, -BodyHalfHeight), CapRadius);
+
+			// 세 형태의 합집합(Union) 중 가장 가까운 표면 거리 선택
+			float Dist = min(DBox, min(DSphereTop, DSphereBot));
+
+			// 3. 감쇠(Falloff) 및 페이드 처리
+			float FalloffWidth = max(1.0, Hole.EdgeSoftness * CapRadius);
+			float Fade = 1.0 - pow(Hole.NormalizedAge, 2.0);
+			HoleDensity = saturate(-Dist / FalloffWidth);
+
+			DynamicResult = min(DynamicResult, 1.0 - (HoleDensity * Fade));
+		}
 	}
 
-	//Density = saturate(Density);
-	VolumeTexture[VoxelCoord] = float4(GrenadeResult.rgb, min(GrenadeResult.a, BulletResult));
+	float CombinedAlpha = min(min(GrenadeResult.a, BulletResult), DynamicResult);
+    VolumeTexture[VoxelCoord] = float4(GrenadeResult.rgb, CombinedAlpha);
 }

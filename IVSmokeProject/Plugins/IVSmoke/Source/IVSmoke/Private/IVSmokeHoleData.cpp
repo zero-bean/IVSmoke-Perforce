@@ -28,14 +28,16 @@ void FIVSmokeHoleData::PreReplicatedRemove(const FIVSmokeHoleArray& InArray)
 	}
 }
 
-TArray<FIVSmokeHoleGPU> FIVSmokeHoleArray::GetHoleGPUDatas(const float CurrentServerTime) const
+TArray<FIVSmokeHoleGPU> FIVSmokeHoleArray::GetHoleGPUData(const float CurrentServerTime) const
 {
 	TArray<FIVSmokeHoleGPU> GPUBuffer;
 	TArray<FIVSmokeHoleGPU> BulletBuffer;
 	TArray<FIVSmokeHoleGPU> GrenadeBuffer;
+	TArray<FIVSmokeHoleGPU> DynamicObjectBuffer;
 
 	BulletBuffer.Reserve(FMath::Max(Num(), 1));
 	GrenadeBuffer.Reserve(FMath::Max(Num(), 1));
+	DynamicObjectBuffer.Reserve(FMath::Max(Num(), 1));
 	GPUBuffer.Reserve(FMath::Max(Num(), 1));
 
 	for (const FIVSmokeHoleData& Hole : Items)
@@ -50,7 +52,6 @@ TArray<FIVSmokeHoleGPU> FIVSmokeHoleArray::GetHoleGPUDatas(const float CurrentSe
 
 		FIVSmokeHoleGPU GPUHole = FIVSmokeHoleGPU(Hole, *Preset.Get());
 		GPUHole.SetNormalizedAge(RemainingTime);
-		// Calculate normalized age (with division by zero protection)
 
 		if (Preset->HoleType == EIVSmokeHoleType::Penetration)
 		{
@@ -60,10 +61,15 @@ TArray<FIVSmokeHoleGPU> FIVSmokeHoleArray::GetHoleGPUDatas(const float CurrentSe
 		{
 			GrenadeBuffer.Add(GPUHole);
 		}
+		else if (Preset->HoleType == EIVSmokeHoleType::Dynamic)
+		{
+			DynamicObjectBuffer.Add(GPUHole);
+		}
 	}
 
 	GPUBuffer.Append(GrenadeBuffer);
 	GPUBuffer.Append(BulletBuffer);
+	GPUBuffer.Append(DynamicObjectBuffer);
 
 	if (GPUBuffer.Num() == 0)
 	{
@@ -73,13 +79,13 @@ TArray<FIVSmokeHoleGPU> FIVSmokeHoleArray::GetHoleGPUDatas(const float CurrentSe
 	return GPUBuffer;
 }
 
-FIVSmokeHoleGPU::FIVSmokeHoleGPU(const FIVSmokeHoleData& DynamicHoleData, const UIVSmokeHolePreset& Preset)
+FIVSmokeHoleGPU::FIVSmokeHoleGPU(const FIVSmokeHoleData& HoleData, const UIVSmokeHolePreset& Preset)
 {
-	Position = FVector3f(DynamicHoleData.Position);
-	EndPosition = FVector3f(DynamicHoleData.EndPosition);
+	Position = HoleData.Position;
+	EndPosition = HoleData.EndPosition;
 
 	HoleType = static_cast<int32>(Preset.HoleType);
-	Radius = Preset.StartRadius;
+	Radius = Preset.Radius;
 	Lifetime = Preset.Lifetime;
 	EdgeSoftness = Preset.EdgeSoftness;
 
@@ -90,8 +96,9 @@ FIVSmokeHoleGPU::FIVSmokeHoleGPU(const FIVSmokeHoleData& DynamicHoleData, const 
 		DensityExtDelayTime = Preset.DensityExtDelayTime;
 		break;
 	case EIVSmokeHoleType::Penetration:
-		EndRadius = Preset.EndRadius;
-		DensityMultiplier = Preset.DensityMultiplier;
+		break;
+	case EIVSmokeHoleType::Dynamic:
+		Extent = Preset.Extent;
 		break;
 	}
 }
