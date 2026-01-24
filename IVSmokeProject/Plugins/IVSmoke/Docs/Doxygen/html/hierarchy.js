@@ -33,8 +33,6 @@ var hierarchy =
     [ "FIVSmokeNoiseSettings", "struct_f_i_v_smoke_noise_settings.html", null ],
     [ "FIVSmokeOccupancyConfig", "struct_f_i_v_smoke_occupancy_config.html", null ],
     [ "FIVSmokeOccupancyResources", "struct_f_i_v_smoke_occupancy_resources.html", null ],
-    [ "FIVSmokeOctree", "struct_f_i_v_smoke_octree.html", null ],
-    [ "FIVSmokeOctreeNode", "struct_f_i_v_smoke_octree_node.html", null ],
     [ "FIVSmokePackedRenderData", "struct_f_i_v_smoke_packed_render_data.html", null ],
     [ "FIVSmokePostProcessPass", "class_f_i_v_smoke_post_process_pass.html", null ],
     [ "FIVSmokeRenderer", "class_f_i_v_smoke_renderer.html", null ],

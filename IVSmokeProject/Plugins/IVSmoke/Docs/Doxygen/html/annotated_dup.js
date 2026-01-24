@@ -20,8 +20,6 @@ var annotated_dup =
     [ "FIVSmokeOccupancyBuildCS", "class_f_i_v_smoke_occupancy_build_c_s.html", null ],
     [ "FIVSmokeOccupancyConfig", "struct_f_i_v_smoke_occupancy_config.html", null ],
     [ "FIVSmokeOccupancyResources", "struct_f_i_v_smoke_occupancy_resources.html", "struct_f_i_v_smoke_occupancy_resources" ],
-    [ "FIVSmokeOctree", "struct_f_i_v_smoke_octree.html", "struct_f_i_v_smoke_octree" ],
-    [ "FIVSmokeOctreeNode", "struct_f_i_v_smoke_octree_node.html", null ],
     [ "FIVSmokePackedRenderData", "struct_f_i_v_smoke_packed_render_data.html", "struct_f_i_v_smoke_packed_render_data" ],
     [ "FIVSmokePostProcessPass", "class_f_i_v_smoke_post_process_pass.html", null ],
     [ "FIVSmokeRenderer", "class_f_i_v_smoke_renderer.html", "class_f_i_v_smoke_renderer" ],

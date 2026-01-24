@@ -1,4 +1,4 @@
-# IVSmoke Quick Start Guide
+# IVSmoke Quick Start Guide {#mainpage}
 
 **IVSmoke** (Interactive Volumetric Smoke) is a real-time voxel-based volumetric smoke plugin for Unreal Engine 5.7. This guide covers the essential steps to get started.
 
