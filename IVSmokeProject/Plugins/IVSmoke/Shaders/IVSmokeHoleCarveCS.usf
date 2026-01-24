@@ -141,7 +141,6 @@ float4 Explosion(float3 WorldPos, float3 uvw, int HoleIdx, out float ExplosionFa
 	if (HoleData.CurLifeTime < HoleData.ExpansionDuration)
 	{
 		//Expansion
-		float ExpansionNormalizedTime = HoleData.CurLifeTime / HoleData.ExpansionDuration;
 		float CurFadeRange = HoleData.CurExpansionFadeRangeOverTime * HoleData.Radius;
 		float SoftnessRange = HoleData.Radius * HoleData.Softness;
 		float SoftnessStart = CurFadeRange - SoftnessRange;
@@ -161,7 +160,7 @@ float4 Explosion(float3 WorldPos, float3 uvw, int HoleIdx, out float ExplosionFa
 		float LastExpansionSoftnessStart = LastExpansionFadeRange - SoftnessRange;
 
 		float LastExpansionAlpha = saturate((Dis - LastExpansionSoftnessStart) / max(SoftnessRange, 0.001f));
-		float ShrinkAlpha = saturate((Dis - SoftnessStart) / max(SoftnessRange, 0.001f));
+		float ShrinkAlpha = saturate((Dis - SoftnessStart) / max(SoftnessRange, 0.001f)) * CurDensityMul;
 
 		Result.a = lerp(LastExpansionAlpha, ShrinkAlpha, ShrinkNormalizedTime);
 
