@@ -629,7 +629,6 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 	if (InVolumes.Num() > 0 && InVolumes[0])
 	{
 		Result.GameTime = InVolumes[0]->GetSyncWorldTimeSeconds();
-		UE_LOG(LogIVSmoke, Log, TEXT("Render Time: %f"), Result.GameTime);
 	}
 	else
 	{

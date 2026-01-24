@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2026, Team SDB. All rights reserved.
 
 #include "IVSmokeVoxelVolume.h"
 
@@ -221,7 +221,7 @@ void AIVSmokeVoxelVolume::StartSimulation_Implementation()
 
 void AIVSmokeVoxelVolume::StopSimulation_Implementation(bool bImmediate)
 {
-	StopSimulationInternal();
+	StopSimulationInternal(bImmediate);
 }
 
 void AIVSmokeVoxelVolume::ResetSimulation_Implementation()
@@ -231,6 +231,21 @@ void AIVSmokeVoxelVolume::ResetSimulation_Implementation()
 
 void AIVSmokeVoxelVolume::OnRep_ServerState()
 {
+	UWorld* World = GetWorld();
+	if (World && World->GetNetMode() == NM_Client)
+	{
+		AGameStateBase* GameState = World->GetGameState();
+
+		if (!GameState || GameState->GetServerWorldTimeSeconds() == 0.0f)
+		{
+			FTimerHandle RetryHandle;
+			World->GetTimerManager().SetTimer(RetryHandle, this, &AIVSmokeVoxelVolume::OnRep_ServerState, 0.1f, false);
+
+			UE_LOG(LogIVSmoke, Warning, TEXT("[AIVSmokeVoxelVolume::OnRep_ServerState] GameState not ready yet. Retrying in 0.1s..."));
+			return;
+		}
+	}
+
 	if (!bIsInitialized)
 	{
 		Initialize();
@@ -280,6 +295,7 @@ void AIVSmokeVoxelVolume::HandleStateTransition(EIVSmokeVoxelVolumeState NewStat
 		{
 			VoxelCosts[CenterIndex] = 0.0f;
 			ExpansionHeap.HeapPush({CenterIndex, INDEX_NONE, 0.0f});
+
 		}
 		break;
 	}
@@ -463,20 +479,21 @@ void AIVSmokeVoxelVolume::UpdateExpansion()
 	const float CurrentSyncTime = GetSyncWorldTimeSeconds();
 	const float CurrentSimTime = CurrentSyncTime - ServerState.ExpansionStartTime;
 
-	const float StartSimTime = SimTime;
-	const float EndSimTime = CurrentSimTime;
+	float StartSimTime = SimTime;
+	float EndSimTime = CurrentSimTime;
 
 	SimTime = CurrentSimTime;
 
 	int32 TargetSpawnNum = 0;
 
-	if (CurrentSimTime < ExpansionDuration)
+	if (EndSimTime < ExpansionDuration)
 	{
 		float CurveValue = GetCurveValue(CurrentSimTime, ExpansionDuration, ExpansionCurve);
 		TargetSpawnNum = FMath::FloorToInt(MaxVoxelNum * CurveValue);
 	}
 	else
 	{
+		EndSimTime = ExpansionDuration;
 		TargetSpawnNum = MaxVoxelNum;
 	}
 
@@ -529,8 +546,8 @@ void AIVSmokeVoxelVolume::UpdateDissipation()
 	const float CurrentSyncTime = GetSyncWorldTimeSeconds();
 	const float CurrentSimTime = CurrentSyncTime - ServerState.DissipationStartTime;
 
-	const float StartSimTime = SimTime;
-	const float EndSimTime = CurrentSimTime;
+	float StartSimTime = SimTime;
+	float EndSimTime = CurrentSimTime;
 
 	SimTime = CurrentSimTime;
 
@@ -543,6 +560,7 @@ void AIVSmokeVoxelVolume::UpdateDissipation()
 	}
 	else
 	{
+		EndSimTime = DissipationDuration;
 		TargetAliveNum = 0;
 	}
 
@@ -1102,13 +1120,15 @@ void AIVSmokeVoxelVolume::DrawDebugStatusText() const
 	float Percent = MaxVoxelNum > 0 ? (static_cast<float>(ActiveVoxelNum) / MaxVoxelNum * 100.0f) : 0.0f;
 
 	FString DebugMsg = FString::Printf(
-		TEXT("State: %s\nTime: %.2fs\nVoxels: %d / %d (%.1f%%)\nHeap: %d"),
+		TEXT("State: %s\nSeed: %d\nTime: %.2fs\nVoxels: %d / %d (%.1f%%)\nHeap: %d\nChecksum: %u"),
 		*StateStr,
+		ServerState.RandomSeed,
 		SimTime,
 		ActiveVoxelNum,
 		MaxVoxelNum,
 		Percent,
-		ExpansionHeap.Num()
+		ExpansionHeap.Num(),
+		CalculateSimulationChecksum()
 	);
 
 	FIntVector GridResolution = GetGridResolution();

@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2026, Team SDB. All rights reserved.
 
 #pragma once
 
@@ -388,10 +388,6 @@ public:
 	/** The collision channel used for obstacle detection during expansion. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation", meta = (EditCondition = "bEnableSimulationCollision", AdvancedDisplay))
 	TEnumAsByte<ECollisionChannel> VoxelCollisionChannel = ECC_WorldStatic;
-
-	/** Seed for the random number generator. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation", meta = (AdvancedDisplay, ClampMin = "0"))
-	int32 RandomSeed = 32687;
 
 private:
 	/** Internal node structure for the Dijkstra-based flood fill algorithm. */
