@@ -1,4 +1,4 @@
-// Copyright SDB. All Rights Reserved.
+// Copyright (c) 2026, Team SDB. All rights reserved.
 // IVSmokeHoleCarveCS.usf - Compute shader for carving holes into smoke volume
 
 #include "/Engine/Public/Platform.ush"

@@ -1,4 +1,4 @@
-// Copyright SDB. All Rights Reserved.
+// Copyright (c) 2026, Team SDB. All rights reserved.
 
 #include "IVSmokeHoleGeneratorComponent.h"
 #include "IVSmokeHolePreset.h"
