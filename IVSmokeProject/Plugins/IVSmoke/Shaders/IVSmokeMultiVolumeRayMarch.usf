@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright (c) 2026, Team SDB. All rights reserved.
 //
 // Multi-Volume Ray March Compute Shader (Occupancy-Optimized)
 // Uses precomputed occupancy textures for efficient empty space skipping.

@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright (c) 2026, Team SDB. All rights reserved.
 //
 // Pass 1: Occupancy Build Compute Shader
 // Builds View and Light occupancy 3D textures.

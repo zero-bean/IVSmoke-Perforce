@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright (c) 2026, Team SDB. All rights reserved.
 //
 // Pass 0: Tile Setup Compute Shader
 // Computes per-tile depth range from volume bounds and quick volume mask.

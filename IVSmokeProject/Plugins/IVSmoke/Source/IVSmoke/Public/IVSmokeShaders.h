@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright (c) 2026, Team SDB. All rights reserved.
 
 #pragma once
 
@@ -69,13 +69,21 @@ public:
 	DECLARE_GLOBAL_SHADER(FIVSmokeNoiseGeneratorGlobalCS);
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeNoiseGeneratorGlobalCS, FGlobalShader);
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		/** Output noise volume texture. */
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>, RWNoiseTex)
+		/** Texture resolution (voxel count per axis). */
 		SHADER_PARAMETER(FUintVector3, TexSize)
+		/** Number of fractal octaves for noise generation. */
 		SHADER_PARAMETER(int32, Octaves)
+		/** Wrap value for seamless tiling. */
 		SHADER_PARAMETER(float, Wrap)
+		/** Number of cells per axis for cellular noise. */
 		SHADER_PARAMETER(int32, AxisCellCount)
+		/** Noise amplitude (intensity). */
 		SHADER_PARAMETER(float, Amplitude)
+		/** Size of each noise cell. */
 		SHADER_PARAMETER(int32, CellSize)
+		/** Random seed for noise generation. */
 		SHADER_PARAMETER(int32, Seed)
 	END_SHADER_PARAMETER_STRUCT()
 
@@ -96,14 +104,22 @@ public:
 	DECLARE_GLOBAL_SHADER(FIVSmokeStructuredToTextureCS);
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeStructuredToTextureCS, FGlobalShader);
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		/** Output 3D texture atlas containing voxel density values. */
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>, Desti)
+		/** Per-voxel birth times for fade-in animation. */
 		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<float>, BirthTimes)
+		/** Per-voxel death times for fade-out animation. */
 		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<float>, DeathTimes)
+		/** Per-volume GPU metadata (transform, bounds, etc.). */
 		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<FIVSmokeVolumeGPUData>, VolumeDataBuffer)
 
+		/** Total atlas texture size. */
 		SHADER_PARAMETER(FIntVector, TexSize)
+		/** Voxel resolution per volume. */
 		SHADER_PARAMETER(FIntVector, VoxelResolution)
+		/** Number of volumes packed per row in atlas. */
 		SHADER_PARAMETER(int32, PackedInterval)
+		/** Current game time for fade animation calculation. */
 		SHADER_PARAMETER(float, GameTime)
 	END_SHADER_PARAMETER_STRUCT()
 
@@ -124,14 +140,20 @@ public:
 	DECLARE_GLOBAL_SHADER(FIVSmokeVoxelFXAACS);
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeVoxelFXAACS, FGlobalShader);
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		/** Output anti-aliased 3D texture. */
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>, Desti)
+		/** Source 3D texture to apply FXAA. */
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float>, Source)
+		/** Linear sampler with border addressing. */
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearBorder_Sampler)
+		/** Texture resolution. */
 		SHADER_PARAMETER(FIntVector, TexSize)
 
-		// FXAA
+		/** Maximum edge span for FXAA. */
 		SHADER_PARAMETER(float, FXAASpanMax)
+		/** Edge detection range threshold. */
 		SHADER_PARAMETER(float, FXAARange)
+		/** Sharpness factor for anti-aliasing. */
 		SHADER_PARAMETER(float, FXAASharpness)
 	END_SHADER_PARAMETER_STRUCT()
 };
@@ -149,12 +171,19 @@ public:
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeSharpenCompositePS, FGlobalShader);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		/** Scene color texture (background). */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SceneTex)
+		/** Smoke albedo (color) from ray marching. */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeAlbedoTex)
+		/** Smoke opacity mask from ray marching. */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeMaskTex)
+		/** Linear sampler with repeat addressing. */
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearRepeat_Sampler)
+		/** Sharpen/blur amount (-1 to 1, 0 = no filter). */
 		SHADER_PARAMETER(float, Sharpness)
+		/** Viewport size for UV calculation. */
 		SHADER_PARAMETER(FVector2f, ViewportSize)
+		/** View rect offset for multi-view support. */
 		SHADER_PARAMETER(FVector2f, ViewRectMin)
 		RENDER_TARGET_BINDING_SLOTS()
 	END_SHADER_PARAMETER_STRUCT()
@@ -178,8 +207,11 @@ public:
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeCopyPS, FGlobalShader);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		/** Source texture to copy. */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, MainTex)
+		/** Linear sampler for bilinear filtering. */
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearRepeat_Sampler)
+		/** Destination texture size for UV mapping. */
 		SHADER_PARAMETER(FVector2f, ViewportSize)
 		RENDER_TARGET_BINDING_SLOTS()
 	END_SHADER_PARAMETER_STRUCT()
@@ -209,12 +241,19 @@ public:
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeTranslucencyCompositePS, FGlobalShader);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		/** Smoke albedo (color) from ray marching. */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeAlbedoTex)
+		/** Smoke opacity mask from ray marching. */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeMaskTex)
+		/** SeparateTranslucency texture (particles). */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, ParticlesTex)
+		/** Linear sampler for texture filtering. */
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearSampler)
+		/** Sharpen/blur amount (-1 to 1, 0 = no filter). */
 		SHADER_PARAMETER(float, Sharpness)
+		/** Smoke texture extent for UV calculation. */
 		SHADER_PARAMETER(FVector2f, SmokeTexExtent)
+		/** Particles texture extent for UV calculation. */
 		SHADER_PARAMETER(FVector2f, ParticlesTexExtent)
 		RENDER_TARGET_BINDING_SLOTS()
 	END_SHADER_PARAMETER_STRUCT()
@@ -244,23 +283,27 @@ public:
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeDepthSortedCompositePS, FGlobalShader);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-		// Smoke layer (from ray marching CS)
+		/** Smoke albedo (color) from ray marching CS. */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeAlbedoTex)
+		/** Smoke opacity mask from ray marching CS. */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeMaskTex)
 
-		// Particle layer (from Separate Translucency)
+		/** SeparateTranslucency texture (particles). */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SeparateTranslucencyTex)
 
-		// Scene Textures (provides CustomDepth and SceneDepth via uniform buffer)
+		/** Scene textures uniform buffer (CustomDepth, SceneDepth). */
 		SHADER_PARAMETER_RDG_UNIFORM_BUFFER(FSceneTextureUniformParameters, SceneTexturesStruct)
 
-		// Samplers
+		/** Point sampler with clamp addressing. */
 		SHADER_PARAMETER_SAMPLER(SamplerState, PointClamp_Sampler)
+		/** Linear sampler with clamp addressing. */
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearClamp_Sampler)
 
-		// Texture Extents for UV calculation (UV = SvPosition / TexExtent)
+		/** Smoke texture extent for UV calculation. */
 		SHADER_PARAMETER(FVector2f, SmokeTexExtent)
+		/** Sharpen/blur amount (-1 to 1, 0 = no filter). */
 		SHADER_PARAMETER(float, Sharpness)
+		/** Transform for converting device Z to world Z. */
 		SHADER_PARAMETER(FVector4f, InvDeviceZToWorldZTransform)
 
 		RENDER_TARGET_BINDING_SLOTS()
@@ -293,8 +336,11 @@ public:
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeDepthToVarianceCS, FGlobalShader);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		/** Input depth texture from shadow capture. */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, DepthTexture)
+		/** Output variance texture (depth, depth squared). */
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float2>, VarianceTexture)
+		/** Texture resolution. */
 		SHADER_PARAMETER(FIntPoint, TextureSize)
 	END_SHADER_PARAMETER_STRUCT()
 
@@ -328,12 +374,18 @@ public:
 	SHADER_USE_PARAMETER_STRUCT(FIVSmokeVSMBlurCS, FGlobalShader);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		/** Source variance texture to blur. */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SourceTexture)
+		/** Output blurred variance texture. */
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float2>, DestTexture)
+		/** Linear sampler with clamp addressing. */
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearClampSampler)
+		/** Texture resolution. */
 		SHADER_PARAMETER(FIntPoint, TextureSize)
+		/** Blur kernel radius in pixels. */
 		SHADER_PARAMETER(int32, BlurRadius)
-		SHADER_PARAMETER(int32, BlurDirection)  // 0 = Horizontal, 1 = Vertical
+		/** Blur direction (0 = Horizontal, 1 = Vertical). */
+		SHADER_PARAMETER(int32, BlurDirection)
 	END_SHADER_PARAMETER_STRUCT()
 
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)

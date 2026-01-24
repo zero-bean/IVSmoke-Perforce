@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright (c) 2026, Team SDB. All rights reserved.
 
 #pragma once
 
@@ -26,10 +26,10 @@ struct FIVSmokeOccupancyResources;
  */
 struct IVSMOKE_API FIVSmokePackedRenderData
 {
-	/** @todo Documentation */
+	/** Packed voxel birth times for all volumes (flattened by VoxelBufferOffset). */
 	TArray<float> PackedVoxelBirthTimes;
 
-	/** @todo Documentation */
+	/** Packed voxel death times for all volumes (flattened by VoxelBufferOffset). */
 	TArray<float> PackedVoxelDeathTimes;
 
 	/** Per-volume GPU metadata */

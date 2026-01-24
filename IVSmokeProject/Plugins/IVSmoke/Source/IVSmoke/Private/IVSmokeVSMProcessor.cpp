@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright (c) 2026, Team SDB. All rights reserved.
 
 #include "IVSmokeVSMProcessor.h"
 #include "IVSmokeCSMRenderer.h"
