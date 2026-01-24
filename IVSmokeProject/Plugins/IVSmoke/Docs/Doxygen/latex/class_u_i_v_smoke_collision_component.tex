@@ -1,0 +1,170 @@
+\doxysection{UIVSmoke\+Collision\+Component Class Reference}
+\hypertarget{class_u_i_v_smoke_collision_component}{}\label{class_u_i_v_smoke_collision_component}\index{UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Collision\+Component.\+h$>$}
+
+
+
+Inheritance diagram for UIVSmoke\+Collision\+Component:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=240pt]{class_u_i_v_smoke_collision_component__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for UIVSmoke\+Collision\+Component:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=240pt]{class_u_i_v_smoke_collision_component__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_u_i_v_smoke_collision_component_ae08a77de7a6fdfd484edaa4b38027f19}\label{class_u_i_v_smoke_collision_component_ae08a77de7a6fdfd484edaa4b38027f19} 
+virtual UBody\+Setup \texorpdfstring{$\ast$}{*} {\bfseries Get\+Body\+Setup} () override
+\item 
+void \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_a511993314c3c6a657a11898ee8f3bcd1}{Try\+Update\+Collision}} (const TArray$<$ uint64 $>$ \&Voxel\+Bit\+Array, const FInt\+Vector \&Grid\+Resolution, float Voxel\+Size, int32 Active\+Voxel\+Num, float Sync\+Time, bool b\+Force=false)
+\item 
+void \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_ae6f1817db2a2d4524d144cb65328f297}{Reset\+Collision}} ()
+\item 
+void \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_a3b5e0bebd069996cea81e245f63799c7}{Draw\+Debug\+Visualization}} () const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+bool \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_a0f4d27f0dac91f6e5f03d4e7ed7f9683}{b\+Collision\+Enabled}} = true
+\item 
+FName \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_aa8a21fae21363b9f586ccd330c7ad925}{Smoke\+Collision\+Profile\+Name}} = UCollision\+Profile::\+\+No\+Collision\+\_\+\+Profile\+Name
+\item 
+TArray$<$ TEnum\+As\+Byte$<$ ECollision\+Channel $>$ $>$ \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_ac2b852d08ae56978c940d13599c282dc}{Block\+Channel\+Array}}
+\item 
+int32 \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_a65f83b67c0f01e7433c34e5c336747c5}{Min\+Collision\+Update\+Voxel\+Num}} = 50
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_a59d22fb7acf6ed4a216250b8effc233d}{Min\+Collision\+Update\+Interval}} = 0.\+25f
+\item 
+bool \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_a586d4233fc4c94ba63cc3eb8bf7795e4}{b\+Debug\+Enabled}} = false
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_u_i_v_smoke_collision_component_a3d7e358aee1a16f0795a28a73b48187e}\label{class_u_i_v_smoke_collision_component_a3d7e358aee1a16f0795a28a73b48187e} 
+virtual void {\bfseries On\+Create\+Physics\+State} () override
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+A primitive component that dynamically generates collision geometry based on the voxel grid data.\hypertarget{class_u_i_v_smoke_collision_component_autotoc_md0}{}\doxysubsubsection{\texorpdfstring{Overview}{Overview}}\label{class_u_i_v_smoke_collision_component_autotoc_md0}
+Unlike standard static meshes, this component constructs a set of box colliders (Agg\+Geom) representing the active voxels. It uses a binary greedy meshing algorithm to merge adjacent voxels into larger boxes to minimize the physics cost.\hypertarget{class_u_i_v_smoke_collision_component_autotoc_md1}{}\doxysubsubsection{\texorpdfstring{Usage}{Usage}}\label{class_u_i_v_smoke_collision_component_autotoc_md1}
+This is primarily designed for query-\/only interactions, such as:\+
+\begin{DoxyItemize}
+\item Blocking AI Line of Sight (Visibility channel).
+\item Preventing camera clipping.
+\item Simple projectile blocking.
+\end{DoxyItemize}
+
+\begin{DoxyNote}{Note}
+Frequent updates to collision geometry are expensive. Use {\ttfamily \doxylink{class_u_i_v_smoke_collision_component_a59d22fb7acf6ed4a216250b8effc233d}{Min\+Collision\+Update\+Interval}} and {\ttfamily \doxylink{class_u_i_v_smoke_collision_component_a65f83b67c0f01e7433c34e5c336747c5}{Min\+Collision\+Update\+Voxel\+Num}} to throttle updates. 
+\end{DoxyNote}
+
+
+\label{doc-func-members}
+\Hypertarget{class_u_i_v_smoke_collision_component_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_u_i_v_smoke_collision_component_a3b5e0bebd069996cea81e245f63799c7}\index{UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}!DrawDebugVisualization@{DrawDebugVisualization}}
+\index{DrawDebugVisualization@{DrawDebugVisualization}!UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}}
+\doxysubsubsection{\texorpdfstring{DrawDebugVisualization()}{DrawDebugVisualization()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_collision_component_a3b5e0bebd069996cea81e245f63799c7} 
+void UIVSmoke\+Collision\+Component::\+\+Draw\+Debug\+Visualization (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+Renders wireframe boxes for each generated collision element ({\ttfamily FKBox\+Elem}). Useful for visualizing how the greedy meshing algorithm has optimized the voxels. \Hypertarget{class_u_i_v_smoke_collision_component_ae6f1817db2a2d4524d144cb65328f297}\index{UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}!ResetCollision@{ResetCollision}}
+\index{ResetCollision@{ResetCollision}!UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}}
+\doxysubsubsection{\texorpdfstring{ResetCollision()}{ResetCollision()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_collision_component_ae6f1817db2a2d4524d144cb65328f297} 
+void UIVSmoke\+Collision\+Component::\+\+Reset\+Collision (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Clears all generated physics geometry and resets the collision state. Called when the simulation is stopped or reset to ensure no "{}ghost"{} collision remains. \Hypertarget{class_u_i_v_smoke_collision_component_a511993314c3c6a657a11898ee8f3bcd1}\index{UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}!TryUpdateCollision@{TryUpdateCollision}}
+\index{TryUpdateCollision@{TryUpdateCollision}!UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}}
+\doxysubsubsection{\texorpdfstring{TryUpdateCollision()}{TryUpdateCollision()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_collision_component_a511993314c3c6a657a11898ee8f3bcd1} 
+void UIVSmoke\+Collision\+Component::\+\+Try\+Update\+Collision (\begin{DoxyParamCaption}\item[{const TArray$<$ uint64 $>$ \&}]{Voxel\+Bit\+Array}{, }\item[{const FInt\+Vector \&}]{Grid\+Resolution}{, }\item[{float}]{Voxel\+Size}{, }\item[{int32}]{Active\+Voxel\+Num}{, }\item[{float}]{Sync\+Time}{, }\item[{bool}]{b\+Force}{ = {\ttfamily false}}\end{DoxyParamCaption})}
+
+Attempts to update the collision geometry based on the current voxel data.
+
+It checks {\ttfamily \doxylink{class_u_i_v_smoke_collision_component_a59d22fb7acf6ed4a216250b8effc233d}{Min\+Collision\+Update\+Interval}} and {\ttfamily \doxylink{class_u_i_v_smoke_collision_component_a65f83b67c0f01e7433c34e5c336747c5}{Min\+Collision\+Update\+Voxel\+Num}} to throttle updates and prevent performance spikes from frequent physics rebuilding.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Voxel\+Bit\+Array} & A bitmask buffer where each {\ttfamily uint64} element represents a row of voxels along the X-\/axis. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyWarning}{Warning}
+The Grid X-\/resolution must not exceed 64. 
+\end{DoxyWarning}
+
+\begin{DoxyParams}{Parameters}
+{\em Grid\+Resolution} & The resolution of the voxel grid (Width, Depth, Height). \\
+\hline
+{\em Voxel\+Size} & World space size of a single voxel. \\
+\hline
+{\em Active\+Voxel\+Num} & Current count of active voxels (used for threshold checks). \\
+\hline
+{\em Sync\+Time} & Current synchronized world time (used for interval checks). \\
+\hline
+{\em b\+Force} & If true, bypasses optimization checks and forces an immediate rebuild. \\
+\hline
+\end{DoxyParams}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_u_i_v_smoke_collision_component_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_u_i_v_smoke_collision_component_a0f4d27f0dac91f6e5f03d4e7ed7f9683}\index{UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}!bCollisionEnabled@{bCollisionEnabled}}
+\index{bCollisionEnabled@{bCollisionEnabled}!UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}}
+\doxysubsubsection{\texorpdfstring{bCollisionEnabled}{bCollisionEnabled}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_collision_component_a0f4d27f0dac91f6e5f03d4e7ed7f9683} 
+bool UIVSmoke\+Collision\+Component::\+b\+Collision\+Enabled = true}
+
+Master switch for voxel collision. If false, no physics geometry will be generated, and all update requests will be ignored. \Hypertarget{class_u_i_v_smoke_collision_component_a586d4233fc4c94ba63cc3eb8bf7795e4}\index{UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}!bDebugEnabled@{bDebugEnabled}}
+\index{bDebugEnabled@{bDebugEnabled}!UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}}
+\doxysubsubsection{\texorpdfstring{bDebugEnabled}{bDebugEnabled}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_collision_component_a586d4233fc4c94ba63cc3eb8bf7795e4} 
+bool UIVSmoke\+Collision\+Component::\+b\+Debug\+Enabled = false}
+
+If true, draws debug visualization for the collision geometry in the editor. \begin{DoxyNote}{Note}
+Only works if {\ttfamily IVSmoke\+Debug\+Settings::\+b\+Debug\+Enabled} is also true on the main actor. 
+\end{DoxyNote}
+\Hypertarget{class_u_i_v_smoke_collision_component_ac2b852d08ae56978c940d13599c282dc}\index{UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}!BlockChannelArray@{BlockChannelArray}}
+\index{BlockChannelArray@{BlockChannelArray}!UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}}
+\doxysubsubsection{\texorpdfstring{BlockChannelArray}{BlockChannelArray}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_collision_component_ac2b852d08ae56978c940d13599c282dc} 
+TArray$<$TEnum\+As\+Byte$<$ECollision\+Channel$>$ $>$ UIVSmoke\+Collision\+Component::\+\+Block\+Channel\+Array}
+
+List of specific collision channels to set to {\ttfamily ECR\+\_\+\+Block}. Useful if you want to block only specific traces (e.\+g., Visibility) without affecting physical movement. Overrides the settings from {\ttfamily \doxylink{class_u_i_v_smoke_collision_component_aa8a21fae21363b9f586ccd330c7ad925}{Smoke\+Collision\+Profile\+Name}} if specified. \Hypertarget{class_u_i_v_smoke_collision_component_a59d22fb7acf6ed4a216250b8effc233d}\index{UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}!MinCollisionUpdateInterval@{MinCollisionUpdateInterval}}
+\index{MinCollisionUpdateInterval@{MinCollisionUpdateInterval}!UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}}
+\doxysubsubsection{\texorpdfstring{MinCollisionUpdateInterval}{MinCollisionUpdateInterval}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_collision_component_a59d22fb7acf6ed4a216250b8effc233d} 
+float UIVSmoke\+Collision\+Component::\+\+Min\+Collision\+Update\+Interval = 0.\+25f}
+
+The minimum time (in seconds) that must pass between two consecutive physics geometry rebuilds. \Hypertarget{class_u_i_v_smoke_collision_component_a65f83b67c0f01e7433c34e5c336747c5}\index{UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}!MinCollisionUpdateVoxelNum@{MinCollisionUpdateVoxelNum}}
+\index{MinCollisionUpdateVoxelNum@{MinCollisionUpdateVoxelNum}!UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}}
+\doxysubsubsection{\texorpdfstring{MinCollisionUpdateVoxelNum}{MinCollisionUpdateVoxelNum}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_collision_component_a65f83b67c0f01e7433c34e5c336747c5} 
+int32 UIVSmoke\+Collision\+Component::\+\+Min\+Collision\+Update\+Voxel\+Num = 50}
+
+The minimum number of voxel changes (spawned or destroyed) required to trigger a physics geometry rebuild. \Hypertarget{class_u_i_v_smoke_collision_component_aa8a21fae21363b9f586ccd330c7ad925}\index{UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}!SmokeCollisionProfileName@{SmokeCollisionProfileName}}
+\index{SmokeCollisionProfileName@{SmokeCollisionProfileName}!UIVSmokeCollisionComponent@{UIVSmokeCollisionComponent}}
+\doxysubsubsection{\texorpdfstring{SmokeCollisionProfileName}{SmokeCollisionProfileName}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_collision_component_aa8a21fae21363b9f586ccd330c7ad925} 
+FName UIVSmoke\+Collision\+Component::\+\+Smoke\+Collision\+Profile\+Name = UCollision\+Profile::\+\+No\+Collision\+\_\+\+Profile\+Name}
+
+The collision profile to apply to the generated geometry. Defaults to {\ttfamily No\+Collision}. Change this to {\ttfamily Block\+All} or a custom profile to enable interaction. 
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Collision\+Component.\+h\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Private/\+IVSmoke\+Collision\+Component.\+cpp\end{DoxyCompactItemize}

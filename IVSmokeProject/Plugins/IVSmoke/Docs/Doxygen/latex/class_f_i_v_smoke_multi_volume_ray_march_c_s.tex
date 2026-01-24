@@ -1,0 +1,74 @@
+\doxysection{FIVSmoke\+Multi\+Volume\+Ray\+March\+CS Class Reference}
+\hypertarget{class_f_i_v_smoke_multi_volume_ray_march_c_s}{}\label{class_f_i_v_smoke_multi_volume_ray_march_c_s}\index{FIVSmokeMultiVolumeRayMarchCS@{FIVSmokeMultiVolumeRayMarchCS}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Ray\+March\+Pipeline.\+h$>$}
+
+
+
+Inheritance diagram for FIVSmoke\+Multi\+Volume\+Ray\+March\+CS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=247pt]{class_f_i_v_smoke_multi_volume_ray_march_c_s__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for FIVSmoke\+Multi\+Volume\+Ray\+March\+CS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=247pt]{class_f_i_v_smoke_multi_volume_ray_march_c_s__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_multi_volume_ray_march_c_s_a4716bb908d8b48f0d17e522f8558eae7}\label{class_f_i_v_smoke_multi_volume_ray_march_c_s_a4716bb908d8b48f0d17e522f8558eae7} 
+{\bfseries DECLARE\+\_\+\+GLOBAL\+\_\+\+SHADER} (\doxymbox{\hyperlink{class_f_i_v_smoke_multi_volume_ray_march_c_s}{FIVSmoke\+Multi\+Volume\+Ray\+March\+CS}})
+\item 
+\Hypertarget{class_f_i_v_smoke_multi_volume_ray_march_c_s_a620c2544276d913c495bc704db1ca685}\label{class_f_i_v_smoke_multi_volume_ray_march_c_s_a620c2544276d913c495bc704db1ca685} 
+{\bfseries SHADER\+\_\+\+USE\+\_\+\+PARAMETER\+\_\+\+STRUCT} (\doxymbox{\hyperlink{class_f_i_v_smoke_multi_volume_ray_march_c_s}{FIVSmoke\+Multi\+Volume\+Ray\+March\+CS}}, FGlobal\+Shader)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_multi_volume_ray_march_c_s_a402d17e091ad88460433b46d27e425b5}\label{class_f_i_v_smoke_multi_volume_ray_march_c_s_a402d17e091ad88460433b46d27e425b5} 
+static bool {\bfseries Should\+Compile\+Permutation} (const FGlobal\+Shader\+Permutation\+Parameters \&Parameters)
+\item 
+\Hypertarget{class_f_i_v_smoke_multi_volume_ray_march_c_s_a66a85b890c39eb84f029011630f0efbe}\label{class_f_i_v_smoke_multi_volume_ray_march_c_s_a66a85b890c39eb84f029011630f0efbe} 
+static void {\bfseries Modify\+Compilation\+Environment} (const FGlobal\+Shader\+Permutation\+Parameters \&Parameters, FShader\+Compiler\+Environment \&Out\+Environment)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_multi_volume_ray_march_c_s_aa169e384a50a6524550e8043a08ed78e}\label{class_f_i_v_smoke_multi_volume_ray_march_c_s_aa169e384a50a6524550e8043a08ed78e} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeX} = 8
+\item 
+\Hypertarget{class_f_i_v_smoke_multi_volume_ray_march_c_s_aa3e70452c20da1471cec9d58a8fa9ac6}\label{class_f_i_v_smoke_multi_volume_ray_march_c_s_aa3e70452c20da1471cec9d58a8fa9ac6} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeY} = 8
+\item 
+\Hypertarget{class_f_i_v_smoke_multi_volume_ray_march_c_s_a9f3e3adeed5bd7c0f862cd90e7048ccd}\label{class_f_i_v_smoke_multi_volume_ray_march_c_s_a9f3e3adeed5bd7c0f862cd90e7048ccd} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeZ} = 1
+\item 
+\Hypertarget{class_f_i_v_smoke_multi_volume_ray_march_c_s_aa0abd401185d5aac8cbd97ac652c107c}\label{class_f_i_v_smoke_multi_volume_ray_march_c_s_aa0abd401185d5aac8cbd97ac652c107c} 
+static constexpr const TCHAR \texorpdfstring{$\ast$}{*} {\bfseries Event\+Name} = TEXT("{}IVSmoke\+Multi\+Volume\+Ray\+March\+CS"{})
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Multi-\/\+Volume Ray March compute shader with Occupancy optimization. Uses precomputed occupancy textures for efficient empty space skipping.
+
+Key optimizations:\+
+\begin{DoxyItemize}
+\item Slice-\/level early-\/out (skip 4 steps at once if empty)
+\item Sparse volume iteration using firstbitlow + bit clear
+\item Light occupancy for light march optimization
+\end{DoxyItemize}
+
+This is the main multi-\/volume ray march shader class. Uses Occupancy-\/based optimization (3-\/pass pipeline). 
+
+The documentation for this class was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Ray\+March\+Pipeline.\+h\end{DoxyCompactItemize}

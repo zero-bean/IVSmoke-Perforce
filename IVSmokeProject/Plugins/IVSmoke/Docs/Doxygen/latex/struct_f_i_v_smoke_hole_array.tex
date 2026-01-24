@@ -1,0 +1,148 @@
+\doxysection{FIVSmoke\+Hole\+Array Struct Reference}
+\hypertarget{struct_f_i_v_smoke_hole_array}{}\label{struct_f_i_v_smoke_hole_array}\index{FIVSmokeHoleArray@{FIVSmokeHoleArray}}
+
+
+Fast TArray container for delta replication of hole data.  
+
+
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Hole\+Data.\+h$>$}
+
+
+
+Inheritance diagram for FIVSmoke\+Hole\+Array:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=194pt]{struct_f_i_v_smoke_hole_array__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for FIVSmoke\+Hole\+Array:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=194pt]{struct_f_i_v_smoke_hole_array__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_a1606705a0db36b04e48845f78f494584}{Net\+Delta\+Serialize}} (FNet\+Delta\+Serialize\+Info \&Delta\+Parms)
+\item 
+void \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_a672cf3fc8492dabcf6ebc8ab4a4be920}{Add\+Hole}} (const \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data}{FIVSmoke\+Hole\+Data}} \&New\+Hole)
+\item 
+void \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_a6486cb154f1611cc53b185b3e0521985}{Remove\+At\+Swap}} (const int32 Index)
+\item 
+FORCEINLINE int32 \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_ac62c844392b1663be55934685508b676}{Num}} () const
+\item 
+FORCEINLINE bool \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_a045dfae532c8e4100b733d50bf2ec296}{Is\+Valid\+Index}} (const int32 Index) const
+\item 
+FORCEINLINE \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data}{FIVSmoke\+Hole\+Data}} \& \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_ab51a88ddec529b67d7c7fb98deae81aa}{operator\+[$\,$]\+}} (const int32 Index)
+\item 
+FORCEINLINE const \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data}{FIVSmoke\+Hole\+Data}} \& \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_a4fb4657d888d61072fccf8f393bd0dea}{operator\+[$\,$]\+}} (const int32 Index) const
+\item 
+FORCEINLINE void \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_a797e3548d740590d29497bee643caec0}{Reserve}} (const int32 Number)
+\item 
+TArray$<$ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u}{FIVSmoke\+Hole\+GPU}} $>$ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_aba5c1d94fd9a8ac207b84e4d03654616}{Get\+Hole\+GPUData}} (const float Current\+Server\+Time) const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+TObject\+Ptr$<$ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component}{UIVSmoke\+Hole\+Generator\+Component}} $>$ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_abb5e016e74c5c94721fa79451abea3fb}{Owner\+Component}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Fast TArray container for delta replication of hole data. 
+
+\label{doc-func-members}
+\Hypertarget{struct_f_i_v_smoke_hole_array_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{struct_f_i_v_smoke_hole_array_a672cf3fc8492dabcf6ebc8ab4a4be920}\index{FIVSmokeHoleArray@{FIVSmokeHoleArray}!AddHole@{AddHole}}
+\index{AddHole@{AddHole}!FIVSmokeHoleArray@{FIVSmokeHoleArray}}
+\doxysubsubsection{\texorpdfstring{AddHole()}{AddHole()}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_array_a672cf3fc8492dabcf6ebc8ab4a4be920} 
+void FIVSmoke\+Hole\+Array::\+\+Add\+Hole (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data}{FIVSmoke\+Hole\+Data}} \&}]{New\+Hole}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Add new hole and mark dirty. \Hypertarget{struct_f_i_v_smoke_hole_array_aba5c1d94fd9a8ac207b84e4d03654616}\index{FIVSmokeHoleArray@{FIVSmokeHoleArray}!GetHoleGPUData@{GetHoleGPUData}}
+\index{GetHoleGPUData@{GetHoleGPUData}!FIVSmokeHoleArray@{FIVSmokeHoleArray}}
+\doxysubsubsection{\texorpdfstring{GetHoleGPUData()}{GetHoleGPUData()}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_array_aba5c1d94fd9a8ac207b84e4d03654616} 
+TArray$<$ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u}{FIVSmoke\+Hole\+GPU}} $>$ FIVSmoke\+Hole\+Array::\+\+Get\+Hole\+GPUData (\begin{DoxyParamCaption}\item[{const float}]{Current\+Server\+Time}{}\end{DoxyParamCaption}) const}
+
+Converts items array into an array of GPU-\/compatible hole data structures. Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{struct_f_i_v_smoke_hole_array_aba5c1d94fd9a8ac207b84e4d03654616_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_i_v_smoke_hole_array_a045dfae532c8e4100b733d50bf2ec296}\index{FIVSmokeHoleArray@{FIVSmokeHoleArray}!IsValidIndex@{IsValidIndex}}
+\index{IsValidIndex@{IsValidIndex}!FIVSmokeHoleArray@{FIVSmokeHoleArray}}
+\doxysubsubsection{\texorpdfstring{IsValidIndex()}{IsValidIndex()}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_array_a045dfae532c8e4100b733d50bf2ec296} 
+FORCEINLINE bool FIVSmoke\+Hole\+Array::\+\+Is\+Valid\+Index (\begin{DoxyParamCaption}\item[{const int32}]{Index}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns the index item is valid. \Hypertarget{struct_f_i_v_smoke_hole_array_a1606705a0db36b04e48845f78f494584}\index{FIVSmokeHoleArray@{FIVSmokeHoleArray}!NetDeltaSerialize@{NetDeltaSerialize}}
+\index{NetDeltaSerialize@{NetDeltaSerialize}!FIVSmokeHoleArray@{FIVSmokeHoleArray}}
+\doxysubsubsection{\texorpdfstring{NetDeltaSerialize()}{NetDeltaSerialize()}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_array_a1606705a0db36b04e48845f78f494584} 
+bool FIVSmoke\+Hole\+Array::\+\+Net\+Delta\+Serialize (\begin{DoxyParamCaption}\item[{FNet\+Delta\+Serialize\+Info \&}]{Delta\+Parms}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Fast\+Array delta replication entry point. Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=192pt]{struct_f_i_v_smoke_hole_array_a1606705a0db36b04e48845f78f494584_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_i_v_smoke_hole_array_ac62c844392b1663be55934685508b676}\index{FIVSmokeHoleArray@{FIVSmokeHoleArray}!Num@{Num}}
+\index{Num@{Num}!FIVSmokeHoleArray@{FIVSmokeHoleArray}}
+\doxysubsubsection{\texorpdfstring{Num()}{Num()}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_array_ac62c844392b1663be55934685508b676} 
+FORCEINLINE int32 FIVSmoke\+Hole\+Array::\+\+Num (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns the hole num \Hypertarget{struct_f_i_v_smoke_hole_array_ab51a88ddec529b67d7c7fb98deae81aa}\index{FIVSmokeHoleArray@{FIVSmokeHoleArray}!operator\+[]\+@{operator[]}}
+\index{operator\+[]\+@{operator[]}!FIVSmokeHoleArray@{FIVSmokeHoleArray}}
+\doxysubsubsection{\texorpdfstring{operator[]()}{operator[]()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_array_ab51a88ddec529b67d7c7fb98deae81aa} 
+FORCEINLINE \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data}{FIVSmoke\+Hole\+Data}} \& FIVSmoke\+Hole\+Array::\+operator\+[$\,$]\+ (\begin{DoxyParamCaption}\item[{const int32}]{Index}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns the hole data at index. \Hypertarget{struct_f_i_v_smoke_hole_array_a4fb4657d888d61072fccf8f393bd0dea}\index{FIVSmokeHoleArray@{FIVSmokeHoleArray}!operator\+[]\+@{operator[]}}
+\index{operator\+[]\+@{operator[]}!FIVSmokeHoleArray@{FIVSmokeHoleArray}}
+\doxysubsubsection{\texorpdfstring{operator[]()}{operator[]()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_array_a4fb4657d888d61072fccf8f393bd0dea} 
+FORCEINLINE const \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data}{FIVSmoke\+Hole\+Data}} \& FIVSmoke\+Hole\+Array::\+operator\+[$\,$]\+ (\begin{DoxyParamCaption}\item[{const int32}]{Index}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns the hole data at index. \Hypertarget{struct_f_i_v_smoke_hole_array_a6486cb154f1611cc53b185b3e0521985}\index{FIVSmokeHoleArray@{FIVSmokeHoleArray}!RemoveAtSwap@{RemoveAtSwap}}
+\index{RemoveAtSwap@{RemoveAtSwap}!FIVSmokeHoleArray@{FIVSmokeHoleArray}}
+\doxysubsubsection{\texorpdfstring{RemoveAtSwap()}{RemoveAtSwap()}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_array_a6486cb154f1611cc53b185b3e0521985} 
+void FIVSmoke\+Hole\+Array::\+\+Remove\+At\+Swap (\begin{DoxyParamCaption}\item[{const int32}]{Index}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Remove hole by swap and mark dirty. \Hypertarget{struct_f_i_v_smoke_hole_array_a797e3548d740590d29497bee643caec0}\index{FIVSmokeHoleArray@{FIVSmokeHoleArray}!Reserve@{Reserve}}
+\index{Reserve@{Reserve}!FIVSmokeHoleArray@{FIVSmokeHoleArray}}
+\doxysubsubsection{\texorpdfstring{Reserve()}{Reserve()}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_array_a797e3548d740590d29497bee643caec0} 
+FORCEINLINE void FIVSmoke\+Hole\+Array::\+\+Reserve (\begin{DoxyParamCaption}\item[{const int32}]{Number}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Reserve size items array 
+
+\label{doc-variable-members}
+\Hypertarget{struct_f_i_v_smoke_hole_array_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{struct_f_i_v_smoke_hole_array_abb5e016e74c5c94721fa79451abea3fb}\index{FIVSmokeHoleArray@{FIVSmokeHoleArray}!OwnerComponent@{OwnerComponent}}
+\index{OwnerComponent@{OwnerComponent}!FIVSmokeHoleArray@{FIVSmokeHoleArray}}
+\doxysubsubsection{\texorpdfstring{OwnerComponent}{OwnerComponent}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_array_abb5e016e74c5c94721fa79451abea3fb} 
+TObject\+Ptr$<$\doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component}{UIVSmoke\+Hole\+Generator\+Component}}$>$ FIVSmoke\+Hole\+Array::\+\+Owner\+Component}
+
+Owner component reference for replication callbacks. 
+
+The documentation for this struct was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Hole\+Data.\+h\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Private/\+IVSmoke\+Hole\+Data.\+cpp\end{DoxyCompactItemize}

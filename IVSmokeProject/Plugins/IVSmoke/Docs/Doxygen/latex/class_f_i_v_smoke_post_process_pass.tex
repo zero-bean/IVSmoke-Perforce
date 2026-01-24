@@ -1,0 +1,122 @@
+\doxysection{FIVSmoke\+Post\+Process\+Pass Class Reference}
+\hypertarget{class_f_i_v_smoke_post_process_pass}{}\label{class_f_i_v_smoke_post_process_pass}\index{FIVSmokePostProcessPass@{FIVSmokePostProcessPass}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Post\+Process\+Pass.\+h$>$}
+
+
+
+Collaboration diagram for FIVSmoke\+Post\+Process\+Pass:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=214pt]{class_f_i_v_smoke_post_process_pass__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+{\footnotesize template$<$typename TShader\+Class$>$ }\\static void \doxymbox{\hyperlink{class_f_i_v_smoke_post_process_pass_a8f1dbf9ae3c49b3e771217069c879d28}{Add\+Pixel\+Shader\+Pass}} (FRDGBuilder \&Graph\+Builder, FGlobal\+Shader\+Map \texorpdfstring{$\ast$}{*}Shader\+Map, TShader\+Map\+Ref$<$ TShader\+Class $>$ Pixel\+Shader, typename TShader\+Class::\+\+FParameters \texorpdfstring{$\ast$}{*}Parameters, const FScreen\+Pass\+Render\+Target \&Output)
+\item 
+{\footnotesize template$<$typename TShader\+Class$>$ }\\static void \doxymbox{\hyperlink{class_f_i_v_smoke_post_process_pass_a12269d31084d63a79ecbabcd15ffa467}{Add\+Compute\+Shader\+Pass}} (FRDGBuilder \&Graph\+Builder, FGlobal\+Shader\+Map \texorpdfstring{$\ast$}{*}Shader\+Map, TShader\+Map\+Ref$<$ TShader\+Class $>$ Compute\+Shader, typename TShader\+Class::\+\+FParameters \texorpdfstring{$\ast$}{*}Parameters, const FInt\+Vector \&Total\+Thread\+Size)
+\item 
+static FRDGTexture\+Ref \doxymbox{\hyperlink{class_f_i_v_smoke_post_process_pass_a2f649d0a9d8dd3ea75a9a8bca2b2cd41}{Create\+Output\+Texture}} (FRDGBuilder \&Graph\+Builder, FRDGTexture\+Ref Source\+Texture, const TCHAR \texorpdfstring{$\ast$}{*}Debug\+Name=TEXT("{}IVSmoke\+Output"{}), EPixel\+Format Override\+Format=PF\+\_\+\+Unknown, FInt\+Point Override\+Extent=FInt\+Point::\+\+Zero\+Value, ETexture\+Create\+Flags Flags=ETexture\+Create\+Flags::\+\+UAV)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Core utility for dispatching PS/\+\+CS post process passes. Designed for reusability -\/ bring your own shader and parameters. 
+
+\label{doc-func-members}
+\Hypertarget{class_f_i_v_smoke_post_process_pass_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_i_v_smoke_post_process_pass_a12269d31084d63a79ecbabcd15ffa467}\index{FIVSmokePostProcessPass@{FIVSmokePostProcessPass}!AddComputeShaderPass@{AddComputeShaderPass}}
+\index{AddComputeShaderPass@{AddComputeShaderPass}!FIVSmokePostProcessPass@{FIVSmokePostProcessPass}}
+\doxysubsubsection{\texorpdfstring{AddComputeShaderPass()}{AddComputeShaderPass()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_post_process_pass_a12269d31084d63a79ecbabcd15ffa467} 
+template$<$typename TShader\+Class$>$ \\
+void FIVSmoke\+Post\+Process\+Pass::\+\+Add\+Compute\+Shader\+Pass (\begin{DoxyParamCaption}\item[{FRDGBuilder \&}]{Graph\+Builder}{, }\item[{FGlobal\+Shader\+Map \texorpdfstring{$\ast$}{*}}]{Shader\+Map}{, }\item[{TShader\+Map\+Ref$<$ TShader\+Class $>$}]{Compute\+Shader}{, }\item[{typename TShader\+Class::\+\+FParameters \texorpdfstring{$\ast$}{*}}]{Parameters}{, }\item[{const FInt\+Vector \&}]{Total\+Thread\+Size}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Add a compute shader pass.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Graph\+Builder} & RDG builder \\
+\hline
+{\em Shader\+Map} & Global shader map \\
+\hline
+{\em Compute\+Shader} & Compute shader to use \\
+\hline
+{\em Parameters} & Shader parameters (must have UAV bound) \\
+\hline
+{\em Viewport\+Size} & Size of the viewport for thread dispatch \\
+\hline
+{\em Config} & Pass configuration\\
+\hline
+\end{DoxyParams}
+\begin{DoxyWarning}{Warning}
+Confirmed Engine Bug (UE 5.\+6 -\/ UE 5.\+7) Similar to the Pixel Shader pass, the scope name appears as "{}\+IVSmoke::\+\+Compute\+Shader:\+ \%s"{} in the Timing View due to the engine bug mentioned above.
+\end{DoxyWarning}
+Please refer to the Details Panel in Unreal Insights for the correct shader name \Hypertarget{class_f_i_v_smoke_post_process_pass_a8f1dbf9ae3c49b3e771217069c879d28}\index{FIVSmokePostProcessPass@{FIVSmokePostProcessPass}!AddPixelShaderPass@{AddPixelShaderPass}}
+\index{AddPixelShaderPass@{AddPixelShaderPass}!FIVSmokePostProcessPass@{FIVSmokePostProcessPass}}
+\doxysubsubsection{\texorpdfstring{AddPixelShaderPass()}{AddPixelShaderPass()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_post_process_pass_a8f1dbf9ae3c49b3e771217069c879d28} 
+template$<$typename TShader\+Class$>$ \\
+void FIVSmoke\+Post\+Process\+Pass::\+\+Add\+Pixel\+Shader\+Pass (\begin{DoxyParamCaption}\item[{FRDGBuilder \&}]{Graph\+Builder}{, }\item[{FGlobal\+Shader\+Map \texorpdfstring{$\ast$}{*}}]{Shader\+Map}{, }\item[{TShader\+Map\+Ref$<$ TShader\+Class $>$}]{Pixel\+Shader}{, }\item[{typename TShader\+Class::\+\+FParameters \texorpdfstring{$\ast$}{*}}]{Parameters}{, }\item[{const FScreen\+Pass\+Render\+Target \&}]{Output}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Add a fullscreen pixel shader pass.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Graph\+Builder} & RDG builder \\
+\hline
+{\em Shader\+Map} & Global shader map \\
+\hline
+{\em Pixel\+Shader} & Pixel shader to use \\
+\hline
+{\em Parameters} & Shader parameters (must have Render\+Targets bound) \\
+\hline
+{\em Output} & Render target \\
+\hline
+{\em Config} & Pass configuration\\
+\hline
+\end{DoxyParams}
+\begin{DoxyWarning}{Warning}
+Confirmed Engine Bug (UE 5.\+6 -\/ UE 5.\+7) The RDG Timeline View currently displays the raw format string (e.\+g., "{}\+IVSmoke::\+\+Pixel\+Shader:\+ \%s"{}) instead of the resolved variable name in Unreal Insights.
+\end{DoxyWarning}
+Workaround:\+
+\begin{DoxyEnumerate}
+\item Select the event bar in Unreal Insights (Timing View).
+\item Check the Details Panel (Metadata) to view the correct shader name (e.\+g., My\+Shader\+PS).
+\end{DoxyEnumerate}
+
+\href{https://issues.unrealengine.com/issue/UE-298245}{\texttt{https:\+/\+/\+issues.\+unrealengine.\+com/\+issue/\+\+UE-\/298245}} \Hypertarget{class_f_i_v_smoke_post_process_pass_a2f649d0a9d8dd3ea75a9a8bca2b2cd41}\index{FIVSmokePostProcessPass@{FIVSmokePostProcessPass}!CreateOutputTexture@{CreateOutputTexture}}
+\index{CreateOutputTexture@{CreateOutputTexture}!FIVSmokePostProcessPass@{FIVSmokePostProcessPass}}
+\doxysubsubsection{\texorpdfstring{CreateOutputTexture()}{CreateOutputTexture()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_post_process_pass_a2f649d0a9d8dd3ea75a9a8bca2b2cd41} 
+FRDGTexture\+Ref FIVSmoke\+Post\+Process\+Pass::\+\+Create\+Output\+Texture (\begin{DoxyParamCaption}\item[{FRDGBuilder \&}]{Graph\+Builder}{, }\item[{FRDGTexture\+Ref}]{Source\+Texture}{, }\item[{const TCHAR \texorpdfstring{$\ast$}{*}}]{Debug\+Name}{ = {\ttfamily TEXT("{}IVSmokeOutput"{})}, }\item[{EPixel\+Format}]{Override\+Format}{ = {\ttfamily PF\+\_\+Unknown}, }\item[{FInt\+Point}]{Override\+Extent}{ = {\ttfamily FIntPoint:\+:\+ZeroValue}, }\item[{ETexture\+Create\+Flags}]{Flags}{ = {\ttfamily ETextureCreateFlags:\+:\+UAV}}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Create an output texture suitable for UAV (compute shader).
+
+
+\begin{DoxyParams}{Parameters}
+{\em Graph\+Builder} & RDG builder \\
+\hline
+{\em Source\+Texture} & Texture to base dimensions on \\
+\hline
+{\em Debug\+Name} & Debug name for the new texture \\
+\hline
+{\em Override\+Format} & Override pixel format (PF\+\_\+\+Unknown = use source format) \\
+\hline
+{\em Override\+Extent} & Override texture extent (zero = use source extent) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+New texture with UAV flag 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Post\+Process\+Pass.\+h\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Private/\+IVSmoke\+Post\+Process\+Pass.\+cpp\end{DoxyCompactItemize}

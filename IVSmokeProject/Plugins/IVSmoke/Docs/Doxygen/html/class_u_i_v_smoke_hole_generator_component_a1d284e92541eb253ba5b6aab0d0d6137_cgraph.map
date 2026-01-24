@@ -1,0 +1,6 @@
+<map id="UIVSmokeHoleGeneratorComponent::RequestTrackDynamicObject" name="UIVSmokeHoleGeneratorComponent::RequestTrackDynamicObject">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,29,242,72"/>
+<area shape="rect" id="Node000002" href="$class_u_i_v_smoke_hole_preset.html#a9687dee2ec054de02a0fb8ce04cf2a42" title=" " alt="" coords="290,29,440,72"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="242,48,277,51,271,51,242,53"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="320,27,317,19,325,10,341,5,365,3,391,5,408,14,402,13,389,10,365,8,342,10,328,15,322,21,324,30"/>
+</map>

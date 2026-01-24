@@ -1,0 +1,195 @@
+\doxysection{FIVSmoke\+CSMRenderer Class Reference}
+\hypertarget{class_f_i_v_smoke_c_s_m_renderer}{}\label{class_f_i_v_smoke_c_s_m_renderer}\index{FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+CSMRenderer.\+h$>$}
+
+
+
+Collaboration diagram for FIVSmoke\+CSMRenderer:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=219pt]{class_f_i_v_smoke_c_s_m_renderer__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_a3a079f728e607e9fcbb219039fa8cfb9}{Initialize}} (UWorld \texorpdfstring{$\ast$}{*}World, int32 Num\+Cascades, int32 Resolution, float Max\+Distance)
+\item 
+void \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_a3aadb4f498ae864be971a24c0d27e655}{Shutdown}} ()
+\item 
+bool \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_a107bda476cbff63b1464033228d3e944}{Is\+Initialized}} () const
+\item 
+void \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_a495acbc1982e7a006b30357ee4513c43}{Update}} (const FVector \&Camera\+Position, const FVector \&Camera\+Forward, const FVector \&Light\+Direction, uint32 Frame\+Number)
+\item 
+int32 \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_a310075122178f9ca168b341280792bfb}{Get\+Num\+Cascades}} () const
+\item 
+const \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data}{FIVSmoke\+Cascade\+Data}} \& \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_a94f0c9f47876da9839143337e8ba61f4}{Get\+Cascade}} (int32 Index) const
+\item 
+const TArray$<$ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data}{FIVSmoke\+Cascade\+Data}} $>$ \& \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_ac507d6f3bd6236b25da682662b4599d0}{Get\+Cascades}} () const
+\item 
+TArray$<$ float $>$ \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_ab0ea17b1c3703c4e5dc36c4be16a1c71}{Get\+Split\+Distances}} () const
+\item 
+FTexture\+RHIRef \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_a1010d80bc12f57285d2886d472dd5cad}{Get\+VSMTexture}} (int32 Cascade\+Index) const
+\item 
+FTexture\+RHIRef \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_a8ac4db18553caf2afa6f64423f8c9279}{Get\+Depth\+Texture}} (int32 Cascade\+Index) const
+\item 
+bool \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_a8211f4270b34361106b22d51b8b8cd85}{Has\+Valid\+Shadow\+Data}} () const
+\item 
+FVector \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_a0d249ba70f6f19d8d56937d3ab1674a3}{Get\+Light\+Camera\+Position}} (int32 Cascade\+Index) const
+\item 
+FVector \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_a9021079a99e54a785107be20310f009e}{Get\+Main\+Camera\+Position}} () const
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Cascaded Shadow Map renderer for volumetric smoke. Manages multiple shadow cascades with priority-\/based updates.
+
+Features:\+
+\begin{DoxyItemize}
+\item Configurable cascade count (1-\/8)
+\item Log/\+\+Linear split distribution
+\item Texel snapping for shimmer prevention
+\item Priority-\/based update (near cascades update more frequently)
+\item VSM support for soft shadows 
+\end{DoxyItemize}
+
+\label{doc-func-members}
+\Hypertarget{class_f_i_v_smoke_c_s_m_renderer_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_i_v_smoke_c_s_m_renderer_a94f0c9f47876da9839143337e8ba61f4}\index{FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}!GetCascade@{GetCascade}}
+\index{GetCascade@{GetCascade}!FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}}
+\doxysubsubsection{\texorpdfstring{GetCascade()}{GetCascade()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_c_s_m_renderer_a94f0c9f47876da9839143337e8ba61f4} 
+const \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data}{FIVSmoke\+Cascade\+Data}} \& FIVSmoke\+CSMRenderer::\+\+Get\+Cascade (\begin{DoxyParamCaption}\item[{int32}]{Index}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Get cascade data by index. \Hypertarget{class_f_i_v_smoke_c_s_m_renderer_ac507d6f3bd6236b25da682662b4599d0}\index{FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}!GetCascades@{GetCascades}}
+\index{GetCascades@{GetCascades}!FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}}
+\doxysubsubsection{\texorpdfstring{GetCascades()}{GetCascades()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_c_s_m_renderer_ac507d6f3bd6236b25da682662b4599d0} 
+const TArray$<$ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data}{FIVSmoke\+Cascade\+Data}} $>$ \& FIVSmoke\+CSMRenderer::\+\+Get\+Cascades (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Get all cascade data. \Hypertarget{class_f_i_v_smoke_c_s_m_renderer_a8ac4db18553caf2afa6f64423f8c9279}\index{FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}!GetDepthTexture@{GetDepthTexture}}
+\index{GetDepthTexture@{GetDepthTexture}!FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}}
+\doxysubsubsection{\texorpdfstring{GetDepthTexture()}{GetDepthTexture()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_c_s_m_renderer_a8ac4db18553caf2afa6f64423f8c9279} 
+FTexture\+RHIRef FIVSmoke\+CSMRenderer::\+\+Get\+Depth\+Texture (\begin{DoxyParamCaption}\item[{int32}]{Cascade\+Index}{}\end{DoxyParamCaption}) const}
+
+Get depth texture for a cascade. \Hypertarget{class_f_i_v_smoke_c_s_m_renderer_a0d249ba70f6f19d8d56937d3ab1674a3}\index{FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}!GetLightCameraPosition@{GetLightCameraPosition}}
+\index{GetLightCameraPosition@{GetLightCameraPosition}!FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}}
+\doxysubsubsection{\texorpdfstring{GetLightCameraPosition()}{GetLightCameraPosition()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_c_s_m_renderer_a0d249ba70f6f19d8d56937d3ab1674a3} 
+FVector FIVSmoke\+CSMRenderer::\+\+Get\+Light\+Camera\+Position (\begin{DoxyParamCaption}\item[{int32}]{Cascade\+Index}{}\end{DoxyParamCaption}) const}
+
+Get light camera position for a cascade.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Cascade\+Index} & Index of cascade. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Light camera world position for the specified cascade. 
+\end{DoxyReturn}
+\Hypertarget{class_f_i_v_smoke_c_s_m_renderer_a9021079a99e54a785107be20310f009e}\index{FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}!GetMainCameraPosition@{GetMainCameraPosition}}
+\index{GetMainCameraPosition@{GetMainCameraPosition}!FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}}
+\doxysubsubsection{\texorpdfstring{GetMainCameraPosition()}{GetMainCameraPosition()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_c_s_m_renderer_a9021079a99e54a785107be20310f009e} 
+FVector FIVSmoke\+CSMRenderer::\+\+Get\+Main\+Camera\+Position (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Get main camera position. \Hypertarget{class_f_i_v_smoke_c_s_m_renderer_a310075122178f9ca168b341280792bfb}\index{FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}!GetNumCascades@{GetNumCascades}}
+\index{GetNumCascades@{GetNumCascades}!FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}}
+\doxysubsubsection{\texorpdfstring{GetNumCascades()}{GetNumCascades()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_c_s_m_renderer_a310075122178f9ca168b341280792bfb} 
+int32 FIVSmoke\+CSMRenderer::\+\+Get\+Num\+Cascades (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Get number of active cascades. \Hypertarget{class_f_i_v_smoke_c_s_m_renderer_ab0ea17b1c3703c4e5dc36c4be16a1c71}\index{FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}!GetSplitDistances@{GetSplitDistances}}
+\index{GetSplitDistances@{GetSplitDistances}!FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}}
+\doxysubsubsection{\texorpdfstring{GetSplitDistances()}{GetSplitDistances()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_c_s_m_renderer_ab0ea17b1c3703c4e5dc36c4be16a1c71} 
+TArray$<$ float $>$ FIVSmoke\+CSMRenderer::\+\+Get\+Split\+Distances (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+Get cascade split distances (for shader). \Hypertarget{class_f_i_v_smoke_c_s_m_renderer_a1010d80bc12f57285d2886d472dd5cad}\index{FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}!GetVSMTexture@{GetVSMTexture}}
+\index{GetVSMTexture@{GetVSMTexture}!FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}}
+\doxysubsubsection{\texorpdfstring{GetVSMTexture()}{GetVSMTexture()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_c_s_m_renderer_a1010d80bc12f57285d2886d472dd5cad} 
+FTexture\+RHIRef FIVSmoke\+CSMRenderer::\+\+Get\+VSMTexture (\begin{DoxyParamCaption}\item[{int32}]{Cascade\+Index}{}\end{DoxyParamCaption}) const}
+
+Get VSM texture for a cascade (nullptr if VSM disabled). \Hypertarget{class_f_i_v_smoke_c_s_m_renderer_a8211f4270b34361106b22d51b8b8cd85}\index{FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}!HasValidShadowData@{HasValidShadowData}}
+\index{HasValidShadowData@{HasValidShadowData}!FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}}
+\doxysubsubsection{\texorpdfstring{HasValidShadowData()}{HasValidShadowData()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_c_s_m_renderer_a8211f4270b34361106b22d51b8b8cd85} 
+bool FIVSmoke\+CSMRenderer::\+\+Has\+Valid\+Shadow\+Data (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+Check if any cascade has valid shadow data. \Hypertarget{class_f_i_v_smoke_c_s_m_renderer_a3a079f728e607e9fcbb219039fa8cfb9}\index{FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}!Initialize@{Initialize}}
+\index{Initialize@{Initialize}!FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}}
+\doxysubsubsection{\texorpdfstring{Initialize()}{Initialize()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_c_s_m_renderer_a3a079f728e607e9fcbb219039fa8cfb9} 
+void FIVSmoke\+CSMRenderer::\+\+Initialize (\begin{DoxyParamCaption}\item[{UWorld \texorpdfstring{$\ast$}{*}}]{World}{, }\item[{int32}]{Num\+Cascades}{, }\item[{int32}]{Resolution}{, }\item[{float}]{Max\+Distance}{}\end{DoxyParamCaption})}
+
+Initialize CSM renderer with specified settings. Creates cascade render targets and capture components.
+
+
+\begin{DoxyParams}{Parameters}
+{\em World} & World to create capture components in. \\
+\hline
+{\em Num\+Cascades} & Number of shadow cascades (1-\/8). \\
+\hline
+{\em Resolution} & Shadow map resolution per cascade. \\
+\hline
+{\em Max\+Distance} & Maximum shadow distance in world units. \\
+\hline
+\end{DoxyParams}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_i_v_smoke_c_s_m_renderer_a3a079f728e607e9fcbb219039fa8cfb9_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_i_v_smoke_c_s_m_renderer_a107bda476cbff63b1464033228d3e944}\index{FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}!IsInitialized@{IsInitialized}}
+\index{IsInitialized@{IsInitialized}!FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}}
+\doxysubsubsection{\texorpdfstring{IsInitialized()}{IsInitialized()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_c_s_m_renderer_a107bda476cbff63b1464033228d3e944} 
+bool FIVSmoke\+CSMRenderer::\+\+Is\+Initialized (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Check if renderer is initialized. \Hypertarget{class_f_i_v_smoke_c_s_m_renderer_a3aadb4f498ae864be971a24c0d27e655}\index{FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}!Shutdown@{Shutdown}}
+\index{Shutdown@{Shutdown}!FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}}
+\doxysubsubsection{\texorpdfstring{Shutdown()}{Shutdown()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_c_s_m_renderer_a3aadb4f498ae864be971a24c0d27e655} 
+void FIVSmoke\+CSMRenderer::\+\+Shutdown (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Release all resources. \Hypertarget{class_f_i_v_smoke_c_s_m_renderer_a495acbc1982e7a006b30357ee4513c43}\index{FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}!Update@{Update}}
+\index{Update@{Update}!FIVSmokeCSMRenderer@{FIVSmokeCSMRenderer}}
+\doxysubsubsection{\texorpdfstring{Update()}{Update()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_c_s_m_renderer_a495acbc1982e7a006b30357ee4513c43} 
+void FIVSmoke\+CSMRenderer::\+\+Update (\begin{DoxyParamCaption}\item[{const FVector \&}]{Camera\+Position}{, }\item[{const FVector \&}]{Camera\+Forward}{, }\item[{const FVector \&}]{Light\+Direction}{, }\item[{uint32}]{Frame\+Number}{}\end{DoxyParamCaption})}
+
+Update shadow cascades for current frame. Calculates cascade splits, applies texel snapping, and triggers captures.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Camera\+Position} & Current camera world position. \\
+\hline
+{\em Camera\+Forward} & Camera forward direction. \\
+\hline
+{\em Light\+Direction} & Direction TOWARD the light source (opposite of light travel). \\
+\hline
+{\em Frame\+Number} & Current frame number for priority update. \\
+\hline
+\end{DoxyParams}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_i_v_smoke_c_s_m_renderer_a495acbc1982e7a006b30357ee4513c43_cgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+CSMRenderer.\+h\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Private/\+IVSmoke\+CSMRenderer.\+cpp\end{DoxyCompactItemize}

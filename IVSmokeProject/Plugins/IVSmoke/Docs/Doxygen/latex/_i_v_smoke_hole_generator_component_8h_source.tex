@@ -1,0 +1,119 @@
+\doxysection{IVSmoke\+Hole\+Generator\+Component.\+h}
+\hypertarget{_i_v_smoke_hole_generator_component_8h_source}{}\label{_i_v_smoke_hole_generator_component_8h_source}\index{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeHoleGeneratorComponent.h@{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeHoleGeneratorComponent.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//\ Copyright\ (c)\ 2026,\ Team\ SDB.\ All\ rights\ reserved.}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}Components/BoxComponent.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}IVSmokeHoleData.h"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}IVSmokeHoleGeneratorComponent.generated.h"{}}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }UTextureRenderTargetVolume;}
+\DoxyCodeLine{00010\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmokeHolePreset}};}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00016\ UCLASS(ClassGroup\ =\ (\doxymbox{\hyperlink{class_i_v_smoke}{IVSmoke}}),\ meta\ =\ (BlueprintSpawnableComponent))}
+\DoxyCodeLine{00017\ class\ IVSMOKE\_API\ UIVSmokeHoleGeneratorComponent\ :\ public\ UBoxComponent}
+\DoxyCodeLine{00018\ \{}
+\DoxyCodeLine{00019\ \ \ \ \ GENERATED\_BODY()}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00022\ \ \ \ \ UIVSmokeHoleGeneratorComponent();}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \textcolor{keyword}{protected}:}
+\DoxyCodeLine{00025\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ BeginPlay()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ TickComponent(\textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ DeltaTime,\ \textcolor{keyword}{const}\ ELevelTick\ TickType,\ FActorComponentTickFunction*\ ThisTickFunction)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00027\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ EndPlay(\textcolor{keyword}{const}\ EEndPlayReason::Type\ EndPlayReason)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00028\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ GetLifetimeReplicatedProps(TArray<FLifetimeProperty>\&\ OutLifetimeProps)\ \textcolor{keyword}{const\ override};}
+\DoxyCodeLine{00029\ }
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{comment}{//\string~============================================================================}}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{comment}{//\ Public\ API\ (Blueprint\ \&\ C++)}}
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\#pragma\ region\ API}}
+\DoxyCodeLine{00033\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00035\ \ \ \ \ UFUNCTION(BlueprintCallable,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Hole\ |\ API"{}})}
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_a227c41d665c3944e274e1773b81e63f1}{RequestPenetrationHole}}(\textcolor{keyword}{const}\ FVector3f\ Origin,\ \textcolor{keyword}{const}\ FVector3f\ Direction,\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmokeHolePreset}}*\ Preset);}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00039\ \ \ \ \ UFUNCTION(BlueprintCallable,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Hole\ |\ API"{}})}
+\DoxyCodeLine{00040\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_aae055305f55742e021ee18ae1cb9fb6f}{RequestExplosionHole}}(\textcolor{keyword}{const}\ FVector3f\ Origin,\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmokeHolePreset}}*\ Preset);}
+\DoxyCodeLine{00041\ }
+\DoxyCodeLine{00043\ \ \ \ \ UFUNCTION(BlueprintCallable,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Hole\ |\ API"{}})}
+\DoxyCodeLine{00044\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_a1d284e92541eb253ba5b6aab0d0d6137}{RequestTrackDynamicObject}}(AActor*\ TargetActor,\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmokeHolePreset}}*\ Preset);}
+\DoxyCodeLine{00045\ \textcolor{preprocessor}{\#pragma\ endregion}}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{comment}{//\string~============================================================================}}
+\DoxyCodeLine{00048\ \ \ \ \ \textcolor{comment}{//\ Internal\ Server\ RPC}}
+\DoxyCodeLine{00049\ \textcolor{preprocessor}{\#pragma\ region\ Server\ RPC}}
+\DoxyCodeLine{00050\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00051\ \ \ \ \ UFUNCTION(Server,\ Reliable)}
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{keywordtype}{void}\ Internal\_RequestPenetrationHole(\textcolor{keyword}{const}\ FVector3f\&\ Origin,\ \textcolor{keyword}{const}\ FVector3f\&\ Direction,\ \textcolor{keyword}{const}\ uint8\ PresetID);}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00054\ \ \ \ \ UFUNCTION(Server,\ Reliable)}
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{keywordtype}{void}\ Internal\_RequestExplosionHole(\textcolor{keyword}{const}\ FVector3f\&\ Origin,\ \textcolor{keyword}{const}\ uint8\ PresetID);}
+\DoxyCodeLine{00056\ }
+\DoxyCodeLine{00057\ \ \ \ \ UFUNCTION(Server,\ Reliable)}
+\DoxyCodeLine{00058\ \ \ \ \ \textcolor{keywordtype}{void}\ Internal\_RequestDynamicHole(AActor*\ TargetActor,\ \textcolor{keyword}{const}\ uint8\ PresetID);}
+\DoxyCodeLine{00059\ \textcolor{preprocessor}{\#pragma\ endregion}}
+\DoxyCodeLine{00060\ }
+\DoxyCodeLine{00061\ \ \ \ \ \textcolor{comment}{//\string~============================================================================}}
+\DoxyCodeLine{00062\ \ \ \ \ \textcolor{comment}{//\ Authority\ Only\ (Server\ \&\ Standalone)}}
+\DoxyCodeLine{00063\ \textcolor{preprocessor}{\#pragma\ region\ Authority\ Only}}
+\DoxyCodeLine{00064\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ \ \ \ \ UPROPERTY(Transient)}
+\DoxyCodeLine{00067\ \ \ \ \ TArray<FIVSmokeHoleDynamicSubject>\ DynamicSubjectList;}
+\DoxyCodeLine{00068\ }
+\DoxyCodeLine{00070\ \ \ \ \ \textcolor{keywordtype}{void}\ Authority\_CreateHole(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data}{FIVSmokeHoleData}}\&\ HoleData);}
+\DoxyCodeLine{00071\ }
+\DoxyCodeLine{00073\ \ \ \ \ \textcolor{keywordtype}{void}\ Authority\_CleanupExpiredHoles();}
+\DoxyCodeLine{00074\ }
+\DoxyCodeLine{00076\ \ \ \ \ \textcolor{keywordtype}{bool}\ Authority\_CalculatePenetrationPoints(\textcolor{keyword}{const}\ FVector3f\&\ Origin,\ \textcolor{keyword}{const}\ FVector3f\&\ Direction,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a3b713bdef21708f036d291be731ab845}{Radius}},\ FVector3f\&\ OutEntry,\ FVector3f\&\ OutExit);}
+\DoxyCodeLine{00077\ }
+\DoxyCodeLine{00079\ \ \ \ \ \textcolor{keywordtype}{void}\ Authority\_UpdateDynamicSubjectList();}
+\DoxyCodeLine{00080\ \textcolor{preprocessor}{\#pragma\ endregion}}
+\DoxyCodeLine{00081\ }
+\DoxyCodeLine{00082\ \ \ \ \ \textcolor{comment}{//\string~============================================================================}}
+\DoxyCodeLine{00083\ \ \ \ \ \textcolor{comment}{//\ Local\ Only\ (Client\ \&\ Standalone)}}
+\DoxyCodeLine{00084\ \textcolor{preprocessor}{\#pragma\ region\ Local\ Only}}
+\DoxyCodeLine{00085\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00086\ \ \ \ \ UPROPERTY(Transient)}
+\DoxyCodeLine{00087\ \ \ \ \ TObjectPtr<UTextureRenderTargetVolume>\ HoleTexture\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00088\ }
+\DoxyCodeLine{00090\ \ \ \ \ \textcolor{keywordtype}{void}\ Local\_InitializeHoleTexture();}
+\DoxyCodeLine{00091\ }
+\DoxyCodeLine{00093\ \ \ \ \ \textcolor{keywordtype}{void}\ Local\_RebuildHoleTexture();}
+\DoxyCodeLine{00094\ \textcolor{preprocessor}{\#pragma\ endregion}}
+\DoxyCodeLine{00095\ }
+\DoxyCodeLine{00096\ \ \ \ \ \textcolor{comment}{//\string~============================================================================}}
+\DoxyCodeLine{00097\ \ \ \ \ \textcolor{comment}{//\ Common}}
+\DoxyCodeLine{00098\ \textcolor{preprocessor}{\#pragma\ region\ Common}}
+\DoxyCodeLine{00099\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00100\ }
+\DoxyCodeLine{00102\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Hole\ |\ Optimization"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}1"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}512"{}}))}
+\DoxyCodeLine{00103\ \ \ \ \ int32\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_a1a74e1c9567dde329ad5cf1719a9ff57}{MaxHoles}}\ =\ 128;}
+\DoxyCodeLine{00104\ }
+\DoxyCodeLine{00106\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Hole\ |\ Optimization"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}16"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}128"{}}))}
+\DoxyCodeLine{00107\ \ \ \ \ FIntVector\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_aa2b0ae7af26b7556056531c5f1082dcb}{VoxelResolution}}\ =\ FIntVector(64,\ 64,\ 64);}
+\DoxyCodeLine{00108\ }
+\DoxyCodeLine{00110\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Hole\ |\ Configuration"{}},}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ meta\ =\ (ToolTip\ =\ \textcolor{stringliteral}{"{}Select\ the\ type\ of\ obstacle\ that\ will\ block\ the\ penetration\ hole"{}}))}
+\DoxyCodeLine{00112\ \ \ \ \ TArray<TEnumAsByte<EObjectTypeQuery>>\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_a55d5a8ac0585653d2e1f45a6162b8918}{ObstacleObjectTypes}};}
+\DoxyCodeLine{00113\ }
+\DoxyCodeLine{00115\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_a522a4fba7daa952f9533c790ab925170}{GetSyncedTime}}()\ const;}
+\DoxyCodeLine{00116\ }
+\DoxyCodeLine{00118\ \ \ \ \ FTextureRHIRef\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_a6fa36f3322d58955ccebf773745ad947}{GetHoleTextureRHI}}()\ const;}
+\DoxyCodeLine{00119\ }
+\DoxyCodeLine{00121\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_a0b607c06a349f6cc23ee85575590f2cc}{SetBoxToVoxelAABB}}();}
+\DoxyCodeLine{00122\ }
+\DoxyCodeLine{00124\ \ \ \ \ FORCEINLINE\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_aad9a6774c3e7cabfa015d727ae5867a2}{MarkHoleTextureDirty}}(const\ \textcolor{keywordtype}{bool}\ bIsDirty\ =\ true)\ \{\ bHoleTextureDirty\ =\ bIsDirty;\ \}}
+\DoxyCodeLine{00125\ }
+\DoxyCodeLine{00126\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00127\ }
+\DoxyCodeLine{00129\ \ \ \ \ UPROPERTY(Transient,\ Replicated,\ VisibleAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Hole\ |\ Debug"{}})}
+\DoxyCodeLine{00130\ \ \ \ \ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array}{FIVSmokeHoleArray}}\ ActiveHoles;}
+\DoxyCodeLine{00131\ }
+\DoxyCodeLine{00133\ \ \ \ \ uint8\ bHoleTextureDirty\ :\ 1;}
+\DoxyCodeLine{00134\ \textcolor{preprocessor}{\#pragma\ endregion}}
+\DoxyCodeLine{00135\ \};}
+
+\end{DoxyCode}

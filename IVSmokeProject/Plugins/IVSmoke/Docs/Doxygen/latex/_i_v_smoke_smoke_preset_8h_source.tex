@@ -1,0 +1,42 @@
+\doxysection{IVSmoke\+Smoke\+Preset.\+h}
+\hypertarget{_i_v_smoke_smoke_preset_8h_source}{}\label{_i_v_smoke_smoke_preset_8h_source}\index{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeSmokePreset.h@{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeSmokePreset.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//\ Copyright\ (c)\ 2026,\ Team\ SDB.\ All\ rights\ reserved.}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}CoreMinimal.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}Engine/DataAsset.h"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}IVSmokeSmokePreset.generated.h"{}}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00016\ UCLASS(BlueprintType)}
+\DoxyCodeLine{00017\ class\ IVSMOKE\_API\ \doxymbox{\hyperlink{class_u_i_v_smoke_smoke_preset}{UIVSmokeSmokePreset}}\ :\ public\ UPrimaryDataAsset}
+\DoxyCodeLine{00018\ \{}
+\DoxyCodeLine{00019\ \ \ \ \ GENERATED\_BODY()}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{comment}{//\ ============================================================================}}
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{comment}{//\ Appearance\ (Per-\/Volume)}}
+\DoxyCodeLine{00024\ \ \ \ \ \textcolor{comment}{//\ ============================================================================}}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00027\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke|Appearance"{}})}
+\DoxyCodeLine{00028\ \ \ \ \ FLinearColor\ \doxymbox{\hyperlink{class_u_i_v_smoke_smoke_preset_ad42b6c9b899c0298d9fd0816d052829b}{SmokeColor}}\ =\ FLinearColor(0.8f,\ 0.8f,\ 0.8f,\ 1.0f);}
+\DoxyCodeLine{00029\ }
+\DoxyCodeLine{00031\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke|Appearance"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}1.0"{}}))}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_smoke_preset_ae34280f37fc1bf9a20528f089f2e7385}{SmokeAbsorption}}\ =\ 0.1f;}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00035\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke|Appearance"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}10.0"{}}))}
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_smoke_preset_ad2be1e161f2e972b9b4fc19e1cc05b78}{VolumeDensity}}\ =\ 1.0f;}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \ \ \ \ \textcolor{comment}{//\ ============================================================================}}
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{comment}{//\ UPrimaryDataAsset\ Interface}}
+\DoxyCodeLine{00040\ \ \ \ \ \textcolor{comment}{//\ ============================================================================}}
+\DoxyCodeLine{00041\ }
+\DoxyCodeLine{00042\ \ \ \ \ virtual\ FPrimaryAssetId\ GetPrimaryAssetId()\textcolor{keyword}{\ const\ override}}
+\DoxyCodeLine{00043\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ FPrimaryAssetId(TEXT(\textcolor{stringliteral}{"{}IVSmokeSmokePreset"{}}),\ GetFName());}
+\DoxyCodeLine{00045\ \ \ \ \ \}}
+\DoxyCodeLine{00046\ \};}
+
+\end{DoxyCode}

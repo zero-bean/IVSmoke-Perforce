@@ -1,0 +1,357 @@
+\doxysection{UIVSmoke\+Grid\+Library Class Reference}
+\hypertarget{class_u_i_v_smoke_grid_library}{}\label{class_u_i_v_smoke_grid_library}\index{UIVSmokeGridLibrary@{UIVSmokeGridLibrary}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Grid\+Library.\+h$>$}
+
+
+
+Inheritance diagram for UIVSmoke\+Grid\+Library:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=201pt]{class_u_i_v_smoke_grid_library__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for UIVSmoke\+Grid\+Library:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=201pt]{class_u_i_v_smoke_grid_library__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static FORCEINLINE int32 \doxymbox{\hyperlink{class_u_i_v_smoke_grid_library_abadc862887d67c967ca9e70742317f9c}{Grid\+To\+Index}} (const FInt\+Vector \&Grid\+Pos, const FInt\+Vector \&Resolution)
+\item 
+static FORCEINLINE FInt\+Vector \doxymbox{\hyperlink{class_u_i_v_smoke_grid_library_a308ae3d403b3ded083264e6046fbc9d5}{Index\+To\+Grid}} (int32 Index, const FInt\+Vector \&Resolution)
+\item 
+static FORCEINLINE FVector \doxymbox{\hyperlink{class_u_i_v_smoke_grid_library_a574676c6a3d229540aed5b3ca1116cf3}{Grid\+To\+Local}} (const FInt\+Vector \&Grid\+Pos, float Voxel\+Size, const FInt\+Vector \&Center\+Offset)
+\item 
+static FORCEINLINE FInt\+Vector \doxymbox{\hyperlink{class_u_i_v_smoke_grid_library_a0f00b89261e1423afdd6ae74ee7daedc}{Local\+To\+Grid}} (const FVector \&Local\+Pos, float Voxel\+Size, const FInt\+Vector \&Center\+Offset, const FInt\+Vector \&Resolution)
+\item 
+static FORCEINLINE int32 \doxymbox{\hyperlink{class_u_i_v_smoke_grid_library_aec495254787240eade7f480eaf091b72}{Grid\+To\+Voxel\+Bit\+Index}} (const FInt\+Vector \&Grid\+Pos, const FInt\+Vector \&Resolution)
+\item 
+static FORCEINLINE int32 \doxymbox{\hyperlink{class_u_i_v_smoke_grid_library_a0cdb7e958d75dc013c1f4d6593165e53}{Grid\+To\+Voxel\+Bit\+Index}} (int32 Y, int32 Z, int32 ResolutionY)
+\item 
+static FORCEINLINE bool \doxymbox{\hyperlink{class_u_i_v_smoke_grid_library_ad9f884203188931687e1bbab0d314fc8}{Is\+Voxel\+Bit\+Set}} (const TArray$<$ uint64 $>$ \&Voxel\+Bit\+Array, const FInt\+Vector \&Grid\+Pos, const FInt\+Vector \&Resolution)
+\item 
+static FORCEINLINE void \doxymbox{\hyperlink{class_u_i_v_smoke_grid_library_a0ec5d73071373cbcbeaf54ceb14f9244}{Set\+Voxel\+Bit}} (TArray$<$ uint64 $>$ \&Voxel\+Bit\+Array, int32 Index, const FInt\+Vector \&Resolution, bool b\+Value)
+\item 
+static FORCEINLINE void \doxymbox{\hyperlink{class_u_i_v_smoke_grid_library_a206460369858cc4a31bfb7cdb4c21497}{Set\+Voxel\+Bit}} (TArray$<$ uint64 $>$ \&Voxel\+Bit\+Array, const FInt\+Vector \&Grid\+Pos, const FInt\+Vector \&Resolution, bool b\+Value)
+\item 
+static FORCEINLINE void \doxymbox{\hyperlink{class_u_i_v_smoke_grid_library_a80ca8a6294c5e35baca6e7f1381f01e9}{Toggle\+Voxel\+Bit}} (TArray$<$ uint64 $>$ \&Voxel\+Bit\+Array, int32 Index, const FInt\+Vector \&Resolution)
+\item 
+static FORCEINLINE void \doxymbox{\hyperlink{class_u_i_v_smoke_grid_library_ac09c11b875463ecca8fe8d0163814f6f}{Toggle\+Voxel\+Bit}} (TArray$<$ uint64 $>$ \&Voxel\+Bit\+Array, const FInt\+Vector \&Grid\+Pos, const FInt\+Vector \&Resolution)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static const FInt\+Vector \doxymbox{\hyperlink{class_u_i_v_smoke_grid_library_ada811d26c333edf592c3e3dfceb21179}{Invalid\+Grid\+Pos}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Utility library for smoke grid calculations and voxel bit operations. 
+
+\label{doc-func-members}
+\Hypertarget{class_u_i_v_smoke_grid_library_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_u_i_v_smoke_grid_library_abadc862887d67c967ca9e70742317f9c}\index{UIVSmokeGridLibrary@{UIVSmokeGridLibrary}!GridToIndex@{GridToIndex}}
+\index{GridToIndex@{GridToIndex}!UIVSmokeGridLibrary@{UIVSmokeGridLibrary}}
+\doxysubsubsection{\texorpdfstring{GridToIndex()}{GridToIndex()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_grid_library_abadc862887d67c967ca9e70742317f9c} 
+FORCEINLINE int32 UIVSmoke\+Grid\+Library::\+\+Grid\+To\+Index (\begin{DoxyParamCaption}\item[{const FInt\+Vector \&}]{Grid\+Pos}{, }\item[{const FInt\+Vector \&}]{Resolution}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+3D grid coordinate to 1D index.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Grid\+Pos} & 3D grid coordinate. \\
+\hline
+{\em Resolution} & 3D grid resolution. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+1D flattened index 
+\end{DoxyReturn}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=191pt]{class_u_i_v_smoke_grid_library_abadc862887d67c967ca9e70742317f9c_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_i_v_smoke_grid_library_a574676c6a3d229540aed5b3ca1116cf3}\index{UIVSmokeGridLibrary@{UIVSmokeGridLibrary}!GridToLocal@{GridToLocal}}
+\index{GridToLocal@{GridToLocal}!UIVSmokeGridLibrary@{UIVSmokeGridLibrary}}
+\doxysubsubsection{\texorpdfstring{GridToLocal()}{GridToLocal()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_grid_library_a574676c6a3d229540aed5b3ca1116cf3} 
+FORCEINLINE FVector UIVSmoke\+Grid\+Library::\+\+Grid\+To\+Local (\begin{DoxyParamCaption}\item[{const FInt\+Vector \&}]{Grid\+Pos}{, }\item[{float}]{Voxel\+Size}{, }\item[{const FInt\+Vector \&}]{Center\+Offset}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+Converts 3D grid coordinate to local space position.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Grid\+Pos} & 3D grid coordinate. \\
+\hline
+{\em Voxel\+Size} & Size of each voxel. \\
+\hline
+{\em Center\+Offset} & Grid center offset. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Local space position. 
+\end{DoxyReturn}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=191pt]{class_u_i_v_smoke_grid_library_a574676c6a3d229540aed5b3ca1116cf3_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_i_v_smoke_grid_library_aec495254787240eade7f480eaf091b72}\index{UIVSmokeGridLibrary@{UIVSmokeGridLibrary}!GridToVoxelBitIndex@{GridToVoxelBitIndex}}
+\index{GridToVoxelBitIndex@{GridToVoxelBitIndex}!UIVSmokeGridLibrary@{UIVSmokeGridLibrary}}
+\doxysubsubsection{\texorpdfstring{GridToVoxelBitIndex()}{GridToVoxelBitIndex()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_grid_library_aec495254787240eade7f480eaf091b72} 
+FORCEINLINE int32 UIVSmoke\+Grid\+Library::\+\+Grid\+To\+Voxel\+Bit\+Index (\begin{DoxyParamCaption}\item[{const FInt\+Vector \&}]{Grid\+Pos}{, }\item[{const FInt\+Vector \&}]{Resolution}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+Converts 3D grid coordinate to voxel bit index.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Grid\+Pos} & 3D grid coordinate. \\
+\hline
+{\em Resolution} & 3D grid resolution. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Voxel bit index. 
+\end{DoxyReturn}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=191pt]{class_u_i_v_smoke_grid_library_aec495254787240eade7f480eaf091b72_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_i_v_smoke_grid_library_a0cdb7e958d75dc013c1f4d6593165e53}\index{UIVSmokeGridLibrary@{UIVSmokeGridLibrary}!GridToVoxelBitIndex@{GridToVoxelBitIndex}}
+\index{GridToVoxelBitIndex@{GridToVoxelBitIndex}!UIVSmokeGridLibrary@{UIVSmokeGridLibrary}}
+\doxysubsubsection{\texorpdfstring{GridToVoxelBitIndex()}{GridToVoxelBitIndex()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_grid_library_a0cdb7e958d75dc013c1f4d6593165e53} 
+FORCEINLINE int32 UIVSmoke\+Grid\+Library::\+\+Grid\+To\+Voxel\+Bit\+Index (\begin{DoxyParamCaption}\item[{int32}]{Y}{, }\item[{int32}]{Z}{, }\item[{int32}]{ResolutionY}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+Converts Y and Z coordinates to voxel bit index.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Y} & Y coordinate. \\
+\hline
+{\em Z} & Z coordinate. \\
+\hline
+{\em ResolutionY} & Y resolution. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Voxel bit index. 
+\end{DoxyReturn}
+\Hypertarget{class_u_i_v_smoke_grid_library_a308ae3d403b3ded083264e6046fbc9d5}\index{UIVSmokeGridLibrary@{UIVSmokeGridLibrary}!IndexToGrid@{IndexToGrid}}
+\index{IndexToGrid@{IndexToGrid}!UIVSmokeGridLibrary@{UIVSmokeGridLibrary}}
+\doxysubsubsection{\texorpdfstring{IndexToGrid()}{IndexToGrid()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_grid_library_a308ae3d403b3ded083264e6046fbc9d5} 
+FORCEINLINE FInt\+Vector UIVSmoke\+Grid\+Library::\+\+Index\+To\+Grid (\begin{DoxyParamCaption}\item[{int32}]{Index}{, }\item[{const FInt\+Vector \&}]{Resolution}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+1D flattened index to 3D grid coordinate.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Index} & 1D flattened index. \\
+\hline
+{\em Resolution} & 3D grid resolution. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+3D grid coordinate. 
+\end{DoxyReturn}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=191pt]{class_u_i_v_smoke_grid_library_a308ae3d403b3ded083264e6046fbc9d5_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_i_v_smoke_grid_library_ad9f884203188931687e1bbab0d314fc8}\index{UIVSmokeGridLibrary@{UIVSmokeGridLibrary}!IsVoxelBitSet@{IsVoxelBitSet}}
+\index{IsVoxelBitSet@{IsVoxelBitSet}!UIVSmokeGridLibrary@{UIVSmokeGridLibrary}}
+\doxysubsubsection{\texorpdfstring{IsVoxelBitSet()}{IsVoxelBitSet()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_grid_library_ad9f884203188931687e1bbab0d314fc8} 
+FORCEINLINE bool UIVSmoke\+Grid\+Library::\+\+Is\+Voxel\+Bit\+Set (\begin{DoxyParamCaption}\item[{const TArray$<$ uint64 $>$ \&}]{Voxel\+Bit\+Array}{, }\item[{const FInt\+Vector \&}]{Grid\+Pos}{, }\item[{const FInt\+Vector \&}]{Resolution}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+Checks if a voxel occupancy bit is set at the given 3D grid position. Internally, X is stored as a bit index in a uint64, while Y and Z are mapped to the array index.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Voxel\+Bit\+Array} & Bit-\/packed voxel occupancy array (uint64 per YZ slice). \\
+\hline
+{\em Grid\+Pos} & 3D grid coordinate. \\
+\hline
+{\em Resolution} & 3D grid resolution (each axis \texorpdfstring{$<$}{<} 64). \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+True if the voxel bit is set, false otherwise. 
+\end{DoxyReturn}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=339pt]{class_u_i_v_smoke_grid_library_ad9f884203188931687e1bbab0d314fc8_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_i_v_smoke_grid_library_a0f00b89261e1423afdd6ae74ee7daedc}\index{UIVSmokeGridLibrary@{UIVSmokeGridLibrary}!LocalToGrid@{LocalToGrid}}
+\index{LocalToGrid@{LocalToGrid}!UIVSmokeGridLibrary@{UIVSmokeGridLibrary}}
+\doxysubsubsection{\texorpdfstring{LocalToGrid()}{LocalToGrid()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_grid_library_a0f00b89261e1423afdd6ae74ee7daedc} 
+FORCEINLINE FInt\+Vector UIVSmoke\+Grid\+Library::\+\+Local\+To\+Grid (\begin{DoxyParamCaption}\item[{const FVector \&}]{Local\+Pos}{, }\item[{float}]{Voxel\+Size}{, }\item[{const FInt\+Vector \&}]{Center\+Offset}{, }\item[{const FInt\+Vector \&}]{Resolution}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+Converts local space position to 3D grid coordinate.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Local\+Pos} & Local space position. \\
+\hline
+{\em Voxel\+Size} & Size of each voxel. \\
+\hline
+{\em Center\+Offset} & Grid center offset. \\
+\hline
+{\em Resolution} & 3D grid resolution. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+3D grid coordinate, or Invalid\+Grid\+Pos if out of bounds. 
+\end{DoxyReturn}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=191pt]{class_u_i_v_smoke_grid_library_a0f00b89261e1423afdd6ae74ee7daedc_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_i_v_smoke_grid_library_a206460369858cc4a31bfb7cdb4c21497}\index{UIVSmokeGridLibrary@{UIVSmokeGridLibrary}!SetVoxelBit@{SetVoxelBit}}
+\index{SetVoxelBit@{SetVoxelBit}!UIVSmokeGridLibrary@{UIVSmokeGridLibrary}}
+\doxysubsubsection{\texorpdfstring{SetVoxelBit()}{SetVoxelBit()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_grid_library_a206460369858cc4a31bfb7cdb4c21497} 
+FORCEINLINE void UIVSmoke\+Grid\+Library::\+\+Set\+Voxel\+Bit (\begin{DoxyParamCaption}\item[{TArray$<$ uint64 $>$ \&}]{Voxel\+Bit\+Array}{, }\item[{const FInt\+Vector \&}]{Grid\+Pos}{, }\item[{const FInt\+Vector \&}]{Resolution}{, }\item[{bool}]{b\+Value}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+Sets a voxel bit value at the given 3D grid position. Internally, X is stored as a bit index in a uint64, while Y and Z are mapped to the array index.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Voxel\+Bit\+Array} & Bit-\/packed voxel occupancy array (uint64 per YZ slice). \\
+\hline
+{\em Grid\+Pos} & 3D grid coordinate. \\
+\hline
+{\em Resolution} & 3D grid resolution (each axis \texorpdfstring{$<$}{<} 64). \\
+\hline
+{\em b\+Value} & Value to set (true or false). \\
+\hline
+\end{DoxyParams}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=339pt]{class_u_i_v_smoke_grid_library_a206460369858cc4a31bfb7cdb4c21497_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_i_v_smoke_grid_library_a0ec5d73071373cbcbeaf54ceb14f9244}\index{UIVSmokeGridLibrary@{UIVSmokeGridLibrary}!SetVoxelBit@{SetVoxelBit}}
+\index{SetVoxelBit@{SetVoxelBit}!UIVSmokeGridLibrary@{UIVSmokeGridLibrary}}
+\doxysubsubsection{\texorpdfstring{SetVoxelBit()}{SetVoxelBit()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_grid_library_a0ec5d73071373cbcbeaf54ceb14f9244} 
+FORCEINLINE void UIVSmoke\+Grid\+Library::\+\+Set\+Voxel\+Bit (\begin{DoxyParamCaption}\item[{TArray$<$ uint64 $>$ \&}]{Voxel\+Bit\+Array}{, }\item[{int32}]{Index}{, }\item[{const FInt\+Vector \&}]{Resolution}{, }\item[{bool}]{b\+Value}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+Sets a voxel bit value at the given 1D index.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Voxel\+Bit\+Array} & Bit-\/packed voxel occupancy array (uint64 per YZ slice). \\
+\hline
+{\em Index} & 1D flattened index. \\
+\hline
+{\em Resolution} & 3D grid resolution (each axis \texorpdfstring{$<$}{<} 64). \\
+\hline
+{\em b\+Value} & Value to set (true or false). \\
+\hline
+\end{DoxyParams}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=339pt]{class_u_i_v_smoke_grid_library_a0ec5d73071373cbcbeaf54ceb14f9244_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_i_v_smoke_grid_library_ac09c11b875463ecca8fe8d0163814f6f}\index{UIVSmokeGridLibrary@{UIVSmokeGridLibrary}!ToggleVoxelBit@{ToggleVoxelBit}}
+\index{ToggleVoxelBit@{ToggleVoxelBit}!UIVSmokeGridLibrary@{UIVSmokeGridLibrary}}
+\doxysubsubsection{\texorpdfstring{ToggleVoxelBit()}{ToggleVoxelBit()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_grid_library_ac09c11b875463ecca8fe8d0163814f6f} 
+FORCEINLINE void UIVSmoke\+Grid\+Library::\+\+Toggle\+Voxel\+Bit (\begin{DoxyParamCaption}\item[{TArray$<$ uint64 $>$ \&}]{Voxel\+Bit\+Array}{, }\item[{const FInt\+Vector \&}]{Grid\+Pos}{, }\item[{const FInt\+Vector \&}]{Resolution}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+Toggles a voxel bit value at the given 3D grid position. Internally, X is stored as a bit index in a uint64, while Y and Z are mapped to the array index.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Voxel\+Bit\+Array} & Bit-\/packed voxel occupancy array (uint64 per YZ slice). \\
+\hline
+{\em Grid\+Pos} & 3D grid coordinate. \\
+\hline
+{\em Resolution} & 3D grid resolution (each axis \texorpdfstring{$<$}{<} 64). \\
+\hline
+\end{DoxyParams}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=339pt]{class_u_i_v_smoke_grid_library_ac09c11b875463ecca8fe8d0163814f6f_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_i_v_smoke_grid_library_a80ca8a6294c5e35baca6e7f1381f01e9}\index{UIVSmokeGridLibrary@{UIVSmokeGridLibrary}!ToggleVoxelBit@{ToggleVoxelBit}}
+\index{ToggleVoxelBit@{ToggleVoxelBit}!UIVSmokeGridLibrary@{UIVSmokeGridLibrary}}
+\doxysubsubsection{\texorpdfstring{ToggleVoxelBit()}{ToggleVoxelBit()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_grid_library_a80ca8a6294c5e35baca6e7f1381f01e9} 
+FORCEINLINE void UIVSmoke\+Grid\+Library::\+\+Toggle\+Voxel\+Bit (\begin{DoxyParamCaption}\item[{TArray$<$ uint64 $>$ \&}]{Voxel\+Bit\+Array}{, }\item[{int32}]{Index}{, }\item[{const FInt\+Vector \&}]{Resolution}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+Toggles a voxel bit value at the given 1D index.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Voxel\+Bit\+Array} & Bit-\/packed voxel occupancy array (uint64 per YZ slice). \\
+\hline
+{\em Index} & 1D flattened index. \\
+\hline
+{\em Resolution} & 3D grid resolution (each axis \texorpdfstring{$<$}{<} 64). \\
+\hline
+\end{DoxyParams}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=339pt]{class_u_i_v_smoke_grid_library_a80ca8a6294c5e35baca6e7f1381f01e9_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_u_i_v_smoke_grid_library_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_u_i_v_smoke_grid_library_ada811d26c333edf592c3e3dfceb21179}\index{UIVSmokeGridLibrary@{UIVSmokeGridLibrary}!InvalidGridPos@{InvalidGridPos}}
+\index{InvalidGridPos@{InvalidGridPos}!UIVSmokeGridLibrary@{UIVSmokeGridLibrary}}
+\doxysubsubsection{\texorpdfstring{InvalidGridPos}{InvalidGridPos}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_grid_library_ada811d26c333edf592c3e3dfceb21179} 
+const FInt\+Vector UIVSmoke\+Grid\+Library::\+\+Invalid\+Grid\+Pos\hspace{0.3cm}{\ttfamily [static]}}
+
+Invalid grid pos (-\/1, -\/1, -\/1) 
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Grid\+Library.\+h\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Private/\+IVSmoke\+Grid\+Library.\+cpp\end{DoxyCompactItemize}

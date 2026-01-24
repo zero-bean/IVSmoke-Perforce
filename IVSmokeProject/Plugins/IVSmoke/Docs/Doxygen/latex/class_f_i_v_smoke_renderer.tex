@@ -1,0 +1,171 @@
+\doxysection{FIVSmoke\+Renderer Class Reference}
+\hypertarget{class_f_i_v_smoke_renderer}{}\label{class_f_i_v_smoke_renderer}\index{FIVSmokeRenderer@{FIVSmokeRenderer}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Renderer.\+h$>$}
+
+
+
+Collaboration diagram for FIVSmoke\+Renderer:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=205pt]{class_f_i_v_smoke_renderer__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \doxymbox{\hyperlink{class_f_i_v_smoke_renderer_a32ceb1e4b56594a7c68a99e32ddf9f3c}{Initialize}} ()
+\item 
+void \doxymbox{\hyperlink{class_f_i_v_smoke_renderer_ab1678805f0a5f66e9e739dad3e5a03f9}{Shutdown}} ()
+\item 
+bool \doxymbox{\hyperlink{class_f_i_v_smoke_renderer_ad3e4ca785257d273ac9f43d00347d902}{Is\+Initialized}} () const
+\item 
+void \doxymbox{\hyperlink{class_f_i_v_smoke_renderer_ad65a8d127d524eedb10207fc13b9fb4d}{Add\+Volume}} (\doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume}{AIVSmoke\+Voxel\+Volume}} \texorpdfstring{$\ast$}{*}Volume)
+\item 
+void \doxymbox{\hyperlink{class_f_i_v_smoke_renderer_ad2c6f7c5134601f589034756d2837846}{Remove\+Volume}} (\doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume}{AIVSmoke\+Voxel\+Volume}} \texorpdfstring{$\ast$}{*}Volume)
+\item 
+bool \doxymbox{\hyperlink{class_f_i_v_smoke_renderer_a2de00378272c8dbaa80ce8afed0109b8}{Has\+Volumes}} () const
+\item 
+const TArray$<$ TWeak\+Object\+Ptr$<$ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume}{AIVSmoke\+Voxel\+Volume}} $>$ $>$ \& \doxymbox{\hyperlink{class_f_i_v_smoke_renderer_a19a1aa4bbb02c12568ce4e99e6a8fab4}{Get\+Volumes}} () const
+\item 
+FCritical\+Section \& \doxymbox{\hyperlink{class_f_i_v_smoke_renderer_a81bb37ad5900cfbb494d053976d516b6}{Get\+Volumes\+Mutex}} () const
+\item 
+\doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data}{FIVSmoke\+Packed\+Render\+Data}} \doxymbox{\hyperlink{class_f_i_v_smoke_renderer_a3557efa5920ad3a1ed184fcf98aad68c}{Prepare\+Render\+Data}} (const TArray$<$ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume}{AIVSmoke\+Voxel\+Volume}} \texorpdfstring{$\ast$}{*} $>$ \&In\+Volumes)
+\item 
+void \doxymbox{\hyperlink{class_f_i_v_smoke_renderer_a07ee517d53c93cd4daceb9c5f977bb74}{Set\+Cached\+Render\+Data}} (\doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data}{FIVSmoke\+Packed\+Render\+Data}} \&\&In\+Render\+Data)
+\item 
+FScreen\+Pass\+Texture \doxymbox{\hyperlink{class_f_i_v_smoke_renderer_a434b16865d2b3c9b26adf6843218b476}{Render}} (FRDGBuilder \&Graph\+Builder, const FScene\+View \&View, const FPost\+Process\+Material\+Inputs \&Inputs)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_renderer_a7e118472eeada864cd577f8a2c2d8d9e}\label{class_f_i_v_smoke_renderer_a7e118472eeada864cd577f8a2c2d8d9e} 
+static \doxymbox{\hyperlink{class_f_i_v_smoke_renderer}{FIVSmoke\+Renderer}} \& {\bfseries Get} ()
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Manages registered smoke volumes and handles rendering. Owns shared rendering resources (noise volume) and reads settings from \doxylink{class_u_i_v_smoke_settings}{UIVSmoke\+Settings}. 
+
+\label{doc-func-members}
+\Hypertarget{class_f_i_v_smoke_renderer_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_i_v_smoke_renderer_ad65a8d127d524eedb10207fc13b9fb4d}\index{FIVSmokeRenderer@{FIVSmokeRenderer}!AddVolume@{AddVolume}}
+\index{AddVolume@{AddVolume}!FIVSmokeRenderer@{FIVSmokeRenderer}}
+\doxysubsubsection{\texorpdfstring{AddVolume()}{AddVolume()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_renderer_ad65a8d127d524eedb10207fc13b9fb4d} 
+void FIVSmoke\+Renderer::\+\+Add\+Volume (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume}{AIVSmoke\+Voxel\+Volume}} \texorpdfstring{$\ast$}{*}}]{Volume}{}\end{DoxyParamCaption})}
+
+Register a smoke volume for rendering. Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_i_v_smoke_renderer_ad65a8d127d524eedb10207fc13b9fb4d_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_i_v_smoke_renderer_a19a1aa4bbb02c12568ce4e99e6a8fab4}\index{FIVSmokeRenderer@{FIVSmokeRenderer}!GetVolumes@{GetVolumes}}
+\index{GetVolumes@{GetVolumes}!FIVSmokeRenderer@{FIVSmokeRenderer}}
+\doxysubsubsection{\texorpdfstring{GetVolumes()}{GetVolumes()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_renderer_a19a1aa4bbb02c12568ce4e99e6a8fab4} 
+const TArray$<$ TWeak\+Object\+Ptr$<$ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume}{AIVSmoke\+Voxel\+Volume}} $>$ $>$ \& FIVSmoke\+Renderer::\+\+Get\+Volumes (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Access to volumes array (for Prepare\+Render\+Data). \Hypertarget{class_f_i_v_smoke_renderer_a81bb37ad5900cfbb494d053976d516b6}\index{FIVSmokeRenderer@{FIVSmokeRenderer}!GetVolumesMutex@{GetVolumesMutex}}
+\index{GetVolumesMutex@{GetVolumesMutex}!FIVSmokeRenderer@{FIVSmokeRenderer}}
+\doxysubsubsection{\texorpdfstring{GetVolumesMutex()}{GetVolumesMutex()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_renderer_a81bb37ad5900cfbb494d053976d516b6} 
+FCritical\+Section \& FIVSmoke\+Renderer::\+\+Get\+Volumes\+Mutex (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Access to volumes mutex (for thread-\/safe iteration). \Hypertarget{class_f_i_v_smoke_renderer_a2de00378272c8dbaa80ce8afed0109b8}\index{FIVSmokeRenderer@{FIVSmokeRenderer}!HasVolumes@{HasVolumes}}
+\index{HasVolumes@{HasVolumes}!FIVSmokeRenderer@{FIVSmokeRenderer}}
+\doxysubsubsection{\texorpdfstring{HasVolumes()}{HasVolumes()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_renderer_a2de00378272c8dbaa80ce8afed0109b8} 
+bool FIVSmoke\+Renderer::\+\+Has\+Volumes (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+Check if any volumes are registered for rendering. \Hypertarget{class_f_i_v_smoke_renderer_a32ceb1e4b56594a7c68a99e32ddf9f3c}\index{FIVSmokeRenderer@{FIVSmokeRenderer}!Initialize@{Initialize}}
+\index{Initialize@{Initialize}!FIVSmokeRenderer@{FIVSmokeRenderer}}
+\doxysubsubsection{\texorpdfstring{Initialize()}{Initialize()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_renderer_a32ceb1e4b56594a7c68a99e32ddf9f3c} 
+void FIVSmoke\+Renderer::\+\+Initialize (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Initialize renderer resources. Called on first use or settings change. \Hypertarget{class_f_i_v_smoke_renderer_ad3e4ca785257d273ac9f43d00347d902}\index{FIVSmokeRenderer@{FIVSmokeRenderer}!IsInitialized@{IsInitialized}}
+\index{IsInitialized@{IsInitialized}!FIVSmokeRenderer@{FIVSmokeRenderer}}
+\doxysubsubsection{\texorpdfstring{IsInitialized()}{IsInitialized()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_renderer_ad3e4ca785257d273ac9f43d00347d902} 
+bool FIVSmoke\+Renderer::\+\+Is\+Initialized (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Check if renderer is initialized with valid resources. \Hypertarget{class_f_i_v_smoke_renderer_a3557efa5920ad3a1ed184fcf98aad68c}\index{FIVSmokeRenderer@{FIVSmokeRenderer}!PrepareRenderData@{PrepareRenderData}}
+\index{PrepareRenderData@{PrepareRenderData}!FIVSmokeRenderer@{FIVSmokeRenderer}}
+\doxysubsubsection{\texorpdfstring{PrepareRenderData()}{PrepareRenderData()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_renderer_a3557efa5920ad3a1ed184fcf98aad68c} 
+\doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data}{FIVSmoke\+Packed\+Render\+Data}} FIVSmoke\+Renderer::\+\+Prepare\+Render\+Data (\begin{DoxyParamCaption}\item[{const TArray$<$ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume}{AIVSmoke\+Voxel\+Volume}} \texorpdfstring{$\ast$}{*} $>$ \&}]{In\+Volumes}{}\end{DoxyParamCaption})}
+
+Prepare render data from all registered volumes. Must be called on Game Thread. Copies and packs all volume data for safe Render Thread access.
+
+
+\begin{DoxyParams}{Parameters}
+{\em In\+Volumes} & Array of volumes to process \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Packed render data ready for Render Thread 
+\end{DoxyReturn}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_i_v_smoke_renderer_a3557efa5920ad3a1ed184fcf98aad68c_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_i_v_smoke_renderer_ad2c6f7c5134601f589034756d2837846}\index{FIVSmokeRenderer@{FIVSmokeRenderer}!RemoveVolume@{RemoveVolume}}
+\index{RemoveVolume@{RemoveVolume}!FIVSmokeRenderer@{FIVSmokeRenderer}}
+\doxysubsubsection{\texorpdfstring{RemoveVolume()}{RemoveVolume()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_renderer_ad2c6f7c5134601f589034756d2837846} 
+void FIVSmoke\+Renderer::\+\+Remove\+Volume (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume}{AIVSmoke\+Voxel\+Volume}} \texorpdfstring{$\ast$}{*}}]{Volume}{}\end{DoxyParamCaption})}
+
+Unregister a smoke volume from rendering. \Hypertarget{class_f_i_v_smoke_renderer_a434b16865d2b3c9b26adf6843218b476}\index{FIVSmokeRenderer@{FIVSmokeRenderer}!Render@{Render}}
+\index{Render@{Render}!FIVSmokeRenderer@{FIVSmokeRenderer}}
+\doxysubsubsection{\texorpdfstring{Render()}{Render()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_renderer_a434b16865d2b3c9b26adf6843218b476} 
+FScreen\+Pass\+Texture FIVSmoke\+Renderer::\+\+Render (\begin{DoxyParamCaption}\item[{FRDGBuilder \&}]{Graph\+Builder}{, }\item[{const FScene\+View \&}]{View}{, }\item[{const FPost\+Process\+Material\+Inputs \&}]{Inputs}{}\end{DoxyParamCaption})}
+
+Main render entry point called from Scene\+View\+Extension.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Graph\+Builder} & RDG builder \\
+\hline
+{\em View} & Current scene view \\
+\hline
+{\em Inputs} & Post-\/process material inputs \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Output texture after smoke rendering 
+\end{DoxyReturn}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_i_v_smoke_renderer_a434b16865d2b3c9b26adf6843218b476_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_f_i_v_smoke_renderer_a07ee517d53c93cd4daceb9c5f977bb74}\index{FIVSmokeRenderer@{FIVSmokeRenderer}!SetCachedRenderData@{SetCachedRenderData}}
+\index{SetCachedRenderData@{SetCachedRenderData}!FIVSmokeRenderer@{FIVSmokeRenderer}}
+\doxysubsubsection{\texorpdfstring{SetCachedRenderData()}{SetCachedRenderData()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_renderer_a07ee517d53c93cd4daceb9c5f977bb74} 
+void FIVSmoke\+Renderer::\+\+Set\+Cached\+Render\+Data (\begin{DoxyParamCaption}\item[{\doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data}{FIVSmoke\+Packed\+Render\+Data}} \&\&}]{In\+Render\+Data}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Set cached render data for next frame. Called from Render Thread via ENQUEUE\+\_\+\+RENDER\+\_\+\+COMMAND. \Hypertarget{class_f_i_v_smoke_renderer_ab1678805f0a5f66e9e739dad3e5a03f9}\index{FIVSmokeRenderer@{FIVSmokeRenderer}!Shutdown@{Shutdown}}
+\index{Shutdown@{Shutdown}!FIVSmokeRenderer@{FIVSmokeRenderer}}
+\doxysubsubsection{\texorpdfstring{Shutdown()}{Shutdown()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_renderer_ab1678805f0a5f66e9e739dad3e5a03f9} 
+void FIVSmoke\+Renderer::\+\+Shutdown (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Release renderer resources. 
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Renderer.\+h\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Private/\+IVSmoke\+Renderer.\+cpp\end{DoxyCompactItemize}

@@ -1,0 +1,135 @@
+\doxysection{FIVSmoke\+Cascade\+Data Struct Reference}
+\hypertarget{struct_f_i_v_smoke_cascade_data}{}\label{struct_f_i_v_smoke_cascade_data}\index{FIVSmokeCascadeData@{FIVSmokeCascadeData}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+CSMRenderer.\+h$>$}
+
+
+
+Collaboration diagram for FIVSmoke\+Cascade\+Data:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=195pt]{struct_f_i_v_smoke_cascade_data__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+int32 \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_a8f5233381fd828e4bb87c4ec01e5db9f}{Cascade\+Index}} = 0
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_ad93f96b234416b110378e68c0c60bc9e}{Near\+Plane}} = 0.\+0f
+\item 
+\Hypertarget{struct_f_i_v_smoke_cascade_data_aff8cd22ec038db60f634693a838be43b}\label{struct_f_i_v_smoke_cascade_data_aff8cd22ec038db60f634693a838be43b} 
+float {\bfseries Far\+Plane} = 0.\+0f
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_a948ae8d315d688a9e0f322f6eb53ae55}{Ortho\+Width}} = 0.\+0f
+\item 
+FMatrix \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_a3fc7dad7979c35706f2254a958946631}{View\+Projection\+Matrix}} = FMatrix::\+\+Identity
+\item 
+FVector \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_a0039cab43f51236cd6f22f02be1b034f}{Light\+Camera\+Position}} = FVector::\+\+Zero\+Vector
+\item 
+FVector \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_af4d1eca98095ef1a2033d1ef16513680}{Light\+Camera\+Forward}} = FVector(0.\+0f, 0.\+0f, -\/1.\+0f)
+\item 
+TObject\+Ptr$<$ UTexture\+Render\+Target2D $>$ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_ace3bc2f6a41fc32f26ca0d4d8a1253c2}{Depth\+RT}} = nullptr
+\item 
+TObject\+Ptr$<$ UTexture\+Render\+Target2D $>$ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_a0f61eb1aebdf3d6cdc5614bd593825db}{VSMRT}} = nullptr
+\item 
+TObject\+Ptr$<$ UScene\+Capture\+Component2D $>$ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_a4875b5adc349b9481221822ac01d9198}{Capture\+Component}} = nullptr
+\item 
+bool \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_aab1965d6abd0a94365157ce5fdfb473f}{b\+Needs\+Capture}} = true
+\item 
+uint32 \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_ad7dda89d1940083d7752198659007428}{Last\+Capture\+Frame}} = 0
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Data for a single shadow cascade. Contains render targets, matrices, and update state.\hypertarget{struct_f_i_v_smoke_cascade_data_autotoc_md2}{}\doxysubsection{\texorpdfstring{TIMING MODEL (Single-\/\+Buffer):\+}{TIMING MODEL (Single-\/\+Buffer):\+}}\label{struct_f_i_v_smoke_cascade_data_autotoc_md2}
+This uses a SINGLE-\/\+BUFFER approach because Scene\+Capture\+Component2D with b\+Capture\+Every\+Frame=true executes capture in the SAME frame\textquotesingle{}s render pass.
+
+Frame N timeline:\+
+\begin{DoxyEnumerate}
+\item Game Thread:\+ Update() calculates VP matrix and sets Capture\+Component transform
+\item Render Thread:\+ Scene\+Capture\+Component2D captures depth using current transform
+\item Render Thread:\+ Ray march shader samples the captured texture with VP matrix
+\end{DoxyEnumerate}
+
+Since capture and sampling happen in the SAME frame, no double-\/buffering is needed. The VP matrix calculated in Update() matches the texture captured in the same frame.
+
+NOTE:\+ Double-\/buffering would be needed if capture happened at END of frame and \hypertarget{struct_f_i_v_smoke_cascade_data_autotoc_md3}{}\doxysubsection{\texorpdfstring{sampling happened at START of next frame, but that\textquotesingle{}s not the case here.}{sampling happened at START of next frame, but that\textquotesingle{}s not the case here.}}\label{struct_f_i_v_smoke_cascade_data_autotoc_md3}
+
+
+\label{doc-variable-members}
+\Hypertarget{struct_f_i_v_smoke_cascade_data_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{struct_f_i_v_smoke_cascade_data_aab1965d6abd0a94365157ce5fdfb473f}\index{FIVSmokeCascadeData@{FIVSmokeCascadeData}!bNeedsCapture@{bNeedsCapture}}
+\index{bNeedsCapture@{bNeedsCapture}!FIVSmokeCascadeData@{FIVSmokeCascadeData}}
+\doxysubsubsection{\texorpdfstring{bNeedsCapture}{bNeedsCapture}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_cascade_data_aab1965d6abd0a94365157ce5fdfb473f} 
+bool FIVSmoke\+Cascade\+Data::\+b\+Needs\+Capture = true}
+
+Whether this cascade needs capture this frame. \Hypertarget{struct_f_i_v_smoke_cascade_data_a4875b5adc349b9481221822ac01d9198}\index{FIVSmokeCascadeData@{FIVSmokeCascadeData}!CaptureComponent@{CaptureComponent}}
+\index{CaptureComponent@{CaptureComponent}!FIVSmokeCascadeData@{FIVSmokeCascadeData}}
+\doxysubsubsection{\texorpdfstring{CaptureComponent}{CaptureComponent}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_cascade_data_a4875b5adc349b9481221822ac01d9198} 
+TObject\+Ptr$<$UScene\+Capture\+Component2D$>$ FIVSmoke\+Cascade\+Data::\+\+Capture\+Component = nullptr}
+
+Scene capture component for this cascade. \Hypertarget{struct_f_i_v_smoke_cascade_data_a8f5233381fd828e4bb87c4ec01e5db9f}\index{FIVSmokeCascadeData@{FIVSmokeCascadeData}!CascadeIndex@{CascadeIndex}}
+\index{CascadeIndex@{CascadeIndex}!FIVSmokeCascadeData@{FIVSmokeCascadeData}}
+\doxysubsubsection{\texorpdfstring{CascadeIndex}{CascadeIndex}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_cascade_data_a8f5233381fd828e4bb87c4ec01e5db9f} 
+int32 FIVSmoke\+Cascade\+Data::\+\+Cascade\+Index = 0}
+
+Cascade index (0 = nearest, N-\/1 = farthest). \Hypertarget{struct_f_i_v_smoke_cascade_data_ace3bc2f6a41fc32f26ca0d4d8a1253c2}\index{FIVSmokeCascadeData@{FIVSmokeCascadeData}!DepthRT@{DepthRT}}
+\index{DepthRT@{DepthRT}!FIVSmokeCascadeData@{FIVSmokeCascadeData}}
+\doxysubsubsection{\texorpdfstring{DepthRT}{DepthRT}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_cascade_data_ace3bc2f6a41fc32f26ca0d4d8a1253c2} 
+TObject\+Ptr$<$UTexture\+Render\+Target2D$>$ FIVSmoke\+Cascade\+Data::\+\+Depth\+RT = nullptr}
+
+Depth render target (R32F). \Hypertarget{struct_f_i_v_smoke_cascade_data_ad7dda89d1940083d7752198659007428}\index{FIVSmokeCascadeData@{FIVSmokeCascadeData}!LastCaptureFrame@{LastCaptureFrame}}
+\index{LastCaptureFrame@{LastCaptureFrame}!FIVSmokeCascadeData@{FIVSmokeCascadeData}}
+\doxysubsubsection{\texorpdfstring{LastCaptureFrame}{LastCaptureFrame}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_cascade_data_ad7dda89d1940083d7752198659007428} 
+uint32 FIVSmoke\+Cascade\+Data::\+\+Last\+Capture\+Frame = 0}
+
+Frame number when last captured. \Hypertarget{struct_f_i_v_smoke_cascade_data_af4d1eca98095ef1a2033d1ef16513680}\index{FIVSmokeCascadeData@{FIVSmokeCascadeData}!LightCameraForward@{LightCameraForward}}
+\index{LightCameraForward@{LightCameraForward}!FIVSmokeCascadeData@{FIVSmokeCascadeData}}
+\doxysubsubsection{\texorpdfstring{LightCameraForward}{LightCameraForward}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_cascade_data_af4d1eca98095ef1a2033d1ef16513680} 
+FVector FIVSmoke\+Cascade\+Data::\+\+Light\+Camera\+Forward = FVector(0.\+0f, 0.\+0f, -\/1.\+0f)}
+
+Light camera forward direction (light travel direction, opposite of light source). \Hypertarget{struct_f_i_v_smoke_cascade_data_a0039cab43f51236cd6f22f02be1b034f}\index{FIVSmokeCascadeData@{FIVSmokeCascadeData}!LightCameraPosition@{LightCameraPosition}}
+\index{LightCameraPosition@{LightCameraPosition}!FIVSmokeCascadeData@{FIVSmokeCascadeData}}
+\doxysubsubsection{\texorpdfstring{LightCameraPosition}{LightCameraPosition}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_cascade_data_a0039cab43f51236cd6f22f02be1b034f} 
+FVector FIVSmoke\+Cascade\+Data::\+\+Light\+Camera\+Position = FVector::\+\+Zero\+Vector}
+
+Light camera position for this cascade (after texel snapping). \Hypertarget{struct_f_i_v_smoke_cascade_data_ad93f96b234416b110378e68c0c60bc9e}\index{FIVSmokeCascadeData@{FIVSmokeCascadeData}!NearPlane@{NearPlane}}
+\index{NearPlane@{NearPlane}!FIVSmokeCascadeData@{FIVSmokeCascadeData}}
+\doxysubsubsection{\texorpdfstring{NearPlane}{NearPlane}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_cascade_data_ad93f96b234416b110378e68c0c60bc9e} 
+float FIVSmoke\+Cascade\+Data::\+\+Near\+Plane = 0.\+0f}
+
+View distance range for this cascade. \Hypertarget{struct_f_i_v_smoke_cascade_data_a948ae8d315d688a9e0f322f6eb53ae55}\index{FIVSmokeCascadeData@{FIVSmokeCascadeData}!OrthoWidth@{OrthoWidth}}
+\index{OrthoWidth@{OrthoWidth}!FIVSmokeCascadeData@{FIVSmokeCascadeData}}
+\doxysubsubsection{\texorpdfstring{OrthoWidth}{OrthoWidth}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_cascade_data_a948ae8d315d688a9e0f322f6eb53ae55} 
+float FIVSmoke\+Cascade\+Data::\+\+Ortho\+Width = 0.\+0f}
+
+Orthographic projection width for this cascade. \Hypertarget{struct_f_i_v_smoke_cascade_data_a3fc7dad7979c35706f2254a958946631}\index{FIVSmokeCascadeData@{FIVSmokeCascadeData}!ViewProjectionMatrix@{ViewProjectionMatrix}}
+\index{ViewProjectionMatrix@{ViewProjectionMatrix}!FIVSmokeCascadeData@{FIVSmokeCascadeData}}
+\doxysubsubsection{\texorpdfstring{ViewProjectionMatrix}{ViewProjectionMatrix}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_cascade_data_a3fc7dad7979c35706f2254a958946631} 
+FMatrix FIVSmoke\+Cascade\+Data::\+\+View\+Projection\+Matrix = FMatrix::\+\+Identity}
+
+View-\/projection matrix for world-\/to-\/light-\/clip transform. \Hypertarget{struct_f_i_v_smoke_cascade_data_a0f61eb1aebdf3d6cdc5614bd593825db}\index{FIVSmokeCascadeData@{FIVSmokeCascadeData}!VSMRT@{VSMRT}}
+\index{VSMRT@{VSMRT}!FIVSmokeCascadeData@{FIVSmokeCascadeData}}
+\doxysubsubsection{\texorpdfstring{VSMRT}{VSMRT}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_cascade_data_a0f61eb1aebdf3d6cdc5614bd593825db} 
+TObject\+Ptr$<$UTexture\+Render\+Target2D$>$ FIVSmoke\+Cascade\+Data::\+\+VSMRT = nullptr}
+
+Variance Shadow Map render target (RG32F). 
+
+The documentation for this struct was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+CSMRenderer.\+h\end{DoxyCompactItemize}

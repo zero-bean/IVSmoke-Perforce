@@ -1,0 +1,221 @@
+\doxysection{UIVSmoke\+Hole\+Preset Class Reference}
+\hypertarget{class_u_i_v_smoke_hole_preset}{}\label{class_u_i_v_smoke_hole_preset}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Hole\+Preset.\+h$>$}
+
+
+
+Inheritance diagram for UIVSmoke\+Hole\+Preset:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=263pt]{class_u_i_v_smoke_hole_preset__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for UIVSmoke\+Hole\+Preset:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=263pt]{class_u_i_v_smoke_hole_preset__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+FORCEINLINE uint8 \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a9687dee2ec054de02a0fb8ce04cf2a42}{Get\+Preset\+ID}} () const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static TObject\+Ptr$<$ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmoke\+Hole\+Preset}} $>$ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a300dac8b9302a325fb01ac066d9c8059}{Find\+By\+ID}} (const uint8 In\+Preset\+ID)
+\item 
+static void \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_ac80a193384a86fd7a289aafe9f98e331}{Get\+Curve\+Samples}} (const UCurve\+Float \texorpdfstring{$\ast$}{*}Curve, const int32 Sample\+Count, float \texorpdfstring{$\ast$}{*}Out\+Curve\+Samples)
+\item 
+static float \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a2e316eec56121140e853f05647266c38}{Get\+Float\+Value}} (const TObject\+Ptr$<$ UCurve\+Float $>$ Curve, const float X)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+EIVSmoke\+Hole\+Type \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_acb93f8d44ca74a2b0b313aa4c888274b}{Hole\+Type}} = EIVSmoke\+Hole\+Type::\+\+Penetration
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a3b713bdef21708f036d291be731ab845}{Radius}} = 50.\+0f
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_aa18b922ee7aeba5183dd418ff071d248}{Duration}} = 3.\+0f
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_ad6b22aaed79221289f4a5d3548b6e525}{Softness}} = 0.\+3f
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a21567590774d935411783dcded46969e}{Expansion\+Duration}} = 0.\+15f
+\item 
+TObject\+Ptr$<$ UCurve\+Float $>$ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_ae9327b78b57a6872131b9db2b740a47f}{Expansion\+Fade\+Range\+Curve\+Over\+Time}}
+\item 
+TObject\+Ptr$<$ UCurve\+Float $>$ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a6c85440b4331d18ef05fd1830c617c5d}{Shrink\+Fade\+Range\+Curve\+Over\+Time}}
+\item 
+TObject\+Ptr$<$ UCurve\+Float $>$ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a199f71d3fcb67a73a62f75b7578ac497}{Shrink\+Density\+Mul\+Curve\+Over\+Time}}
+\item 
+TObject\+Ptr$<$ UCurve\+Float $>$ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_ab10c50d4d7ffd9392da54f01b5b1d6cf}{Distortion\+Curve\+Over\+Time}}
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a8865ba3a05ee41731e0d7a4da4e6ee85}{Distortion\+Distance}} = 0.\+0f
+\item 
+TObject\+Ptr$<$ UCurve\+Float $>$ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a99cfe623120eda040ed1324dc31d33e8}{Distortion\+Curve\+Over\+Distance}}
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a17dd06bd16f09c6596ae5988b95b1d9a}{End\+Radius}} = 25.\+0f
+\item 
+FVector3f \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a88102446429f7eeca1644b282805a313}{Extent}} = FVector3f(50.f, 50.f, 50.f)
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a50d94a7edf240aac96aaec0294c1d4fb}{Distance\+Threshold}} = 50.\+0f
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_u_i_v_smoke_hole_preset_a5e6c607c27cc9e5ea6995df14d6d0ab1}\label{class_u_i_v_smoke_hole_preset_a5e6c607c27cc9e5ea6995df14d6d0ab1} 
+virtual void {\bfseries Post\+Load} () override
+\item 
+\Hypertarget{class_u_i_v_smoke_hole_preset_a2423ae3b9014b3664e15a2505c471d41}\label{class_u_i_v_smoke_hole_preset_a2423ae3b9014b3664e15a2505c471d41} 
+virtual void {\bfseries Begin\+Destroy} () override
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Data asset containing hole configuration preset. Automatically registered to global registry on load. 
+
+\label{doc-func-members}
+\Hypertarget{class_u_i_v_smoke_hole_preset_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_u_i_v_smoke_hole_preset_a300dac8b9302a325fb01ac066d9c8059}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!FindByID@{FindByID}}
+\index{FindByID@{FindByID}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{FindByID()}{FindByID()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_a300dac8b9302a325fb01ac066d9c8059} 
+TObject\+Ptr$<$ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmoke\+Hole\+Preset}} $>$ UIVSmoke\+Hole\+Preset::\+\+Find\+By\+ID (\begin{DoxyParamCaption}\item[{const uint8}]{In\+Preset\+ID}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Find and return the preset with the key id. If not, return nullptr. \Hypertarget{class_u_i_v_smoke_hole_preset_ac80a193384a86fd7a289aafe9f98e331}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!GetCurveSamples@{GetCurveSamples}}
+\index{GetCurveSamples@{GetCurveSamples}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{GetCurveSamples()}{GetCurveSamples()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_ac80a193384a86fd7a289aafe9f98e331} 
+void UIVSmoke\+Hole\+Preset::\+\+Get\+Curve\+Samples (\begin{DoxyParamCaption}\item[{const UCurve\+Float \texorpdfstring{$\ast$}{*}}]{Curve}{, }\item[{const int32}]{Sample\+Count}{, }\item[{float \texorpdfstring{$\ast$}{*}}]{Out\+Curve\+Samples}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Samples the value from 0 to 1 of the curve by Sample\+Count and store the Out\+Curve\+Samples. if the curve is nullptr, early return 
+\begin{DoxyParams}{Parameters}
+{\em Curve} & Curve to be sampled \\
+\hline
+{\em Sample\+Count} & Sample\+Count. It should match the array size of the Out\+Curve\+Samples. \\
+\hline
+{\em Out\+Curve\+Samples} & Sampled array. \\
+\hline
+\end{DoxyParams}
+\Hypertarget{class_u_i_v_smoke_hole_preset_a2e316eec56121140e853f05647266c38}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!GetFloatValue@{GetFloatValue}}
+\index{GetFloatValue@{GetFloatValue}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{GetFloatValue()}{GetFloatValue()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_a2e316eec56121140e853f05647266c38} 
+float UIVSmoke\+Hole\+Preset::\+\+Get\+Float\+Value (\begin{DoxyParamCaption}\item[{const TObject\+Ptr$<$ UCurve\+Float $>$}]{Curve}{, }\item[{const float}]{X}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Returns the y value corresponding to the x value of the curve. If the curve is nullptr, return 0. \Hypertarget{class_u_i_v_smoke_hole_preset_a9687dee2ec054de02a0fb8ce04cf2a42}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!GetPresetID@{GetPresetID}}
+\index{GetPresetID@{GetPresetID}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{GetPresetID()}{GetPresetID()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_a9687dee2ec054de02a0fb8ce04cf2a42} 
+FORCEINLINE uint8 UIVSmoke\+Hole\+Preset::\+\+Get\+Preset\+ID (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns the this preset id. Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=193pt]{class_u_i_v_smoke_hole_preset_a9687dee2ec054de02a0fb8ce04cf2a42_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_u_i_v_smoke_hole_preset_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_u_i_v_smoke_hole_preset_a50d94a7edf240aac96aaec0294c1d4fb}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!DistanceThreshold@{DistanceThreshold}}
+\index{DistanceThreshold@{DistanceThreshold}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{DistanceThreshold}{DistanceThreshold}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_a50d94a7edf240aac96aaec0294c1d4fb} 
+float UIVSmoke\+Hole\+Preset::\+\+Distance\+Threshold = 50.\+0f}
+
+Minimum travel distance to make a hole \Hypertarget{class_u_i_v_smoke_hole_preset_a99cfe623120eda040ed1324dc31d33e8}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!DistortionCurveOverDistance@{DistortionCurveOverDistance}}
+\index{DistortionCurveOverDistance@{DistortionCurveOverDistance}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{DistortionCurveOverDistance}{DistortionCurveOverDistance}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_a99cfe623120eda040ed1324dc31d33e8} 
+TObject\+Ptr$<$UCurve\+Float$>$ UIVSmoke\+Hole\+Preset::\+\+Distortion\+Curve\+Over\+Distance}
+
+Distortion degree curve over distance to explosion point. Use normalized x axis(distance) between 0 and 1 \Hypertarget{class_u_i_v_smoke_hole_preset_ab10c50d4d7ffd9392da54f01b5b1d6cf}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!DistortionCurveOverTime@{DistortionCurveOverTime}}
+\index{DistortionCurveOverTime@{DistortionCurveOverTime}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{DistortionCurveOverTime}{DistortionCurveOverTime}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_ab10c50d4d7ffd9392da54f01b5b1d6cf} 
+TObject\+Ptr$<$UCurve\+Float$>$ UIVSmoke\+Hole\+Preset::\+\+Distortion\+Curve\+Over\+Time}
+
+Distortion degree curve over expansion time. Use normalized time between 0 and 1 \Hypertarget{class_u_i_v_smoke_hole_preset_a8865ba3a05ee41731e0d7a4da4e6ee85}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!DistortionDistance@{DistortionDistance}}
+\index{DistortionDistance@{DistortionDistance}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{DistortionDistance}{DistortionDistance}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_a8865ba3a05ee41731e0d7a4da4e6ee85} 
+float UIVSmoke\+Hole\+Preset::\+\+Distortion\+Distance = 0.\+0f}
+
+Distortion degree max value. The degree of distortion is proportional to (dis(hole voxel to explosion point) /\+ radius). \Hypertarget{class_u_i_v_smoke_hole_preset_aa18b922ee7aeba5183dd418ff071d248}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!Duration@{Duration}}
+\index{Duration@{Duration}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{Duration}{Duration}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_aa18b922ee7aeba5183dd418ff071d248} 
+float UIVSmoke\+Hole\+Preset::\+\+Duration = 3.\+0f}
+
+Total effect duration. \Hypertarget{class_u_i_v_smoke_hole_preset_a17dd06bd16f09c6596ae5988b95b1d9a}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!EndRadius@{EndRadius}}
+\index{EndRadius@{EndRadius}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{EndRadius}{EndRadius}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_a17dd06bd16f09c6596ae5988b95b1d9a} 
+float UIVSmoke\+Hole\+Preset::\+\+End\+Radius = 25.\+0f}
+
+End\+Radius represents the radius at the End\+Position in a penetration hole. \Hypertarget{class_u_i_v_smoke_hole_preset_a21567590774d935411783dcded46969e}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!ExpansionDuration@{ExpansionDuration}}
+\index{ExpansionDuration@{ExpansionDuration}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{ExpansionDuration}{ExpansionDuration}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_a21567590774d935411783dcded46969e} 
+float UIVSmoke\+Hole\+Preset::\+\+Expansion\+Duration = 0.\+15f}
+
+Expansion time. The expansion time is used for expansion-\/related curve values. \Hypertarget{class_u_i_v_smoke_hole_preset_ae9327b78b57a6872131b9db2b740a47f}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!ExpansionFadeRangeCurveOverTime@{ExpansionFadeRangeCurveOverTime}}
+\index{ExpansionFadeRangeCurveOverTime@{ExpansionFadeRangeCurveOverTime}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{ExpansionFadeRangeCurveOverTime}{ExpansionFadeRangeCurveOverTime}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_ae9327b78b57a6872131b9db2b740a47f} 
+TObject\+Ptr$<$UCurve\+Float$>$ UIVSmoke\+Hole\+Preset::\+\+Expansion\+Fade\+Range\+Curve\+Over\+Time}
+
+Fade range curve over expansion time. Use normalized time between 0 and 1. \Hypertarget{class_u_i_v_smoke_hole_preset_a88102446429f7eeca1644b282805a313}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!Extent@{Extent}}
+\index{Extent@{Extent}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{Extent}{Extent}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_a88102446429f7eeca1644b282805a313} 
+FVector3f UIVSmoke\+Hole\+Preset::\+\+Extent = FVector3f(50.f, 50.f, 50.f)}
+
+The size of a hole \Hypertarget{class_u_i_v_smoke_hole_preset_acb93f8d44ca74a2b0b313aa4c888274b}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!HoleType@{HoleType}}
+\index{HoleType@{HoleType}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{HoleType}{HoleType}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_acb93f8d44ca74a2b0b313aa4c888274b} 
+EIVSmoke\+Hole\+Type UIVSmoke\+Hole\+Preset::\+\+Hole\+Type = EIVSmoke\+Hole\+Type::\+\+Penetration}
+
+Hole Type. 0 = Penetration, 1 = Explosion, 2 = Dynamic Create a hole in a different way depending on this value. \Hypertarget{class_u_i_v_smoke_hole_preset_a3b713bdef21708f036d291be731ab845}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!Radius@{Radius}}
+\index{Radius@{Radius}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{Radius}{Radius}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_a3b713bdef21708f036d291be731ab845} 
+float UIVSmoke\+Hole\+Preset::\+\+Radius = 50.\+0f}
+
+This radius range that affects. \Hypertarget{class_u_i_v_smoke_hole_preset_a199f71d3fcb67a73a62f75b7578ac497}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!ShrinkDensityMulCurveOverTime@{ShrinkDensityMulCurveOverTime}}
+\index{ShrinkDensityMulCurveOverTime@{ShrinkDensityMulCurveOverTime}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{ShrinkDensityMulCurveOverTime}{ShrinkDensityMulCurveOverTime}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_a199f71d3fcb67a73a62f75b7578ac497} 
+TObject\+Ptr$<$UCurve\+Float$>$ UIVSmoke\+Hole\+Preset::\+\+Shrink\+Density\+Mul\+Curve\+Over\+Time}
+
+Density multiply value curve over shrink time. Use normalized time between 0 and 1 \Hypertarget{class_u_i_v_smoke_hole_preset_a6c85440b4331d18ef05fd1830c617c5d}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!ShrinkFadeRangeCurveOverTime@{ShrinkFadeRangeCurveOverTime}}
+\index{ShrinkFadeRangeCurveOverTime@{ShrinkFadeRangeCurveOverTime}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{ShrinkFadeRangeCurveOverTime}{ShrinkFadeRangeCurveOverTime}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_a6c85440b4331d18ef05fd1830c617c5d} 
+TObject\+Ptr$<$UCurve\+Float$>$ UIVSmoke\+Hole\+Preset::\+\+Shrink\+Fade\+Range\+Curve\+Over\+Time}
+
+Fade out range curve over shrink time. At the end of the expansion time, the shrink time begins. Shrink\+Duration = Duration -\/ Expansion\+Duration Use normalized time between 0 and 1 \Hypertarget{class_u_i_v_smoke_hole_preset_ad6b22aaed79221289f4a5d3548b6e525}\index{UIVSmokeHolePreset@{UIVSmokeHolePreset}!Softness@{Softness}}
+\index{Softness@{Softness}!UIVSmokeHolePreset@{UIVSmokeHolePreset}}
+\doxysubsubsection{\texorpdfstring{Softness}{Softness}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_preset_ad6b22aaed79221289f4a5d3548b6e525} 
+float UIVSmoke\+Hole\+Preset::\+\+Softness = 0.\+3f}
+
+Softness of the edges. 0 = hard edge, 1 = soft gradient 
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Hole\+Preset.\+h\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Private/\+IVSmoke\+Hole\+Preset.\+cpp\end{DoxyCompactItemize}

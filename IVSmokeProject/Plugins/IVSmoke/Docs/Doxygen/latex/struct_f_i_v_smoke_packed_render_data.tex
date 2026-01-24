@@ -1,0 +1,244 @@
+\doxysection{FIVSmoke\+Packed\+Render\+Data Struct Reference}
+\hypertarget{struct_f_i_v_smoke_packed_render_data}{}\label{struct_f_i_v_smoke_packed_render_data}\index{FIVSmokePackedRenderData@{FIVSmokePackedRenderData}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Renderer.\+h$>$}
+
+
+
+Collaboration diagram for FIVSmoke\+Packed\+Render\+Data:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=220pt]{struct_f_i_v_smoke_packed_render_data__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a7c384d7104a8273ee15b3c6eac6370cb}{Reset}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+TArray$<$ float $>$ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a052ac503c2be38868843e86597f1b9f9}{Packed\+Voxel\+Birth\+Times}}
+\item 
+TArray$<$ float $>$ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a0e62820c6ff566e98c5cbb6b09cb6d07}{Packed\+Voxel\+Death\+Times}}
+\item 
+TArray$<$ \doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data}{FIVSmoke\+Volume\+GPUData}} $>$ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a1da45d51d370d65bca0045104871a4aa}{Volume\+Data\+Array}}
+\item 
+TArray$<$ FTexture\+RHIRef $>$ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a229b87682dc9d713e99f5284cc6c0ee9}{Hole\+Textures}}
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a4d26f28a0d7107b418e44bf438628f80}\label{struct_f_i_v_smoke_packed_render_data_a4d26f28a0d7107b418e44bf438628f80} 
+TArray$<$ FInt\+Vector $>$ {\bfseries Hole\+Texture\+Sizes}
+\item 
+FInt\+Vector \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_acf78e820c465ce2bc1835dcbbe33487e}{Voxel\+Resolution}} = FInt\+Vector::\+\+Zero\+Value
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_af7dc254e2b5543ad71e3ad00132d90f8}\label{struct_f_i_v_smoke_packed_render_data_af7dc254e2b5543ad71e3ad00132d90f8} 
+FInt\+Vector {\bfseries Hole\+Resolution} = FInt\+Vector::\+\+Zero\+Value
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_acc18b16dbcac5caa423a2529d8cff004}\label{struct_f_i_v_smoke_packed_render_data_acc18b16dbcac5caa423a2529d8cff004} 
+int32 {\bfseries Volume\+Count} = 0
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a9066f45f7e7b0f67200edb4fa5c4ce67}{Sharpness}} = 0.\+0f
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_aa4e3961cc66bf0e05c3b02daf1b37034}\label{struct_f_i_v_smoke_packed_render_data_aa4e3961cc66bf0e05c3b02daf1b37034} 
+int32 {\bfseries Max\+Steps} = 128
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_aaff586f59e9fce4c3da39660999bc588}\label{struct_f_i_v_smoke_packed_render_data_aaff586f59e9fce4c3da39660999bc588} 
+float {\bfseries Global\+Absorption} = 0.\+1f
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_aa0fbab2c707350c14bc0026b116bcb14}\label{struct_f_i_v_smoke_packed_render_data_aa0fbab2c707350c14bc0026b116bcb14} 
+float {\bfseries Smoke\+Size} = 128.\+0f
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a8f3da5e1555e98037a12da7575377cc3}\label{struct_f_i_v_smoke_packed_render_data_a8f3da5e1555e98037a12da7575377cc3} 
+float {\bfseries Smoke\+Density\+Falloff} = 0.\+2f
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a4ac5e116c026b5c3bf6d316a0180cb6b}\label{struct_f_i_v_smoke_packed_render_data_a4ac5e116c026b5c3bf6d316a0180cb6b} 
+FVector {\bfseries Wind\+Direction} = FVector(0.\+01f, 0.\+02f, 0.\+1f)
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a31b588644d18a6a2978fe899d2b1f0bb}\label{struct_f_i_v_smoke_packed_render_data_a31b588644d18a6a2978fe899d2b1f0bb} 
+float {\bfseries Volume\+Range\+Offset} = 0.\+1f
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_ac1c739a6d8d3741f7d63197d00bde701}\label{struct_f_i_v_smoke_packed_render_data_ac1c739a6d8d3741f7d63197d00bde701} 
+float {\bfseries Volume\+Edge\+Noise\+Fade\+Offset} = 0.\+04f
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a74a74b6e1233f48bdb6e2ce0e397ef50}\label{struct_f_i_v_smoke_packed_render_data_a74a74b6e1233f48bdb6e2ce0e397ef50} 
+float {\bfseries Volume\+Edge\+Fade\+Sharpness} = 3.\+5f
+\item 
+bool \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_aceead7e771820dacdbc3c072f23ca30c}{b\+Enable\+Scattering}} = true
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a7385faeb9a2df3fa352182c4d28c3bd9}\label{struct_f_i_v_smoke_packed_render_data_a7385faeb9a2df3fa352182c4d28c3bd9} 
+float {\bfseries Scatter\+Scale} = 0.\+5f
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_aafa8b47a05beac1182bf740541185211}\label{struct_f_i_v_smoke_packed_render_data_aafa8b47a05beac1182bf740541185211} 
+float {\bfseries Scattering\+Anisotropy} = 0.\+5f
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_abe1b61e560b279aec2f126b75fc6660d}\label{struct_f_i_v_smoke_packed_render_data_abe1b61e560b279aec2f126b75fc6660d} 
+FVector {\bfseries Light\+Direction} = FVector(0.\+2f, 0.\+1f, 0.\+9f)
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a460bfce3d92890e132ed26be0a34bcd7}\label{struct_f_i_v_smoke_packed_render_data_a460bfce3d92890e132ed26be0a34bcd7} 
+FLinear\+Color {\bfseries Light\+Color} = FLinear\+Color::\+\+White
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a545954d5a08c8ebe43d616c9c672ac1e}\label{struct_f_i_v_smoke_packed_render_data_a545954d5a08c8ebe43d616c9c672ac1e} 
+float {\bfseries Light\+Intensity} = 1.\+0f
+\item 
+bool \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a0b6e2811efbfbcf5a64ee0bdce8a405b}{b\+Enable\+Self\+Shadowing}} = true
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a50e0c02257b107dbacbc169e70edcfe0}\label{struct_f_i_v_smoke_packed_render_data_a50e0c02257b107dbacbc169e70edcfe0} 
+int32 {\bfseries Light\+Marching\+Steps} = 6
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_abf1f9ac1f889c4c90295afd61e7a3f8d}\label{struct_f_i_v_smoke_packed_render_data_abf1f9ac1f889c4c90295afd61e7a3f8d} 
+float {\bfseries Light\+Marching\+Distance} = 0.\+0f
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_aa882d71fe915868c654ff2aabb1f58a1}\label{struct_f_i_v_smoke_packed_render_data_aa882d71fe915868c654ff2aabb1f58a1} 
+float {\bfseries Light\+Marching\+Exp\+Factor} = 2.\+0f
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a124e6bc779156cfda3d1b40bececcacf}\label{struct_f_i_v_smoke_packed_render_data_a124e6bc779156cfda3d1b40bececcacf} 
+float {\bfseries Shadow\+Ambient} = 0.\+2f
+\item 
+int32 \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a0c37c6d9b877ddec1d606754bccb8a8d}{Num\+Cascades}} = 0
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a4aa6f5a6041aac792595b99d7c9a2c50}\label{struct_f_i_v_smoke_packed_render_data_a4aa6f5a6041aac792595b99d7c9a2c50} 
+TArray$<$ FTexture\+RHIRef $>$ {\bfseries CSMDepth\+Textures}
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_aa8a416d488250ddab6acc8366c2b1a2c}\label{struct_f_i_v_smoke_packed_render_data_aa8a416d488250ddab6acc8366c2b1a2c} 
+TArray$<$ FTexture\+RHIRef $>$ {\bfseries CSMVSMTextures}
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a4544f3c3c4bf7e284fd359480ca03807}\label{struct_f_i_v_smoke_packed_render_data_a4544f3c3c4bf7e284fd359480ca03807} 
+TArray$<$ FMatrix $>$ {\bfseries CSMView\+Projection\+Matrices}
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_ac49c0866378c14c7c2dbd7cbebc80db8}\label{struct_f_i_v_smoke_packed_render_data_ac49c0866378c14c7c2dbd7cbebc80db8} 
+TArray$<$ float $>$ {\bfseries CSMSplit\+Distances}
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_aed9f443c407234e6a635bbcf6b2c2cf2}\label{struct_f_i_v_smoke_packed_render_data_aed9f443c407234e6a635bbcf6b2c2cf2} 
+TArray$<$ FVector $>$ {\bfseries CSMLight\+Camera\+Positions}
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a3765048670fac7a4a2fb0b872179ee6e}\label{struct_f_i_v_smoke_packed_render_data_a3765048670fac7a4a2fb0b872179ee6e} 
+TArray$<$ FVector $>$ {\bfseries CSMLight\+Camera\+Forwards}
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a2082054411c668a7e587242bba90eb4c}\label{struct_f_i_v_smoke_packed_render_data_a2082054411c668a7e587242bba90eb4c} 
+float {\bfseries Cascade\+Blend\+Range} = 0.\+1f
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a69c8ed85158ba364e8971ebb7006ff84}\label{struct_f_i_v_smoke_packed_render_data_a69c8ed85158ba364e8971ebb7006ff84} 
+float {\bfseries Shadow\+Depth\+Bias} = 1.\+0f
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a8a597e3530eaf8ee57917714484dc332}\label{struct_f_i_v_smoke_packed_render_data_a8a597e3530eaf8ee57917714484dc332} 
+float {\bfseries External\+Shadow\+Ambient} = 0.\+3f
+\item 
+bool \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_aba57625ebb8dc475b42634aef85eda53}{b\+Enable\+VSM}} = true
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a17b450c878dba68ee8c81074f95d7fff}\label{struct_f_i_v_smoke_packed_render_data_a17b450c878dba68ee8c81074f95d7fff} 
+float {\bfseries VSMMin\+Variance} = 0.\+0001f
+\item 
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a7de48a482320acaaab4b79152899ddf7}\label{struct_f_i_v_smoke_packed_render_data_a7de48a482320acaaab4b79152899ddf7} 
+float {\bfseries VSMLight\+Bleeding\+Reduction} = 0.\+2f
+\item 
+FVector \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_aaa5319bce05f3e73e2deba6c1f153297}{CSMMain\+Camera\+Position}} = FVector::\+\+Zero\+Vector
+\item 
+bool \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a5b76a12cb243263c103c1f750d9d396c}{b\+Is\+Valid}} = false
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a0de09d83af0979e87959ae45760f17c0}{Game\+Time}} = 0.\+0f
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Packed render data for all smoke volumes. Created on Game Thread, consumed on Render Thread. Contains all data needed for rendering without accessing Volume actors. 
+
+\label{doc-func-members}
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_a7c384d7104a8273ee15b3c6eac6370cb}\index{FIVSmokePackedRenderData@{FIVSmokePackedRenderData}!Reset@{Reset}}
+\index{Reset@{Reset}!FIVSmokePackedRenderData@{FIVSmokePackedRenderData}}
+\doxysubsubsection{\texorpdfstring{Reset()}{Reset()}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_packed_render_data_a7c384d7104a8273ee15b3c6eac6370cb} 
+void FIVSmoke\+Packed\+Render\+Data::\+\+Reset (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Reset to invalid state 
+
+\label{doc-variable-members}
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{struct_f_i_v_smoke_packed_render_data_aceead7e771820dacdbc3c072f23ca30c}\index{FIVSmokePackedRenderData@{FIVSmokePackedRenderData}!bEnableScattering@{bEnableScattering}}
+\index{bEnableScattering@{bEnableScattering}!FIVSmokePackedRenderData@{FIVSmokePackedRenderData}}
+\doxysubsubsection{\texorpdfstring{bEnableScattering}{bEnableScattering}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_packed_render_data_aceead7e771820dacdbc3c072f23ca30c} 
+bool FIVSmoke\+Packed\+Render\+Data::\+b\+Enable\+Scattering = true}
+
+Scattering parameters \Hypertarget{struct_f_i_v_smoke_packed_render_data_a0b6e2811efbfbcf5a64ee0bdce8a405b}\index{FIVSmokePackedRenderData@{FIVSmokePackedRenderData}!bEnableSelfShadowing@{bEnableSelfShadowing}}
+\index{bEnableSelfShadowing@{bEnableSelfShadowing}!FIVSmokePackedRenderData@{FIVSmokePackedRenderData}}
+\doxysubsubsection{\texorpdfstring{bEnableSelfShadowing}{bEnableSelfShadowing}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_packed_render_data_a0b6e2811efbfbcf5a64ee0bdce8a405b} 
+bool FIVSmoke\+Packed\+Render\+Data::\+b\+Enable\+Self\+Shadowing = true}
+
+Self-\/shadowing parameters \Hypertarget{struct_f_i_v_smoke_packed_render_data_aba57625ebb8dc475b42634aef85eda53}\index{FIVSmokePackedRenderData@{FIVSmokePackedRenderData}!bEnableVSM@{bEnableVSM}}
+\index{bEnableVSM@{bEnableVSM}!FIVSmokePackedRenderData@{FIVSmokePackedRenderData}}
+\doxysubsubsection{\texorpdfstring{bEnableVSM}{bEnableVSM}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_packed_render_data_aba57625ebb8dc475b42634aef85eda53} 
+bool FIVSmoke\+Packed\+Render\+Data::\+b\+Enable\+VSM = true}
+
+VSM parameters \Hypertarget{struct_f_i_v_smoke_packed_render_data_a5b76a12cb243263c103c1f750d9d396c}\index{FIVSmokePackedRenderData@{FIVSmokePackedRenderData}!bIsValid@{bIsValid}}
+\index{bIsValid@{bIsValid}!FIVSmokePackedRenderData@{FIVSmokePackedRenderData}}
+\doxysubsubsection{\texorpdfstring{bIsValid}{bIsValid}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_packed_render_data_a5b76a12cb243263c103c1f750d9d396c} 
+bool FIVSmoke\+Packed\+Render\+Data::\+b\+Is\+Valid = false}
+
+Validity flag \Hypertarget{struct_f_i_v_smoke_packed_render_data_aaa5319bce05f3e73e2deba6c1f153297}\index{FIVSmokePackedRenderData@{FIVSmokePackedRenderData}!CSMMainCameraPosition@{CSMMainCameraPosition}}
+\index{CSMMainCameraPosition@{CSMMainCameraPosition}!FIVSmokePackedRenderData@{FIVSmokePackedRenderData}}
+\doxysubsubsection{\texorpdfstring{CSMMainCameraPosition}{CSMMainCameraPosition}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_packed_render_data_aaa5319bce05f3e73e2deba6c1f153297} 
+FVector FIVSmoke\+Packed\+Render\+Data::\+\+CSMMain\+Camera\+Position = FVector::\+\+Zero\+Vector}
+
+Main camera position for CSM (must match what CSMRenderer used) \Hypertarget{struct_f_i_v_smoke_packed_render_data_a0de09d83af0979e87959ae45760f17c0}\index{FIVSmokePackedRenderData@{FIVSmokePackedRenderData}!GameTime@{GameTime}}
+\index{GameTime@{GameTime}!FIVSmokePackedRenderData@{FIVSmokePackedRenderData}}
+\doxysubsubsection{\texorpdfstring{GameTime}{GameTime}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_packed_render_data_a0de09d83af0979e87959ae45760f17c0} 
+float FIVSmoke\+Packed\+Render\+Data::\+\+Game\+Time = 0.\+0f}
+
+Game World Time \Hypertarget{struct_f_i_v_smoke_packed_render_data_a229b87682dc9d713e99f5284cc6c0ee9}\index{FIVSmokePackedRenderData@{FIVSmokePackedRenderData}!HoleTextures@{HoleTextures}}
+\index{HoleTextures@{HoleTextures}!FIVSmokePackedRenderData@{FIVSmokePackedRenderData}}
+\doxysubsubsection{\texorpdfstring{HoleTextures}{HoleTextures}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_packed_render_data_a229b87682dc9d713e99f5284cc6c0ee9} 
+TArray$<$FTexture\+RHIRef$>$ FIVSmoke\+Packed\+Render\+Data::\+\+Hole\+Textures}
+
+Hole Texture references (RHI resources are thread-\/safe) \Hypertarget{struct_f_i_v_smoke_packed_render_data_a0c37c6d9b877ddec1d606754bccb8a8d}\index{FIVSmokePackedRenderData@{FIVSmokePackedRenderData}!NumCascades@{NumCascades}}
+\index{NumCascades@{NumCascades}!FIVSmokePackedRenderData@{FIVSmokePackedRenderData}}
+\doxysubsubsection{\texorpdfstring{NumCascades}{NumCascades}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_packed_render_data_a0c37c6d9b877ddec1d606754bccb8a8d} 
+int32 FIVSmoke\+Packed\+Render\+Data::\+\+Num\+Cascades = 0}
+
+External shadowing parameters (CSM -\/ Cascaded Shadow Maps) Note:\+ CSM is always used when external shadowing is enabled \Hypertarget{struct_f_i_v_smoke_packed_render_data_a052ac503c2be38868843e86597f1b9f9}\index{FIVSmokePackedRenderData@{FIVSmokePackedRenderData}!PackedVoxelBirthTimes@{PackedVoxelBirthTimes}}
+\index{PackedVoxelBirthTimes@{PackedVoxelBirthTimes}!FIVSmokePackedRenderData@{FIVSmokePackedRenderData}}
+\doxysubsubsection{\texorpdfstring{PackedVoxelBirthTimes}{PackedVoxelBirthTimes}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_packed_render_data_a052ac503c2be38868843e86597f1b9f9} 
+TArray$<$float$>$ FIVSmoke\+Packed\+Render\+Data::\+\+Packed\+Voxel\+Birth\+Times}
+
+Packed voxel birth times for all volumes (flattened by Voxel\+Buffer\+Offset). \Hypertarget{struct_f_i_v_smoke_packed_render_data_a0e62820c6ff566e98c5cbb6b09cb6d07}\index{FIVSmokePackedRenderData@{FIVSmokePackedRenderData}!PackedVoxelDeathTimes@{PackedVoxelDeathTimes}}
+\index{PackedVoxelDeathTimes@{PackedVoxelDeathTimes}!FIVSmokePackedRenderData@{FIVSmokePackedRenderData}}
+\doxysubsubsection{\texorpdfstring{PackedVoxelDeathTimes}{PackedVoxelDeathTimes}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_packed_render_data_a0e62820c6ff566e98c5cbb6b09cb6d07} 
+TArray$<$float$>$ FIVSmoke\+Packed\+Render\+Data::\+\+Packed\+Voxel\+Death\+Times}
+
+Packed voxel death times for all volumes (flattened by Voxel\+Buffer\+Offset). \Hypertarget{struct_f_i_v_smoke_packed_render_data_a9066f45f7e7b0f67200edb4fa5c4ce67}\index{FIVSmokePackedRenderData@{FIVSmokePackedRenderData}!Sharpness@{Sharpness}}
+\index{Sharpness@{Sharpness}!FIVSmokePackedRenderData@{FIVSmokePackedRenderData}}
+\doxysubsubsection{\texorpdfstring{Sharpness}{Sharpness}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_packed_render_data_a9066f45f7e7b0f67200edb4fa5c4ce67} 
+float FIVSmoke\+Packed\+Render\+Data::\+\+Sharpness = 0.\+0f}
+
+Preset parameters (copied from default preset) \Hypertarget{struct_f_i_v_smoke_packed_render_data_a1da45d51d370d65bca0045104871a4aa}\index{FIVSmokePackedRenderData@{FIVSmokePackedRenderData}!VolumeDataArray@{VolumeDataArray}}
+\index{VolumeDataArray@{VolumeDataArray}!FIVSmokePackedRenderData@{FIVSmokePackedRenderData}}
+\doxysubsubsection{\texorpdfstring{VolumeDataArray}{VolumeDataArray}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_packed_render_data_a1da45d51d370d65bca0045104871a4aa} 
+TArray$<$\doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data}{FIVSmoke\+Volume\+GPUData}}$>$ FIVSmoke\+Packed\+Render\+Data::\+\+Volume\+Data\+Array}
+
+Per-\/volume GPU metadata \Hypertarget{struct_f_i_v_smoke_packed_render_data_acf78e820c465ce2bc1835dcbbe33487e}\index{FIVSmokePackedRenderData@{FIVSmokePackedRenderData}!VoxelResolution@{VoxelResolution}}
+\index{VoxelResolution@{VoxelResolution}!FIVSmokePackedRenderData@{FIVSmokePackedRenderData}}
+\doxysubsubsection{\texorpdfstring{VoxelResolution}{VoxelResolution}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_packed_render_data_acf78e820c465ce2bc1835dcbbe33487e} 
+FInt\+Vector FIVSmoke\+Packed\+Render\+Data::\+\+Voxel\+Resolution = FInt\+Vector::\+\+Zero\+Value}
+
+Common resolution info 
+
+The documentation for this struct was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Renderer.\+h\end{DoxyCompactItemize}

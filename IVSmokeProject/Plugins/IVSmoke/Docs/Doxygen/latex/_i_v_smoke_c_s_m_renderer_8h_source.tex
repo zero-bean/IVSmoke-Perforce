@@ -1,0 +1,165 @@
+\doxysection{IVSmoke\+CSMRenderer.\+h}
+\hypertarget{_i_v_smoke_c_s_m_renderer_8h_source}{}\label{_i_v_smoke_c_s_m_renderer_8h_source}\index{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeCSMRenderer.h@{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeCSMRenderer.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//\ Copyright\ (c)\ 2026,\ Team\ SDB.\ All\ rights\ reserved.}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}CoreMinimal.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}Engine/TextureRenderTarget2D.h"{}}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{keyword}{class\ }USceneCaptureComponent2D;}
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }AActor;}
+\DoxyCodeLine{00010\ \textcolor{keyword}{class\ }UWorld;}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00013\ \textcolor{comment}{//\ Cascade\ Data\ Structure}}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00036\ \textcolor{keyword}{struct\ }IVSMOKE\_API\ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data}{FIVSmokeCascadeData}}}
+\DoxyCodeLine{00037\ \{}
+\DoxyCodeLine{00039\ \ \ \ \ int32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_a8f5233381fd828e4bb87c4ec01e5db9f}{CascadeIndex}}\ =\ 0;}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_ad93f96b234416b110378e68c0c60bc9e}{NearPlane}}\ =\ 0.0f;}
+\DoxyCodeLine{00043\ \ \ \ \ \textcolor{keywordtype}{float}\ FarPlane\ =\ 0.0f;}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00045\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00046\ \ \ \ \ \textcolor{comment}{//\ Current\ Frame\ Values\ (used\ for\ both\ capture\ and\ shader\ sampling)}}
+\DoxyCodeLine{00047\ }
+\DoxyCodeLine{00049\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_a948ae8d315d688a9e0f322f6eb53ae55}{OrthoWidth}}\ =\ 0.0f;}
+\DoxyCodeLine{00050\ }
+\DoxyCodeLine{00052\ \ \ \ \ FMatrix\ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_a3fc7dad7979c35706f2254a958946631}{ViewProjectionMatrix}}\ =\ FMatrix::Identity;}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00055\ \ \ \ \ FVector\ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_a0039cab43f51236cd6f22f02be1b034f}{LightCameraPosition}}\ =\ FVector::ZeroVector;}
+\DoxyCodeLine{00056\ }
+\DoxyCodeLine{00058\ \ \ \ \ FVector\ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_af4d1eca98095ef1a2033d1ef16513680}{LightCameraForward}}\ =\ FVector(0.0f,\ 0.0f,\ -\/1.0f);}
+\DoxyCodeLine{00059\ }
+\DoxyCodeLine{00060\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00061\ \ \ \ \ \textcolor{comment}{//\ Resources}}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00064\ \ \ \ \ TObjectPtr<UTextureRenderTarget2D>\ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_ace3bc2f6a41fc32f26ca0d4d8a1253c2}{DepthRT}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00067\ \ \ \ \ TObjectPtr<UTextureRenderTarget2D>\ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_a0f61eb1aebdf3d6cdc5614bd593825db}{VSMRT}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00068\ }
+\DoxyCodeLine{00070\ \ \ \ \ TObjectPtr<USceneCaptureComponent2D>\ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_a4875b5adc349b9481221822ac01d9198}{CaptureComponent}}\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00071\ }
+\DoxyCodeLine{00073\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_aab1965d6abd0a94365157ce5fdfb473f}{bNeedsCapture}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00074\ }
+\DoxyCodeLine{00076\ \ \ \ \ uint32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data_ad7dda89d1940083d7752198659007428}{LastCaptureFrame}}\ =\ 0;}
+\DoxyCodeLine{00077\ \};}
+\DoxyCodeLine{00078\ }
+\DoxyCodeLine{00083\ \textcolor{keyword}{struct\ }IVSMOKE\_API\ \doxymbox{\hyperlink{struct_f_i_v_smoke_c_s_m_g_p_u_data}{FIVSmokeCSMGPUData}}}
+\DoxyCodeLine{00084\ \{}
+\DoxyCodeLine{00086\ \ \ \ \ FMatrix44f\ \doxymbox{\hyperlink{struct_f_i_v_smoke_c_s_m_g_p_u_data_a929bf3a286741f904bc6e75b235d6b35}{ViewProjectionMatrix}};}
+\DoxyCodeLine{00087\ }
+\DoxyCodeLine{00089\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_c_s_m_g_p_u_data_a7f510f722ad0ec7f17fe5896f5d25640}{SplitDistance}};}
+\DoxyCodeLine{00090\ }
+\DoxyCodeLine{00092\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_c_s_m_g_p_u_data_a6c2b41588254130ec3d63b562601fc33}{Padding}}[3];}
+\DoxyCodeLine{00093\ \};}
+\DoxyCodeLine{00094\ }
+\DoxyCodeLine{00095\ \textcolor{keyword}{static\_assert}(\textcolor{keyword}{sizeof}(\doxymbox{\hyperlink{struct_f_i_v_smoke_c_s_m_g_p_u_data}{FIVSmokeCSMGPUData}})\ ==\ 80,\ \textcolor{stringliteral}{"{}FIVSmokeCSMGPUData\ size\ must\ be\ 80\ bytes"{}});}
+\DoxyCodeLine{00096\ }
+\DoxyCodeLine{00097\ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00098\ \textcolor{comment}{//\ CSM\ Renderer}}
+\DoxyCodeLine{00099\ }
+\DoxyCodeLine{00111\ \textcolor{keyword}{class\ }IVSMOKE\_API\ FIVSmokeCSMRenderer}
+\DoxyCodeLine{00112\ \{}
+\DoxyCodeLine{00113\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00114\ \ \ \ \ FIVSmokeCSMRenderer();}
+\DoxyCodeLine{00115\ \ \ \ \ \string~FIVSmokeCSMRenderer();}
+\DoxyCodeLine{00116\ }
+\DoxyCodeLine{00117\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00118\ \ \ \ \ \textcolor{comment}{//\ Lifecycle}}
+\DoxyCodeLine{00119\ }
+\DoxyCodeLine{00129\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_a3a079f728e607e9fcbb219039fa8cfb9}{Initialize}}(UWorld*\ World,\ int32\ NumCascades,\ int32\ Resolution,\ \textcolor{keywordtype}{float}\ MaxDistance);}
+\DoxyCodeLine{00130\ }
+\DoxyCodeLine{00132\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_a3aadb4f498ae864be971a24c0d27e655}{Shutdown}}();}
+\DoxyCodeLine{00133\ }
+\DoxyCodeLine{00135\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_a107bda476cbff63b1464033228d3e944}{IsInitialized}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ bIsInitialized;\ \}}
+\DoxyCodeLine{00136\ }
+\DoxyCodeLine{00137\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00138\ \ \ \ \ \textcolor{comment}{//\ Update}}
+\DoxyCodeLine{00139\ }
+\DoxyCodeLine{00149\ \ \ \ \ \textcolor{keywordtype}{void}\ Update(}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FVector\&\ CameraPosition,}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FVector\&\ CameraForward,}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FVector\&\ LightDirection,}
+\DoxyCodeLine{00153\ \ \ \ \ \ \ \ \ uint32\ FrameNumber}
+\DoxyCodeLine{00154\ \ \ \ \ );}
+\DoxyCodeLine{00155\ }
+\DoxyCodeLine{00156\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00157\ \ \ \ \ \textcolor{comment}{//\ Accessors}}
+\DoxyCodeLine{00158\ }
+\DoxyCodeLine{00160\ \ \ \ \ int32\ \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_a310075122178f9ca168b341280792bfb}{GetNumCascades}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ Cascades.Num();\ \}}
+\DoxyCodeLine{00161\ }
+\DoxyCodeLine{00163\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data}{FIVSmokeCascadeData}}\&\ \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_a94f0c9f47876da9839143337e8ba61f4}{GetCascade}}(int32\ Index)\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ Cascades[Index];\ \}}
+\DoxyCodeLine{00164\ }
+\DoxyCodeLine{00166\ \ \ \ \ \textcolor{keyword}{const}\ TArray<FIVSmokeCascadeData>\&\ \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_ac507d6f3bd6236b25da682662b4599d0}{GetCascades}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ Cascades;\ \}}
+\DoxyCodeLine{00167\ }
+\DoxyCodeLine{00169\ \ \ \ \ TArray<float>\ GetSplitDistances()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00170\ }
+\DoxyCodeLine{00172\ \ \ \ \ FTextureRHIRef\ GetVSMTexture(int32\ CascadeIndex)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00173\ }
+\DoxyCodeLine{00175\ \ \ \ \ FTextureRHIRef\ GetDepthTexture(int32\ CascadeIndex)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00176\ }
+\DoxyCodeLine{00178\ \ \ \ \ \textcolor{keywordtype}{bool}\ HasValidShadowData()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00179\ }
+\DoxyCodeLine{00186\ \ \ \ \ FVector\ GetLightCameraPosition(int32\ CascadeIndex)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00187\ }
+\DoxyCodeLine{00189\ \ \ \ \ FVector\ \doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer_a9021079a99e54a785107be20310f009e}{GetMainCameraPosition}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ MainCameraPosition;\ \}}
+\DoxyCodeLine{00190\ }
+\DoxyCodeLine{00191\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00192\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00193\ \ \ \ \ \textcolor{comment}{//\ Internal\ Methods}}
+\DoxyCodeLine{00194\ }
+\DoxyCodeLine{00202\ \ \ \ \ \textcolor{keywordtype}{void}\ CalculateCascadeSplits(\textcolor{keywordtype}{float}\ NearPlane,\ \textcolor{keywordtype}{float}\ FarPlane,\ \textcolor{keywordtype}{float}\ LogLinearBlend);}
+\DoxyCodeLine{00203\ }
+\DoxyCodeLine{00214\ \ \ \ \ FVector\ ApplyTexelSnapping(}
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FVector\&\ LightViewOrigin,}
+\DoxyCodeLine{00216\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ OrthoWidth,}
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \ \ int32\ Resolution,}
+\DoxyCodeLine{00218\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FVector\&\ LightRight,}
+\DoxyCodeLine{00219\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FVector\&\ LightUp}
+\DoxyCodeLine{00220\ \ \ \ \ )\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00221\ }
+\DoxyCodeLine{00227\ \ \ \ \ \textcolor{keywordtype}{void}\ UpdateCascadePriorities(uint32\ FrameNumber);}
+\DoxyCodeLine{00228\ }
+\DoxyCodeLine{00236\ \ \ \ \ \textcolor{keywordtype}{void}\ UpdateCascadeCapture(}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ int32\ CascadeIndex,}
+\DoxyCodeLine{00238\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FVector\&\ CameraPosition,}
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FVector\&\ LightDirection}
+\DoxyCodeLine{00240\ \ \ \ \ );}
+\DoxyCodeLine{00241\ }
+\DoxyCodeLine{00249\ \ \ \ \ \textcolor{keywordtype}{void}\ CalculateViewProjectionMatrix(\doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data}{FIVSmokeCascadeData}}\&\ Cascade);}
+\DoxyCodeLine{00250\ }
+\DoxyCodeLine{00257\ \ \ \ \ \textcolor{keywordtype}{void}\ CreateCascadeRenderTargets(\doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data}{FIVSmokeCascadeData}}\&\ Cascade,\ int32\ Resolution);}
+\DoxyCodeLine{00258\ }
+\DoxyCodeLine{00264\ \ \ \ \ \textcolor{keywordtype}{void}\ ConfigureCaptureComponent(USceneCaptureComponent2D*\ CaptureComponent);}
+\DoxyCodeLine{00265\ }
+\DoxyCodeLine{00266\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00267\ \ \ \ \ \textcolor{comment}{//\ Member\ Variables}}
+\DoxyCodeLine{00268\ }
+\DoxyCodeLine{00270\ \ \ \ \ TArray<FIVSmokeCascadeData>\ Cascades;}
+\DoxyCodeLine{00271\ }
+\DoxyCodeLine{00273\ \ \ \ \ TWeakObjectPtr<AActor>\ CaptureOwner;}
+\DoxyCodeLine{00274\ }
+\DoxyCodeLine{00276\ \ \ \ \ int32\ CurrentResolution\ =\ 512;}
+\DoxyCodeLine{00277\ }
+\DoxyCodeLine{00279\ \ \ \ \ \textcolor{keywordtype}{float}\ MaxShadowDistance\ =\ 100000.0f;}
+\DoxyCodeLine{00280\ }
+\DoxyCodeLine{00282\ \ \ \ \ \textcolor{keywordtype}{float}\ LogLinearBlend\ =\ 0.7f;}
+\DoxyCodeLine{00283\ }
+\DoxyCodeLine{00285\ \ \ \ \ \textcolor{keywordtype}{float}\ NearPlaneDistance\ =\ 10.0f;}
+\DoxyCodeLine{00286\ }
+\DoxyCodeLine{00288\ \ \ \ \ \textcolor{keywordtype}{bool}\ bIsInitialized\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00289\ }
+\DoxyCodeLine{00291\ \ \ \ \ \textcolor{keywordtype}{bool}\ bEnablePriorityUpdate\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00292\ }
+\DoxyCodeLine{00294\ \ \ \ \ int32\ NearCascadeUpdateInterval\ =\ 1;}
+\DoxyCodeLine{00295\ }
+\DoxyCodeLine{00297\ \ \ \ \ int32\ FarCascadeUpdateInterval\ =\ 4;}
+\DoxyCodeLine{00298\ }
+\DoxyCodeLine{00300\ \ \ \ \ FVector\ MainCameraPosition\ =\ FVector::ZeroVector;}
+\DoxyCodeLine{00301\ \};}
+
+\end{DoxyCode}

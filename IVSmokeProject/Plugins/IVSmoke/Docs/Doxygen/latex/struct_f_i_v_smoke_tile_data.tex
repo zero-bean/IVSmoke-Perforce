@@ -1,0 +1,89 @@
+\doxysection{FIVSmoke\+Tile\+Data Struct Reference}
+\hypertarget{struct_f_i_v_smoke_tile_data}{}\label{struct_f_i_v_smoke_tile_data}\index{FIVSmokeTileData@{FIVSmokeTileData}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Ray\+March\+Pipeline.\+h$>$}
+
+
+
+Collaboration diagram for FIVSmoke\+Tile\+Data:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=204pt]{struct_f_i_v_smoke_tile_data__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_tile_data_ab9968c5d91d845d4dc851b252cfb6de3}{Near}}
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_tile_data_a7147d49de952d4f8865153339f676f77}{Far}}
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_tile_data_ae27bb1ef6194303e9498c5b976e7ba2d}{Step\+Size}}
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_tile_data_a5e16219a2ce9e6da7f92d5af66abfa89}{Total\+Volume\+Length}}
+\item 
+uint32 \doxymbox{\hyperlink{struct_f_i_v_smoke_tile_data_a561d8865a847ce8a52f6899c70878872}{Volume\+Mask128}} \+[4]\+
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_tile_data_a26339bf3febb3767f78c7d1308ebd681}{Max\+Light\+March\+Distance}}
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_tile_data_a621cc4dcaa39e27dfc68725454d486df}{Padding}} \+[3]\+
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Per-\/tile metadata computed in Pass 0. Contains depth range and 128-\/bit volume mask for sparse iteration.
+
+Memory:\+ 48 bytes (16-\/byte aligned, cache-\/friendly) 
+
+\label{doc-variable-members}
+\Hypertarget{struct_f_i_v_smoke_tile_data_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{struct_f_i_v_smoke_tile_data_a7147d49de952d4f8865153339f676f77}\index{FIVSmokeTileData@{FIVSmokeTileData}!Far@{Far}}
+\index{Far@{Far}!FIVSmokeTileData@{FIVSmokeTileData}}
+\doxysubsubsection{\texorpdfstring{Far}{Far}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_tile_data_a7147d49de952d4f8865153339f676f77} 
+float FIVSmoke\+Tile\+Data::\+\+Far}
+
+Maximum linear depth in tile (far plane, clamped to max ray distance). \Hypertarget{struct_f_i_v_smoke_tile_data_a26339bf3febb3767f78c7d1308ebd681}\index{FIVSmokeTileData@{FIVSmokeTileData}!MaxLightMarchDistance@{MaxLightMarchDistance}}
+\index{MaxLightMarchDistance@{MaxLightMarchDistance}!FIVSmokeTileData@{FIVSmokeTileData}}
+\doxysubsubsection{\texorpdfstring{MaxLightMarchDistance}{MaxLightMarchDistance}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_tile_data_a26339bf3febb3767f78c7d1308ebd681} 
+float FIVSmoke\+Tile\+Data::\+\+Max\+Light\+March\+Distance}
+
+Maximum distance for light marching from this tile. Currently unused -\/ light march uses Global\+AABB per-\/pixel instead. \Hypertarget{struct_f_i_v_smoke_tile_data_ab9968c5d91d845d4dc851b252cfb6de3}\index{FIVSmokeTileData@{FIVSmokeTileData}!Near@{Near}}
+\index{Near@{Near}!FIVSmokeTileData@{FIVSmokeTileData}}
+\doxysubsubsection{\texorpdfstring{Near}{Near}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_tile_data_ab9968c5d91d845d4dc851b252cfb6de3} 
+float FIVSmoke\+Tile\+Data::\+\+Near}
+
+Minimum linear depth in tile (near plane). \Hypertarget{struct_f_i_v_smoke_tile_data_a621cc4dcaa39e27dfc68725454d486df}\index{FIVSmokeTileData@{FIVSmokeTileData}!Padding@{Padding}}
+\index{Padding@{Padding}!FIVSmokeTileData@{FIVSmokeTileData}}
+\doxysubsubsection{\texorpdfstring{Padding}{Padding}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_tile_data_a621cc4dcaa39e27dfc68725454d486df} 
+float FIVSmoke\+Tile\+Data::\+\+Padding\+[3]\+}
+
+Padding for 48-\/byte alignment. \Hypertarget{struct_f_i_v_smoke_tile_data_ae27bb1ef6194303e9498c5b976e7ba2d}\index{FIVSmokeTileData@{FIVSmokeTileData}!StepSize@{StepSize}}
+\index{StepSize@{StepSize}!FIVSmokeTileData@{FIVSmokeTileData}}
+\doxysubsubsection{\texorpdfstring{StepSize}{StepSize}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_tile_data_ae27bb1ef6194303e9498c5b976e7ba2d} 
+float FIVSmoke\+Tile\+Data::\+\+Step\+Size}
+
+Step size for this tile:\+ (Far -\/ Near) /\+ (Step\+Slice\+Count \texorpdfstring{$\ast$}{*} Step\+Divisor). \Hypertarget{struct_f_i_v_smoke_tile_data_a5e16219a2ce9e6da7f92d5af66abfa89}\index{FIVSmokeTileData@{FIVSmokeTileData}!TotalVolumeLength@{TotalVolumeLength}}
+\index{TotalVolumeLength@{TotalVolumeLength}!FIVSmokeTileData@{FIVSmokeTileData}}
+\doxysubsubsection{\texorpdfstring{TotalVolumeLength}{TotalVolumeLength}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_tile_data_a5e16219a2ce9e6da7f92d5af66abfa89} 
+float FIVSmoke\+Tile\+Data::\+\+Total\+Volume\+Length}
+
+Total ray-\/volume intersection length (for early rejection). Computed using interval merging to correctly handle overlapping volumes. If zero, no volumes intersect this tile\textquotesingle{}s center ray. \Hypertarget{struct_f_i_v_smoke_tile_data_a561d8865a847ce8a52f6899c70878872}\index{FIVSmokeTileData@{FIVSmokeTileData}!VolumeMask128@{VolumeMask128}}
+\index{VolumeMask128@{VolumeMask128}!FIVSmokeTileData@{FIVSmokeTileData}}
+\doxysubsubsection{\texorpdfstring{VolumeMask128}{VolumeMask128}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_tile_data_a561d8865a847ce8a52f6899c70878872} 
+uint32 FIVSmoke\+Tile\+Data::\+\+Volume\+Mask128\+[4]\+}
+
+128-\/bit volume mask for sparse iteration. Each bit indicates whether the corresponding volume intersects this tile. Used by Occupancy\+Build for efficient volume iteration. 
+
+The documentation for this struct was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Ray\+March\+Pipeline.\+h\end{DoxyCompactItemize}

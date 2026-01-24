@@ -1,0 +1,67 @@
+\doxysection{FIVSmoke\+Tile\+Setup\+CS Class Reference}
+\hypertarget{class_f_i_v_smoke_tile_setup_c_s}{}\label{class_f_i_v_smoke_tile_setup_c_s}\index{FIVSmokeTileSetupCS@{FIVSmokeTileSetupCS}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Ray\+March\+Pipeline.\+h$>$}
+
+
+
+Inheritance diagram for FIVSmoke\+Tile\+Setup\+CS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=244pt]{class_f_i_v_smoke_tile_setup_c_s__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for FIVSmoke\+Tile\+Setup\+CS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=244pt]{class_f_i_v_smoke_tile_setup_c_s__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_tile_setup_c_s_a54ff7cb6676b370290491cf4fb344686}\label{class_f_i_v_smoke_tile_setup_c_s_a54ff7cb6676b370290491cf4fb344686} 
+{\bfseries DECLARE\+\_\+\+GLOBAL\+\_\+\+SHADER} (\doxymbox{\hyperlink{class_f_i_v_smoke_tile_setup_c_s}{FIVSmoke\+Tile\+Setup\+CS}})
+\item 
+\Hypertarget{class_f_i_v_smoke_tile_setup_c_s_adf65f5989f39dfa9b06edc45715a5c74}\label{class_f_i_v_smoke_tile_setup_c_s_adf65f5989f39dfa9b06edc45715a5c74} 
+{\bfseries SHADER\+\_\+\+USE\+\_\+\+PARAMETER\+\_\+\+STRUCT} (\doxymbox{\hyperlink{class_f_i_v_smoke_tile_setup_c_s}{FIVSmoke\+Tile\+Setup\+CS}}, FGlobal\+Shader)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_tile_setup_c_s_ad02216ea950531cf6263a76eaad0688f}\label{class_f_i_v_smoke_tile_setup_c_s_ad02216ea950531cf6263a76eaad0688f} 
+static bool {\bfseries Should\+Compile\+Permutation} (const FGlobal\+Shader\+Permutation\+Parameters \&Parameters)
+\item 
+\Hypertarget{class_f_i_v_smoke_tile_setup_c_s_a2655a34f50a07ed2692ffcb8b894bfbd}\label{class_f_i_v_smoke_tile_setup_c_s_a2655a34f50a07ed2692ffcb8b894bfbd} 
+static void {\bfseries Modify\+Compilation\+Environment} (const FGlobal\+Shader\+Permutation\+Parameters \&Parameters, FShader\+Compiler\+Environment \&Out\+Environment)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_tile_setup_c_s_a1d62f6e4b6206890237f2cd0c898ead3}\label{class_f_i_v_smoke_tile_setup_c_s_a1d62f6e4b6206890237f2cd0c898ead3} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeX} = \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_ae96cd7b47fe5fb1f235ae00763941558}{FIVSmoke\+Occupancy\+Config::\+\+Tile\+Setup\+ThreadsX}}
+\item 
+\Hypertarget{class_f_i_v_smoke_tile_setup_c_s_abc2fd034d4125e167717db5be74bdb6f}\label{class_f_i_v_smoke_tile_setup_c_s_abc2fd034d4125e167717db5be74bdb6f} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeY} = FIVSmoke\+Occupancy\+Config::\+\+Tile\+Setup\+ThreadsY
+\item 
+\Hypertarget{class_f_i_v_smoke_tile_setup_c_s_a0ea85cdbbbe455e5c976044e720f695d}\label{class_f_i_v_smoke_tile_setup_c_s_a0ea85cdbbbe455e5c976044e720f695d} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeZ} = 1
+\item 
+\Hypertarget{class_f_i_v_smoke_tile_setup_c_s_aad243b8b6fccebaadd060d9083b3d7cf}\label{class_f_i_v_smoke_tile_setup_c_s_aad243b8b6fccebaadd060d9083b3d7cf} 
+static constexpr const TCHAR \texorpdfstring{$\ast$}{*} {\bfseries Event\+Name} = TEXT("{}IVSmoke\+Tile\+Setup\+CS"{})
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Tile Setup compute shader (Pass 0). Computes per-\/tile depth range and quick volume mask using wave reduction.
+
+Dispatch:\+ (Tile\+CountX, Tile\+CountY, 1) Each thread group processes one tile (8×8 threads, 2×2 pixels each). 
+
+The documentation for this class was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Ray\+March\+Pipeline.\+h\end{DoxyCompactItemize}

@@ -1,0 +1,78 @@
+\doxysection{FIVSmoke\+Scene\+View\+Extension Class Reference}
+\hypertarget{class_f_i_v_smoke_scene_view_extension}{}\label{class_f_i_v_smoke_scene_view_extension}\index{FIVSmokeSceneViewExtension@{FIVSmokeSceneViewExtension}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Scene\+View\+Extension.\+h$>$}
+
+
+
+Inheritance diagram for FIVSmoke\+Scene\+View\+Extension:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=244pt]{class_f_i_v_smoke_scene_view_extension__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for FIVSmoke\+Scene\+View\+Extension:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=244pt]{class_f_i_v_smoke_scene_view_extension__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_scene_view_extension_a7be2daf0114e454b4644272311d9f896}\label{class_f_i_v_smoke_scene_view_extension_a7be2daf0114e454b4644272311d9f896} 
+{\bfseries FIVSmoke\+Scene\+View\+Extension} (const FAuto\+Register \&Auto\+Register)
+\item 
+\Hypertarget{class_f_i_v_smoke_scene_view_extension_a0f323069a1b0156f8acbda006a75cb83}\label{class_f_i_v_smoke_scene_view_extension_a0f323069a1b0156f8acbda006a75cb83} 
+virtual void {\bfseries Setup\+View\+Family} (FScene\+View\+Family \&In\+View\+Family) override
+\item 
+\Hypertarget{class_f_i_v_smoke_scene_view_extension_a2038479361708f558165ed96006fbd20}\label{class_f_i_v_smoke_scene_view_extension_a2038479361708f558165ed96006fbd20} 
+virtual void {\bfseries Setup\+View} (FScene\+View\+Family \&In\+View\+Family, FScene\+View \&In\+View) override
+\item 
+\Hypertarget{class_f_i_v_smoke_scene_view_extension_ac2a2dd8ddf1850a8fa7865f766cfcec1}\label{class_f_i_v_smoke_scene_view_extension_ac2a2dd8ddf1850a8fa7865f766cfcec1} 
+virtual void {\bfseries Begin\+Render\+View\+Family} (FScene\+View\+Family \&In\+View\+Family) override
+\item 
+\Hypertarget{class_f_i_v_smoke_scene_view_extension_a04226360977ed622d0a3aa2fd0244253}\label{class_f_i_v_smoke_scene_view_extension_a04226360977ed622d0a3aa2fd0244253} 
+virtual void {\bfseries Subscribe\+To\+Post\+Processing\+Pass} (EPost\+Processing\+Pass Pass, const FScene\+View \&In\+View, FPost\+Processing\+Pass\+Delegate\+Array \&In\+Out\+Pass\+Callbacks, bool b\+Is\+Pass\+Enabled) override
+\item 
+\Hypertarget{class_f_i_v_smoke_scene_view_extension_aa75ad9e196c5fe38b0fde87833cc973e}\label{class_f_i_v_smoke_scene_view_extension_aa75ad9e196c5fe38b0fde87833cc973e} 
+virtual bool {\bfseries Is\+Active\+This\+Frame\+\_\+\+Internal} (const FScene\+View\+Extension\+Context \&Context) const override
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static void \doxymbox{\hyperlink{class_f_i_v_smoke_scene_view_extension_a28a478d76517ffcb0deaf4a3541da5f4}{Initialize}} ()
+\item 
+static void \doxymbox{\hyperlink{class_f_i_v_smoke_scene_view_extension_a5b9cc2a244918333fbed625904fe6e40}{Shutdown}} ()
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Scene view extension for \doxylink{class_i_v_smoke}{IVSmoke} post-\/process hook. Delegates actual rendering to \doxylink{class_f_i_v_smoke_renderer}{FIVSmoke\+Renderer}. 
+
+\label{doc-func-members}
+\Hypertarget{class_f_i_v_smoke_scene_view_extension_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_i_v_smoke_scene_view_extension_a28a478d76517ffcb0deaf4a3541da5f4}\index{FIVSmokeSceneViewExtension@{FIVSmokeSceneViewExtension}!Initialize@{Initialize}}
+\index{Initialize@{Initialize}!FIVSmokeSceneViewExtension@{FIVSmokeSceneViewExtension}}
+\doxysubsubsection{\texorpdfstring{Initialize()}{Initialize()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_scene_view_extension_a28a478d76517ffcb0deaf4a3541da5f4} 
+void FIVSmoke\+Scene\+View\+Extension::\+\+Initialize (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Initialize the scene view extension singleton. \Hypertarget{class_f_i_v_smoke_scene_view_extension_a5b9cc2a244918333fbed625904fe6e40}\index{FIVSmokeSceneViewExtension@{FIVSmokeSceneViewExtension}!Shutdown@{Shutdown}}
+\index{Shutdown@{Shutdown}!FIVSmokeSceneViewExtension@{FIVSmokeSceneViewExtension}}
+\doxysubsubsection{\texorpdfstring{Shutdown()}{Shutdown()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_scene_view_extension_a5b9cc2a244918333fbed625904fe6e40} 
+void FIVSmoke\+Scene\+View\+Extension::\+\+Shutdown (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Shutdown and release the scene view extension. 
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Scene\+View\+Extension.\+h\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Private/\+IVSmoke\+Scene\+View\+Extension.\+cpp\end{DoxyCompactItemize}

@@ -1,0 +1,66 @@
+\doxysection{FIVSmoke\+Translucency\+Composite\+PS Class Reference}
+\hypertarget{class_f_i_v_smoke_translucency_composite_p_s}{}\label{class_f_i_v_smoke_translucency_composite_p_s}\index{FIVSmokeTranslucencyCompositePS@{FIVSmokeTranslucencyCompositePS}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Shaders.\+h$>$}
+
+
+
+Inheritance diagram for FIVSmoke\+Translucency\+Composite\+PS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=254pt]{class_f_i_v_smoke_translucency_composite_p_s__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for FIVSmoke\+Translucency\+Composite\+PS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=254pt]{class_f_i_v_smoke_translucency_composite_p_s__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_translucency_composite_p_s_ace60fc6c86a05123882782105e866f23}\label{class_f_i_v_smoke_translucency_composite_p_s_ace60fc6c86a05123882782105e866f23} 
+{\bfseries DECLARE\+\_\+\+GLOBAL\+\_\+\+SHADER} (\doxymbox{\hyperlink{class_f_i_v_smoke_translucency_composite_p_s}{FIVSmoke\+Translucency\+Composite\+PS}})
+\item 
+\Hypertarget{class_f_i_v_smoke_translucency_composite_p_s_a2f233fbbb6bff0f918b7474fab21c05d}\label{class_f_i_v_smoke_translucency_composite_p_s_a2f233fbbb6bff0f918b7474fab21c05d} 
+{\bfseries SHADER\+\_\+\+USE\+\_\+\+PARAMETER\+\_\+\+STRUCT} (\doxymbox{\hyperlink{class_f_i_v_smoke_translucency_composite_p_s}{FIVSmoke\+Translucency\+Composite\+PS}}, FGlobal\+Shader)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_translucency_composite_p_s_a28019e1771c03812cadc8a7205ddbe56}\label{class_f_i_v_smoke_translucency_composite_p_s_a28019e1771c03812cadc8a7205ddbe56} 
+static FRHIBlend\+State \texorpdfstring{$\ast$}{*} {\bfseries Get\+Blend\+State} ()
+\item 
+static bool \doxymbox{\hyperlink{class_f_i_v_smoke_translucency_composite_p_s_a4dba17424303c0a98fcb45a1e61a188d}{Should\+Compile\+Permutation}} (const FGlobal\+Shader\+Permutation\+Parameters \&Parameters)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_translucency_composite_p_s_a69b70eef2cf2a6c53962a62cdac4f46f}\label{class_f_i_v_smoke_translucency_composite_p_s_a69b70eef2cf2a6c53962a62cdac4f46f} 
+static constexpr const TCHAR \texorpdfstring{$\ast$}{*} {\bfseries Event\+Name} = TEXT("{}IVSmoke\+Translucency\+Composite\+PS"{})
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Translucency Composite pixel shader. Composites smoke OVER Separate\+Translucency (smoke on top of particles). Used for Translucency\+After\+DOF render pass. 
+
+\label{doc-func-members}
+\Hypertarget{class_f_i_v_smoke_translucency_composite_p_s_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_i_v_smoke_translucency_composite_p_s_a4dba17424303c0a98fcb45a1e61a188d}\index{FIVSmokeTranslucencyCompositePS@{FIVSmokeTranslucencyCompositePS}!ShouldCompilePermutation@{ShouldCompilePermutation}}
+\index{ShouldCompilePermutation@{ShouldCompilePermutation}!FIVSmokeTranslucencyCompositePS@{FIVSmokeTranslucencyCompositePS}}
+\doxysubsubsection{\texorpdfstring{ShouldCompilePermutation()}{ShouldCompilePermutation()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_translucency_composite_p_s_a4dba17424303c0a98fcb45a1e61a188d} 
+bool FIVSmoke\+Translucency\+Composite\+PS::\+\+Should\+Compile\+Permutation (\begin{DoxyParamCaption}\item[{const FGlobal\+Shader\+Permutation\+Parameters \&}]{Parameters}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+Smoke albedo (color) from ray marching. Smoke opacity mask from ray marching. Separate\+Translucency texture (particles). Linear sampler for texture filtering. Sharpen/\+blur amount (-\/1 to 1, 0 = no filter). Smoke texture extent for UV calculation. Particles texture extent for UV calculation. 
+
+The documentation for this class was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Shaders.\+h\end{DoxyCompactItemize}

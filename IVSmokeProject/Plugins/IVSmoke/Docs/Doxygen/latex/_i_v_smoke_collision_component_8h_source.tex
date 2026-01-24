@@ -1,0 +1,80 @@
+\doxysection{IVSmoke\+Collision\+Component.\+h}
+\hypertarget{_i_v_smoke_collision_component_8h_source}{}\label{_i_v_smoke_collision_component_8h_source}\index{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeCollisionComponent.h@{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeCollisionComponent.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//\ Copyright\ (c)\ 2026,\ Team\ SDB.\ All\ rights\ reserved.}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}CoreMinimal.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}Components/PrimitiveComponent.h"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}IVSmokeCollisionComponent.generated.h"{}}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00026\ UCLASS(ClassGroup\ =\ (\doxymbox{\hyperlink{class_i_v_smoke}{IVSmoke}}),\ meta\ =\ (BlueprintSpawnableComponent))}
+\DoxyCodeLine{00027\ class\ IVSMOKE\_API\ UIVSmokeCollisionComponent\ :\ public\ UPrimitiveComponent}
+\DoxyCodeLine{00028\ \{}
+\DoxyCodeLine{00029\ \ \ \ \ GENERATED\_BODY()}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{comment}{//\ Component\ Lifecycle}}
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#pragma\ region\ Lifecycle}}
+\DoxyCodeLine{00034\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00035\ \ \ \ \ UIVSmokeCollisionComponent();}
+\DoxyCodeLine{00036\ }
+\DoxyCodeLine{00037\ \ \ \ \ \textcolor{keyword}{virtual}\ UBodySetup*\ GetBodySetup()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00038\ }
+\DoxyCodeLine{00039\ \textcolor{keyword}{protected}:}
+\DoxyCodeLine{00040\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ OnCreatePhysicsState()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00041\ \textcolor{preprocessor}{\#pragma\ endregion}}
+\DoxyCodeLine{00042\ }
+\DoxyCodeLine{00043\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00044\ \ \ \ \ \textcolor{comment}{//\ Collision\ Management}}
+\DoxyCodeLine{00045\ \textcolor{preprocessor}{\#pragma\ region\ Collision}}
+\DoxyCodeLine{00046\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00061\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_a511993314c3c6a657a11898ee8f3bcd1}{TryUpdateCollision}}(\textcolor{keyword}{const}\ TArray<uint64>\&\ VoxelBitArray,\ \textcolor{keyword}{const}\ FIntVector\&\ GridResolution,\ \textcolor{keywordtype}{float}\ VoxelSize,\ int32\ ActiveVoxelNum,\ \textcolor{keywordtype}{float}\ SyncTime,\ \textcolor{keywordtype}{bool}\ bForce\ =\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00067\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_ae6f1817db2a2d4524d144cb65328f297}{ResetCollision}}();}
+\DoxyCodeLine{00068\ }
+\DoxyCodeLine{00070\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config"{}})}
+\DoxyCodeLine{00071\ \ \ \ \ bool\ \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_a0f4d27f0dac91f6e5f03d4e7ed7f9683}{bCollisionEnabled}}\ =\ true;}
+\DoxyCodeLine{00072\ }
+\DoxyCodeLine{00077\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bCollisionEnabled"{}}))}
+\DoxyCodeLine{00078\ \ \ \ \ FName\ \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_aa8a21fae21363b9f586ccd330c7ad925}{SmokeCollisionProfileName}}\ =\ UCollisionProfile::NoCollision\_ProfileName;}
+\DoxyCodeLine{00079\ }
+\DoxyCodeLine{00085\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bCollisionEnabled"{}}))}
+\DoxyCodeLine{00086\ \ \ \ \ TArray<TEnumAsByte<ECollisionChannel>>\ \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_ac2b852d08ae56978c940d13599c282dc}{BlockChannelArray}};}
+\DoxyCodeLine{00087\ }
+\DoxyCodeLine{00089\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bCollisionEnabled"{}},\ ClampMin\ =\ \textcolor{stringliteral}{"{}1"{}},\ UIMin\ =\ \textcolor{stringliteral}{"{}10"{}},\ UIMax\ =\ \textcolor{stringliteral}{"{}1000"{}}))}
+\DoxyCodeLine{00090\ \ \ \ \ int32\ \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_a65f83b67c0f01e7433c34e5c336747c5}{MinCollisionUpdateVoxelNum}}\ =\ 50;}
+\DoxyCodeLine{00091\ }
+\DoxyCodeLine{00093\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bCollisionEnabled"{}},\ ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ UIMax\ =\ \textcolor{stringliteral}{"{}2.0"{}}))}
+\DoxyCodeLine{00094\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_a59d22fb7acf6ed4a216250b8effc233d}{MinCollisionUpdateInterval}}\ =\ 0.25f;}
+\DoxyCodeLine{00095\ }
+\DoxyCodeLine{00096\ private:}
+\DoxyCodeLine{00103\ \ \ \ \ \textcolor{keywordtype}{void}\ UpdateCollision(const\ TArray<uint64>\&\ VoxelBitArray,\ const\ FIntVector\&\ GridResolution,\ \textcolor{keywordtype}{float}\ VoxelSize);}
+\DoxyCodeLine{00104\ }
+\DoxyCodeLine{00106\ \ \ \ \ \textcolor{keywordtype}{void}\ ApplyCollisionSettings();}
+\DoxyCodeLine{00107\ }
+\DoxyCodeLine{00109\ \ \ \ \ \textcolor{keywordtype}{void}\ FinalizePhysicsUpdate();}
+\DoxyCodeLine{00110\ }
+\DoxyCodeLine{00112\ \ \ \ \ UPROPERTY(Transient)}
+\DoxyCodeLine{00113\ \ \ \ \ TObjectPtr<UBodySetup>\ VoxelBodySetup;}
+\DoxyCodeLine{00114\ }
+\DoxyCodeLine{00116\ \ \ \ \ \textcolor{keywordtype}{float}\ LastSyncTime\ =\ 0.0f;}
+\DoxyCodeLine{00117\ }
+\DoxyCodeLine{00119\ \ \ \ \ int32\ LastActiveVoxelNum\ =\ 0;}
+\DoxyCodeLine{00120\ \textcolor{preprocessor}{\#pragma\ endregion}}
+\DoxyCodeLine{00121\ }
+\DoxyCodeLine{00122\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00123\ \ \ \ \ \textcolor{comment}{//\ Debug}}
+\DoxyCodeLine{00124\ \textcolor{preprocessor}{\#pragma\ region\ Debug}}
+\DoxyCodeLine{00125\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00130\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_a3b5e0bebd069996cea81e245f63799c7}{DrawDebugVisualization}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00131\ }
+\DoxyCodeLine{00136\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Debug"{}})}
+\DoxyCodeLine{00137\ \ \ \ \ bool\ \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component_a586d4233fc4c94ba63cc3eb8bf7795e4}{bDebugEnabled}}\ =\ false;}
+\DoxyCodeLine{00138\ }
+\DoxyCodeLine{00139\ \textcolor{preprocessor}{\#pragma\ endregion}}
+\DoxyCodeLine{00140\ \};}
+
+\end{DoxyCode}

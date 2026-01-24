@@ -1,0 +1,66 @@
+\doxysection{FIVSmoke\+Depth\+Sorted\+Composite\+PS Class Reference}
+\hypertarget{class_f_i_v_smoke_depth_sorted_composite_p_s}{}\label{class_f_i_v_smoke_depth_sorted_composite_p_s}\index{FIVSmokeDepthSortedCompositePS@{FIVSmokeDepthSortedCompositePS}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Shaders.\+h$>$}
+
+
+
+Inheritance diagram for FIVSmoke\+Depth\+Sorted\+Composite\+PS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=250pt]{class_f_i_v_smoke_depth_sorted_composite_p_s__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for FIVSmoke\+Depth\+Sorted\+Composite\+PS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=250pt]{class_f_i_v_smoke_depth_sorted_composite_p_s__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_depth_sorted_composite_p_s_ac3043a28fad4e8401e8a663b2c302174}\label{class_f_i_v_smoke_depth_sorted_composite_p_s_ac3043a28fad4e8401e8a663b2c302174} 
+{\bfseries DECLARE\+\_\+\+GLOBAL\+\_\+\+SHADER} (\doxymbox{\hyperlink{class_f_i_v_smoke_depth_sorted_composite_p_s}{FIVSmoke\+Depth\+Sorted\+Composite\+PS}})
+\item 
+\Hypertarget{class_f_i_v_smoke_depth_sorted_composite_p_s_a4170c22629fa674f86fa529400891482}\label{class_f_i_v_smoke_depth_sorted_composite_p_s_a4170c22629fa674f86fa529400891482} 
+{\bfseries SHADER\+\_\+\+USE\+\_\+\+PARAMETER\+\_\+\+STRUCT} (\doxymbox{\hyperlink{class_f_i_v_smoke_depth_sorted_composite_p_s}{FIVSmoke\+Depth\+Sorted\+Composite\+PS}}, FGlobal\+Shader)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_depth_sorted_composite_p_s_af467e415ebaa382e1cb9edc7e9067638}\label{class_f_i_v_smoke_depth_sorted_composite_p_s_af467e415ebaa382e1cb9edc7e9067638} 
+static FRHIBlend\+State \texorpdfstring{$\ast$}{*} {\bfseries Get\+Blend\+State} ()
+\item 
+static bool \doxymbox{\hyperlink{class_f_i_v_smoke_depth_sorted_composite_p_s_ac3f69ab344937dbc4eedacb772c5a9d2}{Should\+Compile\+Permutation}} (const FGlobal\+Shader\+Permutation\+Parameters \&Parameters)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_depth_sorted_composite_p_s_a60e9a7b4455a1a8dc1a6b6d79f726e5c}\label{class_f_i_v_smoke_depth_sorted_composite_p_s_a60e9a7b4455a1a8dc1a6b6d79f726e5c} 
+static constexpr const TCHAR \texorpdfstring{$\ast$}{*} {\bfseries Event\+Name} = TEXT("{}IVSmoke\+Depth\+Sorted\+Composite\+PS"{})
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Depth-\/\+Sorted Composite pixel shader. Compares Z values to determine front/\+back ordering, then applies standard over blending. Properly composites smoke and particles based on their depth relationship. 
+
+\label{doc-func-members}
+\Hypertarget{class_f_i_v_smoke_depth_sorted_composite_p_s_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_i_v_smoke_depth_sorted_composite_p_s_ac3f69ab344937dbc4eedacb772c5a9d2}\index{FIVSmokeDepthSortedCompositePS@{FIVSmokeDepthSortedCompositePS}!ShouldCompilePermutation@{ShouldCompilePermutation}}
+\index{ShouldCompilePermutation@{ShouldCompilePermutation}!FIVSmokeDepthSortedCompositePS@{FIVSmokeDepthSortedCompositePS}}
+\doxysubsubsection{\texorpdfstring{ShouldCompilePermutation()}{ShouldCompilePermutation()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_depth_sorted_composite_p_s_ac3f69ab344937dbc4eedacb772c5a9d2} 
+bool FIVSmoke\+Depth\+Sorted\+Composite\+PS::\+\+Should\+Compile\+Permutation (\begin{DoxyParamCaption}\item[{const FGlobal\+Shader\+Permutation\+Parameters \&}]{Parameters}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+Smoke albedo (color) from ray marching CS. Smoke opacity mask from ray marching CS. Separate\+Translucency texture (particles). Scene textures uniform buffer (Custom\+Depth, Scene\+Depth). Point sampler with clamp addressing. Linear sampler with clamp addressing. Smoke texture extent for UV calculation. Sharpen/\+blur amount (-\/1 to 1, 0 = no filter). Transform for converting device Z to world Z. 
+
+The documentation for this class was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Shaders.\+h\end{DoxyCompactItemize}

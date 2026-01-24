@@ -1,0 +1,81 @@
+\doxysection{FIVSmoke\+VSMProcessor Class Reference}
+\hypertarget{class_f_i_v_smoke_v_s_m_processor}{}\label{class_f_i_v_smoke_v_s_m_processor}\index{FIVSmokeVSMProcessor@{FIVSmokeVSMProcessor}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+VSMProcessor.\+h$>$}
+
+
+
+Collaboration diagram for FIVSmoke\+VSMProcessor:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=223pt]{class_f_i_v_smoke_v_s_m_processor__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \doxymbox{\hyperlink{class_f_i_v_smoke_v_s_m_processor_a929f42a33c5155ece3f97aa12675322b}{Process}} (FRDGBuilder \&Graph\+Builder, FRDGTexture\+Ref Depth\+Texture, FRDGTexture\+Ref VSMTexture, int32 Blur\+Radius)
+\item 
+void \doxymbox{\hyperlink{class_f_i_v_smoke_v_s_m_processor_a77e296995e7cf89c49567a8168b6c987}{Process\+Cascades}} (FRDGBuilder \&Graph\+Builder, TArray$<$ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data}{FIVSmoke\+Cascade\+Data}} $>$ \&Cascades, int32 Blur\+Radius)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Variance Shadow Map processor. Converts depth maps to variance shadow maps and applies blur.
+
+VSM stores (depth, depth²) which enables soft shadow filtering without the shadow acne artifacts of PCF. 
+
+\label{doc-func-members}
+\Hypertarget{class_f_i_v_smoke_v_s_m_processor_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_i_v_smoke_v_s_m_processor_a929f42a33c5155ece3f97aa12675322b}\index{FIVSmokeVSMProcessor@{FIVSmokeVSMProcessor}!Process@{Process}}
+\index{Process@{Process}!FIVSmokeVSMProcessor@{FIVSmokeVSMProcessor}}
+\doxysubsubsection{\texorpdfstring{Process()}{Process()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_v_s_m_processor_a929f42a33c5155ece3f97aa12675322b} 
+void FIVSmoke\+VSMProcessor::\+\+Process (\begin{DoxyParamCaption}\item[{FRDGBuilder \&}]{Graph\+Builder}{, }\item[{FRDGTexture\+Ref}]{Depth\+Texture}{, }\item[{FRDGTexture\+Ref}]{VSMTexture}{, }\item[{int32}]{Blur\+Radius}{}\end{DoxyParamCaption})}
+
+Process a depth texture into a VSM texture. Performs depth → variance conversion and separable Gaussian blur.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Graph\+Builder} & RDG builder. \\
+\hline
+{\em Depth\+Texture} & Input depth texture (R32F). \\
+\hline
+{\em VSMTexture} & Output VSM texture (RG32F). \\
+\hline
+{\em Blur\+Radius} & Blur kernel radius (0 = no blur). \\
+\hline
+\end{DoxyParams}
+\Hypertarget{class_f_i_v_smoke_v_s_m_processor_a77e296995e7cf89c49567a8168b6c987}\index{FIVSmokeVSMProcessor@{FIVSmokeVSMProcessor}!ProcessCascades@{ProcessCascades}}
+\index{ProcessCascades@{ProcessCascades}!FIVSmokeVSMProcessor@{FIVSmokeVSMProcessor}}
+\doxysubsubsection{\texorpdfstring{ProcessCascades()}{ProcessCascades()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_v_s_m_processor_a77e296995e7cf89c49567a8168b6c987} 
+void FIVSmoke\+VSMProcessor::\+\+Process\+Cascades (\begin{DoxyParamCaption}\item[{FRDGBuilder \&}]{Graph\+Builder}{, }\item[{TArray$<$ \doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data}{FIVSmoke\+Cascade\+Data}} $>$ \&}]{Cascades}{, }\item[{int32}]{Blur\+Radius}{}\end{DoxyParamCaption})}
+
+Process all cascades\textquotesingle{} depth textures into VSM textures.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Graph\+Builder} & RDG builder. \\
+\hline
+{\em Cascades} & Array of cascade data. \\
+\hline
+{\em Blur\+Radius} & Blur kernel radius. \\
+\hline
+\end{DoxyParams}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_f_i_v_smoke_v_s_m_processor_a77e296995e7cf89c49567a8168b6c987_cgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+VSMProcessor.\+h\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Private/\+IVSmoke\+VSMProcessor.\+cpp\end{DoxyCompactItemize}

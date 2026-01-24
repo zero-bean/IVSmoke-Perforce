@@ -1,0 +1,415 @@
+\chapter{IVSmoke Quick Start Guide }
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97}{}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97}\index{IVSmoke Quick Start Guide@{IVSmoke Quick Start Guide}}
+\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md8}%
+\Hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md8}%
+
+
+{\bfseries{\doxylink{class_i_v_smoke}{IVSmoke}}} (Interactive Volumetric Smoke) is a real-\/time voxel-\/based volumetric smoke plugin for Unreal Engine 5.\+7. This guide covers the essential steps to get started.
+
+\DoxyHorRuler{0}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md10}{}\doxysection{\texorpdfstring{Table of Contents}{Table of Contents}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md10}
+
+\begin{DoxyEnumerate}
+\item Installation
+\item Basic Usage
+\item Project Settings
+\item Volume Configuration
+\item Smoke Preset
+\item Hole Preset
+\item Interactive Features
+\item Network Replication
+\end{DoxyEnumerate}
+
+\DoxyHorRuler{0}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md12}{}\doxysection{\texorpdfstring{Installation}{Installation}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md12}
+
+\begin{DoxyEnumerate}
+\item Copy the {\ttfamily \doxylink{class_i_v_smoke}{IVSmoke}} folder to your project\textquotesingle{}s {\ttfamily Plugins} directory
+\item Regenerate project files
+\item Open your project in Unreal Editor
+\item Enable the plugin in {\bfseries{Edit \texorpdfstring{$>$}{>} Plugins \texorpdfstring{$>$}{>} \doxylink{class_i_v_smoke}{IVSmoke}}}
+\end{DoxyEnumerate}
+
+{\bfseries{Requirements:\+}}
+
+
+\begin{DoxyItemize}
+\item Unreal Engine 5.\+7
+\item Windows 10+ (DirectX 11.\+3+ /\+ Shader Model 5)
+\item Win64 platform
+\end{DoxyItemize}
+
+\DoxyHorRuler{0}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md14}{}\doxysection{\texorpdfstring{Basic Usage}{Basic Usage}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md14}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md15}{}\doxysubsection{\texorpdfstring{Adding Smoke to Your Level}{Adding Smoke to Your Level}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md15}
+
+\begin{DoxyEnumerate}
+\item In the {\bfseries{Place Actors}} panel, search for {\ttfamily IVSmoke\+Voxel\+Volume}
+\item Drag the actor into your level
+\item Position and scale the volume as needed
+\item Play the level to see the smoke simulation
+\end{DoxyEnumerate}
+
+The smoke volume automatically progresses through lifecycle phases:\+
+
+
+\begin{DoxyItemize}
+\item {\bfseries{Idle}} → {\bfseries{Expansion}} → {\bfseries{Sustain}} → {\bfseries{Dissipation}} → {\bfseries{Finished}}
+\end{DoxyItemize}\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md16}{}\doxysubsection{\texorpdfstring{Triggering Smoke}{Triggering Smoke}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md16}
+By default, {\ttfamily b\+Auto\+Activate} is enabled. To manually control activation:\+
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{comment}{//\ C++}}
+\DoxyCodeLine{\doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume}{AIVSmokeVoxelVolume}}*\ SmokeVolume\ =\ ...;}
+\DoxyCodeLine{SmokeVolume-\/>ActivateSmoke();}
+
+\end{DoxyCode}
+
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{//\ Blueprint}
+\DoxyCodeLine{Get\ reference\ to\ IVSmokeVoxelVolume\ →\ Call\ "{}Activate\ Smoke"{}}
+
+\end{DoxyCode}
+
+
+\DoxyHorRuler{0}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md18}{}\doxysection{\texorpdfstring{Project Settings}{Project Settings}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md18}
+Access via {\bfseries{Edit \texorpdfstring{$>$}{>} Project Settings \texorpdfstring{$>$}{>} Plugins \texorpdfstring{$>$}{>} \doxylink{class_i_v_smoke}{IVSmoke}}}\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md19}{}\doxysubsection{\texorpdfstring{Quality Levels}{Quality Levels}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md19}
+
+\begin{DoxyTable}{2}{}{}{1}
+\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Setting  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Description  \\
+{\bfseries{Quality Level}}  &Overall quality preset (Low/\+\+Medium/\+\+High/\+\+Custom)  \\
+\end{DoxyTable}
+
+
+
+\begin{DoxyTable}{4}{}{}{1}
+\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Level  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Max\+Steps  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Min\+Step\+Size  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Description  \\
+{\bfseries{Low}}  &128  &50.\+0  &Fast performance, lower quality  \\
+{\bfseries{Medium}}  &256  &25.\+0  &Balanced quality and performance  \\
+{\bfseries{High}}  &512  &16.\+0  &Best quality, higher GPU cost  \\
+{\bfseries{Custom}}  &User-\/defined  &User-\/defined  &Manual control over parameters  \\
+\end{DoxyTable}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md20}{}\doxysubsection{\texorpdfstring{Noise Settings}{Noise Settings}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md20}
+
+\begin{DoxyTable}{3}{}{}{1}
+\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Setting  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Description  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Default  \\
+{\bfseries{Noise Resolution}}  &3D noise texture resolution  &64  \\
+{\bfseries{Noise Scale}}  &Noise pattern scale  &1.\+0  \\
+{\bfseries{Noise Speed}}  &Animation speed  &0.\+5  \\
+{\bfseries{Noise Strength}}  &Effect intensity  &0.\+3  \\
+\end{DoxyTable}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md21}{}\doxysubsection{\texorpdfstring{Appearance}{Appearance}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md21}
+
+\begin{DoxyTable}{3}{}{}{1}
+\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Setting  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Description  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Default  \\
+{\bfseries{Smoke Color}}  &Base smoke color  &Gray  \\
+{\bfseries{Smoke Absorption}}  &Light absorption coefficient  &1.\+0  \\
+{\bfseries{Volume Density}}  &Overall density multiplier  &1.\+0  \\
+{\bfseries{Density Scale}}  &Additional density scaling  &1.\+0  \\
+\end{DoxyTable}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md22}{}\doxysubsection{\texorpdfstring{Lighting}{Lighting}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md22}
+
+\begin{DoxyTable}{3}{}{}{1}
+\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Setting  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Description  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Default  \\
+{\bfseries{Ambient Light Color}}  &Ambient lighting tint  &White  \\
+{\bfseries{Ambient Light Intensity}}  &Ambient brightness  &0.\+3  \\
+{\bfseries{Enable Scattering}}  &Light scattering effect  &true  \\
+{\bfseries{Scattering Scale}}  &Scattering intensity  &1.\+0  \\
+{\bfseries{Scattering Anisotropy}}  &Henyey-\/\+Greenstein G parameter  &0.\+3  \\
+\end{DoxyTable}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md23}{}\doxysubsection{\texorpdfstring{Shadows}{Shadows}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md23}
+
+\begin{DoxyTable}{3}{}{}{1}
+\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Setting  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Description  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Default  \\
+{\bfseries{Enable External Shadows}}  &Receive shadows from scene  &false  \\
+{\bfseries{Shadow Ambient}}  &Minimum shadow brightness  &0.\+1  \\
+{\bfseries{Enable VSM}}  &Variance Shadow Maps  &true  \\
+{\bfseries{VSM Min Variance}}  &VSM minimum variance  &0.\+0001  \\
+{\bfseries{VSM Light Bleeding Reduction}}  &Light bleeding fix  &0.\+2  \\
+\end{DoxyTable}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md24}{}\doxysubsection{\texorpdfstring{Rendering}{Rendering}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md24}
+
+\begin{DoxyTable}{3}{}{}{1}
+\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Setting  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Description  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Default  \\
+{\bfseries{Max Step Count}}  &Ray marching iterations  &64  \\
+{\bfseries{Step Size}}  &Ray march step distance  &10.\+0  \\
+{\bfseries{Enable FXAA}}  &Anti-\/aliasing  &false  \\
+{\bfseries{Enable Sharpen}}  &Sharpening filter  &false  \\
+{\bfseries{Sharpen Strength}}  &Sharpening intensity  &0.\+5  \\
+\end{DoxyTable}
+
+
+\DoxyHorRuler{0}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md26}{}\doxysection{\texorpdfstring{Volume Configuration}{Volume Configuration}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md26}
+Select an {\ttfamily \doxylink{class_a_i_v_smoke_voxel_volume}{AIVSmoke\+Voxel\+Volume}} actor to configure these properties:\+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md27}{}\doxysubsection{\texorpdfstring{Grid Settings (Category:\+ IVSmoke \texorpdfstring{$\vert$}{|} Grid)}{Grid Settings (Category:\+ IVSmoke \texorpdfstring{$\vert$}{|} Grid)}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md27}
+
+\begin{DoxyTable}{3}{}{}{1}
+\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Property  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Description  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Default  \\
+{\bfseries{Voxel Size}}  &Size of each voxel in cm  &25.\+0  \\
+{\bfseries{Grid Resolution}}  &Voxel grid dimensions (X, Y, Z)  &(16, 16, 16)  \\
+\end{DoxyTable}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md28}{}\doxysubsection{\texorpdfstring{Simulation Timing (Category:\+ IVSmoke \texorpdfstring{$\vert$}{|} Simulation)}{Simulation Timing (Category:\+ IVSmoke \texorpdfstring{$\vert$}{|} Simulation)}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md28}
+
+\begin{DoxyTable}{3}{}{}{1}
+\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Property  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Description  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Default  \\
+{\bfseries{Expansion Duration}}  &Time to fully expand (seconds)  &2.\+0  \\
+{\bfseries{Sustain Duration}}  &Time at full density (seconds)  &5.\+0  \\
+{\bfseries{Dissipation Duration}}  &Time to fade out (seconds)  &3.\+0  \\
+{\bfseries{Auto Activate}}  &Start simulation automatically  &true  \\
+\end{DoxyTable}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md29}{}\doxysubsection{\texorpdfstring{Appearance (Category:\+ IVSmoke \texorpdfstring{$\vert$}{|} Appearance)}{Appearance (Category:\+ IVSmoke \texorpdfstring{$\vert$}{|} Appearance)}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md29}
+
+\begin{DoxyTable}{2}{}{}{1}
+\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Property  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Description  \\
+{\bfseries{Smoke Preset}}  &Reference to \doxylink{class_u_i_v_smoke_smoke_preset}{UIVSmoke\+Smoke\+Preset} data asset  \\
+\end{DoxyTable}
+
+
+\DoxyHorRuler{0}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md31}{}\doxysection{\texorpdfstring{Smoke Preset}{Smoke Preset}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md31}
+Create a {\bfseries{Smoke Preset}} data asset for reusable appearance settings:\+
+
+
+\begin{DoxyEnumerate}
+\item {\bfseries{Content Browser}} → Right-\/click → {\bfseries{Miscellaneous \texorpdfstring{$>$}{>} Data Asset}}
+\item Select {\ttfamily IVSmoke\+Smoke\+Preset} as the class
+\item Configure the preset properties:\+
+\end{DoxyEnumerate}
+
+
+\begin{DoxyTable}{3}{}{}{1}
+\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Property  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Description  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Default  \\
+{\bfseries{Smoke Color}}  &RGB color of the smoke  &(0.\+5, 0.\+5, 0.\+5)  \\
+{\bfseries{Smoke Absorption}}  &Light absorption rate  &1.\+0  \\
+{\bfseries{Volume Density}}  &Density multiplier  &1.\+0  \\
+\end{DoxyTable}
+
+
+
+\begin{DoxyEnumerate}
+\item Assign the preset to your {\ttfamily \doxylink{class_a_i_v_smoke_voxel_volume}{AIVSmoke\+Voxel\+Volume}} actor\textquotesingle{}s {\bfseries{Smoke Preset}} property
+\end{DoxyEnumerate}
+
+\DoxyHorRuler{0}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md33}{}\doxysection{\texorpdfstring{Hole Preset}{Hole Preset}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md33}
+Create a {\bfseries{Hole Preset}} data asset for reusable hole configuration:\+
+
+
+\begin{DoxyEnumerate}
+\item {\bfseries{Content Browser}} → Right-\/click → {\bfseries{Miscellaneous \texorpdfstring{$>$}{>} Data Asset}}
+\item Select {\ttfamily IVSmoke\+Hole\+Preset} as the class
+\item Configure the preset based on hole type
+\end{DoxyEnumerate}\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md34}{}\doxysubsection{\texorpdfstring{Hole Types}{Hole Types}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md34}
+
+\begin{DoxyTable}{3}{}{}{1}
+\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Type  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Description  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Use Case  \\
+{\bfseries{Penetration}}  &Cylindrical hole along a path  &Bullets, projectiles  \\
+{\bfseries{Explosion}}  &Spherical expanding hole with distortion  &Grenades, explosions  \\
+{\bfseries{Dynamic}}  &Box-\/shaped hole that follows an object  &Moving vehicles, characters  \\
+\end{DoxyTable}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md35}{}\doxysubsection{\texorpdfstring{Common Properties}{Common Properties}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md35}
+
+\begin{DoxyTable}{3}{}{}{1}
+\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Property  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Description  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Default  \\
+{\bfseries{Hole Type}}  &Penetration /\+ Explosion /\+ Dynamic  &Penetration  \\
+{\bfseries{Radius}}  &Effect radius in cm (not for Dynamic)  &50.\+0  \\
+{\bfseries{Duration}}  &How long the hole lasts (seconds)  &3.\+0  \\
+{\bfseries{Softness}}  &Edge softness (0=hard, 1=soft gradient)  &0.\+3  \\
+\end{DoxyTable}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md36}{}\doxysubsection{\texorpdfstring{Explosion-\/\+Specific Properties}{Explosion-\/\+Specific Properties}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md36}
+
+\begin{DoxyTable}{3}{}{}{1}
+\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Property  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Description  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Default  \\
+{\bfseries{Expansion Duration}}  &Time for hole to reach full size  &0.\+15  \\
+{\bfseries{Expansion Fade Range Curve}}  &Fade range over expansion time (0-\/1)  &-\/  \\
+{\bfseries{Shrink Fade Range Curve}}  &Fade range during shrink phase  &-\/  \\
+{\bfseries{Shrink Density Mul Curve}}  &Density multiplier during shrink  &-\/  \\
+{\bfseries{Distortion Curve Over Time}}  &Distortion intensity over time  &-\/  \\
+{\bfseries{Distortion Distance}}  &Maximum distortion distance  &0.\+0  \\
+{\bfseries{Distortion Curve Over Distance}}  &Distortion falloff by distance  &-\/  \\
+\end{DoxyTable}
+
+
+{\bfseries{Explosion Timeline:\+}}
+
+
+\begin{DoxyEnumerate}
+\item {\bfseries{Expansion Phase}} (0 → Expansion\+Duration):\+ Hole expands to full radius
+\item {\bfseries{Shrink Phase}} (Expansion\+Duration → Duration):\+ Hole gradually closes
+\end{DoxyEnumerate}\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md37}{}\doxysubsection{\texorpdfstring{Penetration-\/\+Specific Properties}{Penetration-\/\+Specific Properties}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md37}
+
+\begin{DoxyTable}{3}{}{}{1}
+\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Property  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Description  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Default  \\
+{\bfseries{End Radius}}  &Radius at the exit point  &25.\+0  \\
+\end{DoxyTable}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md38}{}\doxysubsection{\texorpdfstring{Dynamic-\/\+Specific Properties}{Dynamic-\/\+Specific Properties}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md38}
+
+\begin{DoxyTable}{3}{}{}{1}
+\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Property  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Description  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Default  \\
+{\bfseries{Extent}}  &Box size (X, Y, Z)  &(50, 50, 50)  \\
+{\bfseries{Distance Threshold}}  &Min travel distance to create hole  &50.\+0  \\
+\end{DoxyTable}
+
+
+\DoxyHorRuler{0}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md40}{}\doxysection{\texorpdfstring{Interactive Features}{Interactive Features}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md40}
+The {\ttfamily \doxylink{class_u_i_v_smoke_hole_generator_component}{UIVSmoke\+Hole\+Generator\+Component}} provides APIs for creating holes in the smoke volume. For detailed hole configuration, create a {\bfseries{Hole Preset}} data asset (see Hole Preset section).\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md41}{}\doxysubsection{\texorpdfstring{Adding the Component}{Adding the Component}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md41}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{comment}{//\ C++\ -\/\ Add\ to\ your\ Actor}}
+\DoxyCodeLine{\doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component}{UIVSmokeHoleGeneratorComponent}}*\ HoleGenerator\ =\ CreateDefaultSubobject<UIVSmokeHoleGeneratorComponent>(TEXT(\textcolor{stringliteral}{"{}HoleGenerator"{}}));}
+
+\end{DoxyCode}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md42}{}\doxysubsection{\texorpdfstring{Penetration Holes (Bullets)}{Penetration Holes (Bullets)}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md42}
+Creates a cylindrical hole along a projectile path. Requires a Penetration-\/type Hole Preset:\+
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{comment}{//\ C++}}
+\DoxyCodeLine{\doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmokeHolePreset}}*\ BulletPreset\ =\ LoadObject<UIVSmokeHolePreset>(...);}
+\DoxyCodeLine{HoleGenerator-\/>\doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_a227c41d665c3944e274e1773b81e63f1}{RequestPenetrationHole}}(}
+\DoxyCodeLine{\ \ \ \ FVector3f(HitLocation),\ \ \textcolor{comment}{//\ Origin:\ Impact\ point}}
+\DoxyCodeLine{\ \ \ \ FVector3f(ShotDirection),\ \textcolor{comment}{//\ Direction:\ Projectile\ direction\ (normalized)}}
+\DoxyCodeLine{\ \ \ \ BulletPreset\ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Preset:\ Penetration-\/type\ hole\ preset}}
+\DoxyCodeLine{);}
+
+\end{DoxyCode}
+
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{//\ Blueprint}
+\DoxyCodeLine{Request\ Penetration\ Hole}
+\DoxyCodeLine{-\/\ Origin:\ Hit\ location\ (FVector3f)}
+\DoxyCodeLine{-\/\ Direction:\ Shot\ direction\ (FVector3f)}
+\DoxyCodeLine{-\/\ Preset:\ Reference\ to\ IVSmokeHolePreset\ (Penetration\ type)}
+
+\end{DoxyCode}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md43}{}\doxysubsection{\texorpdfstring{Explosion Holes}{Explosion Holes}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md43}
+Creates a spherical expanding hole with optional distortion effects. Requires an Explosion-\/type Hole Preset for animated expansion/\+shrink with curve-\/based control:\+
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{comment}{//\ C++}}
+\DoxyCodeLine{\doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmokeHolePreset}}*\ GrenadePreset\ =\ LoadObject<UIVSmokeHolePreset>(...);}
+\DoxyCodeLine{HoleGenerator-\/>\doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_aae055305f55742e021ee18ae1cb9fb6f}{RequestExplosionHole}}(}
+\DoxyCodeLine{\ \ \ \ FVector3f(ExplosionCenter),\ \ \textcolor{comment}{//\ Origin:\ Center\ of\ explosion}}
+\DoxyCodeLine{\ \ \ \ GrenadePreset\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Preset:\ Explosion-\/type\ hole\ preset}}
+\DoxyCodeLine{);}
+
+\end{DoxyCode}
+
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{//\ Blueprint}
+\DoxyCodeLine{Request\ Explosion\ Hole}
+\DoxyCodeLine{-\/\ Origin:\ Explosion\ center\ (FVector3f)}
+\DoxyCodeLine{-\/\ Preset:\ Reference\ to\ IVSmokeHolePreset\ (Explosion\ type)}
+
+\end{DoxyCode}
+
+
+{\bfseries{Tip:\+}} Create an Explosion-\/type {\ttfamily \doxylink{class_u_i_v_smoke_hole_preset}{UIVSmoke\+Hole\+Preset}} to customize:\+
+
+
+\begin{DoxyItemize}
+\item Expansion/\+shrink timing and curves
+\item Smoke distortion effects (push smoke outward)
+\item Edge softness and duration
+\end{DoxyItemize}\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md44}{}\doxysubsection{\texorpdfstring{Dynamic Object Tracking}{Dynamic Object Tracking}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md44}
+Tracks a moving actor and creates holes along its path. Requires a Dynamic-\/type Hole Preset:\+
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{comment}{//\ C++}}
+\DoxyCodeLine{\doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmokeHolePreset}}*\ VehiclePreset\ =\ LoadObject<UIVSmokeHolePreset>(...);}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{comment}{//\ Start\ tracking}}
+\DoxyCodeLine{HoleGenerator-\/>\doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_a1d284e92541eb253ba5b6aab0d0d6137}{RequestTrackDynamicObject}}(}
+\DoxyCodeLine{\ \ \ \ TargetActor,\ \ \ \ \textcolor{comment}{//\ AActor*:\ Actor\ to\ follow}}
+\DoxyCodeLine{\ \ \ \ VehiclePreset\ \ \ \textcolor{comment}{//\ Preset:\ Dynamic-\/type\ hole\ preset}}
+\DoxyCodeLine{);}
+
+\end{DoxyCode}
+
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{//\ Blueprint}
+\DoxyCodeLine{Request\ Track\ Dynamic\ Object}
+\DoxyCodeLine{-\/\ Target\ Actor:\ Actor\ reference\ to\ track}
+\DoxyCodeLine{-\/\ Preset:\ Reference\ to\ IVSmokeHolePreset\ (Dynamic\ type)}
+
+\end{DoxyCode}
+
+
+\DoxyHorRuler{0}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md46}{}\doxysection{\texorpdfstring{Network Replication}{Network Replication}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md46}
+\doxylink{class_i_v_smoke}{IVSmoke} supports network replication for multiplayer games.\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md47}{}\doxysubsection{\texorpdfstring{Enabling Replication}{Enabling Replication}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md47}
+On your {\ttfamily \doxylink{class_a_i_v_smoke_voxel_volume}{AIVSmoke\+Voxel\+Volume}} actor:\+
+
+
+\begin{DoxyTable}{3}{}{}{1}
+\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Property  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Description  &\SetCell{c,bg=\tableheadbgcolor,font=\bfseries}Default  \\
+{\bfseries{Replicate Smoke}}  &Enable network sync  &false  \\
+{\bfseries{Replication Interval}}  &Sync frequency (seconds)  &0.\+1  \\
+\end{DoxyTable}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md48}{}\doxysubsection{\texorpdfstring{How It Works}{How It Works}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md48}
+
+\begin{DoxyItemize}
+\item {\bfseries{Server}}:\+ Runs the full simulation and broadcasts state
+\item {\bfseries{Clients}}:\+ Receive replicated voxel data and render locally
+\item Hole generation is automatically replicated when enabled
+\end{DoxyItemize}\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md49}{}\doxysubsection{\texorpdfstring{Best Practices}{Best Practices}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md49}
+
+\begin{DoxyEnumerate}
+\item Only enable replication when needed (has bandwidth cost)
+\item Adjust {\ttfamily Replication\+Interval} based on your network requirements
+\item For client-\/side-\/only effects, keep {\ttfamily Replicate\+Smoke} disabled
+\end{DoxyEnumerate}
+
+\DoxyHorRuler{0}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md51}{}\doxysection{\texorpdfstring{Troubleshooting}{Troubleshooting}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md51}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md52}{}\doxysubsection{\texorpdfstring{Smoke Not Visible}{Smoke Not Visible}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md52}
+
+\begin{DoxyEnumerate}
+\item Check that the volume is within camera view
+\item Verify {\ttfamily b\+Auto\+Activate} is enabled or call {\ttfamily Activate\+Smoke()}
+\item Ensure Project Settings density values are \texorpdfstring{$>$}{>} 0
+\end{DoxyEnumerate}\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md53}{}\doxysubsection{\texorpdfstring{Performance Issues}{Performance Issues}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md53}
+
+\begin{DoxyEnumerate}
+\item Reduce {\bfseries{Grid Resolution}} (fewer voxels)
+\item Increase {\bfseries{Voxel Size}} (larger voxels, less detail)
+\item Lower {\bfseries{Max Step Count}} in Project Settings
+\item Disable {\bfseries{External Shadows}} if not needed
+\end{DoxyEnumerate}\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md54}{}\doxysubsection{\texorpdfstring{Network Sync Issues}{Network Sync Issues}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md54}
+
+\begin{DoxyEnumerate}
+\item Verify {\ttfamily b\+Replicate\+Smoke} is enabled on server
+\item Check that the actor is set to replicate ({\ttfamily b\+Replicates = true})
+\item Adjust {\ttfamily Replication\+Interval} if updates are too slow
+\end{DoxyEnumerate}
+
+\DoxyHorRuler{0}
+\hypertarget{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md56}{}\doxysection{\texorpdfstring{API Reference}{API Reference}}\label{md__c_1_2_users_2_jungle_2_perforce_2geb0598__dev_2_i_v_smoke_project_2_plugins_2_i_v_smoke_2_do0a9fa1ed6ca682bab9752b619f044c97_autotoc_md56}
+For detailed API documentation, see Doxygen documentation or refer to the header files:\+
+
+
+\begin{DoxyItemize}
+\item {\ttfamily \doxylink{_i_v_smoke_voxel_volume_8h_source}{IVSmoke\+Voxel\+Volume.\+h}} -\/ Main smoke volume actor
+\item {\ttfamily \doxylink{_i_v_smoke_settings_8h_source}{IVSmoke\+Settings.\+h}} -\/ Project settings
+\item {\ttfamily \doxylink{_i_v_smoke_smoke_preset_8h_source}{IVSmoke\+Smoke\+Preset.\+h}} -\/ Appearance presets
+\item {\ttfamily \doxylink{_i_v_smoke_hole_preset_8h_source}{IVSmoke\+Hole\+Preset.\+h}} -\/ Hole configuration presets (Penetration/\+\+Explosion/\+\+Dynamic)
+\item {\ttfamily \doxylink{_i_v_smoke_hole_generator_component_8h_source}{IVSmoke\+Hole\+Generator\+Component.\+h}} -\/ Hole generation API
+\end{DoxyItemize}
+
+\DoxyHorRuler{0}
+
+
+{\itshape Copyright (c) 2026, Team SDB. All rights reserved.} 

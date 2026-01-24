@@ -1,0 +1,125 @@
+\doxysection{FIVSmoke\+Hole\+Data Struct Reference}
+\hypertarget{struct_f_i_v_smoke_hole_data}{}\label{struct_f_i_v_smoke_hole_data}\index{FIVSmokeHoleData@{FIVSmokeHoleData}}
+
+
+Network-\/optimized hole data structure.  
+
+
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Hole\+Data.\+h$>$}
+
+
+
+Inheritance diagram for FIVSmoke\+Hole\+Data:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=205pt]{struct_f_i_v_smoke_hole_data__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for FIVSmoke\+Hole\+Data:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=205pt]{struct_f_i_v_smoke_hole_data__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data_a4a8f292a4fad6ac86ef03e0e600e79da}{Post\+Replicated\+Add}} (const \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array}{FIVSmoke\+Hole\+Array}} \&In\+Array)
+\item 
+void \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data_a5d10460e61399a65287975eb8aa7c3c6}{Post\+Replicated\+Change}} (const \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array}{FIVSmoke\+Hole\+Array}} \&In\+Array)
+\item 
+void \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data_a7ae21975d1b0f15c77232c00d5c7c680}{Pre\+Replicated\+Remove}} (const \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array}{FIVSmoke\+Hole\+Array}} \&In\+Array)
+\item 
+FORCEINLINE bool \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data_ae93fe0f2762429d569ac2bd633712f6f}{Is\+Expired}} (const float Current\+Server\+Time) const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+FVector3f \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data_a2f624fb78b9fde72ace88071b81202e1}{Position}} = FVector3f::\+\+Zero\+Vector
+\item 
+FVector3f \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data_a3f07227c98373bd01004608646392eda}{End\+Position}} = FVector3f::\+\+Zero\+Vector
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data_a7ea951ba1de19e219d3cb87afb987d8e}{Expiration\+Server\+Time}} = 0.\+0f
+\item 
+uint8 \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data_a85dd55314c5d9140bee61973e31f79c2}{Preset\+ID}} = 0
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Network-\/optimized hole data structure. 
+
+\label{doc-func-members}
+\Hypertarget{struct_f_i_v_smoke_hole_data_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{struct_f_i_v_smoke_hole_data_ae93fe0f2762429d569ac2bd633712f6f}\index{FIVSmokeHoleData@{FIVSmokeHoleData}!IsExpired@{IsExpired}}
+\index{IsExpired@{IsExpired}!FIVSmokeHoleData@{FIVSmokeHoleData}}
+\doxysubsubsection{\texorpdfstring{IsExpired()}{IsExpired()}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_data_ae93fe0f2762429d569ac2bd633712f6f} 
+FORCEINLINE bool FIVSmoke\+Hole\+Data::\+\+Is\+Expired (\begin{DoxyParamCaption}\item[{const float}]{Current\+Server\+Time}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Check if this hole has expired. Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=231pt]{struct_f_i_v_smoke_hole_data_ae93fe0f2762429d569ac2bd633712f6f_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{struct_f_i_v_smoke_hole_data_a4a8f292a4fad6ac86ef03e0e600e79da}\index{FIVSmokeHoleData@{FIVSmokeHoleData}!PostReplicatedAdd@{PostReplicatedAdd}}
+\index{PostReplicatedAdd@{PostReplicatedAdd}!FIVSmokeHoleData@{FIVSmokeHoleData}}
+\doxysubsubsection{\texorpdfstring{PostReplicatedAdd()}{PostReplicatedAdd()}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_data_a4a8f292a4fad6ac86ef03e0e600e79da} 
+void FIVSmoke\+Hole\+Data::\+\+Post\+Replicated\+Add (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array}{FIVSmoke\+Hole\+Array}} \&}]{In\+Array}{}\end{DoxyParamCaption})}
+
+This function turns on the dirty flag. \Hypertarget{struct_f_i_v_smoke_hole_data_a5d10460e61399a65287975eb8aa7c3c6}\index{FIVSmokeHoleData@{FIVSmokeHoleData}!PostReplicatedChange@{PostReplicatedChange}}
+\index{PostReplicatedChange@{PostReplicatedChange}!FIVSmokeHoleData@{FIVSmokeHoleData}}
+\doxysubsubsection{\texorpdfstring{PostReplicatedChange()}{PostReplicatedChange()}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_data_a5d10460e61399a65287975eb8aa7c3c6} 
+void FIVSmoke\+Hole\+Data::\+\+Post\+Replicated\+Change (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array}{FIVSmoke\+Hole\+Array}} \&}]{In\+Array}{}\end{DoxyParamCaption})}
+
+This function turns on the dirty flag. \Hypertarget{struct_f_i_v_smoke_hole_data_a7ae21975d1b0f15c77232c00d5c7c680}\index{FIVSmokeHoleData@{FIVSmokeHoleData}!PreReplicatedRemove@{PreReplicatedRemove}}
+\index{PreReplicatedRemove@{PreReplicatedRemove}!FIVSmokeHoleData@{FIVSmokeHoleData}}
+\doxysubsubsection{\texorpdfstring{PreReplicatedRemove()}{PreReplicatedRemove()}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_data_a7ae21975d1b0f15c77232c00d5c7c680} 
+void FIVSmoke\+Hole\+Data::\+\+Pre\+Replicated\+Remove (\begin{DoxyParamCaption}\item[{const \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array}{FIVSmoke\+Hole\+Array}} \&}]{In\+Array}{}\end{DoxyParamCaption})}
+
+This function turns on the dirty flag. 
+
+\label{doc-variable-members}
+\Hypertarget{struct_f_i_v_smoke_hole_data_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{struct_f_i_v_smoke_hole_data_a3f07227c98373bd01004608646392eda}\index{FIVSmokeHoleData@{FIVSmokeHoleData}!EndPosition@{EndPosition}}
+\index{EndPosition@{EndPosition}!FIVSmokeHoleData@{FIVSmokeHoleData}}
+\doxysubsubsection{\texorpdfstring{EndPosition}{EndPosition}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_data_a3f07227c98373bd01004608646392eda} 
+FVector3f FIVSmoke\+Hole\+Data::\+\+End\+Position = FVector3f::\+\+Zero\+Vector}
+
+World position where the penetration exits. (Penetration only) \Hypertarget{struct_f_i_v_smoke_hole_data_a7ea951ba1de19e219d3cb87afb987d8e}\index{FIVSmokeHoleData@{FIVSmokeHoleData}!ExpirationServerTime@{ExpirationServerTime}}
+\index{ExpirationServerTime@{ExpirationServerTime}!FIVSmokeHoleData@{FIVSmokeHoleData}}
+\doxysubsubsection{\texorpdfstring{ExpirationServerTime}{ExpirationServerTime}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_data_a7ea951ba1de19e219d3cb87afb987d8e} 
+float FIVSmoke\+Hole\+Data::\+\+Expiration\+Server\+Time = 0.\+0f}
+
+Hole expiration time (server based). \Hypertarget{struct_f_i_v_smoke_hole_data_a2f624fb78b9fde72ace88071b81202e1}\index{FIVSmokeHoleData@{FIVSmokeHoleData}!Position@{Position}}
+\index{Position@{Position}!FIVSmokeHoleData@{FIVSmokeHoleData}}
+\doxysubsubsection{\texorpdfstring{Position}{Position}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_data_a2f624fb78b9fde72ace88071b81202e1} 
+FVector3f FIVSmoke\+Hole\+Data::\+\+Position = FVector3f::\+\+Zero\+Vector}
+
+World position where the hole starts. \Hypertarget{struct_f_i_v_smoke_hole_data_a85dd55314c5d9140bee61973e31f79c2}\index{FIVSmokeHoleData@{FIVSmokeHoleData}!PresetID@{PresetID}}
+\index{PresetID@{PresetID}!FIVSmokeHoleData@{FIVSmokeHoleData}}
+\doxysubsubsection{\texorpdfstring{PresetID}{PresetID}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_hole_data_a85dd55314c5d9140bee61973e31f79c2} 
+uint8 FIVSmoke\+Hole\+Data::\+\+Preset\+ID = 0}
+
+Preset ID. 
+
+The documentation for this struct was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Hole\+Data.\+h\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Private/\+IVSmoke\+Hole\+Data.\+cpp\end{DoxyCompactItemize}

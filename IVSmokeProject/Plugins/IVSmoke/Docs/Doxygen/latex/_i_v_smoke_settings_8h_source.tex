@@ -1,0 +1,269 @@
+\doxysection{IVSmoke\+Settings.\+h}
+\hypertarget{_i_v_smoke_settings_8h_source}{}\label{_i_v_smoke_settings_8h_source}\index{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeSettings.h@{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeSettings.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//\ Copyright\ (c)\ 2026,\ Team\ SDB.\ All\ rights\ reserved.}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}CoreMinimal.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}Engine/DeveloperSettings.h"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}SceneViewExtension.h"{}}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}IVSmokeSettings.generated.h"{}}}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00013\ USTRUCT(BlueprintType)}
+\DoxyCodeLine{00014\ struct\ IVSMOKE\_API\ \doxymbox{\hyperlink{struct_f_i_v_smoke_noise_settings}{FIVSmokeNoiseSettings}}}
+\DoxyCodeLine{00015\ \{}
+\DoxyCodeLine{00016\ \ \ \ \ GENERATED\_BODY()}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \ \ \ \ }
+\DoxyCodeLine{00019\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite)}
+\DoxyCodeLine{00020\ \ \ \ \ int32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_noise_settings_a43deca2bf1df9f88cee3416acdd991c8}{Seed}}\ =\ 0;}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00023\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}16"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}512"{}}))}
+\DoxyCodeLine{00024\ \ \ \ \ int32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_noise_settings_a87df3f7de47bca99c49e710f469b0d4e}{TexSize}}\ =\ 128;}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00027\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}1"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}8"{}}))}
+\DoxyCodeLine{00028\ \ \ \ \ int32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_noise_settings_a582f060983cdf2c3f43a20397b6ac4d4}{Octaves}}\ =\ 6;}
+\DoxyCodeLine{00029\ }
+\DoxyCodeLine{00031\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}1.0"{}}))}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_noise_settings_a4cdc0940715fc80389e201f10871157f}{Wrap}}\ =\ 0.76f;}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00035\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}1.0"{}}))}
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_noise_settings_af674ba9a6a4b83fecf86c2fd398982f1}{Amplitude}}\ =\ 0.62f;}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00039\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}1"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}16"{}}))}
+\DoxyCodeLine{00040\ \ \ \ \ int32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_noise_settings_ac7c48e54fadfae353e0986e6a17c4e15}{AxisCellCount}}\ =\ 4;}
+\DoxyCodeLine{00041\ }
+\DoxyCodeLine{00043\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}8"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}128"{}}))}
+\DoxyCodeLine{00044\ \ \ \ \ int32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_noise_settings_ac978ccdc62b79a5b3b52d93760484023}{CellSize}}\ =\ 32;}
+\DoxyCodeLine{00045\ \};}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00051\ UENUM(BlueprintType)}
+\DoxyCodeLine{00052\ enum\ class\ EIVSmokeRenderPass\ :\ uint8}
+\DoxyCodeLine{00053\ \{}
+\DoxyCodeLine{00055\ \ \ \ \ BeforeDOF\ UMETA(DisplayName\ =\ \textcolor{stringliteral}{"{}Before\ DOF\ (Best\ Quality)"{}}),}
+\DoxyCodeLine{00056\ }
+\DoxyCodeLine{00058\ \ \ \ \ AfterDOF\ UMETA(DisplayName\ =\ \textcolor{stringliteral}{"{}After\ DOF\ (Recommended)"{}}),}
+\DoxyCodeLine{00059\ }
+\DoxyCodeLine{00061\ \ \ \ \ TranslucencyAfterDOF\ UMETA(DisplayName\ =\ \textcolor{stringliteral}{"{}Translucency\ After\ DOF\ (Experimental)"{}}),}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00064\ \ \ \ \ MotionBlur\ UMETA(DisplayName\ =\ \textcolor{stringliteral}{"{}After\ Motion\ Blur"{}}),}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00067\ \ \ \ \ Tonemap\ UMETA(DisplayName\ =\ \textcolor{stringliteral}{"{}After\ Tonemap\ (No\ Post\ Effects)"{}})}
+\DoxyCodeLine{00068\ \};}
+\DoxyCodeLine{00069\ }
+\DoxyCodeLine{00074\ UENUM(BlueprintType)}
+\DoxyCodeLine{00075\ \textcolor{keyword}{enum\ class}\ EIVSmokeQualityLevel\ :\ uint8}
+\DoxyCodeLine{00076\ \{}
+\DoxyCodeLine{00078\ \ \ \ \ Low\ UMETA(DisplayName\ =\ \textcolor{stringliteral}{"{}Low\ (Fast)"{}}),}
+\DoxyCodeLine{00079\ }
+\DoxyCodeLine{00081\ \ \ \ \ Medium\ UMETA(DisplayName\ =\ \textcolor{stringliteral}{"{}Medium\ (Balanced)"{}}),}
+\DoxyCodeLine{00082\ }
+\DoxyCodeLine{00084\ \ \ \ \ High\ UMETA(DisplayName\ =\ \textcolor{stringliteral}{"{}High\ (Quality)"{}}),}
+\DoxyCodeLine{00085\ }
+\DoxyCodeLine{00087\ \ \ \ \ Custom\ UMETA(DisplayName\ =\ \textcolor{stringliteral}{"{}Custom"{}})}
+\DoxyCodeLine{00088\ \};}
+\DoxyCodeLine{00089\ }
+\DoxyCodeLine{00097\ UCLASS(Config\ =\ Game,\ DefaultConfig,\ meta\ =\ (DisplayName\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}}))}
+\DoxyCodeLine{00098\ class\ IVSMOKE\_API\ UIVSmokeSettings\ :\ public\ UDeveloperSettings}
+\DoxyCodeLine{00099\ \{}
+\DoxyCodeLine{00100\ \ \ \ \ GENERATED\_BODY()}
+\DoxyCodeLine{00101\ }
+\DoxyCodeLine{00102\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00103\ \ \ \ \ UIVSmokeSettings();}
+\DoxyCodeLine{00104\ }
+\DoxyCodeLine{00106\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ UIVSmokeSettings*\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a47e89dc35d4bd609931140b486f75482}{Get}}();}
+\DoxyCodeLine{00107\ }
+\DoxyCodeLine{00108\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00109\ \ \ \ \ \textcolor{comment}{//\ UDeveloperSettings\ Interface}}
+\DoxyCodeLine{00110\ }
+\DoxyCodeLine{00111\ \ \ \ \ \textcolor{keyword}{virtual}\ FName\ GetCategoryName()\textcolor{keyword}{\ const\ override\ }\{\ \textcolor{keywordflow}{return}\ TEXT(\textcolor{stringliteral}{"{}Plugins"{}});\ \}}
+\DoxyCodeLine{00112\ \ \ \ \ \textcolor{keyword}{virtual}\ FName\ GetSectionName()\textcolor{keyword}{\ const\ override\ }\{\ \textcolor{keywordflow}{return}\ TEXT(\textcolor{stringliteral}{"{}IVSmoke"{}});\ \}}
+\DoxyCodeLine{00113\ }
+\DoxyCodeLine{00114\ \textcolor{preprocessor}{\#if\ WITH\_EDITOR}}
+\DoxyCodeLine{00115\ \ \ \ \ \textcolor{keyword}{virtual}\ FText\ GetSectionText()\textcolor{keyword}{\ const\ override\ }\{\ \textcolor{keywordflow}{return}\ NSLOCTEXT(\textcolor{stringliteral}{"{}IVSmoke"{}},\ \textcolor{stringliteral}{"{}SettingsSection"{}},\ \textcolor{stringliteral}{"{}IVSmoke"{}});\ \}}
+\DoxyCodeLine{00116\ \ \ \ \ \textcolor{keyword}{virtual}\ FText\ GetSectionDescription()\textcolor{keyword}{\ const\ override\ }\{\ \textcolor{keywordflow}{return}\ NSLOCTEXT(\textcolor{stringliteral}{"{}IVSmoke"{}},\ \textcolor{stringliteral}{"{}SettingsDescription"{}},\ \textcolor{stringliteral}{"{}Configure\ IVSmoke\ volumetric\ smoke\ settings"{}});\ \}}
+\DoxyCodeLine{00117\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ PostEditChangeProperty(FPropertyChangedEvent\&\ PropertyChangedEvent)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00118\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00119\ }
+\DoxyCodeLine{00120\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00121\ \ \ \ \ \textcolor{comment}{//\ Global}}
+\DoxyCodeLine{00122\ }
+\DoxyCodeLine{00124\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}})}
+\DoxyCodeLine{00125\ \ \ \ \ bool\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a5d68272cc49b3c11187e45939c160d7a}{bEnableSmokeRendering}}\ =\ true;}
+\DoxyCodeLine{00126\ }
+\DoxyCodeLine{00128\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}})}
+\DoxyCodeLine{00129\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ac9f6ed7f85b849230d317531dcef546b}{bShowAdvancedOptions}}\ =\ false;}
+\DoxyCodeLine{00130\ }
+\DoxyCodeLine{00132\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}})}
+\DoxyCodeLine{00133\ \ \ \ \ EIVSmokeQualityLevel\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a23801bba2d85b479a15942dcd804fd15}{QualityLevel}}\ =\ EIVSmokeQualityLevel::Medium;}
+\DoxyCodeLine{00134\ }
+\DoxyCodeLine{00136\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}32"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}1024"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}QualityLevel==EIVSmokeQualityLevel::Custom"{}},\ EditConditionHides))}
+\DoxyCodeLine{00137\ \ \ \ \ int32\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a61021fbc1fe0c000e90edeafb7f03b3a}{CustomMaxSteps}}\ =\ 256;}
+\DoxyCodeLine{00138\ }
+\DoxyCodeLine{00140\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}5.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}100.0"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}QualityLevel==EIVSmokeQualityLevel::Custom"{}},\ EditConditionHides))}
+\DoxyCodeLine{00141\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a1411930bb0f6ee7a43d191aafc1f2eed}{CustomMinStepSize}}\ =\ 25.0f;}
+\DoxyCodeLine{00142\ }
+\DoxyCodeLine{00144\ \ \ \ \ int32\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a9750f3b4816b974e5209b2ba592decbb}{GetEffectiveMaxSteps}}()\ const;}
+\DoxyCodeLine{00145\ }
+\DoxyCodeLine{00147\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a629e461fd7bcd7debb6740a6b887c64a}{GetEffectiveMinStepSize}}()\ const;}
+\DoxyCodeLine{00148\ }
+\DoxyCodeLine{00149\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00150\ \ \ \ \ \textcolor{comment}{//\ Noise}}
+\DoxyCodeLine{00151\ }
+\DoxyCodeLine{00153\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Noise"{}})}
+\DoxyCodeLine{00154\ \ \ \ \ \doxymbox{\hyperlink{struct_f_i_v_smoke_noise_settings}{FIVSmokeNoiseSettings}}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a7f8c931e4f27f4d5f6bafea12bf0f616}{NoiseSettings}};}
+\DoxyCodeLine{00155\ }
+\DoxyCodeLine{00157\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Noise"{}})}
+\DoxyCodeLine{00158\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_af3cd262f4f80a42cb328ec34058eae2a}{bRegenerateNoiseOnStartup}}\ =\ true;}
+\DoxyCodeLine{00159\ }
+\DoxyCodeLine{00161\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Noise"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.01"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}10.0"{}}))}
+\DoxyCodeLine{00162\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ae5b79fd6502c33f6485050cb0bbc72a3}{NoiseUVMul}}\ =\ 0.42f;}
+\DoxyCodeLine{00163\ }
+\DoxyCodeLine{00164\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00165\ \ \ \ \ \textcolor{comment}{//\ Appearance}}
+\DoxyCodeLine{00166\ }
+\DoxyCodeLine{00168\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Appearance"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}1.0"{}}))}
+\DoxyCodeLine{00169\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a82753977ace13e3690a1f92354abaef7}{SmokeDensityFalloff}}\ =\ 0.2f;}
+\DoxyCodeLine{00170\ }
+\DoxyCodeLine{00172\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Appearance"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}1.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}1000.0"{}}))}
+\DoxyCodeLine{00173\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ae195e170e01a99d1c0cd8003ce243733}{SmokeSize}}\ =\ 128.0f;}
+\DoxyCodeLine{00174\ }
+\DoxyCodeLine{00176\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Appearance"{}})}
+\DoxyCodeLine{00177\ \ \ \ \ FVector\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a3f80d63911d11f9dcc688a8c074e0b46}{WindDirection}}\ =\ FVector(0.00f,\ 0.00f,\ 0.1f);}
+\DoxyCodeLine{00178\ }
+\DoxyCodeLine{00181\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Appearance"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}-\/1.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}1.0"{}}))}
+\DoxyCodeLine{00182\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a9a05a514f4d93470aab02d82f98541b9}{Sharpness}}\ =\ 0.0f;}
+\DoxyCodeLine{00183\ }
+\DoxyCodeLine{00185\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Appearance"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}1.0"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions"{}},\ EditConditionHides))}
+\DoxyCodeLine{00186\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a8f4cbf58987d9caa0a2f215fd7ea0961}{VolumeRangeOffset}}\ =\ 0.1;}
+\DoxyCodeLine{00187\ }
+\DoxyCodeLine{00189\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Appearance"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}-\/1.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}1.0"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions"{}},\ EditConditionHides))}
+\DoxyCodeLine{00190\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_afbbe47e34402d9ae806bfbb20fefc3d6}{VolumeEdgeNoiseFadeOffset}}\ =\ 0.04f;}
+\DoxyCodeLine{00191\ }
+\DoxyCodeLine{00193\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Appearance"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.1"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}10.0"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions"{}},\ EditConditionHides))}
+\DoxyCodeLine{00194\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a9e83ba796d27bf30f64aa356a1df549a}{VolumeEdgeFadeSharpness}}\ =\ 3.5f;}
+\DoxyCodeLine{00195\ }
+\DoxyCodeLine{00196\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00197\ \ \ \ \ \textcolor{comment}{//\ Lighting}}
+\DoxyCodeLine{00198\ }
+\DoxyCodeLine{00200\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Lighting"{}})}
+\DoxyCodeLine{00201\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a6b7a4ddcd64a42c7b13bae9b3357c712}{bEnableScattering}}\ =\ true;}
+\DoxyCodeLine{00202\ }
+\DoxyCodeLine{00204\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Lighting"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}10.0"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bEnableScattering"{}},\ EditConditionHides))}
+\DoxyCodeLine{00205\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a07f62f3ac41404fee21952a0210afb4f}{ScatterScale}}\ =\ 0.5f;}
+\DoxyCodeLine{00206\ }
+\DoxyCodeLine{00209\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Lighting"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}-\/0.99"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}0.99"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bEnableScattering"{}},\ EditConditionHides))}
+\DoxyCodeLine{00210\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a834d63aacdfd676ce0950a0ab6954c39}{ScatteringAnisotropy}}\ =\ 0.5f;}
+\DoxyCodeLine{00211\ }
+\DoxyCodeLine{00213\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Lighting"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions"{}},\ EditConditionHides))}
+\DoxyCodeLine{00214\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a242d33091efca4838eb13802c07e20c7}{bOverrideLightDirection}}\ =\ false;}
+\DoxyCodeLine{00215\ }
+\DoxyCodeLine{00217\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Lighting"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions\ \&\&\ bOverrideLightDirection"{}},\ EditConditionHides))}
+\DoxyCodeLine{00218\ \ \ \ \ FVector\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ad93690784063d6522bc740d9d37b99a0}{LightDirectionOverride}}\ =\ FVector(0.0f,\ 0.0f,\ 1.0f);}
+\DoxyCodeLine{00219\ }
+\DoxyCodeLine{00221\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Lighting"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions"{}},\ EditConditionHides))}
+\DoxyCodeLine{00222\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a76b59fee045b68cb1f507e803e648a37}{bOverrideLightColor}}\ =\ false;}
+\DoxyCodeLine{00223\ }
+\DoxyCodeLine{00225\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Lighting"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions\ \&\&\ bOverrideLightColor"{}},\ EditConditionHides))}
+\DoxyCodeLine{00226\ \ \ \ \ FLinearColor\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_aa6b1bacf36afb9447df220c3000b1adb}{LightColorOverride}}\ =\ FLinearColor::White;}
+\DoxyCodeLine{00227\ }
+\DoxyCodeLine{00228\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00229\ \ \ \ \ \textcolor{comment}{//\ Self-\/Shadowing\ (Light\ Marching)}}
+\DoxyCodeLine{00230\ }
+\DoxyCodeLine{00232\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ Self"{}})}
+\DoxyCodeLine{00233\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a875709db505263e1f111bf1904615e32}{bEnableSelfShadowing}}\ =\ true;}
+\DoxyCodeLine{00234\ }
+\DoxyCodeLine{00236\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ Self"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}1"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}16"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bEnableSelfShadowing"{}},\ EditConditionHides))}
+\DoxyCodeLine{00237\ \ \ \ \ int32\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_adffcdaee606bcfdc15862fa0b07b4e35}{LightMarchingSteps}}\ =\ 6;}
+\DoxyCodeLine{00238\ }
+\DoxyCodeLine{00240\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ Self"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}1.0"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bEnableSelfShadowing"{}},\ EditConditionHides))}
+\DoxyCodeLine{00241\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_aaae34a62d76fbcf6acab2b9f7066e80c}{ShadowAmbient}}\ =\ 0.2f;}
+\DoxyCodeLine{00242\ }
+\DoxyCodeLine{00244\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ Self"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}500.0"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions\ \&\&\ bEnableSelfShadowing"{}},\ EditConditionHides))}
+\DoxyCodeLine{00245\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_aed2c17e98657fc3cb442dc9e677e2380}{LightMarchingDistance}}\ =\ 0.0f;}
+\DoxyCodeLine{00246\ }
+\DoxyCodeLine{00248\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ Self"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}1.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}5.0"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions\ \&\&\ bEnableSelfShadowing"{}},\ EditConditionHides))}
+\DoxyCodeLine{00249\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a22ac3be9033d9e6eb96ff323c74c1601}{LightMarchingExpFactor}}\ =\ 2.0f;}
+\DoxyCodeLine{00250\ }
+\DoxyCodeLine{00251\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00252\ \ \ \ \ \textcolor{comment}{//\ External\ Shadows\ (Scene\ Capture)}}
+\DoxyCodeLine{00253\ }
+\DoxyCodeLine{00255\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ External"{}})}
+\DoxyCodeLine{00256\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a88ed1ba8fa02693a3a6d2ece307cf972}{bEnableExternalShadowing}}\ =\ false;}
+\DoxyCodeLine{00257\ }
+\DoxyCodeLine{00259\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ External"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}1"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}6"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bEnableExternalShadowing"{}},\ EditConditionHides))}
+\DoxyCodeLine{00260\ \ \ \ \ int32\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_aedb976587d4bbdb4be1ea1c56207be32}{NumShadowCascades}}\ =\ 4;}
+\DoxyCodeLine{00261\ }
+\DoxyCodeLine{00263\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ External"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}256"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}2048"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bEnableExternalShadowing"{}},\ EditConditionHides))}
+\DoxyCodeLine{00264\ \ \ \ \ int32\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a156f26c05ef5a5fb74fe7d1642569e05}{CascadeResolution}}\ =\ 512;}
+\DoxyCodeLine{00265\ }
+\DoxyCodeLine{00267\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ External"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}1000"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}100000"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bEnableExternalShadowing"{}},\ EditConditionHides))}
+\DoxyCodeLine{00268\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ae6173ebdb3980b4977b7666beec4c27b}{ShadowMaxDistance}}\ =\ 50000.0f;}
+\DoxyCodeLine{00269\ }
+\DoxyCodeLine{00271\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ External"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}1.0"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bEnableExternalShadowing"{}},\ EditConditionHides))}
+\DoxyCodeLine{00272\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_aecedbdc5087ccf1b4902f58f01d48c5a}{ExternalShadowAmbient}}\ =\ 0.3f;}
+\DoxyCodeLine{00273\ }
+\DoxyCodeLine{00275\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ External"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bEnableExternalShadowing"{}},\ EditConditionHides))}
+\DoxyCodeLine{00276\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ac6f34dc6539f1aa5f217b22ae64381a8}{bEnableVSM}}\ =\ true;}
+\DoxyCodeLine{00277\ }
+\DoxyCodeLine{00279\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ External"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}8"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bEnableExternalShadowing\ \&\&\ bEnableVSM"{}},\ EditConditionHides))}
+\DoxyCodeLine{00280\ \ \ \ \ int32\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_affcee0751fc3f7c9d57ec426d9109d87}{VSMBlurRadius}}\ =\ 2;}
+\DoxyCodeLine{00281\ }
+\DoxyCodeLine{00283\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ External"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}100.0"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions\ \&\&\ bEnableExternalShadowing"{}},\ EditConditionHides))}
+\DoxyCodeLine{00284\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ae3805bff319b7893ba069b6d5b6ab466}{ShadowDepthBias}}\ =\ 1.0f;}
+\DoxyCodeLine{00285\ }
+\DoxyCodeLine{00287\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ External"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions\ \&\&\ bEnableExternalShadowing"{}},\ EditConditionHides))}
+\DoxyCodeLine{00288\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_af5c7b8325420185f1ea036b6cc2c6771}{bCaptureSkeletalMeshes}}\ =\ false;}
+\DoxyCodeLine{00289\ }
+\DoxyCodeLine{00291\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ External"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}1.0"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions\ \&\&\ bEnableExternalShadowing"{}},\ EditConditionHides))}
+\DoxyCodeLine{00292\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a3dd0177d0cd46e7073bce218a87522b2}{CascadeLogLinearBlend}}\ =\ 0.85f;}
+\DoxyCodeLine{00293\ }
+\DoxyCodeLine{00295\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ External"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}0.3"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions\ \&\&\ bEnableExternalShadowing"{}},\ EditConditionHides))}
+\DoxyCodeLine{00296\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a37209688c40018b6badb8d365ccb6a53}{CascadeBlendRange}}\ =\ 0.1f;}
+\DoxyCodeLine{00297\ }
+\DoxyCodeLine{00299\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ External"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.01"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}100.0"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions\ \&\&\ bEnableExternalShadowing\ \&\&\ bEnableVSM"{}},\ EditConditionHides))}
+\DoxyCodeLine{00300\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_afdb88a9bdd20f42cabf31e991d7a8b8f}{VSMMinVariance}}\ =\ 1.0f;}
+\DoxyCodeLine{00301\ }
+\DoxyCodeLine{00303\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ External"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}0.5"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions\ \&\&\ bEnableExternalShadowing\ \&\&\ bEnableVSM"{}},\ EditConditionHides))}
+\DoxyCodeLine{00304\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a259b8b2a43d5036a9551355c4340fdcc}{VSMLightBleedingReduction}}\ =\ 0.2f;}
+\DoxyCodeLine{00305\ }
+\DoxyCodeLine{00307\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ External"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions\ \&\&\ bEnableExternalShadowing"{}},\ EditConditionHides))}
+\DoxyCodeLine{00308\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a32226abdebef809a71bb6eb5c4f6fb1f}{bEnablePriorityUpdate}}\ =\ true;}
+\DoxyCodeLine{00309\ }
+\DoxyCodeLine{00311\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ External"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}1"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}4"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions\ \&\&\ bEnableExternalShadowing\ \&\&\ bEnablePriorityUpdate"{}},\ EditConditionHides))}
+\DoxyCodeLine{00312\ \ \ \ \ int32\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ac523054e9318cf3b5d72cfc1ec655b38}{NearCascadeUpdateInterval}}\ =\ 1;}
+\DoxyCodeLine{00313\ }
+\DoxyCodeLine{00315\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shadows\ |\ External"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}1"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}16"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions\ \&\&\ bEnableExternalShadowing\ \&\&\ bEnablePriorityUpdate"{}},\ EditConditionHides))}
+\DoxyCodeLine{00316\ \ \ \ \ int32\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ab7adc9e22b9b543d6ff18b0b2cbb3786}{FarCascadeUpdateInterval}}\ =\ 4;}
+\DoxyCodeLine{00317\ }
+\DoxyCodeLine{00318\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00319\ \ \ \ \ \textcolor{comment}{//\ Post\ Processing\ (Voxel\ FXAA)}}
+\DoxyCodeLine{00320\ }
+\DoxyCodeLine{00322\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ PostProcessing"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}4.0"{}}))}
+\DoxyCodeLine{00323\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a25fb61b630accaa759bc818ac714c089}{FXAASpanMax}}\ =\ 4.0f;}
+\DoxyCodeLine{00324\ }
+\DoxyCodeLine{00326\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ PostProcessing"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}8.0"{}}))}
+\DoxyCodeLine{00327\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ad83d4660e489ed0bedafbca1e7a152b8}{FXAARange}}\ =\ 1.2f;}
+\DoxyCodeLine{00328\ }
+\DoxyCodeLine{00330\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ PostProcessing"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.1"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}8.0"{}}))}
+\DoxyCodeLine{00331\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a8ec5ec913cabe49abb1a573dc48d7b8b}{FXAASharpness}}\ =\ 1.7f;}
+\DoxyCodeLine{00332\ }
+\DoxyCodeLine{00333\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00334\ \ \ \ \ \textcolor{comment}{//\ Rendering}}
+\DoxyCodeLine{00335\ }
+\DoxyCodeLine{00337\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Rendering"{}})}
+\DoxyCodeLine{00338\ \ \ \ \ EIVSmokeRenderPass\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ad11ae061d8729b2d7115c01f66302d71}{RenderPass}}\ =\ EIVSmokeRenderPass::AfterDOF;}
+\DoxyCodeLine{00339\ }
+\DoxyCodeLine{00342\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Rendering"{}},\ meta\ =\ (DisplayName\ =\ \textcolor{stringliteral}{"{}Use\ CustomDepth\ Sorting"{}},\ EditCondition\ =\ \textcolor{stringliteral}{"{}bShowAdvancedOptions\ \&\&\ RenderPass==EIVSmokeRenderPass::TranslucencyAfterDOF"{}},\ EditConditionHides))}
+\DoxyCodeLine{00343\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a9ee3a9ba9c41c6cf054d4633e9d32d2c}{bUseCustomDepthBasedSorting}}\ =\ false;}
+\DoxyCodeLine{00344\ }
+\DoxyCodeLine{00345\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00346\ \ \ \ \ \textcolor{comment}{//\ Debug}}
+\DoxyCodeLine{00347\ }
+\DoxyCodeLine{00349\ \ \ \ \ UPROPERTY(Config,\ EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Debug"{}})}
+\DoxyCodeLine{00350\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_u_i_v_smoke_settings_adf2d312d2c8d36d754e4556e4e2cfe95}{bShowDebugVolumes}}\ =\ false;}
+\DoxyCodeLine{00351\ \};}
+
+\end{DoxyCode}

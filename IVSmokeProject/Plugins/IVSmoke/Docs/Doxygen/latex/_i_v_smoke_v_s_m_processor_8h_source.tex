@@ -1,0 +1,57 @@
+\doxysection{IVSmoke\+VSMProcessor.\+h}
+\hypertarget{_i_v_smoke_v_s_m_processor_8h_source}{}\label{_i_v_smoke_v_s_m_processor_8h_source}\index{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeVSMProcessor.h@{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeVSMProcessor.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//\ Copyright\ (c)\ 2026,\ Team\ SDB.\ All\ rights\ reserved.}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}CoreMinimal.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}RenderGraphBuilder.h"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}RenderGraphResources.h"{}}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }FRDGBuilder;}
+\DoxyCodeLine{00010\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_i_v_smoke_cascade_data}{FIVSmokeCascadeData}};}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00019\ \textcolor{keyword}{class\ }IVSMOKE\_API\ FIVSmokeVSMProcessor}
+\DoxyCodeLine{00020\ \{}
+\DoxyCodeLine{00021\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00022\ \ \ \ \ FIVSmokeVSMProcessor();}
+\DoxyCodeLine{00023\ \ \ \ \ \string~FIVSmokeVSMProcessor();}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_i_v_smoke_v_s_m_processor_a929f42a33c5155ece3f97aa12675322b}{Process}}(}
+\DoxyCodeLine{00035\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ FRDGTextureRef\ DepthTexture,}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ FRDGTextureRef\ VSMTexture,}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ int32\ BlurRadius}
+\DoxyCodeLine{00039\ \ \ \ \ );}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00048\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_i_v_smoke_v_s_m_processor_a77e296995e7cf89c49567a8168b6c987}{ProcessCascades}}(}
+\DoxyCodeLine{00049\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00050\ \ \ \ \ \ \ \ \ TArray<FIVSmokeCascadeData>\&\ Cascades,}
+\DoxyCodeLine{00051\ \ \ \ \ \ \ \ \ int32\ BlurRadius}
+\DoxyCodeLine{00052\ \ \ \ \ );}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00054\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00062\ \ \ \ \ \textcolor{keywordtype}{void}\ AddDepthToVariancePass(}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \ \ FRDGTextureRef\ DepthTexture,}
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ FRDGTextureRef\ VSMTexture}
+\DoxyCodeLine{00066\ \ \ \ \ );}
+\DoxyCodeLine{00067\ }
+\DoxyCodeLine{00076\ \ \ \ \ \textcolor{keywordtype}{void}\ AddHorizontalBlurPass(}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \ \ FRDGTextureRef\ SourceTexture,}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ FRDGTextureRef\ DestTexture,}
+\DoxyCodeLine{00080\ \ \ \ \ \ \ \ \ int32\ BlurRadius}
+\DoxyCodeLine{00081\ \ \ \ \ );}
+\DoxyCodeLine{00082\ }
+\DoxyCodeLine{00091\ \ \ \ \ \textcolor{keywordtype}{void}\ AddVerticalBlurPass(}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ FRDGTextureRef\ SourceTexture,}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \ \ FRDGTextureRef\ DestTexture,}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ int32\ BlurRadius}
+\DoxyCodeLine{00096\ \ \ \ \ );}
+\DoxyCodeLine{00097\ \};}
+
+\end{DoxyCode}

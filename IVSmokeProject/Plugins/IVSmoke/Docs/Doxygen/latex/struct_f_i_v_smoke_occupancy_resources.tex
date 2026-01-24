@@ -1,0 +1,78 @@
+\doxysection{FIVSmoke\+Occupancy\+Resources Struct Reference}
+\hypertarget{struct_f_i_v_smoke_occupancy_resources}{}\label{struct_f_i_v_smoke_occupancy_resources}\index{FIVSmokeOccupancyResources@{FIVSmokeOccupancyResources}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Ray\+March\+Pipeline.\+h$>$}
+
+
+
+Collaboration diagram for FIVSmoke\+Occupancy\+Resources:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=247pt]{struct_f_i_v_smoke_occupancy_resources__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{struct_f_i_v_smoke_occupancy_resources_af21f5ad271c52532f7af8059e1d67779}\label{struct_f_i_v_smoke_occupancy_resources_af21f5ad271c52532f7af8059e1d67779} 
+bool {\bfseries Is\+Valid} () const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+FRDGBuffer\+Ref \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_resources_ae2ee1bf57492b086f12d6e4b5097fab0}{Tile\+Data\+Buffer}}
+\item 
+FRDGTexture\+Ref \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_resources_aed5fac0f3db2e59f8ea9889581c6e5eb}{View\+Occupancy}}
+\item 
+FRDGTexture\+Ref \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_resources_aafe9f0d628bc3929f707d1e6dcad0fec}{Light\+Occupancy}}
+\item 
+FInt\+Point \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_resources_a726a621f894b64e862a6837dff5f1b91}{Tile\+Count}}
+\item 
+uint32 \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_resources_a11b8af9951e5be9e411a066b8f7d11d6}{Step\+Slice\+Count}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Container for occupancy resources created per frame. Holds tile data buffer and occupancy textures. 
+
+\label{doc-variable-members}
+\Hypertarget{struct_f_i_v_smoke_occupancy_resources_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{struct_f_i_v_smoke_occupancy_resources_aafe9f0d628bc3929f707d1e6dcad0fec}\index{FIVSmokeOccupancyResources@{FIVSmokeOccupancyResources}!LightOccupancy@{LightOccupancy}}
+\index{LightOccupancy@{LightOccupancy}!FIVSmokeOccupancyResources@{FIVSmokeOccupancyResources}}
+\doxysubsubsection{\texorpdfstring{LightOccupancy}{LightOccupancy}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_occupancy_resources_aafe9f0d628bc3929f707d1e6dcad0fec} 
+FRDGTexture\+Ref FIVSmoke\+Occupancy\+Resources::\+\+Light\+Occupancy}
+
+Light occupancy 3D texture (which volumes affect light at each cell). \Hypertarget{struct_f_i_v_smoke_occupancy_resources_a11b8af9951e5be9e411a066b8f7d11d6}\index{FIVSmokeOccupancyResources@{FIVSmokeOccupancyResources}!StepSliceCount@{StepSliceCount}}
+\index{StepSliceCount@{StepSliceCount}!FIVSmokeOccupancyResources@{FIVSmokeOccupancyResources}}
+\doxysubsubsection{\texorpdfstring{StepSliceCount}{StepSliceCount}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_occupancy_resources_a11b8af9951e5be9e411a066b8f7d11d6} 
+uint32 FIVSmoke\+Occupancy\+Resources::\+\+Step\+Slice\+Count}
+
+Step slice count (Max\+Steps /\+ 4). \Hypertarget{struct_f_i_v_smoke_occupancy_resources_a726a621f894b64e862a6837dff5f1b91}\index{FIVSmokeOccupancyResources@{FIVSmokeOccupancyResources}!TileCount@{TileCount}}
+\index{TileCount@{TileCount}!FIVSmokeOccupancyResources@{FIVSmokeOccupancyResources}}
+\doxysubsubsection{\texorpdfstring{TileCount}{TileCount}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_occupancy_resources_a726a621f894b64e862a6837dff5f1b91} 
+FInt\+Point FIVSmoke\+Occupancy\+Resources::\+\+Tile\+Count}
+
+Tile count (W/\+16, H/\+16). \Hypertarget{struct_f_i_v_smoke_occupancy_resources_ae2ee1bf57492b086f12d6e4b5097fab0}\index{FIVSmokeOccupancyResources@{FIVSmokeOccupancyResources}!TileDataBuffer@{TileDataBuffer}}
+\index{TileDataBuffer@{TileDataBuffer}!FIVSmokeOccupancyResources@{FIVSmokeOccupancyResources}}
+\doxysubsubsection{\texorpdfstring{TileDataBuffer}{TileDataBuffer}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_occupancy_resources_ae2ee1bf57492b086f12d6e4b5097fab0} 
+FRDGBuffer\+Ref FIVSmoke\+Occupancy\+Resources::\+\+Tile\+Data\+Buffer}
+
+Per-\/tile metadata buffer. \Hypertarget{struct_f_i_v_smoke_occupancy_resources_aed5fac0f3db2e59f8ea9889581c6e5eb}\index{FIVSmokeOccupancyResources@{FIVSmokeOccupancyResources}!ViewOccupancy@{ViewOccupancy}}
+\index{ViewOccupancy@{ViewOccupancy}!FIVSmokeOccupancyResources@{FIVSmokeOccupancyResources}}
+\doxysubsubsection{\texorpdfstring{ViewOccupancy}{ViewOccupancy}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_occupancy_resources_aed5fac0f3db2e59f8ea9889581c6e5eb} 
+FRDGTexture\+Ref FIVSmoke\+Occupancy\+Resources::\+\+View\+Occupancy}
+
+View occupancy 3D texture (which volumes are present at each cell). 
+
+The documentation for this struct was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Ray\+March\+Pipeline.\+h\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Private/\+IVSmoke\+Ray\+March\+Pipeline.\+cpp\end{DoxyCompactItemize}

@@ -1,0 +1,476 @@
+\doxysection{UIVSmoke\+Settings Class Reference}
+\hypertarget{class_u_i_v_smoke_settings}{}\label{class_u_i_v_smoke_settings}\index{UIVSmokeSettings@{UIVSmokeSettings}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Settings.\+h$>$}
+
+
+
+Inheritance diagram for UIVSmoke\+Settings:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=223pt]{class_u_i_v_smoke_settings__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for UIVSmoke\+Settings:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{class_u_i_v_smoke_settings__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_u_i_v_smoke_settings_a4707ac43dd1e863625fef17985f15bfe}\label{class_u_i_v_smoke_settings_a4707ac43dd1e863625fef17985f15bfe} 
+virtual FName {\bfseries Get\+Category\+Name} () const override
+\item 
+\Hypertarget{class_u_i_v_smoke_settings_ac563a416b815ca85b79ee17e2a9bc068}\label{class_u_i_v_smoke_settings_ac563a416b815ca85b79ee17e2a9bc068} 
+virtual FName {\bfseries Get\+Section\+Name} () const override
+\item 
+int32 \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a9750f3b4816b974e5209b2ba592decbb}{Get\+Effective\+Max\+Steps}} () const
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a629e461fd7bcd7debb6740a6b887c64a}{Get\+Effective\+Min\+Step\+Size}} () const
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static const \doxymbox{\hyperlink{class_u_i_v_smoke_settings}{UIVSmoke\+Settings}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a47e89dc35d4bd609931140b486f75482}{Get}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+bool \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a5d68272cc49b3c11187e45939c160d7a}{b\+Enable\+Smoke\+Rendering}} = true
+\item 
+bool \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ac9f6ed7f85b849230d317531dcef546b}{b\+Show\+Advanced\+Options}} = false
+\item 
+EIVSmoke\+Quality\+Level \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a23801bba2d85b479a15942dcd804fd15}{Quality\+Level}} = EIVSmoke\+Quality\+Level::\+\+Medium
+\item 
+int32 \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a61021fbc1fe0c000e90edeafb7f03b3a}{Custom\+Max\+Steps}} = 256
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a1411930bb0f6ee7a43d191aafc1f2eed}{Custom\+Min\+Step\+Size}} = 25.\+0f
+\item 
+\doxymbox{\hyperlink{struct_f_i_v_smoke_noise_settings}{FIVSmoke\+Noise\+Settings}} \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a7f8c931e4f27f4d5f6bafea12bf0f616}{Noise\+Settings}}
+\item 
+bool \doxymbox{\hyperlink{class_u_i_v_smoke_settings_af3cd262f4f80a42cb328ec34058eae2a}{b\+Regenerate\+Noise\+On\+Startup}} = true
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ae5b79fd6502c33f6485050cb0bbc72a3}{Noise\+UVMul}} = 0.\+42f
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a82753977ace13e3690a1f92354abaef7}{Smoke\+Density\+Falloff}} = 0.\+2f
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ae195e170e01a99d1c0cd8003ce243733}{Smoke\+Size}} = 128.\+0f
+\item 
+FVector \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a3f80d63911d11f9dcc688a8c074e0b46}{Wind\+Direction}} = FVector(0.\+00f, 0.\+00f, 0.\+1f)
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a9a05a514f4d93470aab02d82f98541b9}{Sharpness}} = 0.\+0f
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a8f4cbf58987d9caa0a2f215fd7ea0961}{Volume\+Range\+Offset}} = 0.\+1
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_afbbe47e34402d9ae806bfbb20fefc3d6}{Volume\+Edge\+Noise\+Fade\+Offset}} = 0.\+04f
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a9e83ba796d27bf30f64aa356a1df549a}{Volume\+Edge\+Fade\+Sharpness}} = 3.\+5f
+\item 
+bool \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a6b7a4ddcd64a42c7b13bae9b3357c712}{b\+Enable\+Scattering}} = true
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a07f62f3ac41404fee21952a0210afb4f}{Scatter\+Scale}} = 0.\+5f
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a834d63aacdfd676ce0950a0ab6954c39}{Scattering\+Anisotropy}} = 0.\+5f
+\item 
+bool \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a242d33091efca4838eb13802c07e20c7}{b\+Override\+Light\+Direction}} = false
+\item 
+FVector \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ad93690784063d6522bc740d9d37b99a0}{Light\+Direction\+Override}} = FVector(0.\+0f, 0.\+0f, 1.\+0f)
+\item 
+bool \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a76b59fee045b68cb1f507e803e648a37}{b\+Override\+Light\+Color}} = false
+\item 
+FLinear\+Color \doxymbox{\hyperlink{class_u_i_v_smoke_settings_aa6b1bacf36afb9447df220c3000b1adb}{Light\+Color\+Override}} = FLinear\+Color::\+\+White
+\item 
+bool \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a875709db505263e1f111bf1904615e32}{b\+Enable\+Self\+Shadowing}} = true
+\item 
+int32 \doxymbox{\hyperlink{class_u_i_v_smoke_settings_adffcdaee606bcfdc15862fa0b07b4e35}{Light\+Marching\+Steps}} = 6
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_aaae34a62d76fbcf6acab2b9f7066e80c}{Shadow\+Ambient}} = 0.\+2f
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_aed2c17e98657fc3cb442dc9e677e2380}{Light\+Marching\+Distance}} = 0.\+0f
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a22ac3be9033d9e6eb96ff323c74c1601}{Light\+Marching\+Exp\+Factor}} = 2.\+0f
+\item 
+bool \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a88ed1ba8fa02693a3a6d2ece307cf972}{b\+Enable\+External\+Shadowing}} = false
+\item 
+int32 \doxymbox{\hyperlink{class_u_i_v_smoke_settings_aedb976587d4bbdb4be1ea1c56207be32}{Num\+Shadow\+Cascades}} = 4
+\item 
+int32 \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a156f26c05ef5a5fb74fe7d1642569e05}{Cascade\+Resolution}} = 512
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ae6173ebdb3980b4977b7666beec4c27b}{Shadow\+Max\+Distance}} = 50000.\+0f
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_aecedbdc5087ccf1b4902f58f01d48c5a}{External\+Shadow\+Ambient}} = 0.\+3f
+\item 
+bool \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ac6f34dc6539f1aa5f217b22ae64381a8}{b\+Enable\+VSM}} = true
+\item 
+int32 \doxymbox{\hyperlink{class_u_i_v_smoke_settings_affcee0751fc3f7c9d57ec426d9109d87}{VSMBlur\+Radius}} = 2
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ae3805bff319b7893ba069b6d5b6ab466}{Shadow\+Depth\+Bias}} = 1.\+0f
+\item 
+bool \doxymbox{\hyperlink{class_u_i_v_smoke_settings_af5c7b8325420185f1ea036b6cc2c6771}{b\+Capture\+Skeletal\+Meshes}} = false
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a3dd0177d0cd46e7073bce218a87522b2}{Cascade\+Log\+Linear\+Blend}} = 0.\+85f
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a37209688c40018b6badb8d365ccb6a53}{Cascade\+Blend\+Range}} = 0.\+1f
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_afdb88a9bdd20f42cabf31e991d7a8b8f}{VSMMin\+Variance}} = 1.\+0f
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a259b8b2a43d5036a9551355c4340fdcc}{VSMLight\+Bleeding\+Reduction}} = 0.\+2f
+\item 
+bool \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a32226abdebef809a71bb6eb5c4f6fb1f}{b\+Enable\+Priority\+Update}} = true
+\item 
+int32 \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ac523054e9318cf3b5d72cfc1ec655b38}{Near\+Cascade\+Update\+Interval}} = 1
+\item 
+int32 \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ab7adc9e22b9b543d6ff18b0b2cbb3786}{Far\+Cascade\+Update\+Interval}} = 4
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a25fb61b630accaa759bc818ac714c089}{FXAASpan\+Max}} = 4.\+0f
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ad83d4660e489ed0bedafbca1e7a152b8}{FXAARange}} = 1.\+2f
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a8ec5ec913cabe49abb1a573dc48d7b8b}{FXAASharpness}} = 1.\+7f
+\item 
+EIVSmoke\+Render\+Pass \doxymbox{\hyperlink{class_u_i_v_smoke_settings_ad11ae061d8729b2d7115c01f66302d71}{Render\+Pass}} = EIVSmoke\+Render\+Pass::\+\+After\+DOF
+\item 
+bool \doxymbox{\hyperlink{class_u_i_v_smoke_settings_a9ee3a9ba9c41c6cf054d4633e9d32d2c}{b\+Use\+Custom\+Depth\+Based\+Sorting}} = false
+\item 
+bool \doxymbox{\hyperlink{class_u_i_v_smoke_settings_adf2d312d2c8d36d754e4556e4e2cfe95}{b\+Show\+Debug\+Volumes}} = false
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Global settings for \doxylink{class_i_v_smoke}{IVSmoke} plugin. Accessible via Project Settings \texorpdfstring{$>$}{>} Plugins \texorpdfstring{$>$}{>} \doxylink{class_i_v_smoke}{IVSmoke}.
+
+These settings affect ALL smoke volumes globally. For per-\/volume appearance (color, density), use \doxylink{class_u_i_v_smoke_smoke_preset}{UIVSmoke\+Smoke\+Preset}. 
+
+\label{doc-func-members}
+\Hypertarget{class_u_i_v_smoke_settings_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_u_i_v_smoke_settings_a47e89dc35d4bd609931140b486f75482}\index{UIVSmokeSettings@{UIVSmokeSettings}!Get@{Get}}
+\index{Get@{Get}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{Get()}{Get()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a47e89dc35d4bd609931140b486f75482} 
+const \doxymbox{\hyperlink{class_u_i_v_smoke_settings}{UIVSmoke\+Settings}} \texorpdfstring{$\ast$}{*} UIVSmoke\+Settings::\+\+Get (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+Get the singleton settings instance. \Hypertarget{class_u_i_v_smoke_settings_a9750f3b4816b974e5209b2ba592decbb}\index{UIVSmokeSettings@{UIVSmokeSettings}!GetEffectiveMaxSteps@{GetEffectiveMaxSteps}}
+\index{GetEffectiveMaxSteps@{GetEffectiveMaxSteps}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{GetEffectiveMaxSteps()}{GetEffectiveMaxSteps()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a9750f3b4816b974e5209b2ba592decbb} 
+int32 UIVSmoke\+Settings::\+\+Get\+Effective\+Max\+Steps (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+Get effective Max\+Steps based on Quality\+Level. \Hypertarget{class_u_i_v_smoke_settings_a629e461fd7bcd7debb6740a6b887c64a}\index{UIVSmokeSettings@{UIVSmokeSettings}!GetEffectiveMinStepSize@{GetEffectiveMinStepSize}}
+\index{GetEffectiveMinStepSize@{GetEffectiveMinStepSize}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{GetEffectiveMinStepSize()}{GetEffectiveMinStepSize()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a629e461fd7bcd7debb6740a6b887c64a} 
+float UIVSmoke\+Settings::\+\+Get\+Effective\+Min\+Step\+Size (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+Get effective Min\+Step\+Size based on Quality\+Level. 
+
+\label{doc-variable-members}
+\Hypertarget{class_u_i_v_smoke_settings_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_u_i_v_smoke_settings_af5c7b8325420185f1ea036b6cc2c6771}\index{UIVSmokeSettings@{UIVSmokeSettings}!bCaptureSkeletalMeshes@{bCaptureSkeletalMeshes}}
+\index{bCaptureSkeletalMeshes@{bCaptureSkeletalMeshes}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{bCaptureSkeletalMeshes}{bCaptureSkeletalMeshes}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_af5c7b8325420185f1ea036b6cc2c6771} 
+bool UIVSmoke\+Settings::\+b\+Capture\+Skeletal\+Meshes = false}
+
+Include skeletal meshes (characters) in shadow capture. \Hypertarget{class_u_i_v_smoke_settings_a88ed1ba8fa02693a3a6d2ece307cf972}\index{UIVSmokeSettings@{UIVSmokeSettings}!bEnableExternalShadowing@{bEnableExternalShadowing}}
+\index{bEnableExternalShadowing@{bEnableExternalShadowing}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{bEnableExternalShadowing}{bEnableExternalShadowing}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a88ed1ba8fa02693a3a6d2ece307cf972} 
+bool UIVSmoke\+Settings::\+b\+Enable\+External\+Shadowing = false}
+
+Enable external object shadows (trees, buildings) via scene capture. \Hypertarget{class_u_i_v_smoke_settings_a32226abdebef809a71bb6eb5c4f6fb1f}\index{UIVSmokeSettings@{UIVSmokeSettings}!bEnablePriorityUpdate@{bEnablePriorityUpdate}}
+\index{bEnablePriorityUpdate@{bEnablePriorityUpdate}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{bEnablePriorityUpdate}{bEnablePriorityUpdate}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a32226abdebef809a71bb6eb5c4f6fb1f} 
+bool UIVSmoke\+Settings::\+b\+Enable\+Priority\+Update = true}
+
+Enable priority-\/based cascade updates for performance. \Hypertarget{class_u_i_v_smoke_settings_a6b7a4ddcd64a42c7b13bae9b3357c712}\index{UIVSmokeSettings@{UIVSmokeSettings}!bEnableScattering@{bEnableScattering}}
+\index{bEnableScattering@{bEnableScattering}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{bEnableScattering}{bEnableScattering}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a6b7a4ddcd64a42c7b13bae9b3357c712} 
+bool UIVSmoke\+Settings::\+b\+Enable\+Scattering = true}
+
+Enable Rayleigh scattering for atmospheric light effects. \Hypertarget{class_u_i_v_smoke_settings_a875709db505263e1f111bf1904615e32}\index{UIVSmokeSettings@{UIVSmokeSettings}!bEnableSelfShadowing@{bEnableSelfShadowing}}
+\index{bEnableSelfShadowing@{bEnableSelfShadowing}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{bEnableSelfShadowing}{bEnableSelfShadowing}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a875709db505263e1f111bf1904615e32} 
+bool UIVSmoke\+Settings::\+b\+Enable\+Self\+Shadowing = true}
+
+Enable self-\/shadowing (light marching) for more realistic smoke appearance. \Hypertarget{class_u_i_v_smoke_settings_a5d68272cc49b3c11187e45939c160d7a}\index{UIVSmokeSettings@{UIVSmokeSettings}!bEnableSmokeRendering@{bEnableSmokeRendering}}
+\index{bEnableSmokeRendering@{bEnableSmokeRendering}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{bEnableSmokeRendering}{bEnableSmokeRendering}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a5d68272cc49b3c11187e45939c160d7a} 
+bool UIVSmoke\+Settings::\+b\+Enable\+Smoke\+Rendering = true}
+
+Enable smoke rendering globally. \Hypertarget{class_u_i_v_smoke_settings_ac6f34dc6539f1aa5f217b22ae64381a8}\index{UIVSmokeSettings@{UIVSmokeSettings}!bEnableVSM@{bEnableVSM}}
+\index{bEnableVSM@{bEnableVSM}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{bEnableVSM}{bEnableVSM}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_ac6f34dc6539f1aa5f217b22ae64381a8} 
+bool UIVSmoke\+Settings::\+b\+Enable\+VSM = true}
+
+Enable Variance Shadow Maps for soft shadows. \Hypertarget{class_u_i_v_smoke_settings_a76b59fee045b68cb1f507e803e648a37}\index{UIVSmokeSettings@{UIVSmokeSettings}!bOverrideLightColor@{bOverrideLightColor}}
+\index{bOverrideLightColor@{bOverrideLightColor}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{bOverrideLightColor}{bOverrideLightColor}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a76b59fee045b68cb1f507e803e648a37} 
+bool UIVSmoke\+Settings::\+b\+Override\+Light\+Color = false}
+
+Override light color instead of using scene directional light. \Hypertarget{class_u_i_v_smoke_settings_a242d33091efca4838eb13802c07e20c7}\index{UIVSmokeSettings@{UIVSmokeSettings}!bOverrideLightDirection@{bOverrideLightDirection}}
+\index{bOverrideLightDirection@{bOverrideLightDirection}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{bOverrideLightDirection}{bOverrideLightDirection}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a242d33091efca4838eb13802c07e20c7} 
+bool UIVSmoke\+Settings::\+b\+Override\+Light\+Direction = false}
+
+Override light direction instead of using scene directional light. \Hypertarget{class_u_i_v_smoke_settings_af3cd262f4f80a42cb328ec34058eae2a}\index{UIVSmokeSettings@{UIVSmokeSettings}!bRegenerateNoiseOnStartup@{bRegenerateNoiseOnStartup}}
+\index{bRegenerateNoiseOnStartup@{bRegenerateNoiseOnStartup}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{bRegenerateNoiseOnStartup}{bRegenerateNoiseOnStartup}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_af3cd262f4f80a42cb328ec34058eae2a} 
+bool UIVSmoke\+Settings::\+b\+Regenerate\+Noise\+On\+Startup = true}
+
+Whether to regenerate noise texture on startup. \Hypertarget{class_u_i_v_smoke_settings_ac9f6ed7f85b849230d317531dcef546b}\index{UIVSmokeSettings@{UIVSmokeSettings}!bShowAdvancedOptions@{bShowAdvancedOptions}}
+\index{bShowAdvancedOptions@{bShowAdvancedOptions}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{bShowAdvancedOptions}{bShowAdvancedOptions}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_ac9f6ed7f85b849230d317531dcef546b} 
+bool UIVSmoke\+Settings::\+b\+Show\+Advanced\+Options = false}
+
+Show advanced options in all categories. \Hypertarget{class_u_i_v_smoke_settings_adf2d312d2c8d36d754e4556e4e2cfe95}\index{UIVSmokeSettings@{UIVSmokeSettings}!bShowDebugVolumes@{bShowDebugVolumes}}
+\index{bShowDebugVolumes@{bShowDebugVolumes}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{bShowDebugVolumes}{bShowDebugVolumes}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_adf2d312d2c8d36d754e4556e4e2cfe95} 
+bool UIVSmoke\+Settings::\+b\+Show\+Debug\+Volumes = false}
+
+Show debug visualization for smoke volumes. \Hypertarget{class_u_i_v_smoke_settings_a9ee3a9ba9c41c6cf054d4633e9d32d2c}\index{UIVSmokeSettings@{UIVSmokeSettings}!bUseCustomDepthBasedSorting@{bUseCustomDepthBasedSorting}}
+\index{bUseCustomDepthBasedSorting@{bUseCustomDepthBasedSorting}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{bUseCustomDepthBasedSorting}{bUseCustomDepthBasedSorting}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a9ee3a9ba9c41c6cf054d4633e9d32d2c} 
+bool UIVSmoke\+Settings::\+b\+Use\+Custom\+Depth\+Based\+Sorting = false}
+
+Use Custom\+Depth for depth-\/based sorting with particles. Only available when Render\+Pass = Translucency\+After\+DOF. \Hypertarget{class_u_i_v_smoke_settings_a37209688c40018b6badb8d365ccb6a53}\index{UIVSmokeSettings@{UIVSmokeSettings}!CascadeBlendRange@{CascadeBlendRange}}
+\index{CascadeBlendRange@{CascadeBlendRange}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{CascadeBlendRange}{CascadeBlendRange}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a37209688c40018b6badb8d365ccb6a53} 
+float UIVSmoke\+Settings::\+\+Cascade\+Blend\+Range = 0.\+1f}
+
+Blend region at cascade boundaries (0-\/0.\+3). \Hypertarget{class_u_i_v_smoke_settings_a3dd0177d0cd46e7073bce218a87522b2}\index{UIVSmokeSettings@{UIVSmokeSettings}!CascadeLogLinearBlend@{CascadeLogLinearBlend}}
+\index{CascadeLogLinearBlend@{CascadeLogLinearBlend}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{CascadeLogLinearBlend}{CascadeLogLinearBlend}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a3dd0177d0cd46e7073bce218a87522b2} 
+float UIVSmoke\+Settings::\+\+Cascade\+Log\+Linear\+Blend = 0.\+85f}
+
+Log/\+\+Linear cascade split blend (0=linear, 1=logarithmic). \Hypertarget{class_u_i_v_smoke_settings_a156f26c05ef5a5fb74fe7d1642569e05}\index{UIVSmokeSettings@{UIVSmokeSettings}!CascadeResolution@{CascadeResolution}}
+\index{CascadeResolution@{CascadeResolution}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{CascadeResolution}{CascadeResolution}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a156f26c05ef5a5fb74fe7d1642569e05} 
+int32 UIVSmoke\+Settings::\+\+Cascade\+Resolution = 512}
+
+Shadow map resolution per cascade. \Hypertarget{class_u_i_v_smoke_settings_a61021fbc1fe0c000e90edeafb7f03b3a}\index{UIVSmokeSettings@{UIVSmokeSettings}!CustomMaxSteps@{CustomMaxSteps}}
+\index{CustomMaxSteps@{CustomMaxSteps}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{CustomMaxSteps}{CustomMaxSteps}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a61021fbc1fe0c000e90edeafb7f03b3a} 
+int32 UIVSmoke\+Settings::\+\+Custom\+Max\+Steps = 256}
+
+Maximum ray marching steps (32-\/1024). Only used when Quality\+Level is Custom. \Hypertarget{class_u_i_v_smoke_settings_a1411930bb0f6ee7a43d191aafc1f2eed}\index{UIVSmokeSettings@{UIVSmokeSettings}!CustomMinStepSize@{CustomMinStepSize}}
+\index{CustomMinStepSize@{CustomMinStepSize}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{CustomMinStepSize}{CustomMinStepSize}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a1411930bb0f6ee7a43d191aafc1f2eed} 
+float UIVSmoke\+Settings::\+\+Custom\+Min\+Step\+Size = 25.\+0f}
+
+Minimum step size in world units (5-\/100). Only used when Quality\+Level is Custom. \Hypertarget{class_u_i_v_smoke_settings_aecedbdc5087ccf1b4902f58f01d48c5a}\index{UIVSmokeSettings@{UIVSmokeSettings}!ExternalShadowAmbient@{ExternalShadowAmbient}}
+\index{ExternalShadowAmbient@{ExternalShadowAmbient}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{ExternalShadowAmbient}{ExternalShadowAmbient}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_aecedbdc5087ccf1b4902f58f01d48c5a} 
+float UIVSmoke\+Settings::\+\+External\+Shadow\+Ambient = 0.\+3f}
+
+Minimum brightness in externally shadowed areas (0=dark, 1=no shadow). \Hypertarget{class_u_i_v_smoke_settings_ab7adc9e22b9b543d6ff18b0b2cbb3786}\index{UIVSmokeSettings@{UIVSmokeSettings}!FarCascadeUpdateInterval@{FarCascadeUpdateInterval}}
+\index{FarCascadeUpdateInterval@{FarCascadeUpdateInterval}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{FarCascadeUpdateInterval}{FarCascadeUpdateInterval}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_ab7adc9e22b9b543d6ff18b0b2cbb3786} 
+int32 UIVSmoke\+Settings::\+\+Far\+Cascade\+Update\+Interval = 4}
+
+Far cascade update interval (frames). \Hypertarget{class_u_i_v_smoke_settings_ad83d4660e489ed0bedafbca1e7a152b8}\index{UIVSmokeSettings@{UIVSmokeSettings}!FXAARange@{FXAARange}}
+\index{FXAARange@{FXAARange}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{FXAARange}{FXAARange}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_ad83d4660e489ed0bedafbca1e7a152b8} 
+float UIVSmoke\+Settings::\+\+FXAARange = 1.\+2f}
+
+FXAA edge detection threshold range. \Hypertarget{class_u_i_v_smoke_settings_a8ec5ec913cabe49abb1a573dc48d7b8b}\index{UIVSmokeSettings@{UIVSmokeSettings}!FXAASharpness@{FXAASharpness}}
+\index{FXAASharpness@{FXAASharpness}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{FXAASharpness}{FXAASharpness}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a8ec5ec913cabe49abb1a573dc48d7b8b} 
+float UIVSmoke\+Settings::\+\+FXAASharpness = 1.\+7f}
+
+FXAA sharpness factor. \Hypertarget{class_u_i_v_smoke_settings_a25fb61b630accaa759bc818ac714c089}\index{UIVSmokeSettings@{UIVSmokeSettings}!FXAASpanMax@{FXAASpanMax}}
+\index{FXAASpanMax@{FXAASpanMax}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{FXAASpanMax}{FXAASpanMax}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a25fb61b630accaa759bc818ac714c089} 
+float UIVSmoke\+Settings::\+\+FXAASpan\+Max = 4.\+0f}
+
+FXAA maximum edge search distance. \Hypertarget{class_u_i_v_smoke_settings_aa6b1bacf36afb9447df220c3000b1adb}\index{UIVSmokeSettings@{UIVSmokeSettings}!LightColorOverride@{LightColorOverride}}
+\index{LightColorOverride@{LightColorOverride}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{LightColorOverride}{LightColorOverride}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_aa6b1bacf36afb9447df220c3000b1adb} 
+FLinear\+Color UIVSmoke\+Settings::\+\+Light\+Color\+Override = FLinear\+Color::\+\+White}
+
+Custom light color. Used when b\+Override\+Light\+Color is true. \Hypertarget{class_u_i_v_smoke_settings_ad93690784063d6522bc740d9d37b99a0}\index{UIVSmokeSettings@{UIVSmokeSettings}!LightDirectionOverride@{LightDirectionOverride}}
+\index{LightDirectionOverride@{LightDirectionOverride}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{LightDirectionOverride}{LightDirectionOverride}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_ad93690784063d6522bc740d9d37b99a0} 
+FVector UIVSmoke\+Settings::\+\+Light\+Direction\+Override = FVector(0.\+0f, 0.\+0f, 1.\+0f)}
+
+Custom light direction (normalized). Used when b\+Override\+Light\+Direction is true. \Hypertarget{class_u_i_v_smoke_settings_aed2c17e98657fc3cb442dc9e677e2380}\index{UIVSmokeSettings@{UIVSmokeSettings}!LightMarchingDistance@{LightMarchingDistance}}
+\index{LightMarchingDistance@{LightMarchingDistance}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{LightMarchingDistance}{LightMarchingDistance}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_aed2c17e98657fc3cb442dc9e677e2380} 
+float UIVSmoke\+Settings::\+\+Light\+Marching\+Distance = 0.\+0f}
+
+Maximum distance to march toward light (0=no limit). \Hypertarget{class_u_i_v_smoke_settings_a22ac3be9033d9e6eb96ff323c74c1601}\index{UIVSmokeSettings@{UIVSmokeSettings}!LightMarchingExpFactor@{LightMarchingExpFactor}}
+\index{LightMarchingExpFactor@{LightMarchingExpFactor}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{LightMarchingExpFactor}{LightMarchingExpFactor}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a22ac3be9033d9e6eb96ff323c74c1601} 
+float UIVSmoke\+Settings::\+\+Light\+Marching\+Exp\+Factor = 2.\+0f}
+
+Exponential distribution factor for light marching steps (1=uniform, 2-\/3=recommended). \Hypertarget{class_u_i_v_smoke_settings_adffcdaee606bcfdc15862fa0b07b4e35}\index{UIVSmokeSettings@{UIVSmokeSettings}!LightMarchingSteps@{LightMarchingSteps}}
+\index{LightMarchingSteps@{LightMarchingSteps}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{LightMarchingSteps}{LightMarchingSteps}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_adffcdaee606bcfdc15862fa0b07b4e35} 
+int32 UIVSmoke\+Settings::\+\+Light\+Marching\+Steps = 6}
+
+Number of steps for light marching (1-\/16). Higher = better quality, lower performance. \Hypertarget{class_u_i_v_smoke_settings_ac523054e9318cf3b5d72cfc1ec655b38}\index{UIVSmokeSettings@{UIVSmokeSettings}!NearCascadeUpdateInterval@{NearCascadeUpdateInterval}}
+\index{NearCascadeUpdateInterval@{NearCascadeUpdateInterval}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{NearCascadeUpdateInterval}{NearCascadeUpdateInterval}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_ac523054e9318cf3b5d72cfc1ec655b38} 
+int32 UIVSmoke\+Settings::\+\+Near\+Cascade\+Update\+Interval = 1}
+
+Near cascade update interval (frames). \Hypertarget{class_u_i_v_smoke_settings_a7f8c931e4f27f4d5f6bafea12bf0f616}\index{UIVSmokeSettings@{UIVSmokeSettings}!NoiseSettings@{NoiseSettings}}
+\index{NoiseSettings@{NoiseSettings}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{NoiseSettings}{NoiseSettings}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a7f8c931e4f27f4d5f6bafea12bf0f616} 
+\doxymbox{\hyperlink{struct_f_i_v_smoke_noise_settings}{FIVSmoke\+Noise\+Settings}} UIVSmoke\+Settings::\+\+Noise\+Settings}
+
+Global noise settings for smoke texture generation. \Hypertarget{class_u_i_v_smoke_settings_ae5b79fd6502c33f6485050cb0bbc72a3}\index{UIVSmokeSettings@{UIVSmokeSettings}!NoiseUVMul@{NoiseUVMul}}
+\index{NoiseUVMul@{NoiseUVMul}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{NoiseUVMul}{NoiseUVMul}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_ae5b79fd6502c33f6485050cb0bbc72a3} 
+float UIVSmoke\+Settings::\+\+Noise\+UVMul = 0.\+42f}
+
+Noise UV multiplier for sampling. \Hypertarget{class_u_i_v_smoke_settings_aedb976587d4bbdb4be1ea1c56207be32}\index{UIVSmokeSettings@{UIVSmokeSettings}!NumShadowCascades@{NumShadowCascades}}
+\index{NumShadowCascades@{NumShadowCascades}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{NumShadowCascades}{NumShadowCascades}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_aedb976587d4bbdb4be1ea1c56207be32} 
+int32 UIVSmoke\+Settings::\+\+Num\+Shadow\+Cascades = 4}
+
+Number of shadow cascades (1-\/6). More cascades = smoother quality. \Hypertarget{class_u_i_v_smoke_settings_a23801bba2d85b479a15942dcd804fd15}\index{UIVSmokeSettings@{UIVSmokeSettings}!QualityLevel@{QualityLevel}}
+\index{QualityLevel@{QualityLevel}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{QualityLevel}{QualityLevel}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a23801bba2d85b479a15942dcd804fd15} 
+EIVSmoke\+Quality\+Level UIVSmoke\+Settings::\+\+Quality\+Level = EIVSmoke\+Quality\+Level::\+\+Medium}
+
+Quality preset for smoke rendering. Controls ray marching steps and step size. \Hypertarget{class_u_i_v_smoke_settings_ad11ae061d8729b2d7115c01f66302d71}\index{UIVSmokeSettings@{UIVSmokeSettings}!RenderPass@{RenderPass}}
+\index{RenderPass@{RenderPass}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{RenderPass}{RenderPass}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_ad11ae061d8729b2d7115c01f66302d71} 
+EIVSmoke\+Render\+Pass UIVSmoke\+Settings::\+\+Render\+Pass = EIVSmoke\+Render\+Pass::\+\+After\+DOF}
+
+Post-\/processing pass where smoke is rendered. \Hypertarget{class_u_i_v_smoke_settings_a834d63aacdfd676ce0950a0ab6954c39}\index{UIVSmokeSettings@{UIVSmokeSettings}!ScatteringAnisotropy@{ScatteringAnisotropy}}
+\index{ScatteringAnisotropy@{ScatteringAnisotropy}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{ScatteringAnisotropy}{ScatteringAnisotropy}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a834d63aacdfd676ce0950a0ab6954c39} 
+float UIVSmoke\+Settings::\+\+Scattering\+Anisotropy = 0.\+5f}
+
+Anisotropy parameter for Henyey-\/\+Greenstein phase function. 0 = isotropic, positive = forward scattering, negative = backward scattering \Hypertarget{class_u_i_v_smoke_settings_a07f62f3ac41404fee21952a0210afb4f}\index{UIVSmokeSettings@{UIVSmokeSettings}!ScatterScale@{ScatterScale}}
+\index{ScatterScale@{ScatterScale}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{ScatterScale}{ScatterScale}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a07f62f3ac41404fee21952a0210afb4f} 
+float UIVSmoke\+Settings::\+\+Scatter\+Scale = 0.\+5f}
+
+Scattering intensity multiplier. Higher = more light scattered through smoke. \Hypertarget{class_u_i_v_smoke_settings_aaae34a62d76fbcf6acab2b9f7066e80c}\index{UIVSmokeSettings@{UIVSmokeSettings}!ShadowAmbient@{ShadowAmbient}}
+\index{ShadowAmbient@{ShadowAmbient}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{ShadowAmbient}{ShadowAmbient}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_aaae34a62d76fbcf6acab2b9f7066e80c} 
+float UIVSmoke\+Settings::\+\+Shadow\+Ambient = 0.\+2f}
+
+Minimum brightness in fully shadowed areas (0=dark, 1=no shadow). \Hypertarget{class_u_i_v_smoke_settings_ae3805bff319b7893ba069b6d5b6ab466}\index{UIVSmokeSettings@{UIVSmokeSettings}!ShadowDepthBias@{ShadowDepthBias}}
+\index{ShadowDepthBias@{ShadowDepthBias}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{ShadowDepthBias}{ShadowDepthBias}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_ae3805bff319b7893ba069b6d5b6ab466} 
+float UIVSmoke\+Settings::\+\+Shadow\+Depth\+Bias = 1.\+0f}
+
+Shadow depth bias to prevent shadow acne. \Hypertarget{class_u_i_v_smoke_settings_ae6173ebdb3980b4977b7666beec4c27b}\index{UIVSmokeSettings@{UIVSmokeSettings}!ShadowMaxDistance@{ShadowMaxDistance}}
+\index{ShadowMaxDistance@{ShadowMaxDistance}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{ShadowMaxDistance}{ShadowMaxDistance}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_ae6173ebdb3980b4977b7666beec4c27b} 
+float UIVSmoke\+Settings::\+\+Shadow\+Max\+Distance = 50000.\+0f}
+
+Maximum shadow distance in centimeters. \Hypertarget{class_u_i_v_smoke_settings_a9a05a514f4d93470aab02d82f98541b9}\index{UIVSmokeSettings@{UIVSmokeSettings}!Sharpness@{Sharpness}}
+\index{Sharpness@{Sharpness}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{Sharpness}{Sharpness}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a9a05a514f4d93470aab02d82f98541b9} 
+float UIVSmoke\+Settings::\+\+Sharpness = 0.\+0f}
+
+Sharpening/\+blurring of the smoke composite. Positive = sharpen, Zero = no filter, Negative = blur. \Hypertarget{class_u_i_v_smoke_settings_a82753977ace13e3690a1f92354abaef7}\index{UIVSmokeSettings@{UIVSmokeSettings}!SmokeDensityFalloff@{SmokeDensityFalloff}}
+\index{SmokeDensityFalloff@{SmokeDensityFalloff}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{SmokeDensityFalloff}{SmokeDensityFalloff}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a82753977ace13e3690a1f92354abaef7} 
+float UIVSmoke\+Settings::\+\+Smoke\+Density\+Falloff = 0.\+2f}
+
+Controls edge softness. Lower = softer edges. \Hypertarget{class_u_i_v_smoke_settings_ae195e170e01a99d1c0cd8003ce243733}\index{UIVSmokeSettings@{UIVSmokeSettings}!SmokeSize@{SmokeSize}}
+\index{SmokeSize@{SmokeSize}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{SmokeSize}{SmokeSize}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_ae195e170e01a99d1c0cd8003ce243733} 
+float UIVSmoke\+Settings::\+\+Smoke\+Size = 128.\+0f}
+
+Scale for noise sampling. Affects smoke detail size. \Hypertarget{class_u_i_v_smoke_settings_a9e83ba796d27bf30f64aa356a1df549a}\index{UIVSmokeSettings@{UIVSmokeSettings}!VolumeEdgeFadeSharpness@{VolumeEdgeFadeSharpness}}
+\index{VolumeEdgeFadeSharpness@{VolumeEdgeFadeSharpness}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{VolumeEdgeFadeSharpness}{VolumeEdgeFadeSharpness}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a9e83ba796d27bf30f64aa356a1df549a} 
+float UIVSmoke\+Settings::\+\+Volume\+Edge\+Fade\+Sharpness = 3.\+5f}
+
+Edge fade sharpness factor. \Hypertarget{class_u_i_v_smoke_settings_afbbe47e34402d9ae806bfbb20fefc3d6}\index{UIVSmokeSettings@{UIVSmokeSettings}!VolumeEdgeNoiseFadeOffset@{VolumeEdgeNoiseFadeOffset}}
+\index{VolumeEdgeNoiseFadeOffset@{VolumeEdgeNoiseFadeOffset}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{VolumeEdgeNoiseFadeOffset}{VolumeEdgeNoiseFadeOffset}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_afbbe47e34402d9ae806bfbb20fefc3d6} 
+float UIVSmoke\+Settings::\+\+Volume\+Edge\+Noise\+Fade\+Offset = 0.\+04f}
+
+Noise-\/based edge fade offset. \Hypertarget{class_u_i_v_smoke_settings_a8f4cbf58987d9caa0a2f215fd7ea0961}\index{UIVSmokeSettings@{UIVSmokeSettings}!VolumeRangeOffset@{VolumeRangeOffset}}
+\index{VolumeRangeOffset@{VolumeRangeOffset}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{VolumeRangeOffset}{VolumeRangeOffset}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a8f4cbf58987d9caa0a2f215fd7ea0961} 
+float UIVSmoke\+Settings::\+\+Volume\+Range\+Offset = 0.\+1}
+
+Volume edge range offset for density falloff. \Hypertarget{class_u_i_v_smoke_settings_affcee0751fc3f7c9d57ec426d9109d87}\index{UIVSmokeSettings@{UIVSmokeSettings}!VSMBlurRadius@{VSMBlurRadius}}
+\index{VSMBlurRadius@{VSMBlurRadius}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{VSMBlurRadius}{VSMBlurRadius}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_affcee0751fc3f7c9d57ec426d9109d87} 
+int32 UIVSmoke\+Settings::\+\+VSMBlur\+Radius = 2}
+
+VSM blur kernel radius (0=no blur). Higher = softer shadows. \Hypertarget{class_u_i_v_smoke_settings_a259b8b2a43d5036a9551355c4340fdcc}\index{UIVSmokeSettings@{UIVSmokeSettings}!VSMLightBleedingReduction@{VSMLightBleedingReduction}}
+\index{VSMLightBleedingReduction@{VSMLightBleedingReduction}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{VSMLightBleedingReduction}{VSMLightBleedingReduction}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a259b8b2a43d5036a9551355c4340fdcc} 
+float UIVSmoke\+Settings::\+\+VSMLight\+Bleeding\+Reduction = 0.\+2f}
+
+VSM light bleeding reduction (0=none). \Hypertarget{class_u_i_v_smoke_settings_afdb88a9bdd20f42cabf31e991d7a8b8f}\index{UIVSmokeSettings@{UIVSmokeSettings}!VSMMinVariance@{VSMMinVariance}}
+\index{VSMMinVariance@{VSMMinVariance}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{VSMMinVariance}{VSMMinVariance}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_afdb88a9bdd20f42cabf31e991d7a8b8f} 
+float UIVSmoke\+Settings::\+\+VSMMin\+Variance = 1.\+0f}
+
+Minimum variance for VSM to prevent artifacts. \Hypertarget{class_u_i_v_smoke_settings_a3f80d63911d11f9dcc688a8c074e0b46}\index{UIVSmokeSettings@{UIVSmokeSettings}!WindDirection@{WindDirection}}
+\index{WindDirection@{WindDirection}!UIVSmokeSettings@{UIVSmokeSettings}}
+\doxysubsubsection{\texorpdfstring{WindDirection}{WindDirection}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_settings_a3f80d63911d11f9dcc688a8c074e0b46} 
+FVector UIVSmoke\+Settings::\+\+Wind\+Direction = FVector(0.\+00f, 0.\+00f, 0.\+1f)}
+
+Wind direction and speed for smoke animation. 
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Settings.\+h\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Private/\+IVSmoke\+Settings.\+cpp\end{DoxyCompactItemize}

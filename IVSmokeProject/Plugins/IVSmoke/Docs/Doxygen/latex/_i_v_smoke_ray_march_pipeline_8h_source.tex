@@ -1,0 +1,391 @@
+\doxysection{IVSmoke\+Ray\+March\+Pipeline.\+h}
+\hypertarget{_i_v_smoke_ray_march_pipeline_8h_source}{}\label{_i_v_smoke_ray_march_pipeline_8h_source}\index{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeRayMarchPipeline.h@{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeRayMarchPipeline.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//\ Copyright\ (c)\ 2026,\ Team\ SDB.\ All\ rights\ reserved.}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}CoreMinimal.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}GlobalShader.h"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}ShaderParameterStruct.h"{}}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}RenderGraphUtils.h"{}}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ "{}SceneTexturesConfig.h"{}}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ "{}SceneView.h"{}}}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{comment}{//\ Forward\ declarations}}
+\DoxyCodeLine{00013\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data}{FIVSmokeVolumeGPUData}};}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00016\ \textcolor{comment}{//\ Occupancy\ System\ Configuration}}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00029\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config}{FIVSmokeOccupancyConfig}}}
+\DoxyCodeLine{00030\ \{}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_a4eb121fccda2895443499fc3ceef93e0}{TileSizeX}}\ =\ 16;}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ TileSizeY\ =\ 16;}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_ae133d58a822de3eb0b93903625e7f84a}{StepDivisor}}\ =\ 4;}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_ad9c43934dd3743b927d33007e522528f}{MaxVolumes}}\ =\ 128;}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_ae96cd7b47fe5fb1f235ae00763941558}{TileSetupThreadsX}}\ =\ 8;}
+\DoxyCodeLine{00043\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ TileSetupThreadsY\ =\ 8;}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00046\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_abfa6088ef5125cca6d6806cb94483cf9}{OccupancyBuildThreadsX}}\ =\ 8;}
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ OccupancyBuildThreadsY\ =\ 8;}
+\DoxyCodeLine{00048\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ OccupancyBuildThreadsZ\ =\ 4;}
+\DoxyCodeLine{00049\ \};}
+\DoxyCodeLine{00050\ }
+\DoxyCodeLine{00051\ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00052\ \textcolor{comment}{//\ GPU\ Data\ Structures}}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00060\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_i_v_smoke_tile_data}{FIVSmokeTileData}}}
+\DoxyCodeLine{00061\ \{}
+\DoxyCodeLine{00063\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_tile_data_ab9968c5d91d845d4dc851b252cfb6de3}{Near}};}
+\DoxyCodeLine{00064\ }
+\DoxyCodeLine{00066\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_tile_data_a7147d49de952d4f8865153339f676f77}{Far}};}
+\DoxyCodeLine{00067\ }
+\DoxyCodeLine{00069\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_tile_data_ae27bb1ef6194303e9498c5b976e7ba2d}{StepSize}};}
+\DoxyCodeLine{00070\ }
+\DoxyCodeLine{00076\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_tile_data_a5e16219a2ce9e6da7f92d5af66abfa89}{TotalVolumeLength}};}
+\DoxyCodeLine{00077\ }
+\DoxyCodeLine{00083\ \ \ \ \ uint32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_tile_data_a561d8865a847ce8a52f6899c70878872}{VolumeMask128}}[4];}
+\DoxyCodeLine{00084\ }
+\DoxyCodeLine{00089\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_tile_data_a26339bf3febb3767f78c7d1308ebd681}{MaxLightMarchDistance}};}
+\DoxyCodeLine{00090\ }
+\DoxyCodeLine{00092\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_tile_data_a621cc4dcaa39e27dfc68725454d486df}{Padding}}[3];}
+\DoxyCodeLine{00093\ \};}
+\DoxyCodeLine{00094\ }
+\DoxyCodeLine{00095\ \textcolor{keyword}{static\_assert}(\textcolor{keyword}{sizeof}(\doxymbox{\hyperlink{struct_f_i_v_smoke_tile_data}{FIVSmokeTileData}})\ ==\ 48,\ \textcolor{stringliteral}{"{}FIVSmokeTileData\ must\ be\ 48\ bytes"{}});}
+\DoxyCodeLine{00096\ }
+\DoxyCodeLine{00097\ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00098\ \textcolor{comment}{//\ Pass\ 0:\ Tile\ Setup\ Compute\ Shader}}
+\DoxyCodeLine{00099\ }
+\DoxyCodeLine{00107\ \textcolor{keyword}{class\ }IVSMOKE\_API\ \doxymbox{\hyperlink{class_f_i_v_smoke_tile_setup_c_s}{FIVSmokeTileSetupCS}}\ :\ \textcolor{keyword}{public}\ FGlobalShader}
+\DoxyCodeLine{00108\ \{}
+\DoxyCodeLine{00109\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00110\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeX\ =\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_ae96cd7b47fe5fb1f235ae00763941558}{FIVSmokeOccupancyConfig::TileSetupThreadsX}};}
+\DoxyCodeLine{00111\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeY\ =\ FIVSmokeOccupancyConfig::TileSetupThreadsY;}
+\DoxyCodeLine{00112\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeZ\ =\ 1;}
+\DoxyCodeLine{00113\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{const}\ TCHAR*\ EventName\ =\ TEXT(\textcolor{stringliteral}{"{}IVSmokeTileSetupCS"{}});}
+\DoxyCodeLine{00114\ }
+\DoxyCodeLine{00115\ \ \ \ \ DECLARE\_GLOBAL\_SHADER(\doxymbox{\hyperlink{class_f_i_v_smoke_tile_setup_c_s}{FIVSmokeTileSetupCS}});}
+\DoxyCodeLine{00116\ \ \ \ \ SHADER\_USE\_PARAMETER\_STRUCT(\doxymbox{\hyperlink{class_f_i_v_smoke_tile_setup_c_s}{FIVSmokeTileSetupCS}},\ FGlobalShader);}
+\DoxyCodeLine{00117\ }
+\DoxyCodeLine{00118\ \ \ \ \ BEGIN\_SHADER\_PARAMETER\_STRUCT(FParameters,\ )}
+\DoxyCodeLine{00119\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Output:\ Per-\/tile\ data\ buffer}}
+\DoxyCodeLine{00120\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_BUFFER\_UAV(RWStructuredBuffer<FIVSmokeTileData>,\ TileDataBufferRW)}
+\DoxyCodeLine{00121\ }
+\DoxyCodeLine{00122\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Input:\ Scene\ depth\ for\ depth\ range\ calculation}}
+\DoxyCodeLine{00123\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_UNIFORM\_BUFFER(FSceneTextureUniformParameters,\ SceneTexturesStruct)}
+\DoxyCodeLine{00124\ }
+\DoxyCodeLine{00125\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Volume\ data\ for\ AABB\ intersection}}
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_BUFFER\_SRV(StructuredBuffer<FIVSmokeVolumeGPUData>,\ VolumeDataBuffer)}
+\DoxyCodeLine{00127\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(uint32,\ NumActiveVolumes)}
+\DoxyCodeLine{00128\ }
+\DoxyCodeLine{00129\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Tile\ configuration}}
+\DoxyCodeLine{00130\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FIntPoint,\ TileCount)}
+\DoxyCodeLine{00131\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(uint32,\ StepSliceCount)}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ MaxRayDistance)}
+\DoxyCodeLine{00133\ }
+\DoxyCodeLine{00134\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Viewport\ info}}
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FIntPoint,\ ViewportSize)}
+\DoxyCodeLine{00136\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FIntPoint,\ ViewRectMin)}
+\DoxyCodeLine{00137\ }
+\DoxyCodeLine{00138\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Camera\ parameters\ for\ world\ position\ reconstruction}}
+\DoxyCodeLine{00139\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ CameraPosition)}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ CameraForward)}
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ CameraRight)}
+\DoxyCodeLine{00142\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ CameraUp)}
+\DoxyCodeLine{00143\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ TanHalfFOV)}
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ AspectRatio)}
+\DoxyCodeLine{00145\ }
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Depth\ conversion}}
+\DoxyCodeLine{00147\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector4f,\ InvDeviceZToWorldZTransform)}
+\DoxyCodeLine{00148\ \ \ \ \ END\_SHADER\_PARAMETER\_STRUCT()}
+\DoxyCodeLine{00149\ }
+\DoxyCodeLine{00150\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ ShouldCompilePermutation(\textcolor{keyword}{const}\ FGlobalShaderPermutationParameters\&\ Parameters)}
+\DoxyCodeLine{00151\ \ \ \ \ \{}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ IsFeatureLevelSupported(Parameters.Platform,\ ERHIFeatureLevel::SM5);}
+\DoxyCodeLine{00153\ \ \ \ \ \}}
+\DoxyCodeLine{00154\ }
+\DoxyCodeLine{00155\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ ModifyCompilationEnvironment(\textcolor{keyword}{const}\ FGlobalShaderPermutationParameters\&\ Parameters,\ FShaderCompilerEnvironment\&\ OutEnvironment)}
+\DoxyCodeLine{00156\ \ \ \ \ \{}
+\DoxyCodeLine{00157\ \ \ \ \ \ \ \ \ FGlobalShader::ModifyCompilationEnvironment(Parameters,\ OutEnvironment);}
+\DoxyCodeLine{00158\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}THREADGROUP\_SIZE\_X"{}}),\ ThreadGroupSizeX);}
+\DoxyCodeLine{00159\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}THREADGROUP\_SIZE\_Y"{}}),\ ThreadGroupSizeY);}
+\DoxyCodeLine{00160\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}TILE\_SIZE\_X"{}}),\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_a4eb121fccda2895443499fc3ceef93e0}{FIVSmokeOccupancyConfig::TileSizeX}});}
+\DoxyCodeLine{00161\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}TILE\_SIZE\_Y"{}}),\ FIVSmokeOccupancyConfig::TileSizeY);}
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}MAX\_VOLUMES"{}}),\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_ad9c43934dd3743b927d33007e522528f}{FIVSmokeOccupancyConfig::MaxVolumes}});}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}STEP\_DIVISOR"{}}),\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_ae133d58a822de3eb0b93903625e7f84a}{FIVSmokeOccupancyConfig::StepDivisor}});}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Enable\ wave\ intrinsics\ (supported\ on\ SM5\ with\ DX11.3+)}}
+\DoxyCodeLine{00165\ \ \ \ \ \ \ \ \ OutEnvironment.CompilerFlags.Add(CFLAG\_WaveOperations);}
+\DoxyCodeLine{00166\ \ \ \ \ \}}
+\DoxyCodeLine{00167\ \};}
+\DoxyCodeLine{00168\ }
+\DoxyCodeLine{00169\ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00170\ \textcolor{comment}{//\ Pass\ 1:\ Occupancy\ Build\ Compute\ Shader}}
+\DoxyCodeLine{00171\ }
+\DoxyCodeLine{00179\ \textcolor{keyword}{class\ }IVSMOKE\_API\ \doxymbox{\hyperlink{class_f_i_v_smoke_occupancy_build_c_s}{FIVSmokeOccupancyBuildCS}}\ :\ \textcolor{keyword}{public}\ FGlobalShader}
+\DoxyCodeLine{00180\ \{}
+\DoxyCodeLine{00181\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00182\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeX\ =\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_abfa6088ef5125cca6d6806cb94483cf9}{FIVSmokeOccupancyConfig::OccupancyBuildThreadsX}};}
+\DoxyCodeLine{00183\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeY\ =\ FIVSmokeOccupancyConfig::OccupancyBuildThreadsY;}
+\DoxyCodeLine{00184\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeZ\ =\ FIVSmokeOccupancyConfig::OccupancyBuildThreadsZ;}
+\DoxyCodeLine{00185\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{const}\ TCHAR*\ EventName\ =\ TEXT(\textcolor{stringliteral}{"{}IVSmokeOccupancyBuildCS"{}});}
+\DoxyCodeLine{00186\ }
+\DoxyCodeLine{00187\ \ \ \ \ DECLARE\_GLOBAL\_SHADER(\doxymbox{\hyperlink{class_f_i_v_smoke_occupancy_build_c_s}{FIVSmokeOccupancyBuildCS}});}
+\DoxyCodeLine{00188\ \ \ \ \ SHADER\_USE\_PARAMETER\_STRUCT(\doxymbox{\hyperlink{class_f_i_v_smoke_occupancy_build_c_s}{FIVSmokeOccupancyBuildCS}},\ FGlobalShader);}
+\DoxyCodeLine{00189\ }
+\DoxyCodeLine{00190\ \ \ \ \ BEGIN\_SHADER\_PARAMETER\_STRUCT(FParameters,\ )}
+\DoxyCodeLine{00191\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Input:\ Tile\ data\ from\ Pass\ 0}}
+\DoxyCodeLine{00192\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_BUFFER\_SRV(StructuredBuffer<FIVSmokeTileData>,\ TileDataBuffer)}
+\DoxyCodeLine{00193\ }
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Output:\ Occupancy\ 3D\ textures\ (uint4\ =\ 128-\/bit\ bitmask)}}
+\DoxyCodeLine{00195\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE\_UAV(RWTexture3D<uint4>,\ ViewOccupancyRW)}
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE\_UAV(RWTexture3D<uint4>,\ LightOccupancyRW)}
+\DoxyCodeLine{00197\ }
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Volume\ data}}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_BUFFER\_SRV(StructuredBuffer<FIVSmokeVolumeGPUData>,\ VolumeDataBuffer)}
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(uint32,\ NumActiveVolumes)}
+\DoxyCodeLine{00201\ }
+\DoxyCodeLine{00202\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Tile/Occupancy\ configuration}}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FIntPoint,\ TileCount)}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(uint32,\ StepSliceCount)}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(uint32,\ StepDivisor)}
+\DoxyCodeLine{00206\ }
+\DoxyCodeLine{00207\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Camera\ parameters\ for\ frustum\ cell\ calculation}}
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ CameraPosition)}
+\DoxyCodeLine{00209\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ CameraForward)}
+\DoxyCodeLine{00210\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ CameraRight)}
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ CameraUp)}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ TanHalfFOV)}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ AspectRatio)}
+\DoxyCodeLine{00214\ }
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Light\ parameters\ for\ light\ occupancy}}
+\DoxyCodeLine{00216\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ LightDirection)}
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ MaxLightMarchDistance)}
+\DoxyCodeLine{00218\ \ \ \ \ END\_SHADER\_PARAMETER\_STRUCT()}
+\DoxyCodeLine{00219\ }
+\DoxyCodeLine{00220\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ ShouldCompilePermutation(\textcolor{keyword}{const}\ FGlobalShaderPermutationParameters\&\ Parameters)}
+\DoxyCodeLine{00221\ \ \ \ \ \{}
+\DoxyCodeLine{00222\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ IsFeatureLevelSupported(Parameters.Platform,\ ERHIFeatureLevel::SM5);}
+\DoxyCodeLine{00223\ \ \ \ \ \}}
+\DoxyCodeLine{00224\ }
+\DoxyCodeLine{00225\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ ModifyCompilationEnvironment(\textcolor{keyword}{const}\ FGlobalShaderPermutationParameters\&\ Parameters,\ FShaderCompilerEnvironment\&\ OutEnvironment)}
+\DoxyCodeLine{00226\ \ \ \ \ \{}
+\DoxyCodeLine{00227\ \ \ \ \ \ \ \ \ FGlobalShader::ModifyCompilationEnvironment(Parameters,\ OutEnvironment);}
+\DoxyCodeLine{00228\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}THREADGROUP\_SIZE\_X"{}}),\ ThreadGroupSizeX);}
+\DoxyCodeLine{00229\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}THREADGROUP\_SIZE\_Y"{}}),\ ThreadGroupSizeY);}
+\DoxyCodeLine{00230\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}THREADGROUP\_SIZE\_Z"{}}),\ ThreadGroupSizeZ);}
+\DoxyCodeLine{00231\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}TILE\_SIZE\_X"{}}),\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_a4eb121fccda2895443499fc3ceef93e0}{FIVSmokeOccupancyConfig::TileSizeX}});}
+\DoxyCodeLine{00232\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}TILE\_SIZE\_Y"{}}),\ FIVSmokeOccupancyConfig::TileSizeY);}
+\DoxyCodeLine{00233\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}MAX\_VOLUMES"{}}),\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_ad9c43934dd3743b927d33007e522528f}{FIVSmokeOccupancyConfig::MaxVolumes}});}
+\DoxyCodeLine{00234\ \ \ \ \ \}}
+\DoxyCodeLine{00235\ \};}
+\DoxyCodeLine{00236\ }
+\DoxyCodeLine{00237\ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00238\ \textcolor{comment}{//\ Pass\ 2:\ Ray\ March\ with\ Occupancy\ Compute\ Shader}}
+\DoxyCodeLine{00239\ }
+\DoxyCodeLine{00252\ \textcolor{keyword}{class\ }IVSMOKE\_API\ \doxymbox{\hyperlink{class_f_i_v_smoke_multi_volume_ray_march_c_s}{FIVSmokeMultiVolumeRayMarchCS}}\ :\ \textcolor{keyword}{public}\ FGlobalShader}
+\DoxyCodeLine{00253\ \{}
+\DoxyCodeLine{00254\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00255\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeX\ =\ 8;}
+\DoxyCodeLine{00256\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeY\ =\ 8;}
+\DoxyCodeLine{00257\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeZ\ =\ 1;}
+\DoxyCodeLine{00258\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{const}\ TCHAR*\ EventName\ =\ TEXT(\textcolor{stringliteral}{"{}IVSmokeMultiVolumeRayMarchCS"{}});}
+\DoxyCodeLine{00259\ }
+\DoxyCodeLine{00260\ \ \ \ \ DECLARE\_GLOBAL\_SHADER(\doxymbox{\hyperlink{class_f_i_v_smoke_multi_volume_ray_march_c_s}{FIVSmokeMultiVolumeRayMarchCS}});}
+\DoxyCodeLine{00261\ \ \ \ \ SHADER\_USE\_PARAMETER\_STRUCT(\doxymbox{\hyperlink{class_f_i_v_smoke_multi_volume_ray_march_c_s}{FIVSmokeMultiVolumeRayMarchCS}},\ FGlobalShader);}
+\DoxyCodeLine{00262\ }
+\DoxyCodeLine{00263\ \ \ \ \ BEGIN\_SHADER\_PARAMETER\_STRUCT(FParameters,\ )}
+\DoxyCodeLine{00264\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Output\ (Dual\ Render\ Target)}}
+\DoxyCodeLine{00265\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE\_UAV(RWTexture2D<float4>,\ SmokeAlbedoTex)}
+\DoxyCodeLine{00266\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE\_UAV(RWTexture2D<float4>,\ SmokeMaskTex)}
+\DoxyCodeLine{00267\ }
+\DoxyCodeLine{00268\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Occupancy\ inputs}}
+\DoxyCodeLine{00269\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_BUFFER\_SRV(StructuredBuffer<FIVSmokeTileData>,\ TileDataBuffer)}
+\DoxyCodeLine{00270\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE\_SRV(Texture3D<uint4>,\ ViewOccupancy)}
+\DoxyCodeLine{00271\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE\_SRV(Texture3D<uint4>,\ LightOccupancy)}
+\DoxyCodeLine{00272\ }
+\DoxyCodeLine{00273\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Tile\ configuration}}
+\DoxyCodeLine{00274\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FIntPoint,\ TileCount)}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(uint32,\ StepSliceCount)}
+\DoxyCodeLine{00276\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(uint32,\ StepDivisor)}
+\DoxyCodeLine{00277\ }
+\DoxyCodeLine{00278\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Input\ Textures\ (same\ as\ original\ ray\ march)}}
+\DoxyCodeLine{00279\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE(Texture3D,\ NoiseVolume)}
+\DoxyCodeLine{00280\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ NoiseUVMul)}
+\DoxyCodeLine{00281\ }
+\DoxyCodeLine{00282\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Samplers}}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_SAMPLER(SamplerState,\ LinearBorder\_Sampler)}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_SAMPLER(SamplerState,\ LinearRepeat\_Sampler)}
+\DoxyCodeLine{00285\ }
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Time}}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ ElapsedTime)}
+\DoxyCodeLine{00288\ }
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Viewport}}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FIntPoint,\ TexSize)}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector2f,\ ViewportSize)}
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector2f,\ ViewRectMin)}
+\DoxyCodeLine{00293\ }
+\DoxyCodeLine{00294\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Camera}}
+\DoxyCodeLine{00295\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ CameraPosition)}
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ CameraForward)}
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ CameraRight)}
+\DoxyCodeLine{00298\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ CameraUp)}
+\DoxyCodeLine{00299\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ TanHalfFOV)}
+\DoxyCodeLine{00300\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ AspectRatio)}
+\DoxyCodeLine{00301\ }
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Ray\ Marching\ Setup}}
+\DoxyCodeLine{00303\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(int32,\ MaxSteps)}
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ MinStepSize)}
+\DoxyCodeLine{00305\ }
+\DoxyCodeLine{00306\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Multi-\/Volume\ Data}}
+\DoxyCodeLine{00307\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_BUFFER\_SRV(StructuredBuffer<FIVSmokeVolumeGPUData>,\ VolumeDataBuffer)}
+\DoxyCodeLine{00308\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(uint32,\ NumActiveVolumes)}
+\DoxyCodeLine{00309\ }
+\DoxyCodeLine{00310\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Packed\ Voxel\ Data}}
+\DoxyCodeLine{00311\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{int},\ PackedInterval)}
+\DoxyCodeLine{00312\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE\_SRV(Texture3D,\ PackedVoxelAtlas)}
+\DoxyCodeLine{00313\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE\_SRV(Texture3D,\ PackedHoleAtlas)}
+\DoxyCodeLine{00314\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FIntVector,\ VoxelTexSize)}
+\DoxyCodeLine{00315\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FIntVector,\ HoleTexSize)}
+\DoxyCodeLine{00316\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FIntVector,\ PackedHoleTexSize)}
+\DoxyCodeLine{00317\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FIntVector,\ HoleAtlasCount)}
+\DoxyCodeLine{00318\ }
+\DoxyCodeLine{00319\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Scene\ Textures}}
+\DoxyCodeLine{00320\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_UNIFORM\_BUFFER(FSceneTextureUniformParameters,\ SceneTexturesStruct)}
+\DoxyCodeLine{00321\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector4f,\ InvDeviceZToWorldZTransform)}
+\DoxyCodeLine{00322\ }
+\DoxyCodeLine{00323\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ View\ (for\ BlueNoise\ access)}}
+\DoxyCodeLine{00324\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_STRUCT\_REF(FViewUniformShaderParameters,\ View)}
+\DoxyCodeLine{00325\ }
+\DoxyCodeLine{00326\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Global\ Smoke\ Parameters}}
+\DoxyCodeLine{00327\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ GlobalAbsorption)}
+\DoxyCodeLine{00328\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ SmokeSize)}
+\DoxyCodeLine{00329\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ WindDirection)}
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ VolumeRangeOffset)}
+\DoxyCodeLine{00331\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ VolumeEdgeNoiseFadeOffset)}
+\DoxyCodeLine{00332\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ VolumeEdgeFadeSharpness)}
+\DoxyCodeLine{00333\ }
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Rayleigh\ Scattering}}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ LightDirection)}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ LightColor)}
+\DoxyCodeLine{00337\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ ScatterScale)}
+\DoxyCodeLine{00338\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ ScatteringAnisotropy)}
+\DoxyCodeLine{00339\ }
+\DoxyCodeLine{00340\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Self-\/Shadowing\ (Light\ Marching)}}
+\DoxyCodeLine{00341\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(int32,\ LightMarchingSteps)}
+\DoxyCodeLine{00342\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ LightMarchingDistance)}
+\DoxyCodeLine{00343\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ LightMarchingExpFactor)}
+\DoxyCodeLine{00344\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ ShadowAmbient)}
+\DoxyCodeLine{00345\ }
+\DoxyCodeLine{00346\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Global\ AABB\ for\ light\ march\ distance\ calculation\ (per-\/pixel\ ray-\/box\ intersection)}}
+\DoxyCodeLine{00347\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ GlobalAABBMin)}
+\DoxyCodeLine{00348\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ GlobalAABBMax)}
+\DoxyCodeLine{00349\ }
+\DoxyCodeLine{00350\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ External\ Shadowing\ (CSM)}}
+\DoxyCodeLine{00351\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(int32,\ NumCascades)}
+\DoxyCodeLine{00352\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE(Texture2DArray,\ CSMDepthTextureArray)}
+\DoxyCodeLine{00353\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE(Texture2DArray,\ CSMVSMTextureArray)}
+\DoxyCodeLine{00354\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_SAMPLER(SamplerState,\ CSMSampler)}
+\DoxyCodeLine{00355\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_ARRAY(FMatrix44f,\ CSMViewProjectionMatrices,\ [8])}
+\DoxyCodeLine{00356\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_SCALAR\_ARRAY(\textcolor{keywordtype}{float},\ CSMSplitDistances,\ [8])}
+\DoxyCodeLine{00357\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ CSMCameraPosition)}
+\DoxyCodeLine{00358\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ CascadeBlendRange)}
+\DoxyCodeLine{00359\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_ARRAY(FVector4f,\ CSMLightCameraPositions,\ [8])}
+\DoxyCodeLine{00360\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_ARRAY(FVector4f,\ CSMLightCameraForwards,\ [8])}
+\DoxyCodeLine{00361\ }
+\DoxyCodeLine{00362\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ VSM\ parameters}}
+\DoxyCodeLine{00363\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(int32,\ bEnableVSM)}
+\DoxyCodeLine{00364\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ VSMMinVariance)}
+\DoxyCodeLine{00365\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ VSMLightBleedingReduction)}
+\DoxyCodeLine{00366\ }
+\DoxyCodeLine{00367\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Shadow\ common\ parameters}}
+\DoxyCodeLine{00368\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ ShadowDepthBias)}
+\DoxyCodeLine{00369\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ ExternalShadowAmbient)}
+\DoxyCodeLine{00370\ }
+\DoxyCodeLine{00371\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Temporal\ (for\ TAA\ integration)}}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(uint32,\ FrameNumber)}
+\DoxyCodeLine{00373\ \ \ \ \ END\_SHADER\_PARAMETER\_STRUCT()}
+\DoxyCodeLine{00374\ }
+\DoxyCodeLine{00375\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ ShouldCompilePermutation(\textcolor{keyword}{const}\ FGlobalShaderPermutationParameters\&\ Parameters)}
+\DoxyCodeLine{00376\ \ \ \ \ \{}
+\DoxyCodeLine{00377\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ IsFeatureLevelSupported(Parameters.Platform,\ ERHIFeatureLevel::SM5);}
+\DoxyCodeLine{00378\ \ \ \ \ \}}
+\DoxyCodeLine{00379\ }
+\DoxyCodeLine{00380\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ ModifyCompilationEnvironment(\textcolor{keyword}{const}\ FGlobalShaderPermutationParameters\&\ Parameters,\ FShaderCompilerEnvironment\&\ OutEnvironment)}
+\DoxyCodeLine{00381\ \ \ \ \ \{}
+\DoxyCodeLine{00382\ \ \ \ \ \ \ \ \ FGlobalShader::ModifyCompilationEnvironment(Parameters,\ OutEnvironment);}
+\DoxyCodeLine{00383\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}THREADGROUP\_SIZE\_X"{}}),\ ThreadGroupSizeX);}
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}THREADGROUP\_SIZE\_Y"{}}),\ ThreadGroupSizeY);}
+\DoxyCodeLine{00385\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}TILE\_SIZE\_X"{}}),\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_a4eb121fccda2895443499fc3ceef93e0}{FIVSmokeOccupancyConfig::TileSizeX}});}
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}TILE\_SIZE\_Y"{}}),\ FIVSmokeOccupancyConfig::TileSizeY);}
+\DoxyCodeLine{00387\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}MAX\_VOLUMES"{}}),\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_ad9c43934dd3743b927d33007e522528f}{FIVSmokeOccupancyConfig::MaxVolumes}});}
+\DoxyCodeLine{00388\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}USE\_OCCUPANCY"{}}),\ 1);}
+\DoxyCodeLine{00389\ \ \ \ \ \}}
+\DoxyCodeLine{00390\ \};}
+\DoxyCodeLine{00391\ }
+\DoxyCodeLine{00392\ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00393\ \textcolor{comment}{//\ Occupancy\ Resources\ Container}}
+\DoxyCodeLine{00394\ }
+\DoxyCodeLine{00399\ \textcolor{keyword}{struct\ }FIVSmokeOccupancyResources}
+\DoxyCodeLine{00400\ \{}
+\DoxyCodeLine{00402\ \ \ \ \ FRDGBufferRef\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_resources_ae2ee1bf57492b086f12d6e4b5097fab0}{TileDataBuffer}};}
+\DoxyCodeLine{00403\ }
+\DoxyCodeLine{00405\ \ \ \ \ FRDGTextureRef\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_resources_aed5fac0f3db2e59f8ea9889581c6e5eb}{ViewOccupancy}};}
+\DoxyCodeLine{00406\ }
+\DoxyCodeLine{00408\ \ \ \ \ FRDGTextureRef\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_resources_aafe9f0d628bc3929f707d1e6dcad0fec}{LightOccupancy}};}
+\DoxyCodeLine{00409\ }
+\DoxyCodeLine{00411\ \ \ \ \ FIntPoint\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_resources_a726a621f894b64e862a6837dff5f1b91}{TileCount}};}
+\DoxyCodeLine{00412\ }
+\DoxyCodeLine{00414\ \ \ \ \ uint32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_resources_a11b8af9951e5be9e411a066b8f7d11d6}{StepSliceCount}};}
+\DoxyCodeLine{00415\ }
+\DoxyCodeLine{00416\ \ \ \ \ FIVSmokeOccupancyResources();}
+\DoxyCodeLine{00417\ \ \ \ \ \textcolor{keywordtype}{bool}\ IsValid()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00418\ \};}
+\DoxyCodeLine{00419\ }
+\DoxyCodeLine{00420\ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00421\ \textcolor{comment}{//\ Occupancy\ Renderer\ Namespace}}
+\DoxyCodeLine{00422\ }
+\DoxyCodeLine{00423\ \textcolor{keyword}{namespace\ }IVSmokeOccupancy}
+\DoxyCodeLine{00424\ \{}
+\DoxyCodeLine{00428\ \ \ \ \ FIntPoint\ ComputeTileCount(\textcolor{keyword}{const}\ FIntPoint\&\ ViewportSize);}
+\DoxyCodeLine{00429\ }
+\DoxyCodeLine{00433\ \ \ \ \ uint32\ ComputeStepSliceCount(int32\ MaxSteps);}
+\DoxyCodeLine{00434\ }
+\DoxyCodeLine{00438\ \ \ \ \ \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_resources}{FIVSmokeOccupancyResources}}\ CreateOccupancyResources(}
+\DoxyCodeLine{00439\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00440\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FIntPoint\&\ TileCount,}
+\DoxyCodeLine{00441\ \ \ \ \ \ \ \ \ uint32\ StepSliceCount);}
+\DoxyCodeLine{00442\ }
+\DoxyCodeLine{00447\ \ \ \ \ \textcolor{keywordtype}{void}\ AddTileSetupPass(}
+\DoxyCodeLine{00448\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00449\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FSceneView\&\ View,}
+\DoxyCodeLine{00450\ \ \ \ \ \ \ \ \ FRDGBufferRef\ VolumeDataBuffer,}
+\DoxyCodeLine{00451\ \ \ \ \ \ \ \ \ uint32\ NumActiveVolumes,}
+\DoxyCodeLine{00452\ \ \ \ \ \ \ \ \ FRDGBufferRef\ OutTileDataBuffer,}
+\DoxyCodeLine{00453\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FIntPoint\&\ TileCount,}
+\DoxyCodeLine{00454\ \ \ \ \ \ \ \ \ uint32\ StepSliceCount,}
+\DoxyCodeLine{00455\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ MaxRayDistance,}
+\DoxyCodeLine{00456\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FIntPoint\&\ ViewportSize,}
+\DoxyCodeLine{00457\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FIntPoint\&\ ViewRectMin);}
+\DoxyCodeLine{00458\ }
+\DoxyCodeLine{00463\ \ \ \ \ \textcolor{keywordtype}{void}\ AddOccupancyBuildPass(}
+\DoxyCodeLine{00464\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00465\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FSceneView\&\ View,}
+\DoxyCodeLine{00466\ \ \ \ \ \ \ \ \ FRDGBufferRef\ TileDataBuffer,}
+\DoxyCodeLine{00467\ \ \ \ \ \ \ \ \ FRDGBufferRef\ VolumeDataBuffer,}
+\DoxyCodeLine{00468\ \ \ \ \ \ \ \ \ uint32\ NumActiveVolumes,}
+\DoxyCodeLine{00469\ \ \ \ \ \ \ \ \ FRDGTextureRef\ OutViewOccupancy,}
+\DoxyCodeLine{00470\ \ \ \ \ \ \ \ \ FRDGTextureRef\ OutLightOccupancy,}
+\DoxyCodeLine{00471\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FIntPoint\&\ TileCount,}
+\DoxyCodeLine{00472\ \ \ \ \ \ \ \ \ uint32\ StepSliceCount,}
+\DoxyCodeLine{00473\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FVector3f\&\ LightDirection,}
+\DoxyCodeLine{00474\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ MaxLightMarchDistance,}
+\DoxyCodeLine{00475\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FIntPoint\&\ ViewportSize);}
+\DoxyCodeLine{00476\ }
+\DoxyCodeLine{00477\ \}\ \textcolor{comment}{//\ namespace\ IVSmokeOccupancy}}
+
+\end{DoxyCode}

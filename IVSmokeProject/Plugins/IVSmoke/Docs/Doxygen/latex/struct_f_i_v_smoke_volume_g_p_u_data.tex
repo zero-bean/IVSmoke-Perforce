@@ -1,0 +1,118 @@
+\doxysection{FIVSmoke\+Volume\+GPUData Struct Reference}
+\hypertarget{struct_f_i_v_smoke_volume_g_p_u_data}{}\label{struct_f_i_v_smoke_volume_g_p_u_data}\index{FIVSmokeVolumeGPUData@{FIVSmokeVolumeGPUData}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Shaders.\+h$>$}
+
+
+
+Collaboration diagram for FIVSmoke\+Volume\+GPUData:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=210pt]{struct_f_i_v_smoke_volume_g_p_u_data__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+FInt\+Vector3 \doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data_aa03734e55ac15c7d45358f7ab29c37e6}{Grid\+Resolution}}
+\item 
+uint32 \doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data_abcaaa586b72b4d4ceaebe13421b7a0c5}{Voxel\+Count}}
+\item 
+FVector3f \doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data_ac041b8ae231ea2e28dd0a83ae5eef6fb}{Smoke\+Color}}
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data_aacfb4045e588885a483b5d97062af6b8}{Absorption}}
+\item 
+FVector3f \doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data_ab8c93d865e5b62ea30aedfd89765ad0c}{Center\+Offset}}
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data_af21ce1649d8e522886f81c5917e8cefa}{Density\+Scale}}
+\item 
+FVector3f \doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data_a90c81eba4f798dd2f6d54c34f49b2f13}{Volume\+World\+AABBMin}}
+\item 
+\Hypertarget{struct_f_i_v_smoke_volume_g_p_u_data_a3a195cf27ab0a25eb29db7bd1ae4f648}\label{struct_f_i_v_smoke_volume_g_p_u_data_a3a195cf27ab0a25eb29db7bd1ae4f648} 
+float {\bfseries Voxel\+Size}
+\item 
+FVector3f \doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data_ae86657b574f5f952f47c71a28c91c039}{Volume\+World\+AABBMax}}
+\item 
+\Hypertarget{struct_f_i_v_smoke_volume_g_p_u_data_a8a2a90e974f0333ea6c1e3e1ca0ba836}\label{struct_f_i_v_smoke_volume_g_p_u_data_a8a2a90e974f0333ea6c1e3e1ca0ba836} 
+uint32 {\bfseries Voxel\+Buffer\+Offset}
+\item 
+\Hypertarget{struct_f_i_v_smoke_volume_g_p_u_data_ae911c5096ed229629077d8b43d0be073}\label{struct_f_i_v_smoke_volume_g_p_u_data_ae911c5096ed229629077d8b43d0be073} 
+FVector3f {\bfseries Voxel\+World\+AABBMin}
+\item 
+\Hypertarget{struct_f_i_v_smoke_volume_g_p_u_data_ab226882d7216fe04da51af1c292d24ad}\label{struct_f_i_v_smoke_volume_g_p_u_data_ab226882d7216fe04da51af1c292d24ad} 
+float {\bfseries Fade\+In\+Duration}
+\item 
+\Hypertarget{struct_f_i_v_smoke_volume_g_p_u_data_ab0141c681843177397827cb2481e1922}\label{struct_f_i_v_smoke_volume_g_p_u_data_ab0141c681843177397827cb2481e1922} 
+FVector3f {\bfseries Voxel\+World\+AABBMax}
+\item 
+\Hypertarget{struct_f_i_v_smoke_volume_g_p_u_data_ab0da8a04cd9c8a26a5f239368287792a}\label{struct_f_i_v_smoke_volume_g_p_u_data_ab0da8a04cd9c8a26a5f239368287792a} 
+float {\bfseries Fade\+Out\+Duration}
+\item 
+\Hypertarget{struct_f_i_v_smoke_volume_g_p_u_data_ac8665705e69bd66b056ed73527fbfd21}\label{struct_f_i_v_smoke_volume_g_p_u_data_ac8665705e69bd66b056ed73527fbfd21} 
+float {\bfseries Reserved} \+[4]\+
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+GPU-\/side volume metadata for single-\/pass multi-\/volume ray marching. Each volume has its own transform, bounds, and rendering parameters. This struct is uploaded to a Structured\+Buffer for GPU access.
+
+Memory layout:\+ 256 bytes (aligned to 16-\/byte boundary) 
+
+\label{doc-variable-members}
+\Hypertarget{struct_f_i_v_smoke_volume_g_p_u_data_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{struct_f_i_v_smoke_volume_g_p_u_data_aacfb4045e588885a483b5d97062af6b8}\index{FIVSmokeVolumeGPUData@{FIVSmokeVolumeGPUData}!Absorption@{Absorption}}
+\index{Absorption@{Absorption}!FIVSmokeVolumeGPUData@{FIVSmokeVolumeGPUData}}
+\doxysubsubsection{\texorpdfstring{Absorption}{Absorption}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_volume_g_p_u_data_aacfb4045e588885a483b5d97062af6b8} 
+float FIVSmoke\+Volume\+GPUData::\+\+Absorption}
+
+Absorption coefficient. \Hypertarget{struct_f_i_v_smoke_volume_g_p_u_data_ab8c93d865e5b62ea30aedfd89765ad0c}\index{FIVSmokeVolumeGPUData@{FIVSmokeVolumeGPUData}!CenterOffset@{CenterOffset}}
+\index{CenterOffset@{CenterOffset}!FIVSmokeVolumeGPUData@{FIVSmokeVolumeGPUData}}
+\doxysubsubsection{\texorpdfstring{CenterOffset}{CenterOffset}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_volume_g_p_u_data_ab8c93d865e5b62ea30aedfd89765ad0c} 
+FVector3f FIVSmoke\+Volume\+GPUData::\+\+Center\+Offset}
+
+Center offset for grid-\/to-\/local coordinate conversion. \Hypertarget{struct_f_i_v_smoke_volume_g_p_u_data_af21ce1649d8e522886f81c5917e8cefa}\index{FIVSmokeVolumeGPUData@{FIVSmokeVolumeGPUData}!DensityScale@{DensityScale}}
+\index{DensityScale@{DensityScale}!FIVSmokeVolumeGPUData@{FIVSmokeVolumeGPUData}}
+\doxysubsubsection{\texorpdfstring{DensityScale}{DensityScale}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_volume_g_p_u_data_af21ce1649d8e522886f81c5917e8cefa} 
+float FIVSmoke\+Volume\+GPUData::\+\+Density\+Scale}
+
+Per-\/volume density multiplier (default 1.\+0). \Hypertarget{struct_f_i_v_smoke_volume_g_p_u_data_aa03734e55ac15c7d45358f7ab29c37e6}\index{FIVSmokeVolumeGPUData@{FIVSmokeVolumeGPUData}!GridResolution@{GridResolution}}
+\index{GridResolution@{GridResolution}!FIVSmokeVolumeGPUData@{FIVSmokeVolumeGPUData}}
+\doxysubsubsection{\texorpdfstring{GridResolution}{GridResolution}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_volume_g_p_u_data_aa03734e55ac15c7d45358f7ab29c37e6} 
+FInt\+Vector3 FIVSmoke\+Volume\+GPUData::\+\+Grid\+Resolution}
+
+Grid resolution (voxel count per axis). \Hypertarget{struct_f_i_v_smoke_volume_g_p_u_data_ac041b8ae231ea2e28dd0a83ae5eef6fb}\index{FIVSmokeVolumeGPUData@{FIVSmokeVolumeGPUData}!SmokeColor@{SmokeColor}}
+\index{SmokeColor@{SmokeColor}!FIVSmokeVolumeGPUData@{FIVSmokeVolumeGPUData}}
+\doxysubsubsection{\texorpdfstring{SmokeColor}{SmokeColor}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_volume_g_p_u_data_ac041b8ae231ea2e28dd0a83ae5eef6fb} 
+FVector3f FIVSmoke\+Volume\+GPUData::\+\+Smoke\+Color}
+
+Smoke color for this volume. \Hypertarget{struct_f_i_v_smoke_volume_g_p_u_data_ae86657b574f5f952f47c71a28c91c039}\index{FIVSmokeVolumeGPUData@{FIVSmokeVolumeGPUData}!VolumeWorldAABBMax@{VolumeWorldAABBMax}}
+\index{VolumeWorldAABBMax@{VolumeWorldAABBMax}!FIVSmokeVolumeGPUData@{FIVSmokeVolumeGPUData}}
+\doxysubsubsection{\texorpdfstring{VolumeWorldAABBMax}{VolumeWorldAABBMax}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_volume_g_p_u_data_ae86657b574f5f952f47c71a28c91c039} 
+FVector3f FIVSmoke\+Volume\+GPUData::\+\+Volume\+World\+AABBMax}
+
+World-\/space AABB maximum (for fast ray-\/box intersection). \Hypertarget{struct_f_i_v_smoke_volume_g_p_u_data_a90c81eba4f798dd2f6d54c34f49b2f13}\index{FIVSmokeVolumeGPUData@{FIVSmokeVolumeGPUData}!VolumeWorldAABBMin@{VolumeWorldAABBMin}}
+\index{VolumeWorldAABBMin@{VolumeWorldAABBMin}!FIVSmokeVolumeGPUData@{FIVSmokeVolumeGPUData}}
+\doxysubsubsection{\texorpdfstring{VolumeWorldAABBMin}{VolumeWorldAABBMin}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_volume_g_p_u_data_a90c81eba4f798dd2f6d54c34f49b2f13} 
+FVector3f FIVSmoke\+Volume\+GPUData::\+\+Volume\+World\+AABBMin}
+
+World-\/space AABB minimum (for fast ray-\/box intersection). \Hypertarget{struct_f_i_v_smoke_volume_g_p_u_data_abcaaa586b72b4d4ceaebe13421b7a0c5}\index{FIVSmokeVolumeGPUData@{FIVSmokeVolumeGPUData}!VoxelCount@{VoxelCount}}
+\index{VoxelCount@{VoxelCount}!FIVSmokeVolumeGPUData@{FIVSmokeVolumeGPUData}}
+\doxysubsubsection{\texorpdfstring{VoxelCount}{VoxelCount}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_volume_g_p_u_data_abcaaa586b72b4d4ceaebe13421b7a0c5} 
+uint32 FIVSmoke\+Volume\+GPUData::\+\+Voxel\+Count}
+
+Total voxel count for this volume. 
+
+The documentation for this struct was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Shaders.\+h\end{DoxyCompactItemize}

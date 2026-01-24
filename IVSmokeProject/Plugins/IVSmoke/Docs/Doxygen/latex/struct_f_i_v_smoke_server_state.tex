@@ -1,0 +1,79 @@
+\doxysection{FIVSmoke\+Server\+State Struct Reference}
+\hypertarget{struct_f_i_v_smoke_server_state}{}\label{struct_f_i_v_smoke_server_state}\index{FIVSmokeServerState@{FIVSmokeServerState}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Voxel\+Volume.\+h$>$}
+
+
+
+Collaboration diagram for FIVSmoke\+Server\+State:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=190pt]{struct_f_i_v_smoke_server_state__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+EIVSmoke\+Voxel\+Volume\+State \doxymbox{\hyperlink{struct_f_i_v_smoke_server_state_a76784cfebb6da1b713628ffa82e71e0b}{State}} = EIVSmoke\+Voxel\+Volume\+State::\+\+Idle
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_server_state_ac3a29a5545edc34536625bd65279d1dc}{Expansion\+Start\+Time}} = 0.\+0f
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_server_state_a10f3f3788de497b4294f69ba6a7c8241}{Sustain\+Start\+Time}} = 0.\+0f
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_server_state_a0a93113505d1abec448fef46df5f5916}{Dissipation\+Start\+Time}} = 0.\+0f
+\item 
+int32 \doxymbox{\hyperlink{struct_f_i_v_smoke_server_state_ae83de0b6c6d944b68245f18416384a39}{Random\+Seed}} = 0
+\item 
+uint8 \doxymbox{\hyperlink{struct_f_i_v_smoke_server_state_a45b1d89abae8bf69b499c803ef28f10c}{Generation}} = 0
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Replicated state structure to synchronize simulation timing and random seeds across the network. 
+
+\label{doc-variable-members}
+\Hypertarget{struct_f_i_v_smoke_server_state_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{struct_f_i_v_smoke_server_state_a0a93113505d1abec448fef46df5f5916}\index{FIVSmokeServerState@{FIVSmokeServerState}!DissipationStartTime@{DissipationStartTime}}
+\index{DissipationStartTime@{DissipationStartTime}!FIVSmokeServerState@{FIVSmokeServerState}}
+\doxysubsubsection{\texorpdfstring{DissipationStartTime}{DissipationStartTime}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_server_state_a0a93113505d1abec448fef46df5f5916} 
+float FIVSmoke\+Server\+State::\+\+Dissipation\+Start\+Time = 0.\+0f}
+
+World time (synced) when the dissipation phase began. \Hypertarget{struct_f_i_v_smoke_server_state_ac3a29a5545edc34536625bd65279d1dc}\index{FIVSmokeServerState@{FIVSmokeServerState}!ExpansionStartTime@{ExpansionStartTime}}
+\index{ExpansionStartTime@{ExpansionStartTime}!FIVSmokeServerState@{FIVSmokeServerState}}
+\doxysubsubsection{\texorpdfstring{ExpansionStartTime}{ExpansionStartTime}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_server_state_ac3a29a5545edc34536625bd65279d1dc} 
+float FIVSmoke\+Server\+State::\+\+Expansion\+Start\+Time = 0.\+0f}
+
+World time (synced) when the expansion phase began. \Hypertarget{struct_f_i_v_smoke_server_state_a45b1d89abae8bf69b499c803ef28f10c}\index{FIVSmokeServerState@{FIVSmokeServerState}!Generation@{Generation}}
+\index{Generation@{Generation}!FIVSmokeServerState@{FIVSmokeServerState}}
+\doxysubsubsection{\texorpdfstring{Generation}{Generation}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_server_state_a45b1d89abae8bf69b499c803ef28f10c} 
+uint8 FIVSmoke\+Server\+State::\+\+Generation = 0}
+
+Increments every time the simulation resets. Used to force clients (including late-\/joiners) to reset their local state and resync with the server. \Hypertarget{struct_f_i_v_smoke_server_state_ae83de0b6c6d944b68245f18416384a39}\index{FIVSmokeServerState@{FIVSmokeServerState}!RandomSeed@{RandomSeed}}
+\index{RandomSeed@{RandomSeed}!FIVSmokeServerState@{FIVSmokeServerState}}
+\doxysubsubsection{\texorpdfstring{RandomSeed}{RandomSeed}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_server_state_ae83de0b6c6d944b68245f18416384a39} 
+int32 FIVSmoke\+Server\+State::\+\+Random\+Seed = 0}
+
+Seed for deterministic procedural generation across clients. \Hypertarget{struct_f_i_v_smoke_server_state_a76784cfebb6da1b713628ffa82e71e0b}\index{FIVSmokeServerState@{FIVSmokeServerState}!State@{State}}
+\index{State@{State}!FIVSmokeServerState@{FIVSmokeServerState}}
+\doxysubsubsection{\texorpdfstring{State}{State}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_server_state_a76784cfebb6da1b713628ffa82e71e0b} 
+EIVSmoke\+Voxel\+Volume\+State FIVSmoke\+Server\+State::\+\+State = EIVSmoke\+Voxel\+Volume\+State::\+\+Idle}
+
+Current phase of the simulation state machine. \Hypertarget{struct_f_i_v_smoke_server_state_a10f3f3788de497b4294f69ba6a7c8241}\index{FIVSmokeServerState@{FIVSmokeServerState}!SustainStartTime@{SustainStartTime}}
+\index{SustainStartTime@{SustainStartTime}!FIVSmokeServerState@{FIVSmokeServerState}}
+\doxysubsubsection{\texorpdfstring{SustainStartTime}{SustainStartTime}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_server_state_a10f3f3788de497b4294f69ba6a7c8241} 
+float FIVSmoke\+Server\+State::\+\+Sustain\+Start\+Time = 0.\+0f}
+
+World time (synced) when the sustain phase began. 
+
+The documentation for this struct was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Voxel\+Volume.\+h\end{DoxyCompactItemize}

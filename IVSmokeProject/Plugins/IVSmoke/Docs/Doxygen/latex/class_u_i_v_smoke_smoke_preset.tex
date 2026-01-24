@@ -1,0 +1,72 @@
+\doxysection{UIVSmoke\+Smoke\+Preset Class Reference}
+\hypertarget{class_u_i_v_smoke_smoke_preset}{}\label{class_u_i_v_smoke_smoke_preset}\index{UIVSmokeSmokePreset@{UIVSmokeSmokePreset}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Smoke\+Preset.\+h$>$}
+
+
+
+Inheritance diagram for UIVSmoke\+Smoke\+Preset:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=195pt]{class_u_i_v_smoke_smoke_preset__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for UIVSmoke\+Smoke\+Preset:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=195pt]{class_u_i_v_smoke_smoke_preset__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_u_i_v_smoke_smoke_preset_a1621894da30987486df941df4a2baa3a}\label{class_u_i_v_smoke_smoke_preset_a1621894da30987486df941df4a2baa3a} 
+virtual FPrimary\+Asset\+Id {\bfseries Get\+Primary\+Asset\+Id} () const override
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+FLinear\+Color \doxymbox{\hyperlink{class_u_i_v_smoke_smoke_preset_ad42b6c9b899c0298d9fd0816d052829b}{Smoke\+Color}} = FLinear\+Color(0.\+8f, 0.\+8f, 0.\+8f, 1.\+0f)
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_smoke_preset_ae34280f37fc1bf9a20528f089f2e7385}{Smoke\+Absorption}} = 0.\+1f
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_smoke_preset_ad2be1e161f2e972b9b4fc19e1cc05b78}{Volume\+Density}} = 1.\+0f
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Per-\/volume smoke appearance preset. Controls visual properties that can vary between individual smoke volumes.
+
+For global rendering settings (noise, ray marching, scattering, etc.), see \doxylink{class_u_i_v_smoke_settings}{UIVSmoke\+Settings} in Project Settings \texorpdfstring{$>$}{>} Plugins \texorpdfstring{$>$}{>} \doxylink{class_i_v_smoke}{IVSmoke}. 
+
+\label{doc-variable-members}
+\Hypertarget{class_u_i_v_smoke_smoke_preset_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_u_i_v_smoke_smoke_preset_ae34280f37fc1bf9a20528f089f2e7385}\index{UIVSmokeSmokePreset@{UIVSmokeSmokePreset}!SmokeAbsorption@{SmokeAbsorption}}
+\index{SmokeAbsorption@{SmokeAbsorption}!UIVSmokeSmokePreset@{UIVSmokeSmokePreset}}
+\doxysubsubsection{\texorpdfstring{SmokeAbsorption}{SmokeAbsorption}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_smoke_preset_ae34280f37fc1bf9a20528f089f2e7385} 
+float UIVSmoke\+Smoke\+Preset::\+\+Smoke\+Absorption = 0.\+1f}
+
+Light absorption coefficient. Higher = denser, more opaque smoke. \Hypertarget{class_u_i_v_smoke_smoke_preset_ad42b6c9b899c0298d9fd0816d052829b}\index{UIVSmokeSmokePreset@{UIVSmokeSmokePreset}!SmokeColor@{SmokeColor}}
+\index{SmokeColor@{SmokeColor}!UIVSmokeSmokePreset@{UIVSmokeSmokePreset}}
+\doxysubsubsection{\texorpdfstring{SmokeColor}{SmokeColor}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_smoke_preset_ad42b6c9b899c0298d9fd0816d052829b} 
+FLinear\+Color UIVSmoke\+Smoke\+Preset::\+\+Smoke\+Color = FLinear\+Color(0.\+8f, 0.\+8f, 0.\+8f, 1.\+0f)}
+
+Base color of the smoke. \Hypertarget{class_u_i_v_smoke_smoke_preset_ad2be1e161f2e972b9b4fc19e1cc05b78}\index{UIVSmokeSmokePreset@{UIVSmokeSmokePreset}!VolumeDensity@{VolumeDensity}}
+\index{VolumeDensity@{VolumeDensity}!UIVSmokeSmokePreset@{UIVSmokeSmokePreset}}
+\doxysubsubsection{\texorpdfstring{VolumeDensity}{VolumeDensity}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_smoke_preset_ad2be1e161f2e972b9b4fc19e1cc05b78} 
+float UIVSmoke\+Smoke\+Preset::\+\+Volume\+Density = 1.\+0f}
+
+Base density multiplier for this volume. 
+
+The documentation for this class was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Smoke\+Preset.\+h\end{DoxyCompactItemize}

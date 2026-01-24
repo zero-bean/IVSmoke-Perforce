@@ -1,0 +1,65 @@
+\doxysection{FIVSmoke\+Structured\+To\+Texture\+CS Class Reference}
+\hypertarget{class_f_i_v_smoke_structured_to_texture_c_s}{}\label{class_f_i_v_smoke_structured_to_texture_c_s}\index{FIVSmokeStructuredToTextureCS@{FIVSmokeStructuredToTextureCS}}
+
+
+Inheritance diagram for FIVSmoke\+Structured\+To\+Texture\+CS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=244pt]{class_f_i_v_smoke_structured_to_texture_c_s__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for FIVSmoke\+Structured\+To\+Texture\+CS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=244pt]{class_f_i_v_smoke_structured_to_texture_c_s__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_structured_to_texture_c_s_a61b06b58680567baa73373ddf88b6f56}\label{class_f_i_v_smoke_structured_to_texture_c_s_a61b06b58680567baa73373ddf88b6f56} 
+{\bfseries DECLARE\+\_\+\+GLOBAL\+\_\+\+SHADER} (\doxymbox{\hyperlink{class_f_i_v_smoke_structured_to_texture_c_s}{FIVSmoke\+Structured\+To\+Texture\+CS}})
+\item 
+\Hypertarget{class_f_i_v_smoke_structured_to_texture_c_s_abaa731de24125ca7b7533ac9cea563ff}\label{class_f_i_v_smoke_structured_to_texture_c_s_abaa731de24125ca7b7533ac9cea563ff} 
+{\bfseries SHADER\+\_\+\+USE\+\_\+\+PARAMETER\+\_\+\+STRUCT} (\doxymbox{\hyperlink{class_f_i_v_smoke_structured_to_texture_c_s}{FIVSmoke\+Structured\+To\+Texture\+CS}}, FGlobal\+Shader)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static bool \doxymbox{\hyperlink{class_f_i_v_smoke_structured_to_texture_c_s_a81928005341691f94c0098fd27d922ce}{Should\+Compile\+Permutation}} (const FGlobal\+Shader\+Permutation\+Parameters \&Parameters)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_structured_to_texture_c_s_ae5b4e4d3c611b960a130e432de1fe43a}\label{class_f_i_v_smoke_structured_to_texture_c_s_ae5b4e4d3c611b960a130e432de1fe43a} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeX} = 8
+\item 
+\Hypertarget{class_f_i_v_smoke_structured_to_texture_c_s_ac4bed262ef118e6bfc8f831c6bb00c07}\label{class_f_i_v_smoke_structured_to_texture_c_s_ac4bed262ef118e6bfc8f831c6bb00c07} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeY} = 8
+\item 
+\Hypertarget{class_f_i_v_smoke_structured_to_texture_c_s_a964d583c7a5a1954ed2fef9a7313cbfc}\label{class_f_i_v_smoke_structured_to_texture_c_s_a964d583c7a5a1954ed2fef9a7313cbfc} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeZ} = 8
+\item 
+\Hypertarget{class_f_i_v_smoke_structured_to_texture_c_s_a9053cf3442b8179b79de746351fdfa7c}\label{class_f_i_v_smoke_structured_to_texture_c_s_a9053cf3442b8179b79de746351fdfa7c} 
+static constexpr const TCHAR \texorpdfstring{$\ast$}{*} {\bfseries Event\+Name} = TEXT("{}IVSmoke\+Structured\+To\+Texture\+CS"{})
+\end{DoxyCompactItemize}
+
+
+\label{doc-func-members}
+\Hypertarget{class_f_i_v_smoke_structured_to_texture_c_s_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_i_v_smoke_structured_to_texture_c_s_a81928005341691f94c0098fd27d922ce}\index{FIVSmokeStructuredToTextureCS@{FIVSmokeStructuredToTextureCS}!ShouldCompilePermutation@{ShouldCompilePermutation}}
+\index{ShouldCompilePermutation@{ShouldCompilePermutation}!FIVSmokeStructuredToTextureCS@{FIVSmokeStructuredToTextureCS}}
+\doxysubsubsection{\texorpdfstring{ShouldCompilePermutation()}{ShouldCompilePermutation()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_structured_to_texture_c_s_a81928005341691f94c0098fd27d922ce} 
+bool FIVSmoke\+Structured\+To\+Texture\+CS::\+\+Should\+Compile\+Permutation (\begin{DoxyParamCaption}\item[{const FGlobal\+Shader\+Permutation\+Parameters \&}]{Parameters}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+Output 3D texture atlas containing voxel density values. Per-\/voxel birth times for fade-\/in animation. Per-\/voxel death times for fade-\/out animation. Per-\/volume GPU metadata (transform, bounds, etc.). Total atlas texture size. Voxel resolution per volume. Number of volumes packed per row in atlas. Current game time for fade animation calculation. 
+
+The documentation for this class was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Shaders.\+h\end{DoxyCompactItemize}

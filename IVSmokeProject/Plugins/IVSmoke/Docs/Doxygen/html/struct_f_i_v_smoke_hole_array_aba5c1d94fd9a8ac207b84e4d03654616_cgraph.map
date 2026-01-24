@@ -1,0 +1,7 @@
+<map id="FIVSmokeHoleArray::GetHoleGPUData" name="FIVSmokeHoleArray::GetHoleGPUData">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,35,155,77"/>
+<area shape="rect" id="Node000002" href="$class_u_i_v_smoke_hole_preset.html#a300dac8b9302a325fb01ac066d9c8059" title=" " alt="" coords="216,5,366,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="154,43,203,38,198,40,155,48"/>
+<area shape="rect" id="Node000003" href="$struct_f_i_v_smoke_hole_array.html#ac62c844392b1663be55934685508b676" title=" " alt="" coords="203,72,380,99"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="155,64,190,71,185,71,155,69"/>
+</map>

@@ -1,0 +1,82 @@
+\doxysection{FIVSmoke\+Depth\+To\+Variance\+CS Class Reference}
+\hypertarget{class_f_i_v_smoke_depth_to_variance_c_s}{}\label{class_f_i_v_smoke_depth_to_variance_c_s}\index{FIVSmokeDepthToVarianceCS@{FIVSmokeDepthToVarianceCS}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Shaders.\+h$>$}
+
+
+
+Inheritance diagram for FIVSmoke\+Depth\+To\+Variance\+CS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=244pt]{class_f_i_v_smoke_depth_to_variance_c_s__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for FIVSmoke\+Depth\+To\+Variance\+CS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=244pt]{class_f_i_v_smoke_depth_to_variance_c_s__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_depth_to_variance_c_s_a57eef0fd1cb721cbb82b7318557b40fb}\label{class_f_i_v_smoke_depth_to_variance_c_s_a57eef0fd1cb721cbb82b7318557b40fb} 
+{\bfseries DECLARE\+\_\+\+GLOBAL\+\_\+\+SHADER} (\doxymbox{\hyperlink{class_f_i_v_smoke_depth_to_variance_c_s}{FIVSmoke\+Depth\+To\+Variance\+CS}})
+\item 
+\Hypertarget{class_f_i_v_smoke_depth_to_variance_c_s_a9db133d261a030afa703157f0c3a8101}\label{class_f_i_v_smoke_depth_to_variance_c_s_a9db133d261a030afa703157f0c3a8101} 
+{\bfseries SHADER\+\_\+\+USE\+\_\+\+PARAMETER\+\_\+\+STRUCT} (\doxymbox{\hyperlink{class_f_i_v_smoke_depth_to_variance_c_s}{FIVSmoke\+Depth\+To\+Variance\+CS}}, FGlobal\+Shader)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static bool \doxymbox{\hyperlink{class_f_i_v_smoke_depth_to_variance_c_s_a7c7d47b086b3c5c8daa7fbc99f9c0c0e}{Should\+Compile\+Permutation}} (const FGlobal\+Shader\+Permutation\+Parameters \&Parameters)
+\item 
+\Hypertarget{class_f_i_v_smoke_depth_to_variance_c_s_a8bfc1609e3457fe4e673060e335ba697}\label{class_f_i_v_smoke_depth_to_variance_c_s_a8bfc1609e3457fe4e673060e335ba697} 
+static void {\bfseries Modify\+Compilation\+Environment} (const FGlobal\+Shader\+Permutation\+Parameters \&Parameters, FShader\+Compiler\+Environment \&Out\+Environment)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_depth_to_variance_c_s_a92da6480ac4b15f632043ca111eb61a5}\label{class_f_i_v_smoke_depth_to_variance_c_s_a92da6480ac4b15f632043ca111eb61a5} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeX} = 8
+\item 
+\Hypertarget{class_f_i_v_smoke_depth_to_variance_c_s_a7bc358ecf20b44b7b1408ac3d127872e}\label{class_f_i_v_smoke_depth_to_variance_c_s_a7bc358ecf20b44b7b1408ac3d127872e} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeY} = 8
+\item 
+\Hypertarget{class_f_i_v_smoke_depth_to_variance_c_s_a1ea93c38fd894abf0e30c3ab0d1c618d}\label{class_f_i_v_smoke_depth_to_variance_c_s_a1ea93c38fd894abf0e30c3ab0d1c618d} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeZ} = 1
+\item 
+\Hypertarget{class_f_i_v_smoke_depth_to_variance_c_s_a649c4b98df1a024e1712303216633e34}\label{class_f_i_v_smoke_depth_to_variance_c_s_a649c4b98df1a024e1712303216633e34} 
+static constexpr const TCHAR \texorpdfstring{$\ast$}{*} {\bfseries Event\+Name} = TEXT("{}IVSmoke\+Depth\+To\+Variance\+CS"{})
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Depth to Variance compute shader. Converts depth texture (R32F) to variance texture (RG32F). Output:\+ (depth, depth²) 
+
+\label{doc-func-members}
+\Hypertarget{class_f_i_v_smoke_depth_to_variance_c_s_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_i_v_smoke_depth_to_variance_c_s_a7c7d47b086b3c5c8daa7fbc99f9c0c0e}\index{FIVSmokeDepthToVarianceCS@{FIVSmokeDepthToVarianceCS}!ShouldCompilePermutation@{ShouldCompilePermutation}}
+\index{ShouldCompilePermutation@{ShouldCompilePermutation}!FIVSmokeDepthToVarianceCS@{FIVSmokeDepthToVarianceCS}}
+\doxysubsubsection{\texorpdfstring{ShouldCompilePermutation()}{ShouldCompilePermutation()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_depth_to_variance_c_s_a7c7d47b086b3c5c8daa7fbc99f9c0c0e} 
+bool FIVSmoke\+Depth\+To\+Variance\+CS::\+\+Should\+Compile\+Permutation (\begin{DoxyParamCaption}\item[{const FGlobal\+Shader\+Permutation\+Parameters \&}]{Parameters}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+Input depth texture from shadow capture. Output variance texture (depth, depth squared). Texture resolution. Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=231pt]{class_f_i_v_smoke_depth_to_variance_c_s_a7c7d47b086b3c5c8daa7fbc99f9c0c0e_cgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Shaders.\+h\end{DoxyCompactItemize}

@@ -1,0 +1,66 @@
+\doxysection{IVSmoke\+Hole\+Carve\+CS.\+h}
+\hypertarget{_i_v_smoke_hole_carve_c_s_8h_source}{}\label{_i_v_smoke_hole_carve_c_s_8h_source}\index{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeHoleCarveCS.h@{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeHoleCarveCS.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//\ Copyright\ (c)\ 2026,\ Team\ SDB.\ All\ rights\ reserved.}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}CoreMinimal.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}GlobalShader.h"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}ShaderParameterStruct.h"{}}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{comment}{//\ ============================================================================}}
+\DoxyCodeLine{00010\ \textcolor{comment}{//\ Compute\ Shader}}
+\DoxyCodeLine{00011\ \textcolor{comment}{//\ ============================================================================}}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00016\ \textcolor{keyword}{class\ }IVSMOKE\_API\ \doxymbox{\hyperlink{class_f_i_v_smoke_hole_carve_c_s}{FIVSmokeHoleCarveCS}}\ :\ \textcolor{keyword}{public}\ FGlobalShader}
+\DoxyCodeLine{00017\ \{}
+\DoxyCodeLine{00018\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00019\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ CurveSampleCount\ =\ 16;}
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeX\ =\ 8;}
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeY\ =\ 8;}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeZ\ =\ 8;}
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{const}\ TCHAR*\ EventName\ =\ TEXT(\textcolor{stringliteral}{"{}IVSmokeHoleCarveCS"{}});}
+\DoxyCodeLine{00024\ \ \ \ \ DECLARE\_GLOBAL\_SHADER(\doxymbox{\hyperlink{class_f_i_v_smoke_hole_carve_c_s}{FIVSmokeHoleCarveCS}});}
+\DoxyCodeLine{00025\ \ \ \ \ SHADER\_USE\_PARAMETER\_STRUCT(\doxymbox{\hyperlink{class_f_i_v_smoke_hole_carve_c_s}{FIVSmokeHoleCarveCS}},\ FGlobalShader);}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \ \ \ \ BEGIN\_SHADER\_PARAMETER\_STRUCT(FParameters,\ )}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Output:\ 3D\ Volume\ Texture\ (Read\ and\ Write)\ -\/\ R16G16B16A16\_UNORM\ channel}}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE\_UAV(RWTexture3D<float4>,\ VolumeTexture)}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Input:\ Hole\ data\ buffer\ (unified\ structure)}}
+\DoxyCodeLine{00034\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_BUFFER\_SRV(StructuredBuffer<FIVSmokeHoleGPU>,\ HoleBuffer)}
+\DoxyCodeLine{00035\ }
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Volume\ bounds\ (local\ space)}}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ VolumeMin)}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector3f,\ VolumeMax)}
+\DoxyCodeLine{00039\ }
+\DoxyCodeLine{00040\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Volume\ resolution}}
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FIntVector,\ Resolution)}
+\DoxyCodeLine{00042\ }
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Hole\ parameters}}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(int32,\ NumHoles)}
+\DoxyCodeLine{00045\ \ \ \ \ END\_SHADER\_PARAMETER\_STRUCT()}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ ShouldCompilePermutation(\textcolor{keyword}{const}\ FGlobalShaderPermutationParameters\&\ Parameters)}
+\DoxyCodeLine{00048\ \ \ \ \ \{}
+\DoxyCodeLine{00049\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ IsFeatureLevelSupported(Parameters.Platform,\ ERHIFeatureLevel::SM5);}
+\DoxyCodeLine{00050\ \ \ \ \ \}}
+\DoxyCodeLine{00051\ }
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ ModifyCompilationEnvironment(}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FGlobalShaderPermutationParameters\&\ Parameters,}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ FShaderCompilerEnvironment\&\ OutEnvironment}
+\DoxyCodeLine{00055\ \ \ \ \ )}
+\DoxyCodeLine{00056\ \ \ \ \ \{}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ FGlobalShader::ModifyCompilationEnvironment(Parameters,\ OutEnvironment);}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}THREADGROUP\_SIZEX"{}}),\ ThreadGroupSizeX);}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}THREADGROUP\_SIZEY"{}}),\ ThreadGroupSizeY);}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}THREADGROUP\_SIZEZ"{}}),\ ThreadGroupSizeZ);}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}CURVE\_SAMPLE\_COUNT"{}}),\ CurveSampleCount);}
+\DoxyCodeLine{00062\ \ \ \ \ \}}
+\DoxyCodeLine{00063\ \};}
+
+\end{DoxyCode}

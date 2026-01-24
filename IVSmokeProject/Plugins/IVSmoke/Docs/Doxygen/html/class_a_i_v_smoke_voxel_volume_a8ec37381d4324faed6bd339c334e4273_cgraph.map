@@ -1,0 +1,10 @@
+<map id="AIVSmokeVoxelVolume::IsVoxelActive" name="AIVSmokeVoxelVolume::IsVoxelActive">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,39,165,81"/>
+<area shape="rect" id="Node000002" href="$class_a_i_v_smoke_voxel_volume.html#ad4569de3f5dd820f4c9b4eb6bbd0a5f4" title=" " alt="" coords="213,5,372,48"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="164,45,200,41,195,43,166,50"/>
+<area shape="rect" id="Node000003" href="$class_u_i_v_smoke_grid_library.html#ad9f884203188931687e1bbab0d314fc8" title=" " alt="" coords="218,72,366,115"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="165,70,205,79,200,79,165,75"/>
+<area shape="rect" id="Node000004" href="$class_u_i_v_smoke_grid_library.html#aec495254787240eade7f480eaf091b72" title=" " alt="" coords="420,72,568,115"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="367,91,407,93,402,93,367,96"/>
+<area shape="poly" id="edge4_Node000004_Node000004" title=" " alt="" coords="456,70,454,62,460,53,474,47,494,45,516,48,530,57,525,56,514,53,494,51,475,53,464,57,459,63,460,73"/>
+</map>

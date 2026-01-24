@@ -1,0 +1,265 @@
+\doxysection{IVSmoke\+Renderer.\+h}
+\hypertarget{_i_v_smoke_renderer_8h_source}{}\label{_i_v_smoke_renderer_8h_source}\index{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeRenderer.h@{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeRenderer.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//\ Copyright\ (c)\ 2026,\ Team\ SDB.\ All\ rights\ reserved.}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}CoreMinimal.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}ScreenPass.h"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}IVSmokeShaders.h"{}}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume}{AIVSmokeVoxelVolume}};}
+\DoxyCodeLine{00010\ \textcolor{keyword}{class\ }FRDGBuilder;}
+\DoxyCodeLine{00011\ \textcolor{keyword}{class\ }FSceneView;}
+\DoxyCodeLine{00012\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_i_v_smoke_smoke_preset}{UIVSmokeSmokePreset}};}
+\DoxyCodeLine{00013\ \textcolor{keyword}{class\ }UTextureRenderTargetVolume;}
+\DoxyCodeLine{00014\ \textcolor{keyword}{struct\ }FPostProcessMaterialInputs;}
+\DoxyCodeLine{00015\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_f_i_v_smoke_c_s_m_renderer}{FIVSmokeCSMRenderer}};}
+\DoxyCodeLine{00016\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_f_i_v_smoke_v_s_m_processor}{FIVSmokeVSMProcessor}};}
+\DoxyCodeLine{00017\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_resources}{FIVSmokeOccupancyResources}};}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00020\ \textcolor{comment}{//\ Render\ Data\ Structures\ (Thread-\/Safe\ Data\ Transfer)}}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00027\ \textcolor{keyword}{struct\ }IVSMOKE\_API\ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data}{FIVSmokePackedRenderData}}}
+\DoxyCodeLine{00028\ \{}
+\DoxyCodeLine{00030\ \ \ \ \ TArray<float>\ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a052ac503c2be38868843e86597f1b9f9}{PackedVoxelBirthTimes}};}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00033\ \ \ \ \ TArray<float>\ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a0e62820c6ff566e98c5cbb6b09cb6d07}{PackedVoxelDeathTimes}};}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00036\ \ \ \ \ TArray<FIVSmokeVolumeGPUData>\ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a1da45d51d370d65bca0045104871a4aa}{VolumeDataArray}};}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00039\ \ \ \ \ TArray<FTextureRHIRef>\ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a229b87682dc9d713e99f5284cc6c0ee9}{HoleTextures}};}
+\DoxyCodeLine{00040\ \ \ \ \ TArray<FIntVector>\ HoleTextureSizes;}
+\DoxyCodeLine{00041\ }
+\DoxyCodeLine{00043\ \ \ \ \ FIntVector\ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_acf78e820c465ce2bc1835dcbbe33487e}{VoxelResolution}}\ =\ FIntVector::ZeroValue;}
+\DoxyCodeLine{00044\ \ \ \ \ FIntVector\ HoleResolution\ =\ FIntVector::ZeroValue;}
+\DoxyCodeLine{00045\ \ \ \ \ int32\ VolumeCount\ =\ 0;}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00048\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a9066f45f7e7b0f67200edb4fa5c4ce67}{Sharpness}}\ =\ 0.0f;}
+\DoxyCodeLine{00049\ \ \ \ \ int32\ MaxSteps\ =\ 128;}
+\DoxyCodeLine{00050\ \ \ \ \ \textcolor{keywordtype}{float}\ GlobalAbsorption\ =\ 0.1f;}
+\DoxyCodeLine{00051\ \ \ \ \ \textcolor{keywordtype}{float}\ SmokeSize\ =\ 128.0f;}
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{keywordtype}{float}\ SmokeDensityFalloff\ =\ 0.2f;}
+\DoxyCodeLine{00053\ \ \ \ \ FVector\ WindDirection\ =\ FVector(0.01f,\ 0.02f,\ 0.1f);}
+\DoxyCodeLine{00054\ \ \ \ \ \textcolor{keywordtype}{float}\ VolumeRangeOffset\ =\ 0.1f;}
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{keywordtype}{float}\ VolumeEdgeNoiseFadeOffset\ =\ 0.04f;}
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{keywordtype}{float}\ VolumeEdgeFadeSharpness\ =\ 3.5f;}
+\DoxyCodeLine{00057\ }
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_aceead7e771820dacdbc3c072f23ca30c}{bEnableScattering}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00060\ \ \ \ \ \textcolor{keywordtype}{float}\ ScatterScale\ =\ 0.5f;}
+\DoxyCodeLine{00061\ \ \ \ \ \textcolor{keywordtype}{float}\ ScatteringAnisotropy\ =\ 0.5f;}
+\DoxyCodeLine{00062\ \ \ \ \ FVector\ LightDirection\ =\ FVector(0.2f,\ 0.1f,\ 0.9f);}
+\DoxyCodeLine{00063\ \ \ \ \ FLinearColor\ LightColor\ =\ FLinearColor::White;}
+\DoxyCodeLine{00064\ \ \ \ \ \textcolor{keywordtype}{float}\ LightIntensity\ =\ 1.0f;}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00067\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a0b6e2811efbfbcf5a64ee0bdce8a405b}{bEnableSelfShadowing}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00068\ \ \ \ \ int32\ LightMarchingSteps\ =\ 6;}
+\DoxyCodeLine{00069\ \ \ \ \ \textcolor{keywordtype}{float}\ LightMarchingDistance\ =\ 0.0f;}
+\DoxyCodeLine{00070\ \ \ \ \ \textcolor{keywordtype}{float}\ LightMarchingExpFactor\ =\ 2.0f;}
+\DoxyCodeLine{00071\ \ \ \ \ \textcolor{keywordtype}{float}\ ShadowAmbient\ =\ 0.2f;}
+\DoxyCodeLine{00072\ }
+\DoxyCodeLine{00075\ \ \ \ \ int32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a0c37c6d9b877ddec1d606754bccb8a8d}{NumCascades}}\ =\ 0;}
+\DoxyCodeLine{00076\ \ \ \ \ TArray<FTextureRHIRef>\ CSMDepthTextures;}
+\DoxyCodeLine{00077\ \ \ \ \ TArray<FTextureRHIRef>\ CSMVSMTextures;}
+\DoxyCodeLine{00078\ \ \ \ \ TArray<FMatrix>\ CSMViewProjectionMatrices;}
+\DoxyCodeLine{00079\ \ \ \ \ TArray<float>\ CSMSplitDistances;}
+\DoxyCodeLine{00080\ \ \ \ \ TArray<FVector>\ CSMLightCameraPositions;}
+\DoxyCodeLine{00081\ \ \ \ \ TArray<FVector>\ CSMLightCameraForwards;}
+\DoxyCodeLine{00082\ \ \ \ \ \textcolor{keywordtype}{float}\ CascadeBlendRange\ =\ 0.1f;}
+\DoxyCodeLine{00083\ \ \ \ \ \textcolor{keywordtype}{float}\ ShadowDepthBias\ =\ 1.0f;}
+\DoxyCodeLine{00084\ \ \ \ \ \textcolor{keywordtype}{float}\ ExternalShadowAmbient\ =\ 0.3f;}
+\DoxyCodeLine{00085\ }
+\DoxyCodeLine{00087\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_aba57625ebb8dc475b42634aef85eda53}{bEnableVSM}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00088\ \ \ \ \ \textcolor{keywordtype}{float}\ VSMMinVariance\ =\ 0.0001f;}
+\DoxyCodeLine{00089\ \ \ \ \ \textcolor{keywordtype}{float}\ VSMLightBleedingReduction\ =\ 0.2f;}
+\DoxyCodeLine{00090\ }
+\DoxyCodeLine{00092\ \ \ \ \ FVector\ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_aaa5319bce05f3e73e2deba6c1f153297}{CSMMainCameraPosition}}\ =\ FVector::ZeroVector;}
+\DoxyCodeLine{00093\ }
+\DoxyCodeLine{00095\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a5b76a12cb243263c103c1f750d9d396c}{bIsValid}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00096\ }
+\DoxyCodeLine{00098\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a0de09d83af0979e87959ae45760f17c0}{GameTime}}\ =\ 0.0f;}
+\DoxyCodeLine{00099\ }
+\DoxyCodeLine{00101\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a7c384d7104a8273ee15b3c6eac6370cb}{Reset}}()}
+\DoxyCodeLine{00102\ \ \ \ \ \{}
+\DoxyCodeLine{00103\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a052ac503c2be38868843e86597f1b9f9}{PackedVoxelBirthTimes}}.Empty();}
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a0e62820c6ff566e98c5cbb6b09cb6d07}{PackedVoxelDeathTimes}}.Empty();}
+\DoxyCodeLine{00105\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a1da45d51d370d65bca0045104871a4aa}{VolumeDataArray}}.Empty();}
+\DoxyCodeLine{00106\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a229b87682dc9d713e99f5284cc6c0ee9}{HoleTextures}}.Empty();}
+\DoxyCodeLine{00107\ \ \ \ \ \ \ \ \ HoleTextureSizes.Empty();}
+\DoxyCodeLine{00108\ \ \ \ \ \ \ \ \ VolumeCount\ =\ 0;}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a5b76a12cb243263c103c1f750d9d396c}{bIsValid}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00110\ }
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ CSM}}
+\DoxyCodeLine{00112\ \ \ \ \ \ \ \ \ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data_a0c37c6d9b877ddec1d606754bccb8a8d}{NumCascades}}\ =\ 0;}
+\DoxyCodeLine{00113\ \ \ \ \ \ \ \ \ CSMDepthTextures.Empty();}
+\DoxyCodeLine{00114\ \ \ \ \ \ \ \ \ CSMVSMTextures.Empty();}
+\DoxyCodeLine{00115\ \ \ \ \ \ \ \ \ CSMViewProjectionMatrices.Empty();}
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ CSMSplitDistances.Empty();}
+\DoxyCodeLine{00117\ \ \ \ \ \ \ \ \ CSMLightCameraPositions.Empty();}
+\DoxyCodeLine{00118\ \ \ \ \ \ \ \ \ CSMLightCameraForwards.Empty();}
+\DoxyCodeLine{00119\ \ \ \ \ \}}
+\DoxyCodeLine{00120\ \};}
+\DoxyCodeLine{00121\ }
+\DoxyCodeLine{00126\ \textcolor{keyword}{class\ }IVSMOKE\_API\ FIVSmokeRenderer}
+\DoxyCodeLine{00127\ \{}
+\DoxyCodeLine{00128\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00129\ \ \ \ \ \textcolor{keyword}{static}\ FIVSmokeRenderer\&\ Get();}
+\DoxyCodeLine{00130\ }
+\DoxyCodeLine{00131\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00132\ \ \ \ \ \textcolor{comment}{//\ Lifecycle}}
+\DoxyCodeLine{00133\ }
+\DoxyCodeLine{00135\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_i_v_smoke_renderer_a32ceb1e4b56594a7c68a99e32ddf9f3c}{Initialize}}();}
+\DoxyCodeLine{00136\ }
+\DoxyCodeLine{00138\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_i_v_smoke_renderer_ab1678805f0a5f66e9e739dad3e5a03f9}{Shutdown}}();}
+\DoxyCodeLine{00139\ }
+\DoxyCodeLine{00141\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_i_v_smoke_renderer_ad3e4ca785257d273ac9f43d00347d902}{IsInitialized}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ NoiseVolume\ !=\ \textcolor{keyword}{nullptr};\ \}}
+\DoxyCodeLine{00142\ }
+\DoxyCodeLine{00143\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00144\ \ \ \ \ \textcolor{comment}{//\ Volume\ Management}}
+\DoxyCodeLine{00145\ }
+\DoxyCodeLine{00147\ \ \ \ \ \textcolor{keywordtype}{void}\ AddVolume(\doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume}{AIVSmokeVoxelVolume}}*\ Volume);}
+\DoxyCodeLine{00148\ }
+\DoxyCodeLine{00150\ \ \ \ \ \textcolor{keywordtype}{void}\ RemoveVolume(\doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume}{AIVSmokeVoxelVolume}}*\ Volume);}
+\DoxyCodeLine{00151\ }
+\DoxyCodeLine{00153\ \ \ \ \ \textcolor{keywordtype}{bool}\ HasVolumes()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00154\ }
+\DoxyCodeLine{00156\ \ \ \ \ \textcolor{keyword}{const}\ TArray<TWeakObjectPtr<AIVSmokeVoxelVolume>>\&\ \doxymbox{\hyperlink{class_f_i_v_smoke_renderer_a19a1aa4bbb02c12568ce4e99e6a8fab4}{GetVolumes}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ Volumes;\ \}}
+\DoxyCodeLine{00157\ }
+\DoxyCodeLine{00159\ \ \ \ \ FCriticalSection\&\ \doxymbox{\hyperlink{class_f_i_v_smoke_renderer_a81bb37ad5900cfbb494d053976d516b6}{GetVolumesMutex}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ VolumesMutex;\ \}}
+\DoxyCodeLine{00160\ }
+\DoxyCodeLine{00161\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00162\ \ \ \ \ \textcolor{comment}{//\ Thread-\/Safe\ Render\ Data\ (Game\ Thread\ Render\ Thread)}}
+\DoxyCodeLine{00163\ }
+\DoxyCodeLine{00172\ \ \ \ \ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data}{FIVSmokePackedRenderData}}\ PrepareRenderData(\textcolor{keyword}{const}\ TArray<AIVSmokeVoxelVolume*>\&\ InVolumes);}
+\DoxyCodeLine{00173\ }
+\DoxyCodeLine{00178\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_i_v_smoke_renderer_a07ee517d53c93cd4daceb9c5f977bb74}{SetCachedRenderData}}(\doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data}{FIVSmokePackedRenderData}}\&\&\ InRenderData)}
+\DoxyCodeLine{00179\ \ \ \ \ \{}
+\DoxyCodeLine{00180\ \ \ \ \ \ \ \ \ FScopeLock\ Lock(\&RenderDataMutex);}
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ CachedRenderData\ =\ MoveTemp(InRenderData);}
+\DoxyCodeLine{00182\ \ \ \ \ \}}
+\DoxyCodeLine{00183\ }
+\DoxyCodeLine{00184\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00185\ \ \ \ \ \textcolor{comment}{//\ Rendering}}
+\DoxyCodeLine{00186\ }
+\DoxyCodeLine{00195\ \ \ \ \ FScreenPassTexture\ Render(}
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FSceneView\&\ View,}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FPostProcessMaterialInputs\&\ Inputs}
+\DoxyCodeLine{00199\ \ \ \ \ );}
+\DoxyCodeLine{00200\ }
+\DoxyCodeLine{00201\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00202\ \ \ \ \ \doxymbox{\hyperlink{class_f_i_v_smoke_renderer}{FIVSmokeRenderer}}();\ \ \ \textcolor{comment}{//\ Defined\ in\ cpp\ for\ TUniquePtr\ with\ forward-\/declared\ types}}
+\DoxyCodeLine{00203\ \ \ \ \ \doxymbox{\hyperlink{class_f_i_v_smoke_renderer}{\string~FIVSmokeRenderer}}();}
+\DoxyCodeLine{00204\ }
+\DoxyCodeLine{00205\ \ \ \ \ FIntVector\ GetAtlasTexCount(\textcolor{keyword}{const}\ FIntVector\&\ TexSize,\ \textcolor{keyword}{const}\ int32\ TexCount,\ \textcolor{keyword}{const}\ int32\ TexturePackInterval,\ \textcolor{keyword}{const}\ int32\ TexturePackMaxSize);}
+\DoxyCodeLine{00206\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00207\ \ \ \ \ \textcolor{comment}{//\ Resource\ Management}}
+\DoxyCodeLine{00208\ }
+\DoxyCodeLine{00210\ \ \ \ \ \textcolor{keywordtype}{void}\ CreateNoiseVolume();}
+\DoxyCodeLine{00211\ }
+\DoxyCodeLine{00213\ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_u_i_v_smoke_smoke_preset}{UIVSmokeSmokePreset}}*\ GetEffectivePreset(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume}{AIVSmokeVoxelVolume}}*\ Volume)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00214\ }
+\DoxyCodeLine{00215\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00216\ \ \ \ \ \textcolor{comment}{//\ Pass\ Functions}}
+\DoxyCodeLine{00217\ }
+\DoxyCodeLine{00238\ \ \ \ \ \textcolor{keywordtype}{void}\ AddMultiVolumeRayMarchPass(}
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00240\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FSceneView\&\ View,}
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data}{FIVSmokePackedRenderData}}\&\ RenderData,}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ FRDGTextureRef\ SmokeAlbedoTex,}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ FRDGTextureRef\ SmokeMaskTex,}
+\DoxyCodeLine{00244\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FIntPoint\&\ TexSize,}
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FIntPoint\&\ ViewportSize,}
+\DoxyCodeLine{00246\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FIntPoint\&\ ViewRectMin}
+\DoxyCodeLine{00247\ \ \ \ \ );}
+\DoxyCodeLine{00248\ }
+\DoxyCodeLine{00262\ \ \ \ \ \textcolor{keywordtype}{void}\ AddSharpenCompositePass(}
+\DoxyCodeLine{00263\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00264\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FSceneView\&\ View,}
+\DoxyCodeLine{00265\ \ \ \ \ \ \ \ \ FRDGTextureRef\ SceneTex,}
+\DoxyCodeLine{00266\ \ \ \ \ \ \ \ \ FRDGTextureRef\ SmokeAlbedoTex,}
+\DoxyCodeLine{00267\ \ \ \ \ \ \ \ \ FRDGTextureRef\ SmokeMaskTex,}
+\DoxyCodeLine{00268\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FScreenPassRenderTarget\&\ Output,}
+\DoxyCodeLine{00269\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FIntPoint\&\ ViewportSize,}
+\DoxyCodeLine{00270\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ Sharpness}
+\DoxyCodeLine{00271\ \ \ \ \ );}
+\DoxyCodeLine{00272\ }
+\DoxyCodeLine{00284\ \ \ \ \ FRDGTextureRef\ AddCopyPass(}
+\DoxyCodeLine{00285\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FSceneView\&\ View,}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ FRDGTextureRef\ SourceTex,}
+\DoxyCodeLine{00288\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FIntPoint\&\ DestSize,}
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ TCHAR*\ TexName}
+\DoxyCodeLine{00290\ \ \ \ \ );}
+\DoxyCodeLine{00291\ }
+\DoxyCodeLine{00301\ \ \ \ \ \textcolor{keywordtype}{void}\ AddCopyPass(}
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00303\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FSceneView\&\ View,}
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ FRDGTextureRef\ SourceTex,}
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ FRDGTextureRef\ DestTex}
+\DoxyCodeLine{00306\ \ \ \ \ );}
+\DoxyCodeLine{00307\ }
+\DoxyCodeLine{00323\ \ \ \ \ \textcolor{keywordtype}{void}\ AddTranslucencyCompositePass(}
+\DoxyCodeLine{00324\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00325\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FSceneView\&\ View,}
+\DoxyCodeLine{00326\ \ \ \ \ \ \ \ \ FRDGTextureRef\ SmokeAlbedoTex,}
+\DoxyCodeLine{00327\ \ \ \ \ \ \ \ \ FRDGTextureRef\ SmokeMaskTex,}
+\DoxyCodeLine{00328\ \ \ \ \ \ \ \ \ FRDGTextureRef\ ParticlesTex,}
+\DoxyCodeLine{00329\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FScreenPassRenderTarget\&\ Output,}
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FIntPoint\&\ SmokeTexExtent,}
+\DoxyCodeLine{00331\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FIntPoint\&\ ParticlesTexExtent,}
+\DoxyCodeLine{00332\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ Sharpness}
+\DoxyCodeLine{00333\ \ \ \ \ );}
+\DoxyCodeLine{00334\ }
+\DoxyCodeLine{00349\ \ \ \ \ \textcolor{keywordtype}{void}\ AddDepthSortedCompositePass(}
+\DoxyCodeLine{00350\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00351\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FSceneView\&\ View,}
+\DoxyCodeLine{00352\ \ \ \ \ \ \ \ \ FRDGTextureRef\ SmokeAlbedoTex,}
+\DoxyCodeLine{00353\ \ \ \ \ \ \ \ \ FRDGTextureRef\ SmokeMaskTex,}
+\DoxyCodeLine{00354\ \ \ \ \ \ \ \ \ FRDGTextureRef\ SeparateTranslucencyTex,}
+\DoxyCodeLine{00355\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FScreenPassRenderTarget\&\ Output,}
+\DoxyCodeLine{00356\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FIntPoint\&\ SmokeTexExtent,}
+\DoxyCodeLine{00357\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ Sharpness}
+\DoxyCodeLine{00358\ \ \ \ \ );}
+\DoxyCodeLine{00359\ }
+\DoxyCodeLine{00360\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00361\ \ \ \ \ \textcolor{comment}{//\ State}}
+\DoxyCodeLine{00362\ }
+\DoxyCodeLine{00363\ \ \ \ \ TArray<TWeakObjectPtr<AIVSmokeVoxelVolume>>\ Volumes;}
+\DoxyCodeLine{00364\ \ \ \ \ \textcolor{keyword}{mutable}\ FCriticalSection\ VolumesMutex;}
+\DoxyCodeLine{00365\ }
+\DoxyCodeLine{00367\ \ \ \ \ UTextureRenderTargetVolume*\ NoiseVolume\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00368\ }
+\DoxyCodeLine{00370\ \ \ \ \ \textcolor{keywordtype}{float}\ ElapsedTime\ =\ 0.0f;}
+\DoxyCodeLine{00371\ }
+\DoxyCodeLine{00372\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00373\ \ \ \ \ \textcolor{comment}{//\ External\ Shadowing\ (CSM\ -\/\ Cascaded\ Shadow\ Maps)}}
+\DoxyCodeLine{00374\ }
+\DoxyCodeLine{00376\ \ \ \ \ TUniquePtr<FIVSmokeCSMRenderer>\ CSMRenderer;}
+\DoxyCodeLine{00377\ }
+\DoxyCodeLine{00379\ \ \ \ \ TUniquePtr<FIVSmokeVSMProcessor>\ VSMProcessor;}
+\DoxyCodeLine{00380\ }
+\DoxyCodeLine{00382\ \ \ \ \ uint32\ LastCSMUpdateFrameNumber\ =\ 0;}
+\DoxyCodeLine{00383\ }
+\DoxyCodeLine{00385\ \ \ \ \ uint32\ LastVSMProcessFrameNumber\ =\ 0;}
+\DoxyCodeLine{00386\ }
+\DoxyCodeLine{00388\ \ \ \ \ \textcolor{keywordtype}{bool}\ bIsCapturingShadow\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00389\ }
+\DoxyCodeLine{00391\ \ \ \ \ \textcolor{keywordtype}{void}\ InitializeCSM(UWorld*\ World);}
+\DoxyCodeLine{00392\ }
+\DoxyCodeLine{00394\ \ \ \ \ \textcolor{keywordtype}{void}\ CleanupCSM();}
+\DoxyCodeLine{00395\ }
+\DoxyCodeLine{00406\ \ \ \ \ \textcolor{keywordtype}{bool}\ GetMainDirectionalLight(UWorld*\ World,\ FVector\&\ OutDirection,\ FLinearColor\&\ OutColor,\ \textcolor{keywordtype}{float}\&\ OutIntensity);}
+\DoxyCodeLine{00407\ }
+\DoxyCodeLine{00408\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00409\ \ \ \ \ \textcolor{comment}{//\ Thread-\/Safe\ Render\ Data\ Cache}}
+\DoxyCodeLine{00410\ }
+\DoxyCodeLine{00412\ \ \ \ \ \doxymbox{\hyperlink{struct_f_i_v_smoke_packed_render_data}{FIVSmokePackedRenderData}}\ CachedRenderData;}
+\DoxyCodeLine{00413\ }
+\DoxyCodeLine{00415\ \ \ \ \ \textcolor{keyword}{mutable}\ FCriticalSection\ RenderDataMutex;}
+\DoxyCodeLine{00416\ \};}
+
+\end{DoxyCode}

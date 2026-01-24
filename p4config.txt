@@ -1,0 +1,4 @@
+P4PORT=172.21.10.25:2002
+P4USER=geb0598
+P4CLIENT=geb0598_dev
+P4IGNORE=.p4ignore.txt;.gitignore

@@ -1,0 +1,55 @@
+\doxysection{FIVSmoke\+CSMGPUData Struct Reference}
+\hypertarget{struct_f_i_v_smoke_c_s_m_g_p_u_data}{}\label{struct_f_i_v_smoke_c_s_m_g_p_u_data}\index{FIVSmokeCSMGPUData@{FIVSmokeCSMGPUData}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+CSMRenderer.\+h$>$}
+
+
+
+Collaboration diagram for FIVSmoke\+CSMGPUData:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=200pt]{struct_f_i_v_smoke_c_s_m_g_p_u_data__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+FMatrix44f \doxymbox{\hyperlink{struct_f_i_v_smoke_c_s_m_g_p_u_data_a929bf3a286741f904bc6e75b235d6b35}{View\+Projection\+Matrix}}
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_c_s_m_g_p_u_data_a7f510f722ad0ec7f17fe5896f5d25640}{Split\+Distance}}
+\item 
+float \doxymbox{\hyperlink{struct_f_i_v_smoke_c_s_m_g_p_u_data_a6c2b41588254130ec3d63b562601fc33}{Padding}} \+[3]\+
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+GPU-\/side cascade data for shader access. Packed for efficient GPU transfer. 
+
+\label{doc-variable-members}
+\Hypertarget{struct_f_i_v_smoke_c_s_m_g_p_u_data_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{struct_f_i_v_smoke_c_s_m_g_p_u_data_a6c2b41588254130ec3d63b562601fc33}\index{FIVSmokeCSMGPUData@{FIVSmokeCSMGPUData}!Padding@{Padding}}
+\index{Padding@{Padding}!FIVSmokeCSMGPUData@{FIVSmokeCSMGPUData}}
+\doxysubsubsection{\texorpdfstring{Padding}{Padding}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_c_s_m_g_p_u_data_a6c2b41588254130ec3d63b562601fc33} 
+float FIVSmoke\+CSMGPUData::\+\+Padding\+[3]\+}
+
+Padding for 16-\/byte alignment. \Hypertarget{struct_f_i_v_smoke_c_s_m_g_p_u_data_a7f510f722ad0ec7f17fe5896f5d25640}\index{FIVSmokeCSMGPUData@{FIVSmokeCSMGPUData}!SplitDistance@{SplitDistance}}
+\index{SplitDistance@{SplitDistance}!FIVSmokeCSMGPUData@{FIVSmokeCSMGPUData}}
+\doxysubsubsection{\texorpdfstring{SplitDistance}{SplitDistance}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_c_s_m_g_p_u_data_a7f510f722ad0ec7f17fe5896f5d25640} 
+float FIVSmoke\+CSMGPUData::\+\+Split\+Distance}
+
+Split distance (far plane of this cascade). \Hypertarget{struct_f_i_v_smoke_c_s_m_g_p_u_data_a929bf3a286741f904bc6e75b235d6b35}\index{FIVSmokeCSMGPUData@{FIVSmokeCSMGPUData}!ViewProjectionMatrix@{ViewProjectionMatrix}}
+\index{ViewProjectionMatrix@{ViewProjectionMatrix}!FIVSmokeCSMGPUData@{FIVSmokeCSMGPUData}}
+\doxysubsubsection{\texorpdfstring{ViewProjectionMatrix}{ViewProjectionMatrix}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_c_s_m_g_p_u_data_a929bf3a286741f904bc6e75b235d6b35} 
+FMatrix44f FIVSmoke\+CSMGPUData::\+\+View\+Projection\+Matrix}
+
+View-\/projection matrix for this cascade. 
+
+The documentation for this struct was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+CSMRenderer.\+h\end{DoxyCompactItemize}

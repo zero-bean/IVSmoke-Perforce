@@ -1,0 +1,67 @@
+\doxysection{FIVSmoke\+Occupancy\+Build\+CS Class Reference}
+\hypertarget{class_f_i_v_smoke_occupancy_build_c_s}{}\label{class_f_i_v_smoke_occupancy_build_c_s}\index{FIVSmokeOccupancyBuildCS@{FIVSmokeOccupancyBuildCS}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Ray\+March\+Pipeline.\+h$>$}
+
+
+
+Inheritance diagram for FIVSmoke\+Occupancy\+Build\+CS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=244pt]{class_f_i_v_smoke_occupancy_build_c_s__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for FIVSmoke\+Occupancy\+Build\+CS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=244pt]{class_f_i_v_smoke_occupancy_build_c_s__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_occupancy_build_c_s_ab1ba9e4c6ad3a28b781274081213183b}\label{class_f_i_v_smoke_occupancy_build_c_s_ab1ba9e4c6ad3a28b781274081213183b} 
+{\bfseries DECLARE\+\_\+\+GLOBAL\+\_\+\+SHADER} (\doxymbox{\hyperlink{class_f_i_v_smoke_occupancy_build_c_s}{FIVSmoke\+Occupancy\+Build\+CS}})
+\item 
+\Hypertarget{class_f_i_v_smoke_occupancy_build_c_s_a967212e7e580a6fa7e957ad5c45ccae7}\label{class_f_i_v_smoke_occupancy_build_c_s_a967212e7e580a6fa7e957ad5c45ccae7} 
+{\bfseries SHADER\+\_\+\+USE\+\_\+\+PARAMETER\+\_\+\+STRUCT} (\doxymbox{\hyperlink{class_f_i_v_smoke_occupancy_build_c_s}{FIVSmoke\+Occupancy\+Build\+CS}}, FGlobal\+Shader)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_occupancy_build_c_s_a6569f3bb3acc88b223380fa848cee3b7}\label{class_f_i_v_smoke_occupancy_build_c_s_a6569f3bb3acc88b223380fa848cee3b7} 
+static bool {\bfseries Should\+Compile\+Permutation} (const FGlobal\+Shader\+Permutation\+Parameters \&Parameters)
+\item 
+\Hypertarget{class_f_i_v_smoke_occupancy_build_c_s_a675ab29024847e7fce00fe718913a6ca}\label{class_f_i_v_smoke_occupancy_build_c_s_a675ab29024847e7fce00fe718913a6ca} 
+static void {\bfseries Modify\+Compilation\+Environment} (const FGlobal\+Shader\+Permutation\+Parameters \&Parameters, FShader\+Compiler\+Environment \&Out\+Environment)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_occupancy_build_c_s_a63984678e9241b872020151c816ce2f3}\label{class_f_i_v_smoke_occupancy_build_c_s_a63984678e9241b872020151c816ce2f3} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeX} = \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_abfa6088ef5125cca6d6806cb94483cf9}{FIVSmoke\+Occupancy\+Config::\+\+Occupancy\+Build\+ThreadsX}}
+\item 
+\Hypertarget{class_f_i_v_smoke_occupancy_build_c_s_a846375fe5c8c503dc18860a3cb968f18}\label{class_f_i_v_smoke_occupancy_build_c_s_a846375fe5c8c503dc18860a3cb968f18} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeY} = FIVSmoke\+Occupancy\+Config::\+\+Occupancy\+Build\+ThreadsY
+\item 
+\Hypertarget{class_f_i_v_smoke_occupancy_build_c_s_a63bdfa600d8d8b0c22830f4553969583}\label{class_f_i_v_smoke_occupancy_build_c_s_a63bdfa600d8d8b0c22830f4553969583} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeZ} = FIVSmoke\+Occupancy\+Config::\+\+Occupancy\+Build\+ThreadsZ
+\item 
+\Hypertarget{class_f_i_v_smoke_occupancy_build_c_s_a09fe57e5229eee475e89ad87d9590520}\label{class_f_i_v_smoke_occupancy_build_c_s_a09fe57e5229eee475e89ad87d9590520} 
+static constexpr const TCHAR \texorpdfstring{$\ast$}{*} {\bfseries Event\+Name} = TEXT("{}IVSmoke\+Occupancy\+Build\+CS"{})
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Occupancy Build compute shader (Pass 1). Builds View and Light occupancy 3D textures using tile data.
+
+Dispatch:\+ (ceil(Tile\+Count\+X/\+8), ceil(Tile\+Count\+Y/\+8), ceil(Step\+Slice\+Count/\+4)) Each texel stores a uint4 bitmask (128 bits for 128 volumes). 
+
+The documentation for this class was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Ray\+March\+Pipeline.\+h\end{DoxyCompactItemize}

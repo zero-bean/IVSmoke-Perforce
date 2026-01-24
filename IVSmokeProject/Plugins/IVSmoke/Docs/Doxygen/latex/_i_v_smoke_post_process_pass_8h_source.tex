@@ -1,0 +1,93 @@
+\doxysection{IVSmoke\+Post\+Process\+Pass.\+h}
+\hypertarget{_i_v_smoke_post_process_pass_8h_source}{}\label{_i_v_smoke_post_process_pass_8h_source}\index{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokePostProcessPass.h@{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokePostProcessPass.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//\ Copyright\ (c)\ 2026,\ Team\ SDB.\ All\ rights\ reserved.}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}CoreMinimal.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}RenderGraphBuilder.h"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}RenderGraphUtils.h"{}}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}ScreenPass.h"{}}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ "{}GlobalShader.h"{}}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ "{}ShaderParameterStruct.h"{}}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ "{}PixelShaderUtils.h"{}}}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \textcolor{keyword}{class\ }IVSMOKE\_API\ \doxymbox{\hyperlink{class_f_i_v_smoke_post_process_pass}{FIVSmokePostProcessPass}}}
+\DoxyCodeLine{00019\ \{}
+\DoxyCodeLine{00020\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00041\ \ \ \ \ \textcolor{keyword}{template}<\textcolor{keyword}{typename}\ TShaderClass>}
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_i_v_smoke_post_process_pass_a8f1dbf9ae3c49b3e771217069c879d28}{AddPixelShaderPass}}(}
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ FGlobalShaderMap*\ ShaderMap,}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ TShaderMapRef<TShaderClass>\ PixelShader,}
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ \textcolor{keyword}{typename}\ TShaderClass::FParameters*\ Parameters,}
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FScreenPassRenderTarget\&\ Output);}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00065\ \ \ \ \ \textcolor{keyword}{template}<\textcolor{keyword}{typename}\ TShaderClass>}
+\DoxyCodeLine{00066\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_i_v_smoke_post_process_pass_a12269d31084d63a79ecbabcd15ffa467}{AddComputeShaderPass}}(}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ FGlobalShaderMap*\ ShaderMap,}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ TShaderMapRef<TShaderClass>\ ComputeShader,}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ \textcolor{keyword}{typename}\ TShaderClass::FParameters*\ Parameters,}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ FIntVector\&\ TotalThreadSize);}
+\DoxyCodeLine{00072\ }
+\DoxyCodeLine{00083\ \ \ \ \ \textcolor{keyword}{static}\ FRDGTextureRef\ \doxymbox{\hyperlink{class_f_i_v_smoke_post_process_pass_a2f649d0a9d8dd3ea75a9a8bca2b2cd41}{CreateOutputTexture}}(}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ FRDGTextureRef\ SourceTexture,}
+\DoxyCodeLine{00086\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ TCHAR*\ DebugName\ =\ TEXT(\textcolor{stringliteral}{"{}IVSmokeOutput"{}}),}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ EPixelFormat\ OverrideFormat\ =\ PF\_Unknown,}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ FIntPoint\ OverrideExtent\ =\ FIntPoint::ZeroValue,}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ ETextureCreateFlags\ Flags\ =\ ETextureCreateFlags::UAV);}
+\DoxyCodeLine{00090\ \};}
+\DoxyCodeLine{00091\ \textcolor{comment}{//-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/}}
+\DoxyCodeLine{00092\ \textcolor{comment}{//\ Template\ implementations}}
+\DoxyCodeLine{00093\ \textcolor{comment}{//-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/}}
+\DoxyCodeLine{00094\ }
+\DoxyCodeLine{00095\ \textcolor{keyword}{template}<\textcolor{keyword}{typename}\ TShaderClass>}
+\DoxyCodeLine{00096\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_i_v_smoke_post_process_pass_a8f1dbf9ae3c49b3e771217069c879d28}{FIVSmokePostProcessPass::AddPixelShaderPass}}(}
+\DoxyCodeLine{00097\ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00098\ \ \ \ \ FGlobalShaderMap*\ ShaderMap,}
+\DoxyCodeLine{00099\ \ \ \ \ TShaderMapRef<TShaderClass>\ PixelShader,}
+\DoxyCodeLine{00100\ \ \ \ \ \textcolor{keyword}{typename}\ TShaderClass::FParameters*\ Parameters,}
+\DoxyCodeLine{00101\ \ \ \ \ \textcolor{keyword}{const}\ FScreenPassRenderTarget\&\ Output)}
+\DoxyCodeLine{00102\ \{}
+\DoxyCodeLine{00103\ \ \ \ \ RDG\_EVENT\_SCOPE(GraphBuilder,\ \textcolor{stringliteral}{"{}IVSmoke::PixelShader:\ \%s"{}},\ TShaderClass::EventName);}
+\DoxyCodeLine{00104\ }
+\DoxyCodeLine{00105\ \ \ \ \ FPixelShaderUtils::AddFullscreenPass(}
+\DoxyCodeLine{00106\ \ \ \ \ \ \ \ \ GraphBuilder,}
+\DoxyCodeLine{00107\ \ \ \ \ \ \ \ \ ShaderMap,}
+\DoxyCodeLine{00108\ \ \ \ \ \ \ \ \ RDG\_EVENT\_NAME(\textcolor{stringliteral}{"{}\%s"{}},\ TShaderClass::EventName),}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ PixelShader,}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ Parameters,}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ Output.ViewRect,}
+\DoxyCodeLine{00112\ \ \ \ \ \ \ \ \ TShaderClass::GetBlendState()}
+\DoxyCodeLine{00113\ \ \ \ \ );}
+\DoxyCodeLine{00114\ \}}
+\DoxyCodeLine{00115\ }
+\DoxyCodeLine{00116\ \textcolor{keyword}{template}<\textcolor{keyword}{typename}\ TShaderClass>}
+\DoxyCodeLine{00117\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_f_i_v_smoke_post_process_pass_a12269d31084d63a79ecbabcd15ffa467}{FIVSmokePostProcessPass::AddComputeShaderPass}}(}
+\DoxyCodeLine{00118\ \ \ \ \ FRDGBuilder\&\ GraphBuilder,}
+\DoxyCodeLine{00119\ \ \ \ \ FGlobalShaderMap*\ ShaderMap,}
+\DoxyCodeLine{00120\ \ \ \ \ TShaderMapRef<TShaderClass>\ ComputeShader,}
+\DoxyCodeLine{00121\ \ \ \ \ \textcolor{keyword}{typename}\ TShaderClass::FParameters*\ Parameters,}
+\DoxyCodeLine{00122\ \ \ \ \ \textcolor{keyword}{const}\ FIntVector\&\ TotalThreadSize)}
+\DoxyCodeLine{00123\ \{}
+\DoxyCodeLine{00124\ \ \ \ \ \textcolor{keyword}{const}\ uint32\ GroupCountX\ =\ FMath::DivideAndRoundUp((uint32)TotalThreadSize.X,\ TShaderClass::ThreadGroupSizeX);}
+\DoxyCodeLine{00125\ \ \ \ \ \textcolor{keyword}{const}\ uint32\ GroupCountY\ =\ FMath::DivideAndRoundUp((uint32)TotalThreadSize.Y,\ TShaderClass::ThreadGroupSizeY);}
+\DoxyCodeLine{00126\ \ \ \ \ \textcolor{keyword}{const}\ uint32\ GroupCountZ\ =\ FMath::DivideAndRoundUp((uint32)TotalThreadSize.Z,\ TShaderClass::ThreadGroupSizeZ);}
+\DoxyCodeLine{00127\ }
+\DoxyCodeLine{00128\ \ \ \ \ RDG\_EVENT\_SCOPE(GraphBuilder,\ \textcolor{stringliteral}{"{}IVSmoke::ComputeShader:\ \%s"{}},\ TShaderClass::EventName);}
+\DoxyCodeLine{00129\ }
+\DoxyCodeLine{00130\ \ \ \ \ FComputeShaderUtils::AddPass(}
+\DoxyCodeLine{00131\ \ \ \ \ \ \ \ \ GraphBuilder,}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ RDG\_EVENT\_NAME(\textcolor{stringliteral}{"{}\%s"{}},\ TShaderClass::EventName),}
+\DoxyCodeLine{00133\ \ \ \ \ \ \ \ \ ComputeShader,}
+\DoxyCodeLine{00134\ \ \ \ \ \ \ \ \ Parameters,}
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \ \ FIntVector(GroupCountX,\ GroupCountY,\ GroupCountZ)}
+\DoxyCodeLine{00136\ \ \ \ \ );}
+\DoxyCodeLine{00137\ \}}
+
+\end{DoxyCode}

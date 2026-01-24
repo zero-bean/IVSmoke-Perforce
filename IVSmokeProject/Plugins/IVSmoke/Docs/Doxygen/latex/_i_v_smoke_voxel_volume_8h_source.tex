@@ -1,0 +1,432 @@
+\doxysection{IVSmoke\+Voxel\+Volume.\+h}
+\hypertarget{_i_v_smoke_voxel_volume_8h_source}{}\label{_i_v_smoke_voxel_volume_8h_source}\index{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeVoxelVolume.h@{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeVoxelVolume.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//\ Copyright\ (c)\ 2026,\ Team\ SDB.\ All\ rights\ reserved.}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}CoreMinimal.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}IVSmokeGridLibrary.h"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}GameFramework/Actor.h"{}}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}UObject/ObjectMacros.h"{}}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ "{}IVSmokeVoxelVolume.generated.h"{}}}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_i_v_smoke_collision_component}{UIVSmokeCollisionComponent}};}
+\DoxyCodeLine{00012\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_i_v_smoke_smoke_preset}{UIVSmokeSmokePreset}};}
+\DoxyCodeLine{00013\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component}{UIVSmokeHoleGeneratorComponent}};}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00018\ UENUM(BlueprintType)}
+\DoxyCodeLine{00019\ \textcolor{keyword}{enum\ class}\ EIVSmokeVoxelVolumeState\ :\ uint8}
+\DoxyCodeLine{00020\ \{}
+\DoxyCodeLine{00022\ \ \ \ \ Idle,}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00025\ \ \ \ \ Expansion,}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00028\ \ \ \ \ Sustain,}
+\DoxyCodeLine{00029\ }
+\DoxyCodeLine{00031\ \ \ \ \ Dissipation,}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00034\ \ \ \ \ Finished}
+\DoxyCodeLine{00035\ \};}
+\DoxyCodeLine{00036\ }
+\DoxyCodeLine{00040\ USTRUCT(BlueprintType)}
+\DoxyCodeLine{00041\ struct\ \doxymbox{\hyperlink{struct_f_i_v_smoke_server_state}{FIVSmokeServerState}}}
+\DoxyCodeLine{00042\ \{}
+\DoxyCodeLine{00043\ \ \ \ \ GENERATED\_BODY()}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00045\ \ \ \ \ }
+\DoxyCodeLine{00046\ \ \ \ \ UPROPERTY()}
+\DoxyCodeLine{00047\ \ \ \ \ EIVSmokeVoxelVolumeState\ \doxymbox{\hyperlink{struct_f_i_v_smoke_server_state_a76784cfebb6da1b713628ffa82e71e0b}{State}}\ =\ EIVSmokeVoxelVolumeState::Idle;}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00050\ \ \ \ \ UPROPERTY()}
+\DoxyCodeLine{00051\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_server_state_ac3a29a5545edc34536625bd65279d1dc}{ExpansionStartTime}}\ =\ 0.0f;}
+\DoxyCodeLine{00052\ }
+\DoxyCodeLine{00054\ \ \ \ \ UPROPERTY()}
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_server_state_a10f3f3788de497b4294f69ba6a7c8241}{SustainStartTime}}\ =\ 0.0f;}
+\DoxyCodeLine{00056\ }
+\DoxyCodeLine{00058\ \ \ \ \ UPROPERTY()}
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_server_state_a0a93113505d1abec448fef46df5f5916}{DissipationStartTime}}\ =\ 0.0f;}
+\DoxyCodeLine{00060\ }
+\DoxyCodeLine{00062\ \ \ \ \ UPROPERTY()}
+\DoxyCodeLine{00063\ \ \ \ \ int32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_server_state_ae83de0b6c6d944b68245f18416384a39}{RandomSeed}}\ =\ 0;}
+\DoxyCodeLine{00064\ }
+\DoxyCodeLine{00069\ \ \ \ \ UPROPERTY()}
+\DoxyCodeLine{00070\ \ \ \ \ uint8\ \doxymbox{\hyperlink{struct_f_i_v_smoke_server_state_a45b1d89abae8bf69b499c803ef28f10c}{Generation}}\ =\ 0;}
+\DoxyCodeLine{00071\ \};}
+\DoxyCodeLine{00072\ }
+\DoxyCodeLine{00076\ UENUM(BlueprintType)}
+\DoxyCodeLine{00077\ enum\ class\ EIVSmokeDirtyLevel\ :\ uint8}
+\DoxyCodeLine{00078\ \{}
+\DoxyCodeLine{00080\ \ \ \ \ Clean,}
+\DoxyCodeLine{00081\ }
+\DoxyCodeLine{00083\ \ \ \ \ Dirty}
+\DoxyCodeLine{00084\ \};}
+\DoxyCodeLine{00085\ }
+\DoxyCodeLine{00089\ UENUM(BlueprintType)}
+\DoxyCodeLine{00090\ \textcolor{keyword}{enum\ class}\ EIVSmokeDebugViewMode\ :\ uint8}
+\DoxyCodeLine{00091\ \{}
+\DoxyCodeLine{00093\ \ \ \ \ SolidColor,}
+\DoxyCodeLine{00094\ }
+\DoxyCodeLine{00096\ \ \ \ \ Heatmap}
+\DoxyCodeLine{00097\ \};}
+\DoxyCodeLine{00098\ }
+\DoxyCodeLine{00102\ USTRUCT(BlueprintType)}
+\DoxyCodeLine{00103\ struct\ \doxymbox{\hyperlink{struct_f_i_v_smoke_debug_settings}{FIVSmokeDebugSettings}}}
+\DoxyCodeLine{00104\ \{}
+\DoxyCodeLine{00105\ \ \ \ \ GENERATED\_BODY()}
+\DoxyCodeLine{00106\ }
+\DoxyCodeLine{00107\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Debug"{}})}
+\DoxyCodeLine{00108\ \ \ \ \ \textcolor{keywordtype}{bool}\ bDebugEnabled\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00109\ }
+\DoxyCodeLine{00110\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Debug"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bDebugEnabled"{}}))}
+\DoxyCodeLine{00111\ \ \ \ \ EIVSmokeDebugViewMode\ ViewMode\ =\ EIVSmokeDebugViewMode::SolidColor;}
+\DoxyCodeLine{00112\ }
+\DoxyCodeLine{00113\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Debug"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bDebugEnabled"{}}))}
+\DoxyCodeLine{00114\ \ \ \ \ \textcolor{keywordtype}{bool}\ bShowVolumeBounds\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00115\ }
+\DoxyCodeLine{00116\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Debug"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bDebugEnabled"{}}))}
+\DoxyCodeLine{00117\ \ \ \ \ \textcolor{keywordtype}{bool}\ bShowVoxelMesh\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00118\ }
+\DoxyCodeLine{00119\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Debug"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bDebugEnabled"{}}))}
+\DoxyCodeLine{00120\ \ \ \ \ \textcolor{keywordtype}{bool}\ bShowVoxelWireframe\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00121\ }
+\DoxyCodeLine{00122\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Debug"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bDebugEnabled"{}}))}
+\DoxyCodeLine{00123\ \ \ \ \ \textcolor{keywordtype}{bool}\ bShowStatusText\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00124\ }
+\DoxyCodeLine{00125\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Debug"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bDebugEnabled"{}},\ UIMin\ =\ 0.0,\ UIMax\ =\ 1.0,\ ClampMin\ =\ 0.0))}
+\DoxyCodeLine{00126\ \ \ \ \ FColor\ DebugWireframeColor\ =\ FColor(20,\ 20,\ 20);}
+\DoxyCodeLine{00127\ }
+\DoxyCodeLine{00128\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Debug"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bDebugEnabled"{}},\ UIMin=0.0,\ UIMax=1.0))}
+\DoxyCodeLine{00129\ \ \ \ \ \textcolor{keywordtype}{float}\ SliceHeight\ =\ 1.0f;}
+\DoxyCodeLine{00130\ }
+\DoxyCodeLine{00131\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Debug"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bDebugEnabled"{}},\ ClampMin=0,\ ClampMax=100))}
+\DoxyCodeLine{00132\ \ \ \ \ int32\ VisibleStepCountPercent\ =\ 100;}
+\DoxyCodeLine{00133\ \};}
+\DoxyCodeLine{00134\ }
+\DoxyCodeLine{00156\ UCLASS()}
+\DoxyCodeLine{00157\ class\ IVSMOKE\_API\ AIVSmokeVoxelVolume\ :\ public\ AActor}
+\DoxyCodeLine{00158\ \{}
+\DoxyCodeLine{00159\ \ \ \ \ GENERATED\_BODY()}
+\DoxyCodeLine{00160\ }
+\DoxyCodeLine{00161\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00162\ \ \ \ \ \textcolor{comment}{//\ Actor\ Lifecycle}}
+\DoxyCodeLine{00163\ \textcolor{preprocessor}{\#pragma\ region\ Lifecycle}}
+\DoxyCodeLine{00164\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00165\ \ \ \ \ AIVSmokeVoxelVolume();}
+\DoxyCodeLine{00166\ }
+\DoxyCodeLine{00167\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ Tick(\textcolor{keywordtype}{float}\ DeltaTime)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00168\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{bool}\ ShouldTickIfViewportsOnly()\ \textcolor{keyword}{const\ override};}
+\DoxyCodeLine{00169\ }
+\DoxyCodeLine{00170\ \textcolor{preprocessor}{\#if\ WITH\_EDITOR}}
+\DoxyCodeLine{00171\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ PostEditChangeProperty(\textcolor{keyword}{struct}\ FPropertyChangedEvent\&\ PropertyChangedEvent)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00172\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ PostEditMove(\textcolor{keywordtype}{bool}\ bFinished)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00173\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00174\ }
+\DoxyCodeLine{00175\ \textcolor{keyword}{protected}:}
+\DoxyCodeLine{00176\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ BeginPlay()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00177\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ EndPlay(\textcolor{keyword}{const}\ EEndPlayReason::Type\ EndPlayReason)\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00178\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ GetLifetimeReplicatedProps(TArray<FLifetimeProperty>\&\ OutLifetimeProps)\ \textcolor{keyword}{const\ override};}
+\DoxyCodeLine{00179\ \textcolor{preprocessor}{\#pragma\ endregion}}
+\DoxyCodeLine{00180\ }
+\DoxyCodeLine{00181\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00182\ \ \ \ \ \textcolor{comment}{//\ Actor\ Components}}
+\DoxyCodeLine{00183\ \textcolor{preprocessor}{\#pragma\ region\ Components}}
+\DoxyCodeLine{00184\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00189\ \ \ \ \ TObjectPtr<UIVSmokeHoleGeneratorComponent>\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a6d51d4f1c73c7834186997bb1c664805}{GetHoleGeneratorComponent}}();}
+\DoxyCodeLine{00190\ }
+\DoxyCodeLine{00195\ \ \ \ \ TObjectPtr<UIVSmokeCollisionComponent>\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a1dfd67efe861143a057530cf1de0d1a5}{GetCollisionComponent}}();}
+\DoxyCodeLine{00196\ }
+\DoxyCodeLine{00197\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00202\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}})}
+\DoxyCodeLine{00203\ \ \ \ \ TObjectPtr<UIVSmokeHoleGeneratorComponent>\ HoleGeneratorComponent;}
+\DoxyCodeLine{00204\ }
+\DoxyCodeLine{00210\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}})}
+\DoxyCodeLine{00211\ \ \ \ \ TObjectPtr<UIVSmokeCollisionComponent>\ CollisionComponent;}
+\DoxyCodeLine{00212\ }
+\DoxyCodeLine{00213\ \textcolor{preprocessor}{\#if\ WITH\_EDITORONLY\_DATA}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00218\ \ \ \ \ UPROPERTY()}
+\DoxyCodeLine{00219\ \ \ \ \ TObjectPtr<UInstancedStaticMeshComponent>\ DebugMeshComponent;}
+\DoxyCodeLine{00220\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00221\ \textcolor{preprocessor}{\#pragma\ endregion}}
+\DoxyCodeLine{00222\ }
+\DoxyCodeLine{00223\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00224\ \ \ \ \ \textcolor{comment}{//\ Actor\ Configuration}}
+\DoxyCodeLine{00225\ \textcolor{preprocessor}{\#pragma\ region\ Configuation}}
+\DoxyCodeLine{00226\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00232\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}1"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}16"{}}))}
+\DoxyCodeLine{00233\ \ \ \ \ FIntVector\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a9ac65f3432cebe1270ec362166de076f}{VolumeExtent}}\ =\ FIntVector(16,\ 16,\ 16);}
+\DoxyCodeLine{00234\ }
+\DoxyCodeLine{00241\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.1"{}},\ UIMin\ =\ \textcolor{stringliteral}{"{}0.1"{}},\ UIMax\ =\ \textcolor{stringliteral}{"{}5.0"{}}))}
+\DoxyCodeLine{00242\ \ \ \ \ FVector\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a7ac94e6fa1b5e405f86344e1758f1575}{Radii}}\ =\ FVector(1.0f,\ 1.0f,\ 1.0f);}
+\DoxyCodeLine{00243\ }
+\DoxyCodeLine{00249\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}1.0"{}},\ UIMin\ =\ \textcolor{stringliteral}{"{}10.0"{}},\ UIMax\ =\ \textcolor{stringliteral}{"{}100.0"{}}))}
+\DoxyCodeLine{00250\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a6b4caab4220e38ea5ef49f8fa67bf767}{VoxelSize}}\ =\ 50.0f;}
+\DoxyCodeLine{00251\ }
+\DoxyCodeLine{00257\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}1"{}},\ UIMin\ =\ \textcolor{stringliteral}{"{}100"{}},\ UIMax\ =\ \textcolor{stringliteral}{"{}10000"{}}))}
+\DoxyCodeLine{00258\ \ \ \ \ int32\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ac91ff2505673f6b8fef16523882c0417}{MaxVoxelNum}}\ =\ 1000;}
+\DoxyCodeLine{00259\ }
+\DoxyCodeLine{00261\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config"{}})}
+\DoxyCodeLine{00262\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ab014262f2b3853d39b11917ba3e2e1e6}{bAutoStart}}\ =\ false;}
+\DoxyCodeLine{00263\ }
+\DoxyCodeLine{00265\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config"{}})}
+\DoxyCodeLine{00266\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_aed2685aa0c10a3bed0799f8e1e5893fa}{bDestroyOnFinish}}\ =\ false;}
+\DoxyCodeLine{00267\ }
+\DoxyCodeLine{00269\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config"{}})}
+\DoxyCodeLine{00270\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ad23cc54d625c40b54a59745289d334ca}{bIsInfinite}}\ =\ false;}
+\DoxyCodeLine{00271\ }
+\DoxyCodeLine{00277\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config"{}})}
+\DoxyCodeLine{00278\ \ \ \ \ TObjectPtr<\doxymbox{\hyperlink{class_u_i_v_smoke_smoke_preset}{UIVSmokeSmokePreset}}>\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_af180602d8f27cf16f1eb3070d98da4fc}{SmokePresetOverride}};}
+\DoxyCodeLine{00279\ }
+\DoxyCodeLine{00280\ \textcolor{preprocessor}{\#pragma\ endregion}}
+\DoxyCodeLine{00281\ }
+\DoxyCodeLine{00282\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00283\ \ \ \ \ \textcolor{comment}{//\ Flood\ Fill\ Simulation}}
+\DoxyCodeLine{00284\ \textcolor{preprocessor}{\#pragma\ region\ Simulation}}
+\DoxyCodeLine{00285\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00290\ \ \ \ \ UFUNCTION(BlueprintCallable,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}})}
+\DoxyCodeLine{00291\ \ \ \ \ void\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a6fb3f863ca860e957c0c1947f085b128}{Initialize}}();}
+\DoxyCodeLine{00292\ }
+\DoxyCodeLine{00298\ \ \ \ \ UFUNCTION(Server,\ Reliable,\ BlueprintCallable,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}})}
+\DoxyCodeLine{00299\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ae6190c2f9228a444868e8dc57beeec2f}{StartSimulation}}();}
+\DoxyCodeLine{00300\ }
+\DoxyCodeLine{00306\ \ \ \ \ UFUNCTION(Server,\ Reliable,\ BlueprintCallable,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}})}
+\DoxyCodeLine{00307\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a72d3658c6eb8b7740e6b2295b98a46b5}{StopSimulation}}(\textcolor{keywordtype}{bool}\ bImmediate\ =\ false);}
+\DoxyCodeLine{00308\ }
+\DoxyCodeLine{00313\ \ \ \ \ UFUNCTION(Server,\ Reliable,\ BlueprintCallable,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}})}
+\DoxyCodeLine{00314\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a93f666213573d20b90c235d9124b7da6}{ResetSimulation}}();}
+\DoxyCodeLine{00315\ }
+\DoxyCodeLine{00320\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config\ |\ Simulation"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}}))}
+\DoxyCodeLine{00321\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a7f6f92c9a2150fd42ed349805395f7f2}{ExpansionDuration}}\ =\ 3.0f;}
+\DoxyCodeLine{00322\ }
+\DoxyCodeLine{00327\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config\ |\ Simulation"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}}))}
+\DoxyCodeLine{00328\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a5837d33af8adc2b43930f5c19b1b8d4d}{SustainDuration}}\ =\ 5.0f;}
+\DoxyCodeLine{00329\ }
+\DoxyCodeLine{00334\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config\ |\ Simulation"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}}))}
+\DoxyCodeLine{00335\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a4233c1cdaf810100d2672699b2b96879}{DissipationDuration}}\ =\ 2.0f;}
+\DoxyCodeLine{00336\ }
+\DoxyCodeLine{00340\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config\ |\ Simulation"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}}))}
+\DoxyCodeLine{00341\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a2f5ed5eb5d3dccaa786795fb1b905943}{FadeInDuration}}\ =\ 2.0f;}
+\DoxyCodeLine{00342\ }
+\DoxyCodeLine{00346\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config\ |\ Simulation"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}}))}
+\DoxyCodeLine{00347\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a7d92753fc9e0a1371b6abee219a07561}{FadeOutDuration}}\ =\ 2.0f;}
+\DoxyCodeLine{00348\ }
+\DoxyCodeLine{00353\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config\ |\ Simulation"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ UIMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ UIMax\ =\ \textcolor{stringliteral}{"{}5000.0"{}}))}
+\DoxyCodeLine{00354\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ad026a2b12a58bd99e49600b562b404b1}{ExpansionNoise}}\ =\ 100.0f;}
+\DoxyCodeLine{00355\ }
+\DoxyCodeLine{00360\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config\ |\ Simulation"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ UIMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ UIMax\ =\ \textcolor{stringliteral}{"{}5000.0"{}}))}
+\DoxyCodeLine{00361\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ad80330806a2b12bc75565574421e1dd6}{DissipationNoise}}\ =\ 100.0f;}
+\DoxyCodeLine{00362\ }
+\DoxyCodeLine{00369\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config\ |\ Simulation"{}})}
+\DoxyCodeLine{00370\ \ \ \ \ TObjectPtr<UCurveFloat>\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a871fe8eb044c24a11598fac4a0add5a9}{ExpansionCurve}};}
+\DoxyCodeLine{00371\ }
+\DoxyCodeLine{00378\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config\ |\ Simulation"{}})}
+\DoxyCodeLine{00379\ \ \ \ \ TObjectPtr<UCurveFloat>\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_af3b5777030188732ca1bcd706d9123eb}{DissipationCurve}};}
+\DoxyCodeLine{00380\ }
+\DoxyCodeLine{00385\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config\ |\ Simulation"{}})}
+\DoxyCodeLine{00386\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_aee5112a26e67409d062bf6cfbd6788cd}{bEnableSimulationCollision}}\ =\ true;}
+\DoxyCodeLine{00387\ }
+\DoxyCodeLine{00389\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadWrite,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Config\ |\ Simulation"{}},\ meta\ =\ (EditCondition\ =\ \textcolor{stringliteral}{"{}bEnableSimulationCollision"{}},\ AdvancedDisplay))}
+\DoxyCodeLine{00390\ \ \ \ \ TEnumAsByte<ECollisionChannel>\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a54d6c8a4e1a1d151a337cf63aa36e4c8}{VoxelCollisionChannel}}\ =\ ECC\_WorldStatic;}
+\DoxyCodeLine{00391\ }
+\DoxyCodeLine{00392\ private:}
+\DoxyCodeLine{00394\ \ \ \ \ struct\ FIVSmokeVoxelNode}
+\DoxyCodeLine{00395\ \ \ \ \ \{}
+\DoxyCodeLine{00396\ \ \ \ \ \ \ \ \ int32\ Index;}
+\DoxyCodeLine{00397\ \ \ \ \ \ \ \ \ int32\ ParentIndex;}
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ Cost;}
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ operator<(\textcolor{keyword}{const}\ FIVSmokeVoxelNode\&\ Other)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00400\ \textcolor{keyword}{\ \ \ \ \ \ \ \ }\{}
+\DoxyCodeLine{00401\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (FMath::IsNearlyEqual(Cost,\ Other.Cost))}
+\DoxyCodeLine{00402\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00403\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ Index\ <\ Other.Index;}
+\DoxyCodeLine{00404\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00405\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ Cost\ <\ Other.Cost;}
+\DoxyCodeLine{00406\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00407\ \ \ \ \ \};}
+\DoxyCodeLine{00408\ }
+\DoxyCodeLine{00417\ \ \ \ \ FORCEINLINE\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{float}\ GetCurveValue(\textcolor{keywordtype}{float}\ ElapsedTime,\ \textcolor{keywordtype}{float}\ Duration,\ \textcolor{keyword}{const}\ UCurveFloat*\ Curve)}
+\DoxyCodeLine{00418\ \ \ \ \ \{}
+\DoxyCodeLine{00419\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Duration\ <=\ KINDA\_SMALL\_NUMBER)}
+\DoxyCodeLine{00420\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00421\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 1.0f;}
+\DoxyCodeLine{00422\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00423\ }
+\DoxyCodeLine{00424\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ Alpha\ =\ FMath::Clamp(ElapsedTime\ /\ Duration,\ 0.0f,\ 1.0f);}
+\DoxyCodeLine{00425\ }
+\DoxyCodeLine{00426\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Curve)}
+\DoxyCodeLine{00427\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00428\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ FMath::Clamp(Curve-\/>GetFloatValue(Alpha),\ 0.0f,\ 1.0f);}
+\DoxyCodeLine{00429\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00430\ }
+\DoxyCodeLine{00431\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ Alpha;}
+\DoxyCodeLine{00432\ \ \ \ \ \}}
+\DoxyCodeLine{00433\ }
+\DoxyCodeLine{00435\ \ \ \ \ UFUNCTION()}
+\DoxyCodeLine{00436\ \ \ \ \ void\ OnRep\_ServerState();}
+\DoxyCodeLine{00437\ }
+\DoxyCodeLine{00444\ \ \ \ \ \textcolor{keywordtype}{void}\ HandleStateTransition(EIVSmokeVoxelVolumeState\ NewState);}
+\DoxyCodeLine{00445\ }
+\DoxyCodeLine{00447\ \ \ \ \ \textcolor{keywordtype}{void}\ ClearSimulationData();}
+\DoxyCodeLine{00448\ }
+\DoxyCodeLine{00457\ \ \ \ \ \textcolor{keywordtype}{bool}\ IsConnectionBlocked(const\ UWorld*\ World,\ const\ FVector\&\ BeginPos,\ const\ FVector\&\ EndPos)\ const;}
+\DoxyCodeLine{00458\ }
+\DoxyCodeLine{00463\ \ \ \ \ \textcolor{keywordtype}{void}\ StartSimulationInternal();}
+\DoxyCodeLine{00464\ }
+\DoxyCodeLine{00470\ \ \ \ \ \textcolor{keywordtype}{void}\ StopSimulationInternal(\textcolor{keywordtype}{bool}\ bImmediate\ =\ false);}
+\DoxyCodeLine{00471\ }
+\DoxyCodeLine{00476\ \ \ \ \ \textcolor{keywordtype}{void}\ ResetSimulationInternal();}
+\DoxyCodeLine{00477\ }
+\DoxyCodeLine{00482\ \ \ \ \ \textcolor{keywordtype}{void}\ FastForwardSimulation();}
+\DoxyCodeLine{00483\ }
+\DoxyCodeLine{00485\ \ \ \ \ \textcolor{keywordtype}{void}\ UpdateExpansion();}
+\DoxyCodeLine{00486\ }
+\DoxyCodeLine{00488\ \ \ \ \ \textcolor{keywordtype}{void}\ UpdateSustain();}
+\DoxyCodeLine{00489\ }
+\DoxyCodeLine{00491\ \ \ \ \ \textcolor{keywordtype}{void}\ UpdateDissipation();}
+\DoxyCodeLine{00492\ }
+\DoxyCodeLine{00500\ \ \ \ \ \textcolor{keywordtype}{void}\ ProcessExpansion(int32\ SpawnNum,\ \textcolor{keywordtype}{float}\ StartSimTime,\ \textcolor{keywordtype}{float}\ EndSimTime);}
+\DoxyCodeLine{00501\ }
+\DoxyCodeLine{00509\ \ \ \ \ \textcolor{keywordtype}{void}\ ProcessDissipation(int32\ RemoveNum,\ \textcolor{keywordtype}{float}\ StartSimTime,\ \textcolor{keywordtype}{float}\ EndSimTime);}
+\DoxyCodeLine{00510\ }
+\DoxyCodeLine{00517\ \ \ \ \ \textcolor{keywordtype}{void}\ SetVoxelBirthTime(int32\ Index,\ \textcolor{keywordtype}{float}\ BirthTime);}
+\DoxyCodeLine{00518\ }
+\DoxyCodeLine{00525\ \ \ \ \ \textcolor{keywordtype}{void}\ SetVoxelDeathTime(int32\ Index,\ \textcolor{keywordtype}{float}\ DeathTime);}
+\DoxyCodeLine{00526\ }
+\DoxyCodeLine{00528\ \ \ \ \ UPROPERTY(ReplicatedUsing\ =\ OnRep\_ServerState)}
+\DoxyCodeLine{00529\ \ \ \ \ \doxymbox{\hyperlink{struct_f_i_v_smoke_server_state}{FIVSmokeServerState}}\ ServerState;}
+\DoxyCodeLine{00530\ }
+\DoxyCodeLine{00532\ \ \ \ \ EIVSmokeVoxelVolumeState\ LocalState\ =\ EIVSmokeVoxelVolumeState::Idle;}
+\DoxyCodeLine{00533\ }
+\DoxyCodeLine{00535\ \ \ \ \ uint8\ LocalGeneration\ =\ 0;}
+\DoxyCodeLine{00536\ }
+\DoxyCodeLine{00538\ \ \ \ \ FRandomStream\ RandomStream;}
+\DoxyCodeLine{00539\ }
+\DoxyCodeLine{00541\ \ \ \ \ \textcolor{keywordtype}{float}\ SimTime\ =\ 0.0f;}
+\DoxyCodeLine{00542\ }
+\DoxyCodeLine{00544\ \ \ \ \ \textcolor{keywordtype}{bool}\ bIsInitialized\ =\ false;}
+\DoxyCodeLine{00545\ }
+\DoxyCodeLine{00547\ \ \ \ \ \textcolor{keywordtype}{bool}\ bIsFastForwarding\ =\ false;}
+\DoxyCodeLine{00548\ }
+\DoxyCodeLine{00550\ \ \ \ \ FVector\ VoxelWorldAABBMin;}
+\DoxyCodeLine{00551\ }
+\DoxyCodeLine{00553\ \ \ \ \ FVector\ VoxelWorldAABBMax;}
+\DoxyCodeLine{00554\ }
+\DoxyCodeLine{00556\ \ \ \ \ TArray<\textcolor{keywordtype}{float}>\ VoxelBirthTimes;}
+\DoxyCodeLine{00557\ }
+\DoxyCodeLine{00559\ \ \ \ \ TArray<\textcolor{keywordtype}{float}>\ VoxelDeathTimes;}
+\DoxyCodeLine{00560\ }
+\DoxyCodeLine{00562\ \ \ \ \ TArray<\textcolor{keywordtype}{float}>\ VoxelCosts;}
+\DoxyCodeLine{00563\ }
+\DoxyCodeLine{00575\ \ \ \ \ TArray<uint64>\ VoxelBits;}
+\DoxyCodeLine{00576\ }
+\DoxyCodeLine{00578\ \ \ \ \ TArray<FIVSmokeVoxelNode>\ ExpansionHeap;}
+\DoxyCodeLine{00579\ }
+\DoxyCodeLine{00581\ \ \ \ \ TArray<FIVSmokeVoxelNode>\ DissipationHeap;}
+\DoxyCodeLine{00582\ }
+\DoxyCodeLine{00584\ \ \ \ \ TArray<int32>\ GeneratedVoxelIndices;}
+\DoxyCodeLine{00585\ \textcolor{preprocessor}{\#pragma\ endregion}}
+\DoxyCodeLine{00586\ }
+\DoxyCodeLine{00587\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00588\ \ \ \ \ \textcolor{comment}{//\ Collision}}
+\DoxyCodeLine{00589\ \textcolor{preprocessor}{\#pragma\ region\ Collision}\textcolor{preprocessor}{}}
+\DoxyCodeLine{00597\ \ \ \ \ \textcolor{keywordtype}{void}\ TryUpdateCollision(\textcolor{keywordtype}{bool}\ bForce\ =\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00598\ \textcolor{preprocessor}{\#pragma\ endregion}}
+\DoxyCodeLine{00599\ }
+\DoxyCodeLine{00600\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00601\ \ \ \ \ \textcolor{comment}{//\ Data\ Access}}
+\DoxyCodeLine{00602\ \textcolor{preprocessor}{\#pragma\ region\ DataAccess}}
+\DoxyCodeLine{00603\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00605\ \ \ \ \ FORCEINLINE\ EIVSmokeVoxelVolumeState\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ac055a3198f3a80685efffefd3ceccb70}{GetCurrentState}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ ServerState.State;\ \}}
+\DoxyCodeLine{00606\ }
+\DoxyCodeLine{00608\ \ \ \ \ FORCEINLINE\ \textcolor{keyword}{const}\ TArray<float>\&\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a91c4b7383d63ccc96cf259873179bc89}{GetVoxelBirthTimes}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ VoxelBirthTimes;\ \}}
+\DoxyCodeLine{00609\ }
+\DoxyCodeLine{00611\ \ \ \ \ FORCEINLINE\ \textcolor{keyword}{const}\ TArray<float>\&\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_adb31b217341a85071e97b580b9d1332b}{GetVoxelDeathTimes}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ VoxelDeathTimes;\ \}}
+\DoxyCodeLine{00612\ }
+\DoxyCodeLine{00614\ \ \ \ \ FORCEINLINE\ FIntVector\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ad4569de3f5dd820f4c9b4eb6bbd0a5f4}{GetGridResolution}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00615\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00616\ \ \ \ \ \ \ \ \ FIntVector\ GridResolution;}
+\DoxyCodeLine{00617\ \ \ \ \ \ \ \ \ GridResolution.X\ =\ FMath::Max(1,\ (\doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a9ac65f3432cebe1270ec362166de076f}{VolumeExtent}}.X\ *\ 2)\ -\/\ 1);}
+\DoxyCodeLine{00618\ \ \ \ \ \ \ \ \ GridResolution.Y\ =\ FMath::Max(1,\ (\doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a9ac65f3432cebe1270ec362166de076f}{VolumeExtent}}.Y\ *\ 2)\ -\/\ 1);}
+\DoxyCodeLine{00619\ \ \ \ \ \ \ \ \ GridResolution.Z\ =\ FMath::Max(1,\ (\doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a9ac65f3432cebe1270ec362166de076f}{VolumeExtent}}.Z\ *\ 2)\ -\/\ 1);}
+\DoxyCodeLine{00620\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ GridResolution;}
+\DoxyCodeLine{00621\ \ \ \ \ \}}
+\DoxyCodeLine{00622\ }
+\DoxyCodeLine{00624\ \ \ \ \ FORCEINLINE\ FIntVector\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ada640c55e6a6fa30898a346cad725afe}{GetCenterOffset}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a9ac65f3432cebe1270ec362166de076f}{VolumeExtent}}\ -\/\ FIntVector(1,\ 1,\ 1);\ \}}
+\DoxyCodeLine{00625\ }
+\DoxyCodeLine{00627\ \ \ \ \ FORCEINLINE\ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a656e9c7b4893bfcf47888cc1123fa6aa}{GetVoxelSize}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a6b4caab4220e38ea5ef49f8fa67bf767}{VoxelSize}};\ \}}
+\DoxyCodeLine{00628\ }
+\DoxyCodeLine{00630\ \ \ \ \ FORCEINLINE\ EIVSmokeDirtyLevel\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ad5ff71e988d86ae7f943cc7fa9ce4a0f}{GetDirtyLevel}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ DirtyLevel;\ \}}
+\DoxyCodeLine{00631\ }
+\DoxyCodeLine{00633\ \ \ \ \ FORCEINLINE\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a6eb5b557c91507c3fe9b181d251818c6}{IsVoxelDataDirty}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ DirtyLevel\ !=\ EIVSmokeDirtyLevel::Clean;\ \}}
+\DoxyCodeLine{00634\ }
+\DoxyCodeLine{00639\ \ \ \ \ FORCEINLINE\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ae13f166844d19e1ac02831da62be8e94}{ClearVoxelDataDirty}}()\ \{\ DirtyLevel\ =\ EIVSmokeDirtyLevel::Clean;\ \}}
+\DoxyCodeLine{00640\ }
+\DoxyCodeLine{00642\ \ \ \ \ FORCEINLINE\ int32\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a0e58b5b2bc27966c8e8d8c639799a3cd}{GetVoxelBufferSize}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ VoxelBirthTimes.Num();\ \}}
+\DoxyCodeLine{00643\ }
+\DoxyCodeLine{00645\ \ \ \ \ FORCEINLINE\ int32\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a8b360c4c2bcd9e9ec43511cf1f4329a6}{GetActiveVoxelNum}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ ActiveVoxelNum;\ \}}
+\DoxyCodeLine{00646\ }
+\DoxyCodeLine{00648\ \ \ \ \ FORCEINLINE\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_u_i_v_smoke_smoke_preset}{UIVSmokeSmokePreset}}*\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a08373d517af5de7e7f41bcdde16d608d}{GetSmokePresetOverride}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_af180602d8f27cf16f1eb3070d98da4fc}{SmokePresetOverride}};\ \}}
+\DoxyCodeLine{00649\ }
+\DoxyCodeLine{00651\ \ \ \ \ FORCEINLINE\ FVector\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_aa5512344c657aeeb45708df1feb356fc}{GetVoxelWorldAABBMin}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ VoxelWorldAABBMin\ -\/\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a6b4caab4220e38ea5ef49f8fa67bf767}{VoxelSize}};\ \}}
+\DoxyCodeLine{00652\ }
+\DoxyCodeLine{00654\ \ \ \ \ FORCEINLINE\ FVector\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a382268525f042f5d7a8d3fe245e8bf33}{GetVoxelWorldAABBMax}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ VoxelWorldAABBMax\ +\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a6b4caab4220e38ea5ef49f8fa67bf767}{VoxelSize}};\ \}}
+\DoxyCodeLine{00655\ }
+\DoxyCodeLine{00662\ \ \ \ \ FORCEINLINE\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a53bcd34ab36a8edced1382b41514a6c0}{IsVoxelActive}}(int32\ Index)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00663\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00664\ \ \ \ \ \ \ \ \ FIntVector\ GridPos\ =\ \doxymbox{\hyperlink{class_u_i_v_smoke_grid_library_a308ae3d403b3ded083264e6046fbc9d5}{UIVSmokeGridLibrary::IndexToGrid}}(Index,\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ad4569de3f5dd820f4c9b4eb6bbd0a5f4}{GetGridResolution}}());}
+\DoxyCodeLine{00665\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a53bcd34ab36a8edced1382b41514a6c0}{IsVoxelActive}}(GridPos);}
+\DoxyCodeLine{00666\ \ \ \ \ \}}
+\DoxyCodeLine{00667\ }
+\DoxyCodeLine{00674\ \ \ \ \ FORCEINLINE\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a8ec37381d4324faed6bd339c334e4273}{IsVoxelActive}}(FIntVector\ GridPos)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00675\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00676\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{class_u_i_v_smoke_grid_library_ad9f884203188931687e1bbab0d314fc8}{UIVSmokeGridLibrary::IsVoxelBitSet}}(VoxelBits,\ GridPos,\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ad4569de3f5dd820f4c9b4eb6bbd0a5f4}{GetGridResolution}}());}
+\DoxyCodeLine{00677\ \ \ \ \ \}}
+\DoxyCodeLine{00678\ }
+\DoxyCodeLine{00680\ \ \ \ \ FTextureRHIRef\ GetHoleTexture()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00681\ }
+\DoxyCodeLine{00686\ \ \ \ \ \textcolor{keywordtype}{float}\ GetSyncWorldTimeSeconds()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00687\ }
+\DoxyCodeLine{00688\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00690\ \ \ \ \ int32\ ActiveVoxelNum\ =\ 0;}
+\DoxyCodeLine{00691\ }
+\DoxyCodeLine{00693\ \ \ \ \ EIVSmokeDirtyLevel\ DirtyLevel\ =\ EIVSmokeDirtyLevel::Clean;}
+\DoxyCodeLine{00694\ \textcolor{preprocessor}{\#pragma\ endregion}}
+\DoxyCodeLine{00695\ }
+\DoxyCodeLine{00696\ \ \ \ \ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00697\ \ \ \ \ \textcolor{comment}{//\ Debug}}
+\DoxyCodeLine{00698\ \textcolor{preprocessor}{\#pragma\ region\ Debug}}
+\DoxyCodeLine{00699\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00705\ \ \ \ \ UFUNCTION(CallInEditor,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Debug"{}})}
+\DoxyCodeLine{00706\ \ \ \ \ void\ StartPreviewSimulation();}
+\DoxyCodeLine{00707\ }
+\DoxyCodeLine{00712\ \ \ \ \ UFUNCTION(CallInEditor,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Debug"{}})}
+\DoxyCodeLine{00713\ \ \ \ \ \textcolor{keywordtype}{void}\ StopPreviewSimulation();}
+\DoxyCodeLine{00714\ }
+\DoxyCodeLine{00716\ \ \ \ \ UPROPERTY(EditAnywhere,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Debug"{}},\ meta\ =\ (ShowOnlyInnerProperties))}
+\DoxyCodeLine{00717\ \ \ \ \ \doxymbox{\hyperlink{struct_f_i_v_smoke_debug_settings}{FIVSmokeDebugSettings}}\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a41da9ee7f907f7494752e9fb3fe10314}{DebugSettings}};}
+\DoxyCodeLine{00718\ }
+\DoxyCodeLine{00720\ \ \ \ \ UPROPERTY(EditDefaultsOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Debug"{}},\ meta\ =\ (AdvancedDisplay))}
+\DoxyCodeLine{00721\ \ \ \ \ TObjectPtr<UStaticMesh>\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a62c48d011fa28ef6168850937fa57300}{DebugVoxelMesh}};}
+\DoxyCodeLine{00722\ }
+\DoxyCodeLine{00724\ \ \ \ \ UPROPERTY(EditDefaultsOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Debug"{}},\ meta\ =\ (AdvancedDisplay))}
+\DoxyCodeLine{00725\ \ \ \ \ TObjectPtr<UMaterialInterface>\ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a4d15ba929200aba896ef14157b549624}{DebugVoxelMaterial}};}
+\DoxyCodeLine{00726\ }
+\DoxyCodeLine{00727\ private:}
+\DoxyCodeLine{00729\ \ \ \ \ \textcolor{keywordtype}{void}\ DrawDebugVisualization()\ const;}
+\DoxyCodeLine{00730\ }
+\DoxyCodeLine{00732\ \ \ \ \ \textcolor{keywordtype}{void}\ DrawDebugBounds()\ const;}
+\DoxyCodeLine{00733\ }
+\DoxyCodeLine{00735\ \ \ \ \ \textcolor{keywordtype}{void}\ DrawDebugVoxelWireframes()\ const;}
+\DoxyCodeLine{00736\ }
+\DoxyCodeLine{00738\ \ \ \ \ \textcolor{keywordtype}{void}\ DrawDebugVoxelMeshes()\ const;}
+\DoxyCodeLine{00739\ }
+\DoxyCodeLine{00741\ \ \ \ \ \textcolor{keywordtype}{void}\ DrawDebugStatusText()\ const;}
+\DoxyCodeLine{00742\ }
+\DoxyCodeLine{00744\ \ \ \ \ uint32\ CalculateSimulationChecksum()\ const;}
+\DoxyCodeLine{00745\ }
+\DoxyCodeLine{00747\ \ \ \ \ \textcolor{keywordtype}{bool}\ bIsEditorPreviewing\ =\ false;}
+\DoxyCodeLine{00748\ \textcolor{preprocessor}{\#pragma\ endregion}}
+\DoxyCodeLine{00749\ \};}
+
+\end{DoxyCode}

@@ -1,0 +1,185 @@
+\doxysection{IVSmoke\+Hole\+Data.\+h}
+\hypertarget{_i_v_smoke_hole_data_8h_source}{}\label{_i_v_smoke_hole_data_8h_source}\index{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeHoleData.h@{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeHoleData.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//\ Copyright\ (c)\ 2026,\ Team\ SDB.\ All\ rights\ reserved.}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}CoreMinimal.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}Net/Serialization/FastArraySerializer.h"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}IVSmokeHoleCarveCS.h"{}}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}IVSmokeHoleData.generated.h"{}}}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array}{FIVSmokeHoleArray}};}
+\DoxyCodeLine{00011\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component}{UIVSmokeHoleGeneratorComponent}};}
+\DoxyCodeLine{00012\ \textcolor{keyword}{class\ }\doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmokeHolePreset}};}
+\DoxyCodeLine{00013\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u}{FIVSmokeHoleGPU}};}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00019\ USTRUCT()}
+\DoxyCodeLine{00020\ struct\ IVSMOKE\_API\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_dynamic_subject}{FIVSmokeHoleDynamicSubject}}}
+\DoxyCodeLine{00021\ \{}
+\DoxyCodeLine{00022\ \ \ \ \ GENERATED\_BODY()}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \ \ \ \ }
+\DoxyCodeLine{00025\ \ \ \ \ UPROPERTY(Transient)}
+\DoxyCodeLine{00026\ \ \ \ \ TWeakObjectPtr<AActor>\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_dynamic_subject_a5ee020c33b20dbd0affd895327d0dd6f}{TargetActor}};}
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00029\ \ \ \ \ UPROPERTY(Transient)}
+\DoxyCodeLine{00030\ \ \ \ \ uint8\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_dynamic_subject_a0e426e5c49b315515b64ca2939004537}{PresetID}}\ =\ 0;}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00033\ \ \ \ \ UPROPERTY(Transient)}
+\DoxyCodeLine{00034\ \ \ \ \ FVector3f\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_dynamic_subject_a1f558dc91a289389a0845b5a3a26d5cf}{LastWorldPosition}}\ =\ FVector3f::ZeroVector;}
+\DoxyCodeLine{00035\ }
+\DoxyCodeLine{00037\ \ \ \ \ UPROPERTY(Transient)}
+\DoxyCodeLine{00038\ \ \ \ \ FQuat\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_dynamic_subject_a14d2ee6fe879dfc2686989140593eb7c}{LastWorldRotation}}\ =\ FQuat::Identity;}
+\DoxyCodeLine{00039\ }
+\DoxyCodeLine{00041\ \ \ \ \ FORCEINLINE\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_dynamic_subject_a03263ac33d26fe553c6ee7fc539f64e9}{IsValid}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_dynamic_subject_a5ee020c33b20dbd0affd895327d0dd6f}{TargetActor}}.IsValid();\ \}}
+\DoxyCodeLine{00042\ \};}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00048\ USTRUCT(BlueprintType)}
+\DoxyCodeLine{00049\ struct\ IVSMOKE\_API\ FIVSmokeHoleData\ :\ public\ FFastArraySerializerItem}
+\DoxyCodeLine{00050\ \{}
+\DoxyCodeLine{00051\ \ \ \ \ GENERATED\_BODY()}
+\DoxyCodeLine{00052\ }
+\DoxyCodeLine{00053\ \ \ \ \ FIVSmokeHoleData()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00054\ }
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data_a4a8f292a4fad6ac86ef03e0e600e79da}{PostReplicatedAdd}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array}{FIVSmokeHoleArray}}\&\ InArray);}
+\DoxyCodeLine{00057\ }
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data_a5d10460e61399a65287975eb8aa7c3c6}{PostReplicatedChange}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array}{FIVSmokeHoleArray}}\&\ InArray);}
+\DoxyCodeLine{00060\ }
+\DoxyCodeLine{00062\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data_a7ae21975d1b0f15c77232c00d5c7c680}{PreReplicatedRemove}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array}{FIVSmokeHoleArray}}\&\ InArray);}
+\DoxyCodeLine{00063\ }
+\DoxyCodeLine{00064\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00067\ \ \ \ \ UPROPERTY(Transient)}
+\DoxyCodeLine{00068\ \ \ \ \ FVector3f\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data_a2f624fb78b9fde72ace88071b81202e1}{Position}}\ =\ FVector3f::ZeroVector;}
+\DoxyCodeLine{00069\ }
+\DoxyCodeLine{00071\ \ \ \ \ UPROPERTY(Transient)}
+\DoxyCodeLine{00072\ \ \ \ \ FVector3f\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data_a3f07227c98373bd01004608646392eda}{EndPosition}}\ =\ FVector3f::ZeroVector;}
+\DoxyCodeLine{00073\ }
+\DoxyCodeLine{00075\ \ \ \ \ UPROPERTY(Transient)}
+\DoxyCodeLine{00076\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data_a7ea951ba1de19e219d3cb87afb987d8e}{ExpirationServerTime}}\ =\ 0.0f;}
+\DoxyCodeLine{00077\ }
+\DoxyCodeLine{00079\ \ \ \ \ UPROPERTY(Transient)}
+\DoxyCodeLine{00080\ \ \ \ \ uint8\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data_a85dd55314c5d9140bee61973e31f79c2}{PresetID}}\ =\ 0;}
+\DoxyCodeLine{00081\ }
+\DoxyCodeLine{00083\ \ \ \ \ FORCEINLINE\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data_ae93fe0f2762429d569ac2bd633712f6f}{IsExpired}}(const\ \textcolor{keywordtype}{float}\ CurrentServerTime)\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ CurrentServerTime\ >=\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data_a7ea951ba1de19e219d3cb87afb987d8e}{ExpirationServerTime}};\ \}}
+\DoxyCodeLine{00084\ \};}
+\DoxyCodeLine{00085\ }
+\DoxyCodeLine{00090\ USTRUCT()}
+\DoxyCodeLine{00091\ struct\ IVSMOKE\_API\ FIVSmokeHoleArray\ :\ public\ FFastArraySerializer}
+\DoxyCodeLine{00092\ \{}
+\DoxyCodeLine{00093\ \ \ \ \ GENERATED\_BODY()}
+\DoxyCodeLine{00094\ }
+\DoxyCodeLine{00095\ \ \ \ \ FIVSmokeHoleArray()\ :\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_abb5e016e74c5c94721fa79451abea3fb}{OwnerComponent}}(\textcolor{keyword}{nullptr})\ \{\}}
+\DoxyCodeLine{00096\ }
+\DoxyCodeLine{00097\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00099\ \ \ \ \ UPROPERTY(Transient,\ VisibleAnywhere)}
+\DoxyCodeLine{00100\ \ \ \ \ TArray<FIVSmokeHoleData>\ Items;}
+\DoxyCodeLine{00101\ }
+\DoxyCodeLine{00102\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00104\ \ \ \ \ UPROPERTY(Transient,\ NotReplicated)}
+\DoxyCodeLine{00105\ \ \ \ \ TObjectPtr<\doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component}{UIVSmokeHoleGeneratorComponent}}>\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_abb5e016e74c5c94721fa79451abea3fb}{OwnerComponent}};}
+\DoxyCodeLine{00106\ }
+\DoxyCodeLine{00108\ \ \ \ \ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_a1606705a0db36b04e48845f78f494584}{NetDeltaSerialize}}(FNetDeltaSerializeInfo\&\ DeltaParms)}
+\DoxyCodeLine{00109\ \ \ \ \ \{}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ FFastArraySerializer::FastArrayDeltaSerialize<FIVSmokeHoleData,\ FIVSmokeHoleArray>(}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ \ \ \ \ Items,\ DeltaParms,\ *\textcolor{keyword}{this}}
+\DoxyCodeLine{00112\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00113\ \ \ \ \ \}}
+\DoxyCodeLine{00114\ }
+\DoxyCodeLine{00116\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_a672cf3fc8492dabcf6ebc8ab4a4be920}{AddHole}}(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data}{FIVSmokeHoleData}}\&\ NewHole)}
+\DoxyCodeLine{00117\ \ \ \ \ \{}
+\DoxyCodeLine{00118\ \ \ \ \ \ \ \ \ Items.Add(NewHole);}
+\DoxyCodeLine{00119\ \ \ \ \ \ \ \ \ MarkItemDirty(Items.Last());}
+\DoxyCodeLine{00120\ \ \ \ \ \}}
+\DoxyCodeLine{00121\ }
+\DoxyCodeLine{00123\ \ \ \ \ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_a6486cb154f1611cc53b185b3e0521985}{RemoveAtSwap}}(\textcolor{keyword}{const}\ int32\ Index)}
+\DoxyCodeLine{00124\ \ \ \ \ \{}
+\DoxyCodeLine{00125\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Items.IsValidIndex(Index))}
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00127\ \ \ \ \ \ \ \ \ \ \ \ \ Items.RemoveAtSwap(Index);}
+\DoxyCodeLine{00128\ \ \ \ \ \ \ \ \ \ \ \ \ MarkArrayDirty();}
+\DoxyCodeLine{00129\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00130\ \ \ \ \ \}}
+\DoxyCodeLine{00131\ }
+\DoxyCodeLine{00133\ \ \ \ \ FORCEINLINE\ int32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_ac62c844392b1663be55934685508b676}{Num}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ Items.Num();\ \}}
+\DoxyCodeLine{00134\ }
+\DoxyCodeLine{00136\ \ \ \ \ FORCEINLINE\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_a045dfae532c8e4100b733d50bf2ec296}{IsValidIndex}}(\textcolor{keyword}{const}\ int32\ Index)\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ Items.IsValidIndex(Index);\ \}}
+\DoxyCodeLine{00137\ }
+\DoxyCodeLine{00139\ \ \ \ \ FORCEINLINE\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data}{FIVSmokeHoleData}}\&\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_ab51a88ddec529b67d7c7fb98deae81aa}{operator[]}}(\textcolor{keyword}{const}\ int32\ Index)\ \{\ \textcolor{keywordflow}{return}\ Items[Index];\ \}}
+\DoxyCodeLine{00140\ }
+\DoxyCodeLine{00142\ \ \ \ \ FORCEINLINE\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data}{FIVSmokeHoleData}}\&\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_a4fb4657d888d61072fccf8f393bd0dea}{operator[]}}(\textcolor{keyword}{const}\ int32\ Index)\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ Items[Index];\ \}}
+\DoxyCodeLine{00143\ }
+\DoxyCodeLine{00145\ \ \ \ \ FORCEINLINE\ \textcolor{keywordtype}{void}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array_a797e3548d740590d29497bee643caec0}{Reserve}}(\textcolor{keyword}{const}\ int32\ Number)\ \{\ Items.Reserve(Number);\ \}}
+\DoxyCodeLine{00146\ }
+\DoxyCodeLine{00148\ \ \ \ \ TArray<FIVSmokeHoleGPU>\ GetHoleGPUData(\textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ CurrentServerTime)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00149\ \};}
+\DoxyCodeLine{00150\ }
+\DoxyCodeLine{00151\ \textcolor{comment}{//\ Enable\ delta\ serialization\ for\ FIVSmokeHoleArray}}
+\DoxyCodeLine{00152\ \textcolor{keyword}{template}<>}
+\DoxyCodeLine{00153\ \textcolor{keyword}{struct\ }TStructOpsTypeTraits<\doxymbox{\hyperlink{struct_f_i_v_smoke_hole_array}{FIVSmokeHoleArray}}>\ :\ \textcolor{keyword}{public}\ TStructOpsTypeTraitsBase2<FIVSmokeHoleArray>}
+\DoxyCodeLine{00154\ \{}
+\DoxyCodeLine{00155\ \ \ \ \ \textcolor{keyword}{enum}}
+\DoxyCodeLine{00156\ \ \ \ \ \{}
+\DoxyCodeLine{00157\ \ \ \ \ \ \ \ \ WithNetDeltaSerializer\ =\ \textcolor{keyword}{true},}
+\DoxyCodeLine{00158\ \ \ \ \ \};}
+\DoxyCodeLine{00159\ \};}
+\DoxyCodeLine{00160\ }
+\DoxyCodeLine{00165\ \textcolor{keyword}{struct\ }\textcolor{keyword}{alignas}(16)\ FIVSmokeHoleGPU}
+\DoxyCodeLine{00166\ \{}
+\DoxyCodeLine{00167\ \ \ \ \ FIVSmokeHoleGPU()\ =\ \textcolor{keywordflow}{default};}
+\DoxyCodeLine{00168\ }
+\DoxyCodeLine{00175\ \ \ \ \ FIVSmokeHoleGPU(\textcolor{keyword}{const}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_data}{FIVSmokeHoleData}}\&\ DynamicHoleData,\ \textcolor{keyword}{const}\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmokeHolePreset}}\&\ Preset,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ CurrentServerTime);}
+\DoxyCodeLine{00176\ }
+\DoxyCodeLine{00177\ \ \ \ \ \textcolor{comment}{//\string~============================================================================}}
+\DoxyCodeLine{00178\ \ \ \ \ \textcolor{comment}{//\ Common}}
+\DoxyCodeLine{00179\ }
+\DoxyCodeLine{00181\ \ \ \ \ FVector3f\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u_a9a284ca9615b34fde70c44d10f5cd7cc}{Position}};}
+\DoxyCodeLine{00182\ }
+\DoxyCodeLine{00184\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u_acd1ecab8df496b78b40b4bda23e4ba05}{CurLifeTime}};}
+\DoxyCodeLine{00185\ }
+\DoxyCodeLine{00187\ \ \ \ \ \textcolor{keywordtype}{int}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u_a37501f6f97aa97bc608580ebd30d1b78}{HoleType}};}
+\DoxyCodeLine{00188\ }
+\DoxyCodeLine{00190\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u_a1501f82126739423e402207e183ae572}{Radius}};}
+\DoxyCodeLine{00191\ }
+\DoxyCodeLine{00193\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u_a645208cb2ccc34402b8d82997d07a5b6}{Duration}};}
+\DoxyCodeLine{00194\ }
+\DoxyCodeLine{00196\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u_a6cbbc6d1b38e7b167216898816e3a964}{Softness}};}
+\DoxyCodeLine{00197\ }
+\DoxyCodeLine{00198\ \ \ \ \ \textcolor{comment}{//\string~============================================================================}}
+\DoxyCodeLine{00199\ \ \ \ \ \textcolor{comment}{//\ Dynamic}}
+\DoxyCodeLine{00200\ }
+\DoxyCodeLine{00202\ \ \ \ \ FVector3f\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u_a629ed3f93b27c8a3e3b663d27baa555f}{Extent}};}
+\DoxyCodeLine{00203\ }
+\DoxyCodeLine{00204\ \ \ \ \ \textcolor{keywordtype}{float}\ DynamicPadding;}
+\DoxyCodeLine{00205\ }
+\DoxyCodeLine{00206\ \ \ \ \ \textcolor{comment}{//\string~============================================================================}}
+\DoxyCodeLine{00207\ \ \ \ \ \textcolor{comment}{//\ Explosion}}
+\DoxyCodeLine{00208\ }
+\DoxyCodeLine{00210\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u_ace3ff9c05ab6083d8dce5781f28414f9}{ExpansionDuration}};}
+\DoxyCodeLine{00211\ }
+\DoxyCodeLine{00213\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u_a6be0b61ad375a38673fef8ddf58676ef}{CurExpansionFadeRangeOverTime}};}
+\DoxyCodeLine{00214\ }
+\DoxyCodeLine{00216\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u_affff65e2cba5ccbb9ae57c2b12f4f327}{CurShrinkFadeRangeOverTime}};}
+\DoxyCodeLine{00217\ }
+\DoxyCodeLine{00219\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u_ad40547711be85d335e19fc0dacad72d9}{CurShrinkDensityMulOverTime}};}
+\DoxyCodeLine{00220\ }
+\DoxyCodeLine{00222\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u_a1579757d6924c2955cb21840e12c5b9f}{CurDistortionOverTime}};}
+\DoxyCodeLine{00223\ }
+\DoxyCodeLine{00225\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u_a10f5b7cee433e92e55686c953963bd53}{DistortionDistance}};}
+\DoxyCodeLine{00226\ }
+\DoxyCodeLine{00227\ \ \ \ \ FVector2f\ PresetExplosionPadding;}
+\DoxyCodeLine{00228\ }
+\DoxyCodeLine{00230\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u_a9f307df502e6cdf6614fe0516054bc4d}{DistortionCurveOverDistance}}[FIVSmokeHoleCarveCS::CurveSampleCount];}
+\DoxyCodeLine{00231\ }
+\DoxyCodeLine{00232\ \ \ \ \ \textcolor{comment}{//\string~============================================================================}}
+\DoxyCodeLine{00233\ \ \ \ \ \textcolor{comment}{//\ Penetration}}
+\DoxyCodeLine{00234\ }
+\DoxyCodeLine{00236\ \ \ \ \ FVector3f\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u_a40bd154cfb95d0ee60deed439c071b8f}{EndPosition}};}
+\DoxyCodeLine{00237\ }
+\DoxyCodeLine{00239\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_hole_g_p_u_a0bb1bbc15e1c61bcd8dfa3cf1e2dfb9e}{EndRadius}};}
+\DoxyCodeLine{00240\ \};}
+
+\end{DoxyCode}

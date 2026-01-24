@@ -1,0 +1,321 @@
+\doxysection{IVSmoke\+Shaders.\+h}
+\hypertarget{_i_v_smoke_shaders_8h_source}{}\label{_i_v_smoke_shaders_8h_source}\index{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeShaders.h@{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeShaders.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//\ Copyright\ (c)\ 2026,\ Team\ SDB.\ All\ rights\ reserved.}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}CoreMinimal.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}GlobalShader.h"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}ShaderParameterStruct.h"{}}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}RenderGraphUtils.h"{}}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ "{}SceneTexturesConfig.h"{}}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ "{}SceneView.h"{}}}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00013\ \textcolor{comment}{//\ GPU\ Data\ Structures\ for\ Multi-\/Volume\ Rendering}}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00022\ \textcolor{keyword}{struct\ }\doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data}{FIVSmokeVolumeGPUData}}}
+\DoxyCodeLine{00023\ \{}
+\DoxyCodeLine{00025\ \ \ \ \ FIntVector3\ \doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data_aa03734e55ac15c7d45358f7ab29c37e6}{GridResolution}};\ \ \ \ \ \textcolor{comment}{//\ 12\ bytes}}
+\DoxyCodeLine{00027\ \ \ \ \ uint32\ \doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data_abcaaa586b72b4d4ceaebe13421b7a0c5}{VoxelCount}};\ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 4\ bytes}}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00030\ \ \ \ \ FVector3f\ \doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data_ac041b8ae231ea2e28dd0a83ae5eef6fb}{SmokeColor}};\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 12\ bytes}}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data_aacfb4045e588885a483b5d97062af6b8}{Absorption}};\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 4\ bytes}}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00035\ \ \ \ \ FVector3f\ \doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data_ab8c93d865e5b62ea30aedfd89765ad0c}{CenterOffset}};\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 12\ bytes}}
+\DoxyCodeLine{00037\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data_af21ce1649d8e522886f81c5917e8cefa}{DensityScale}};\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 4\ bytes}}
+\DoxyCodeLine{00038\ }
+\DoxyCodeLine{00040\ \ \ \ \ FVector3f\ \doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data_a90c81eba4f798dd2f6d54c34f49b2f13}{VolumeWorldAABBMin}};\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 12\ bytes}}
+\DoxyCodeLine{00041\ \ \ \ \ \textcolor{keywordtype}{float}\ VoxelSize;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 4\ bytes}}
+\DoxyCodeLine{00042\ }
+\DoxyCodeLine{00044\ \ \ \ \ FVector3f\ \doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data_ae86657b574f5f952f47c71a28c91c039}{VolumeWorldAABBMax}};\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 12\ bytes}}
+\DoxyCodeLine{00045\ \ \ \ \ uint32\ VoxelBufferOffset;\ \ \ \ \ \ \ \textcolor{comment}{//\ 4\ bytes}}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \ \ \ \ FVector3f\ VoxelWorldAABBMin;\ \ \ \ \textcolor{comment}{//\ 12\ bytes}}
+\DoxyCodeLine{00048\ \ \ \ \ \textcolor{keywordtype}{float}\ FadeInDuration;\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 4\ bytes}}
+\DoxyCodeLine{00049\ \ \ \ \ FVector3f\ VoxelWorldAABBMax;\ \ \ \ \textcolor{comment}{//\ 12\ bytes}}
+\DoxyCodeLine{00050\ \ \ \ \ \textcolor{keywordtype}{float}\ FadeOutDuration;\ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 4\ bytes}}
+\DoxyCodeLine{00051\ }
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{keywordtype}{float}\ Reserved[4];\ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 16\ bytes\ (future\ use\ /\ alignment)}}
+\DoxyCodeLine{00053\ \};}
+\DoxyCodeLine{00054\ }
+\DoxyCodeLine{00055\ \textcolor{comment}{//\ Ensure\ structure\ is\ 256\ bytes\ for\ efficient\ GPU\ access}}
+\DoxyCodeLine{00056\ \textcolor{keyword}{static\_assert}(\textcolor{keyword}{sizeof}(\doxymbox{\hyperlink{struct_f_i_v_smoke_volume_g_p_u_data}{FIVSmokeVolumeGPUData}})\ \%\ 16\ ==\ 0,\ \textcolor{stringliteral}{"{}FIVSmokeVolumeGPUData\ size\ error"{}});}
+\DoxyCodeLine{00057\ }
+\DoxyCodeLine{00058\ \textcolor{comment}{//\ Note:\ FIVSmokeMultiVolumeRayMarchCS\ is\ now\ defined\ in\ IVSmokeOccupancy.h}}
+\DoxyCodeLine{00059\ \textcolor{comment}{//\ (Occupancy-\/based\ ray\ marching\ has\ replaced\ the\ original\ implementation)}}
+\DoxyCodeLine{00060\ }
+\DoxyCodeLine{00061\ \textcolor{keyword}{class\ }IVSMOKE\_API\ \doxymbox{\hyperlink{class_f_i_v_smoke_noise_generator_global_c_s}{FIVSmokeNoiseGeneratorGlobalCS}}\ :\ \textcolor{keyword}{public}\ FGlobalShader}
+\DoxyCodeLine{00062\ \{}
+\DoxyCodeLine{00063\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00064\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeX\ =\ 8;}
+\DoxyCodeLine{00065\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeY\ =\ 8;}
+\DoxyCodeLine{00066\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeZ\ =\ 8;}
+\DoxyCodeLine{00067\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{const}\ TCHAR*\ EventName\ =\ TEXT(\textcolor{stringliteral}{"{}IVSmokeNoiseGeneratorGlobalCS"{}});}
+\DoxyCodeLine{00068\ }
+\DoxyCodeLine{00069\ \ \ \ \ DECLARE\_GLOBAL\_SHADER(\doxymbox{\hyperlink{class_f_i_v_smoke_noise_generator_global_c_s}{FIVSmokeNoiseGeneratorGlobalCS}});}
+\DoxyCodeLine{00070\ \ \ \ \ SHADER\_USE\_PARAMETER\_STRUCT(\doxymbox{\hyperlink{class_f_i_v_smoke_noise_generator_global_c_s}{FIVSmokeNoiseGeneratorGlobalCS}},\ FGlobalShader);}
+\DoxyCodeLine{00071\ \ \ \ \ BEGIN\_SHADER\_PARAMETER\_STRUCT(FParameters,\ )}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE\_UAV(RWTexture3D<float>,\ RWNoiseTex)}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FUintVector3,\ TexSize)}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(int32,\ Octaves)}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ Wrap)}
+\DoxyCodeLine{00081\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(int32,\ AxisCellCount)}
+\DoxyCodeLine{00083\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ Amplitude)}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(int32,\ CellSize)}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(int32,\ Seed)}
+\DoxyCodeLine{00088\ \ \ \ \ END\_SHADER\_PARAMETER\_STRUCT()}
+\DoxyCodeLine{00089\ }
+\DoxyCodeLine{00090\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00091\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_i_v_smoke_noise_generator_global_c_s_ab76a70a0103dfffd10049fa3d790be89}{ShouldCompilePermutation}}(\textcolor{keyword}{const}\ FGlobalShaderPermutationParameters\&\ Parameters)}
+\DoxyCodeLine{00092\ \ \ \ \ \{}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ IsFeatureLevelSupported(Parameters.Platform,\ ERHIFeatureLevel::SM5);}
+\DoxyCodeLine{00094\ \ \ \ \ \}}
+\DoxyCodeLine{00095\ \};}
+\DoxyCodeLine{00096\ \textcolor{keyword}{class\ }IVSMOKE\_API\ \doxymbox{\hyperlink{class_f_i_v_smoke_structured_to_texture_c_s}{FIVSmokeStructuredToTextureCS}}\ :\ \textcolor{keyword}{public}\ FGlobalShader}
+\DoxyCodeLine{00097\ \{}
+\DoxyCodeLine{00098\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00099\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeX\ =\ 8;}
+\DoxyCodeLine{00100\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeY\ =\ 8;}
+\DoxyCodeLine{00101\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeZ\ =\ 8;}
+\DoxyCodeLine{00102\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{const}\ TCHAR*\ EventName\ =\ TEXT(\textcolor{stringliteral}{"{}IVSmokeStructuredToTextureCS"{}});}
+\DoxyCodeLine{00103\ }
+\DoxyCodeLine{00104\ \ \ \ \ DECLARE\_GLOBAL\_SHADER(\doxymbox{\hyperlink{class_f_i_v_smoke_structured_to_texture_c_s}{FIVSmokeStructuredToTextureCS}});}
+\DoxyCodeLine{00105\ \ \ \ \ SHADER\_USE\_PARAMETER\_STRUCT(\doxymbox{\hyperlink{class_f_i_v_smoke_structured_to_texture_c_s}{FIVSmokeStructuredToTextureCS}},\ FGlobalShader);}
+\DoxyCodeLine{00106\ \ \ \ \ BEGIN\_SHADER\_PARAMETER\_STRUCT(FParameters,\ )}
+\DoxyCodeLine{00108\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE\_UAV(RWTexture3D<float>,\ Desti)}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_BUFFER\_SRV(StructuredBuffer<float>,\ BirthTimes)}
+\DoxyCodeLine{00112\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_BUFFER\_SRV(StructuredBuffer<float>,\ DeathTimes)}
+\DoxyCodeLine{00114\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_BUFFER\_SRV(StructuredBuffer<FIVSmokeVolumeGPUData>,\ VolumeDataBuffer)}
+\DoxyCodeLine{00115\ }
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00117\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FIntVector,\ TexSize)}
+\DoxyCodeLine{00119\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FIntVector,\ VoxelResolution)}
+\DoxyCodeLine{00121\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(int32,\ PackedInterval)}
+\DoxyCodeLine{00123\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ GameTime)}
+\DoxyCodeLine{00124\ \ \ \ \ END\_SHADER\_PARAMETER\_STRUCT()}
+\DoxyCodeLine{00125\ }
+\DoxyCodeLine{00126\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00127\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_i_v_smoke_structured_to_texture_c_s_a81928005341691f94c0098fd27d922ce}{ShouldCompilePermutation}}(\textcolor{keyword}{const}\ FGlobalShaderPermutationParameters\&\ Parameters)}
+\DoxyCodeLine{00128\ \ \ \ \ \{}
+\DoxyCodeLine{00129\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ IsFeatureLevelSupported(Parameters.Platform,\ ERHIFeatureLevel::SM5);}
+\DoxyCodeLine{00130\ \ \ \ \ \}}
+\DoxyCodeLine{00131\ \};}
+\DoxyCodeLine{00132\ \textcolor{keyword}{class\ }IVSMOKE\_API\ \doxymbox{\hyperlink{class_f_i_v_smoke_voxel_f_x_a_a_c_s}{FIVSmokeVoxelFXAACS}}\ :\ \textcolor{keyword}{public}\ FGlobalShader}
+\DoxyCodeLine{00133\ \{}
+\DoxyCodeLine{00134\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00135\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeX\ =\ 8;}
+\DoxyCodeLine{00136\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeY\ =\ 8;}
+\DoxyCodeLine{00137\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeZ\ =\ 8;}
+\DoxyCodeLine{00138\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{const}\ TCHAR*\ EventName\ =\ TEXT(\textcolor{stringliteral}{"{}IVSmokeVoxelFXAACS"{}});}
+\DoxyCodeLine{00139\ }
+\DoxyCodeLine{00140\ \ \ \ \ DECLARE\_GLOBAL\_SHADER(\doxymbox{\hyperlink{class_f_i_v_smoke_voxel_f_x_a_a_c_s}{FIVSmokeVoxelFXAACS}});}
+\DoxyCodeLine{00141\ \ \ \ \ SHADER\_USE\_PARAMETER\_STRUCT(\doxymbox{\hyperlink{class_f_i_v_smoke_voxel_f_x_a_a_c_s}{FIVSmokeVoxelFXAACS}},\ FGlobalShader);}
+\DoxyCodeLine{00142\ \ \ \ \ BEGIN\_SHADER\_PARAMETER\_STRUCT(FParameters,\ )}
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE\_UAV(RWTexture3D<float>,\ Desti)}
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE\_SRV(Texture3D<float>,\ Source)}
+\DoxyCodeLine{00148\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_SAMPLER(SamplerState,\ LinearBorder\_Sampler)}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FIntVector,\ TexSize)}
+\DoxyCodeLine{00151\ }
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00153\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ FXAASpanMax)}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ FXAARange)}
+\DoxyCodeLine{00157\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ FXAASharpness)}
+\DoxyCodeLine{00158\ \ \ \ \ END\_SHADER\_PARAMETER\_STRUCT()}
+\DoxyCodeLine{00159\ \};}
+\DoxyCodeLine{00160\ }
+\DoxyCodeLine{00161\ \textcolor{keyword}{class\ }IVSMOKE\_API\ \doxymbox{\hyperlink{class_f_i_v_smoke_sharpen_composite_p_s}{FIVSmokeSharpenCompositePS}}\ :\ \textcolor{keyword}{public}\ FGlobalShader}
+\DoxyCodeLine{00162\ \{}
+\DoxyCodeLine{00163\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00164\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{const}\ TCHAR*\ EventName\ =\ TEXT(\textcolor{stringliteral}{"{}IVSmokeSharpenCompositePS"{}});}
+\DoxyCodeLine{00165\ \ \ \ \ \textcolor{keyword}{static}\ FRHIBlendState*\ GetBlendState()}
+\DoxyCodeLine{00166\ \ \ \ \ \{}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ TStaticBlendState<>::GetRHI();}
+\DoxyCodeLine{00168\ \ \ \ \ \}}
+\DoxyCodeLine{00169\ }
+\DoxyCodeLine{00170\ \ \ \ \ DECLARE\_GLOBAL\_SHADER(\doxymbox{\hyperlink{class_f_i_v_smoke_sharpen_composite_p_s}{FIVSmokeSharpenCompositePS}});}
+\DoxyCodeLine{00171\ \ \ \ \ SHADER\_USE\_PARAMETER\_STRUCT(\doxymbox{\hyperlink{class_f_i_v_smoke_sharpen_composite_p_s}{FIVSmokeSharpenCompositePS}},\ FGlobalShader);}
+\DoxyCodeLine{00172\ }
+\DoxyCodeLine{00173\ \ \ \ \ BEGIN\_SHADER\_PARAMETER\_STRUCT(FParameters,\ )}
+\DoxyCodeLine{00175\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE(Texture2D,\ SceneTex)}
+\DoxyCodeLine{00177\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE(Texture2D,\ SmokeAlbedoTex)}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE(Texture2D,\ SmokeMaskTex)}
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_SAMPLER(SamplerState,\ LinearRepeat\_Sampler)}
+\DoxyCodeLine{00183\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ Sharpness)}
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector2f,\ ViewportSize)}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector2f,\ ViewRectMin)}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ RENDER\_TARGET\_BINDING\_SLOTS()}
+\DoxyCodeLine{00189\ \ \ \ \ END\_SHADER\_PARAMETER\_STRUCT()}
+\DoxyCodeLine{00190\ }
+\DoxyCodeLine{00191\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00192\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_i_v_smoke_sharpen_composite_p_s_afc4a8948d8f3c1dd2b790d5512e6a23b}{ShouldCompilePermutation}}(\textcolor{keyword}{const}\ FGlobalShaderPermutationParameters\&\ Parameters)}
+\DoxyCodeLine{00193\ \ \ \ \ \{}
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ IsFeatureLevelSupported(Parameters.Platform,\ ERHIFeatureLevel::SM5);}
+\DoxyCodeLine{00195\ \ \ \ \ \}}
+\DoxyCodeLine{00196\ \};}
+\DoxyCodeLine{00197\ \textcolor{keyword}{class\ }IVSMOKE\_API\ \doxymbox{\hyperlink{class_f_i_v_smoke_copy_p_s}{FIVSmokeCopyPS}}\ :\ \textcolor{keyword}{public}\ FGlobalShader}
+\DoxyCodeLine{00198\ \{}
+\DoxyCodeLine{00199\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00200\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{const}\ TCHAR*\ EventName\ =\ TEXT(\textcolor{stringliteral}{"{}IVSmokeCopyPS"{}});}
+\DoxyCodeLine{00201\ \ \ \ \ \textcolor{keyword}{static}\ FRHIBlendState*\ GetBlendState()}
+\DoxyCodeLine{00202\ \ \ \ \ \{}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ TStaticBlendState<>::GetRHI();}
+\DoxyCodeLine{00204\ \ \ \ \ \}}
+\DoxyCodeLine{00205\ }
+\DoxyCodeLine{00206\ \ \ \ \ DECLARE\_GLOBAL\_SHADER(\doxymbox{\hyperlink{class_f_i_v_smoke_copy_p_s}{FIVSmokeCopyPS}});}
+\DoxyCodeLine{00207\ \ \ \ \ SHADER\_USE\_PARAMETER\_STRUCT(\doxymbox{\hyperlink{class_f_i_v_smoke_copy_p_s}{FIVSmokeCopyPS}},\ FGlobalShader);}
+\DoxyCodeLine{00208\ }
+\DoxyCodeLine{00209\ \ \ \ \ BEGIN\_SHADER\_PARAMETER\_STRUCT(FParameters,\ )}
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE(Texture2D,\ MainTex)}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_SAMPLER(SamplerState,\ LinearRepeat\_Sampler)}
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector2f,\ ViewportSize)}
+\DoxyCodeLine{00216\ \ \ \ \ \ \ \ \ RENDER\_TARGET\_BINDING\_SLOTS()}
+\DoxyCodeLine{00217\ \ \ \ \ END\_SHADER\_PARAMETER\_STRUCT()}
+\DoxyCodeLine{00218\ }
+\DoxyCodeLine{00219\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00220\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_i_v_smoke_copy_p_s_acbe81689223656eb0e55178a334d5876}{ShouldCompilePermutation}}(\textcolor{keyword}{const}\ FGlobalShaderPermutationParameters\&\ Parameters)}
+\DoxyCodeLine{00221\ \ \ \ \ \{}
+\DoxyCodeLine{00222\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ IsFeatureLevelSupported(Parameters.Platform,\ ERHIFeatureLevel::SM5);}
+\DoxyCodeLine{00223\ \ \ \ \ \}}
+\DoxyCodeLine{00224\ \};}
+\DoxyCodeLine{00225\ }
+\DoxyCodeLine{00231\ \textcolor{keyword}{class\ }IVSMOKE\_API\ \doxymbox{\hyperlink{class_f_i_v_smoke_translucency_composite_p_s}{FIVSmokeTranslucencyCompositePS}}\ :\ \textcolor{keyword}{public}\ FGlobalShader}
+\DoxyCodeLine{00232\ \{}
+\DoxyCodeLine{00233\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00234\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{const}\ TCHAR*\ EventName\ =\ TEXT(\textcolor{stringliteral}{"{}IVSmokeTranslucencyCompositePS"{}});}
+\DoxyCodeLine{00235\ \ \ \ \ \textcolor{keyword}{static}\ FRHIBlendState*\ GetBlendState()}
+\DoxyCodeLine{00236\ \ \ \ \ \{}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ TStaticBlendState<>::GetRHI();}
+\DoxyCodeLine{00238\ \ \ \ \ \}}
+\DoxyCodeLine{00239\ }
+\DoxyCodeLine{00240\ \ \ \ \ DECLARE\_GLOBAL\_SHADER(\doxymbox{\hyperlink{class_f_i_v_smoke_translucency_composite_p_s}{FIVSmokeTranslucencyCompositePS}});}
+\DoxyCodeLine{00241\ \ \ \ \ SHADER\_USE\_PARAMETER\_STRUCT(\doxymbox{\hyperlink{class_f_i_v_smoke_translucency_composite_p_s}{FIVSmokeTranslucencyCompositePS}},\ FGlobalShader);}
+\DoxyCodeLine{00242\ }
+\DoxyCodeLine{00243\ \ \ \ \ BEGIN\_SHADER\_PARAMETER\_STRUCT(FParameters,\ )}
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE(Texture2D,\ SmokeAlbedoTex)}
+\DoxyCodeLine{00247\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE(Texture2D,\ SmokeMaskTex)}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE(Texture2D,\ ParticlesTex)}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_SAMPLER(SamplerState,\ LinearSampler)}
+\DoxyCodeLine{00253\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ Sharpness)}
+\DoxyCodeLine{00255\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector2f,\ SmokeTexExtent)}
+\DoxyCodeLine{00257\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector2f,\ ParticlesTexExtent)}
+\DoxyCodeLine{00258\ \ \ \ \ \ \ \ \ RENDER\_TARGET\_BINDING\_SLOTS()}
+\DoxyCodeLine{00259\ \ \ \ \ END\_SHADER\_PARAMETER\_STRUCT()}
+\DoxyCodeLine{00260\ }
+\DoxyCodeLine{00261\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00262\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_i_v_smoke_translucency_composite_p_s_a4dba17424303c0a98fcb45a1e61a188d}{ShouldCompilePermutation}}(\textcolor{keyword}{const}\ FGlobalShaderPermutationParameters\&\ Parameters)}
+\DoxyCodeLine{00263\ \ \ \ \ \{}
+\DoxyCodeLine{00264\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ IsFeatureLevelSupported(Parameters.Platform,\ ERHIFeatureLevel::SM5);}
+\DoxyCodeLine{00265\ \ \ \ \ \}}
+\DoxyCodeLine{00266\ \};}
+\DoxyCodeLine{00267\ }
+\DoxyCodeLine{00273\ \textcolor{keyword}{class\ }IVSMOKE\_API\ \doxymbox{\hyperlink{class_f_i_v_smoke_depth_sorted_composite_p_s}{FIVSmokeDepthSortedCompositePS}}\ :\ \textcolor{keyword}{public}\ FGlobalShader}
+\DoxyCodeLine{00274\ \{}
+\DoxyCodeLine{00275\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00276\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{const}\ TCHAR*\ EventName\ =\ TEXT(\textcolor{stringliteral}{"{}IVSmokeDepthSortedCompositePS"{}});}
+\DoxyCodeLine{00277\ \ \ \ \ \textcolor{keyword}{static}\ FRHIBlendState*\ GetBlendState()}
+\DoxyCodeLine{00278\ \ \ \ \ \{}
+\DoxyCodeLine{00279\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ TStaticBlendState<>::GetRHI();}
+\DoxyCodeLine{00280\ \ \ \ \ \}}
+\DoxyCodeLine{00281\ }
+\DoxyCodeLine{00282\ \ \ \ \ DECLARE\_GLOBAL\_SHADER(\doxymbox{\hyperlink{class_f_i_v_smoke_depth_sorted_composite_p_s}{FIVSmokeDepthSortedCompositePS}});}
+\DoxyCodeLine{00283\ \ \ \ \ SHADER\_USE\_PARAMETER\_STRUCT(\doxymbox{\hyperlink{class_f_i_v_smoke_depth_sorted_composite_p_s}{FIVSmokeDepthSortedCompositePS}},\ FGlobalShader);}
+\DoxyCodeLine{00284\ }
+\DoxyCodeLine{00285\ \ \ \ \ BEGIN\_SHADER\_PARAMETER\_STRUCT(FParameters,\ )}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE(Texture2D,\ SmokeAlbedoTex)}
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE(Texture2D,\ SmokeMaskTex)}
+\DoxyCodeLine{00290\ }
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE(Texture2D,\ SeparateTranslucencyTex)}
+\DoxyCodeLine{00293\ }
+\DoxyCodeLine{00294\ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00295\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_UNIFORM\_BUFFER(FSceneTextureUniformParameters,\ SceneTexturesStruct)}
+\DoxyCodeLine{00296\ }
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00298\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_SAMPLER(SamplerState,\ PointClamp\_Sampler)}
+\DoxyCodeLine{00300\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_SAMPLER(SamplerState,\ LinearClamp\_Sampler)}
+\DoxyCodeLine{00301\ }
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00303\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector2f,\ SmokeTexExtent)}
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(\textcolor{keywordtype}{float},\ Sharpness)}
+\DoxyCodeLine{00307\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FVector4f,\ InvDeviceZToWorldZTransform)}
+\DoxyCodeLine{00308\ }
+\DoxyCodeLine{00309\ \ \ \ \ \ \ \ \ RENDER\_TARGET\_BINDING\_SLOTS()}
+\DoxyCodeLine{00310\ \ \ \ \ END\_SHADER\_PARAMETER\_STRUCT()}
+\DoxyCodeLine{00311\ }
+\DoxyCodeLine{00312\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00313\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_i_v_smoke_depth_sorted_composite_p_s_ac3f69ab344937dbc4eedacb772c5a9d2}{ShouldCompilePermutation}}(\textcolor{keyword}{const}\ FGlobalShaderPermutationParameters\&\ Parameters)}
+\DoxyCodeLine{00314\ \ \ \ \ \{}
+\DoxyCodeLine{00315\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ IsFeatureLevelSupported(Parameters.Platform,\ ERHIFeatureLevel::SM5);}
+\DoxyCodeLine{00316\ \ \ \ \ \}}
+\DoxyCodeLine{00317\ \};}
+\DoxyCodeLine{00318\ }
+\DoxyCodeLine{00319\ \textcolor{comment}{//\string~==============================================================================}}
+\DoxyCodeLine{00320\ \textcolor{comment}{//\ VSM\ (Variance\ Shadow\ Map)\ Shaders}}
+\DoxyCodeLine{00321\ }
+\DoxyCodeLine{00327\ \textcolor{keyword}{class\ }IVSMOKE\_API\ \doxymbox{\hyperlink{class_f_i_v_smoke_depth_to_variance_c_s}{FIVSmokeDepthToVarianceCS}}\ :\ \textcolor{keyword}{public}\ FGlobalShader}
+\DoxyCodeLine{00328\ \{}
+\DoxyCodeLine{00329\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00330\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeX\ =\ 8;}
+\DoxyCodeLine{00331\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeY\ =\ 8;}
+\DoxyCodeLine{00332\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeZ\ =\ 1;}
+\DoxyCodeLine{00333\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{const}\ TCHAR*\ EventName\ =\ TEXT(\textcolor{stringliteral}{"{}IVSmokeDepthToVarianceCS"{}});}
+\DoxyCodeLine{00334\ }
+\DoxyCodeLine{00335\ \ \ \ \ DECLARE\_GLOBAL\_SHADER(\doxymbox{\hyperlink{class_f_i_v_smoke_depth_to_variance_c_s}{FIVSmokeDepthToVarianceCS}});}
+\DoxyCodeLine{00336\ \ \ \ \ SHADER\_USE\_PARAMETER\_STRUCT(\doxymbox{\hyperlink{class_f_i_v_smoke_depth_to_variance_c_s}{FIVSmokeDepthToVarianceCS}},\ FGlobalShader);}
+\DoxyCodeLine{00337\ }
+\DoxyCodeLine{00338\ \ \ \ \ BEGIN\_SHADER\_PARAMETER\_STRUCT(FParameters,\ )}
+\DoxyCodeLine{00340\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE(Texture2D,\ DepthTexture)}
+\DoxyCodeLine{00342\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE\_UAV(RWTexture2D<float2>,\ VarianceTexture)}
+\DoxyCodeLine{00344\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FIntPoint,\ TextureSize)}
+\DoxyCodeLine{00345\ \ \ \ \ END\_SHADER\_PARAMETER\_STRUCT()}
+\DoxyCodeLine{00346\ }
+\DoxyCodeLine{00347\ \ \ \ \ static\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_i_v_smoke_depth_to_variance_c_s_a7c7d47b086b3c5c8daa7fbc99f9c0c0e}{ShouldCompilePermutation}}(const\ FGlobalShaderPermutationParameters\&\ Parameters)}
+\DoxyCodeLine{00348\ \ \ \ \ \{}
+\DoxyCodeLine{00349\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ IsFeatureLevelSupported(Parameters.Platform,\ ERHIFeatureLevel::SM5);}
+\DoxyCodeLine{00350\ \ \ \ \ \}}
+\DoxyCodeLine{00351\ }
+\DoxyCodeLine{00352\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ ModifyCompilationEnvironment(\textcolor{keyword}{const}\ FGlobalShaderPermutationParameters\&\ Parameters,\ FShaderCompilerEnvironment\&\ OutEnvironment)}
+\DoxyCodeLine{00353\ \ \ \ \ \{}
+\DoxyCodeLine{00354\ \ \ \ \ \ \ \ \ FGlobalShader::ModifyCompilationEnvironment(Parameters,\ OutEnvironment);}
+\DoxyCodeLine{00355\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}THREADGROUP\_SIZE\_X"{}}),\ ThreadGroupSizeX);}
+\DoxyCodeLine{00356\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}THREADGROUP\_SIZE\_Y"{}}),\ ThreadGroupSizeY);}
+\DoxyCodeLine{00357\ \ \ \ \ \}}
+\DoxyCodeLine{00358\ \};}
+\DoxyCodeLine{00359\ }
+\DoxyCodeLine{00365\ \textcolor{keyword}{class\ }IVSMOKE\_API\ \doxymbox{\hyperlink{class_f_i_v_smoke_v_s_m_blur_c_s}{FIVSmokeVSMBlurCS}}\ :\ \textcolor{keyword}{public}\ FGlobalShader}
+\DoxyCodeLine{00366\ \{}
+\DoxyCodeLine{00367\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00368\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeX\ =\ 8;}
+\DoxyCodeLine{00369\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeY\ =\ 8;}
+\DoxyCodeLine{00370\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ uint32\ ThreadGroupSizeZ\ =\ 1;}
+\DoxyCodeLine{00371\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{constexpr}\ \textcolor{keyword}{const}\ TCHAR*\ EventName\ =\ TEXT(\textcolor{stringliteral}{"{}IVSmokeVSMBlurCS"{}});}
+\DoxyCodeLine{00372\ }
+\DoxyCodeLine{00373\ \ \ \ \ DECLARE\_GLOBAL\_SHADER(\doxymbox{\hyperlink{class_f_i_v_smoke_v_s_m_blur_c_s}{FIVSmokeVSMBlurCS}});}
+\DoxyCodeLine{00374\ \ \ \ \ SHADER\_USE\_PARAMETER\_STRUCT(\doxymbox{\hyperlink{class_f_i_v_smoke_v_s_m_blur_c_s}{FIVSmokeVSMBlurCS}},\ FGlobalShader);}
+\DoxyCodeLine{00375\ }
+\DoxyCodeLine{00376\ \ \ \ \ BEGIN\_SHADER\_PARAMETER\_STRUCT(FParameters,\ )}
+\DoxyCodeLine{00378\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE(Texture2D,\ SourceTexture)}
+\DoxyCodeLine{00380\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_RDG\_TEXTURE\_UAV(RWTexture2D<float2>,\ DestTexture)}
+\DoxyCodeLine{00382\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER\_SAMPLER(SamplerState,\ LinearClampSampler)}
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(FIntPoint,\ TextureSize)}
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(int32,\ BlurRadius)}
+\DoxyCodeLine{00388\ \ \ \ \ \ \ \ \ SHADER\_PARAMETER(int32,\ BlurDirection)}
+\DoxyCodeLine{00389\ \ \ \ \ END\_SHADER\_PARAMETER\_STRUCT()}
+\DoxyCodeLine{00390\ }
+\DoxyCodeLine{00391\ \ \ \ \ static\ \textcolor{keywordtype}{bool}\ \doxymbox{\hyperlink{class_f_i_v_smoke_v_s_m_blur_c_s_aba6a6f1c555623d740dfff82585e68a7}{ShouldCompilePermutation}}(const\ FGlobalShaderPermutationParameters\&\ Parameters)}
+\DoxyCodeLine{00392\ \ \ \ \ \{}
+\DoxyCodeLine{00393\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ IsFeatureLevelSupported(Parameters.Platform,\ ERHIFeatureLevel::SM5);}
+\DoxyCodeLine{00394\ \ \ \ \ \}}
+\DoxyCodeLine{00395\ }
+\DoxyCodeLine{00396\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ ModifyCompilationEnvironment(\textcolor{keyword}{const}\ FGlobalShaderPermutationParameters\&\ Parameters,\ FShaderCompilerEnvironment\&\ OutEnvironment)}
+\DoxyCodeLine{00397\ \ \ \ \ \{}
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ FGlobalShader::ModifyCompilationEnvironment(Parameters,\ OutEnvironment);}
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}THREADGROUP\_SIZE\_X"{}}),\ ThreadGroupSizeX);}
+\DoxyCodeLine{00400\ \ \ \ \ \ \ \ \ OutEnvironment.SetDefine(TEXT(\textcolor{stringliteral}{"{}THREADGROUP\_SIZE\_Y"{}}),\ ThreadGroupSizeY);}
+\DoxyCodeLine{00401\ \ \ \ \ \}}
+\DoxyCodeLine{00402\ \};}
+
+\end{DoxyCode}

@@ -1,0 +1,82 @@
+\doxysection{FIVSmoke\+VSMBlur\+CS Class Reference}
+\hypertarget{class_f_i_v_smoke_v_s_m_blur_c_s}{}\label{class_f_i_v_smoke_v_s_m_blur_c_s}\index{FIVSmokeVSMBlurCS@{FIVSmokeVSMBlurCS}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Shaders.\+h$>$}
+
+
+
+Inheritance diagram for FIVSmoke\+VSMBlur\+CS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=244pt]{class_f_i_v_smoke_v_s_m_blur_c_s__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for FIVSmoke\+VSMBlur\+CS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=244pt]{class_f_i_v_smoke_v_s_m_blur_c_s__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_v_s_m_blur_c_s_aa52649d22e3510206448902557b13656}\label{class_f_i_v_smoke_v_s_m_blur_c_s_aa52649d22e3510206448902557b13656} 
+{\bfseries DECLARE\+\_\+\+GLOBAL\+\_\+\+SHADER} (\doxymbox{\hyperlink{class_f_i_v_smoke_v_s_m_blur_c_s}{FIVSmoke\+VSMBlur\+CS}})
+\item 
+\Hypertarget{class_f_i_v_smoke_v_s_m_blur_c_s_a15f5a46b626a6a96d6c84403ec2299a2}\label{class_f_i_v_smoke_v_s_m_blur_c_s_a15f5a46b626a6a96d6c84403ec2299a2} 
+{\bfseries SHADER\+\_\+\+USE\+\_\+\+PARAMETER\+\_\+\+STRUCT} (\doxymbox{\hyperlink{class_f_i_v_smoke_v_s_m_blur_c_s}{FIVSmoke\+VSMBlur\+CS}}, FGlobal\+Shader)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static bool \doxymbox{\hyperlink{class_f_i_v_smoke_v_s_m_blur_c_s_aba6a6f1c555623d740dfff82585e68a7}{Should\+Compile\+Permutation}} (const FGlobal\+Shader\+Permutation\+Parameters \&Parameters)
+\item 
+\Hypertarget{class_f_i_v_smoke_v_s_m_blur_c_s_a4dd7a5db6653e7cf9947912ef86fe38f}\label{class_f_i_v_smoke_v_s_m_blur_c_s_a4dd7a5db6653e7cf9947912ef86fe38f} 
+static void {\bfseries Modify\+Compilation\+Environment} (const FGlobal\+Shader\+Permutation\+Parameters \&Parameters, FShader\+Compiler\+Environment \&Out\+Environment)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_v_s_m_blur_c_s_a00244702d5d82aeab87a3075d41e2d88}\label{class_f_i_v_smoke_v_s_m_blur_c_s_a00244702d5d82aeab87a3075d41e2d88} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeX} = 8
+\item 
+\Hypertarget{class_f_i_v_smoke_v_s_m_blur_c_s_abc8d00e4e6c511e038a939c822386d49}\label{class_f_i_v_smoke_v_s_m_blur_c_s_abc8d00e4e6c511e038a939c822386d49} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeY} = 8
+\item 
+\Hypertarget{class_f_i_v_smoke_v_s_m_blur_c_s_af0d3515bbc4bccfd23898ebb67635716}\label{class_f_i_v_smoke_v_s_m_blur_c_s_af0d3515bbc4bccfd23898ebb67635716} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeZ} = 1
+\item 
+\Hypertarget{class_f_i_v_smoke_v_s_m_blur_c_s_a1b22c11c20e09f93a194bc4822e5f1f3}\label{class_f_i_v_smoke_v_s_m_blur_c_s_a1b22c11c20e09f93a194bc4822e5f1f3} 
+static constexpr const TCHAR \texorpdfstring{$\ast$}{*} {\bfseries Event\+Name} = TEXT("{}IVSmoke\+VSMBlur\+CS"{})
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+VSM Gaussian blur compute shader. Performs separable Gaussian blur on variance texture. Uses horizontal or vertical direction based on Blur\+Direction parameter. 
+
+\label{doc-func-members}
+\Hypertarget{class_f_i_v_smoke_v_s_m_blur_c_s_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_i_v_smoke_v_s_m_blur_c_s_aba6a6f1c555623d740dfff82585e68a7}\index{FIVSmokeVSMBlurCS@{FIVSmokeVSMBlurCS}!ShouldCompilePermutation@{ShouldCompilePermutation}}
+\index{ShouldCompilePermutation@{ShouldCompilePermutation}!FIVSmokeVSMBlurCS@{FIVSmokeVSMBlurCS}}
+\doxysubsubsection{\texorpdfstring{ShouldCompilePermutation()}{ShouldCompilePermutation()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_v_s_m_blur_c_s_aba6a6f1c555623d740dfff82585e68a7} 
+bool FIVSmoke\+VSMBlur\+CS::\+\+Should\+Compile\+Permutation (\begin{DoxyParamCaption}\item[{const FGlobal\+Shader\+Permutation\+Parameters \&}]{Parameters}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+Source variance texture to blur. Output blurred variance texture. Linear sampler with clamp addressing. Texture resolution. Blur kernel radius in pixels. Blur direction (0 = Horizontal, 1 = Vertical). Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=215pt]{class_f_i_v_smoke_v_s_m_blur_c_s_aba6a6f1c555623d740dfff82585e68a7_cgraph}
+\end{center}
+\end{figure}
+
+
+The documentation for this class was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Shaders.\+h\end{DoxyCompactItemize}

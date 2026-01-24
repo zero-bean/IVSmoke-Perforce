@@ -1,0 +1,177 @@
+\doxysection{UIVSmoke\+Hole\+Generator\+Component Class Reference}
+\hypertarget{class_u_i_v_smoke_hole_generator_component}{}\label{class_u_i_v_smoke_hole_generator_component}\index{UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}}
+
+
+Component that generates hole texture for volumetric smoke. Provides public API for penetration and explosion holes.  
+
+
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Hole\+Generator\+Component.\+h$>$}
+
+
+
+Inheritance diagram for UIVSmoke\+Hole\+Generator\+Component:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=265pt]{class_u_i_v_smoke_hole_generator_component__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for UIVSmoke\+Hole\+Generator\+Component:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=265pt]{class_u_i_v_smoke_hole_generator_component__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_a227c41d665c3944e274e1773b81e63f1}{Request\+Penetration\+Hole}} (const FVector3f Origin, const FVector3f Direction, \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmoke\+Hole\+Preset}} \texorpdfstring{$\ast$}{*}Preset)
+\item 
+void \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_aae055305f55742e021ee18ae1cb9fb6f}{Request\+Explosion\+Hole}} (const FVector3f Origin, \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmoke\+Hole\+Preset}} \texorpdfstring{$\ast$}{*}Preset)
+\item 
+void \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_a1d284e92541eb253ba5b6aab0d0d6137}{Request\+Track\+Dynamic\+Object}} (AActor \texorpdfstring{$\ast$}{*}Target\+Actor, \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmoke\+Hole\+Preset}} \texorpdfstring{$\ast$}{*}Preset)
+\item 
+float \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_a522a4fba7daa952f9533c790ab925170}{Get\+Synced\+Time}} () const
+\item 
+FTexture\+RHIRef \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_a6fa36f3322d58955ccebf773745ad947}{Get\+Hole\+Texture\+RHI}} () const
+\item 
+void \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_a0b607c06a349f6cc23ee85575590f2cc}{Set\+Box\+To\+Voxel\+AABB}} ()
+\item 
+FORCEINLINE void \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_aad9a6774c3e7cabfa015d727ae5867a2}{Mark\+Hole\+Texture\+Dirty}} (const bool b\+Is\+Dirty=true)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+int32 \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_a1a74e1c9567dde329ad5cf1719a9ff57}{Max\+Holes}} = 128
+\item 
+FInt\+Vector \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_aa2b0ae7af26b7556056531c5f1082dcb}{Voxel\+Resolution}} = FInt\+Vector(64, 64, 64)
+\item 
+TArray$<$ TEnum\+As\+Byte$<$ EObject\+Type\+Query $>$ $>$ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component_a55d5a8ac0585653d2e1f45a6162b8918}{Obstacle\+Object\+Types}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_u_i_v_smoke_hole_generator_component_af6723420d312cf69aca560a2315175ed}\label{class_u_i_v_smoke_hole_generator_component_af6723420d312cf69aca560a2315175ed} 
+virtual void {\bfseries Begin\+Play} () override
+\item 
+\Hypertarget{class_u_i_v_smoke_hole_generator_component_a65ca83e40809cba98705a57a9f3b3f80}\label{class_u_i_v_smoke_hole_generator_component_a65ca83e40809cba98705a57a9f3b3f80} 
+virtual void {\bfseries Tick\+Component} (const float Delta\+Time, const ELevel\+Tick Tick\+Type, FActor\+Component\+Tick\+Function \texorpdfstring{$\ast$}{*}This\+Tick\+Function) override
+\item 
+\Hypertarget{class_u_i_v_smoke_hole_generator_component_a2114bf7df9f0093e2f70834cbea39c73}\label{class_u_i_v_smoke_hole_generator_component_a2114bf7df9f0093e2f70834cbea39c73} 
+virtual void {\bfseries End\+Play} (const EEnd\+Play\+Reason::\+\+Type End\+Play\+Reason) override
+\item 
+\Hypertarget{class_u_i_v_smoke_hole_generator_component_a65ee0a340a5ef004983c16d8f7a3cbaa}\label{class_u_i_v_smoke_hole_generator_component_a65ee0a340a5ef004983c16d8f7a3cbaa} 
+virtual void {\bfseries Get\+Lifetime\+Replicated\+Props} (TArray$<$ FLifetime\+Property $>$ \&Out\+Lifetime\+Props) const override
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Component that generates hole texture for volumetric smoke. Provides public API for penetration and explosion holes. 
+
+\label{doc-func-members}
+\Hypertarget{class_u_i_v_smoke_hole_generator_component_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_u_i_v_smoke_hole_generator_component_a6fa36f3322d58955ccebf773745ad947}\index{UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}!GetHoleTextureRHI@{GetHoleTextureRHI}}
+\index{GetHoleTextureRHI@{GetHoleTextureRHI}!UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}}
+\doxysubsubsection{\texorpdfstring{GetHoleTextureRHI()}{GetHoleTextureRHI()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_generator_component_a6fa36f3322d58955ccebf773745ad947} 
+FTexture\+RHIRef UIVSmoke\+Hole\+Generator\+Component::\+\+Get\+Hole\+Texture\+RHI (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+Get Texture as a UTexture\+Render\+Target\+Volume to write by. \Hypertarget{class_u_i_v_smoke_hole_generator_component_a522a4fba7daa952f9533c790ab925170}\index{UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}!GetSyncedTime@{GetSyncedTime}}
+\index{GetSyncedTime@{GetSyncedTime}!UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}}
+\doxysubsubsection{\texorpdfstring{GetSyncedTime()}{GetSyncedTime()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_generator_component_a522a4fba7daa952f9533c790ab925170} 
+float UIVSmoke\+Hole\+Generator\+Component::\+\+Get\+Synced\+Time (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+Get synchronized server time. \Hypertarget{class_u_i_v_smoke_hole_generator_component_aad9a6774c3e7cabfa015d727ae5867a2}\index{UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}!MarkHoleTextureDirty@{MarkHoleTextureDirty}}
+\index{MarkHoleTextureDirty@{MarkHoleTextureDirty}!UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}}
+\doxysubsubsection{\texorpdfstring{MarkHoleTextureDirty()}{MarkHoleTextureDirty()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_generator_component_aad9a6774c3e7cabfa015d727ae5867a2} 
+FORCEINLINE void UIVSmoke\+Hole\+Generator\+Component::\+\+Mark\+Hole\+Texture\+Dirty (\begin{DoxyParamCaption}\item[{const bool}]{b\+Is\+Dirty}{ = {\ttfamily true}}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Set Dirty flag whether GPU updates the texure. Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=257pt]{class_u_i_v_smoke_hole_generator_component_aad9a6774c3e7cabfa015d727ae5867a2_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_i_v_smoke_hole_generator_component_aae055305f55742e021ee18ae1cb9fb6f}\index{UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}!RequestExplosionHole@{RequestExplosionHole}}
+\index{RequestExplosionHole@{RequestExplosionHole}!UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}}
+\doxysubsubsection{\texorpdfstring{RequestExplosionHole()}{RequestExplosionHole()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_generator_component_aae055305f55742e021ee18ae1cb9fb6f} 
+void UIVSmoke\+Hole\+Generator\+Component::\+\+Request\+Explosion\+Hole (\begin{DoxyParamCaption}\item[{const FVector3f}]{Origin}{, }\item[{\doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmoke\+Hole\+Preset}} \texorpdfstring{$\ast$}{*}}]{Preset}{}\end{DoxyParamCaption})}
+
+Request an explosion hole at the specified origin. such as grenade (todo:\+ must be refactored) Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_i_v_smoke_hole_generator_component_aae055305f55742e021ee18ae1cb9fb6f_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_i_v_smoke_hole_generator_component_a227c41d665c3944e274e1773b81e63f1}\index{UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}!RequestPenetrationHole@{RequestPenetrationHole}}
+\index{RequestPenetrationHole@{RequestPenetrationHole}!UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}}
+\doxysubsubsection{\texorpdfstring{RequestPenetrationHole()}{RequestPenetrationHole()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_generator_component_a227c41d665c3944e274e1773b81e63f1} 
+void UIVSmoke\+Hole\+Generator\+Component::\+\+Request\+Penetration\+Hole (\begin{DoxyParamCaption}\item[{const FVector3f}]{Origin}{, }\item[{const FVector3f}]{Direction}{, }\item[{\doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmoke\+Hole\+Preset}} \texorpdfstring{$\ast$}{*}}]{Preset}{}\end{DoxyParamCaption})}
+
+Request a penetration hole such as bullet, projectile and hitscan Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_i_v_smoke_hole_generator_component_a227c41d665c3944e274e1773b81e63f1_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_i_v_smoke_hole_generator_component_a1d284e92541eb253ba5b6aab0d0d6137}\index{UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}!RequestTrackDynamicObject@{RequestTrackDynamicObject}}
+\index{RequestTrackDynamicObject@{RequestTrackDynamicObject}!UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}}
+\doxysubsubsection{\texorpdfstring{RequestTrackDynamicObject()}{RequestTrackDynamicObject()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_generator_component_a1d284e92541eb253ba5b6aab0d0d6137} 
+void UIVSmoke\+Hole\+Generator\+Component::\+\+Request\+Track\+Dynamic\+Object (\begin{DoxyParamCaption}\item[{AActor \texorpdfstring{$\ast$}{*}}]{Target\+Actor}{, }\item[{\doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmoke\+Hole\+Preset}} \texorpdfstring{$\ast$}{*}}]{Preset}{}\end{DoxyParamCaption})}
+
+Request registration of tracking dynamic object such as human and vehicle Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_u_i_v_smoke_hole_generator_component_a1d284e92541eb253ba5b6aab0d0d6137_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_u_i_v_smoke_hole_generator_component_a0b607c06a349f6cc23ee85575590f2cc}\index{UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}!SetBoxToVoxelAABB@{SetBoxToVoxelAABB}}
+\index{SetBoxToVoxelAABB@{SetBoxToVoxelAABB}!UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}}
+\doxysubsubsection{\texorpdfstring{SetBoxToVoxelAABB()}{SetBoxToVoxelAABB()}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_generator_component_a0b607c06a349f6cc23ee85575590f2cc} 
+void UIVSmoke\+Hole\+Generator\+Component::\+\+Set\+Box\+To\+Voxel\+AABB (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Set Box\+Extent and Component Position to Voxel\+AABB Center. 
+
+\label{doc-variable-members}
+\Hypertarget{class_u_i_v_smoke_hole_generator_component_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_u_i_v_smoke_hole_generator_component_a1a74e1c9567dde329ad5cf1719a9ff57}\index{UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}!MaxHoles@{MaxHoles}}
+\index{MaxHoles@{MaxHoles}!UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}}
+\doxysubsubsection{\texorpdfstring{MaxHoles}{MaxHoles}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_generator_component_a1a74e1c9567dde329ad5cf1719a9ff57} 
+int32 UIVSmoke\+Hole\+Generator\+Component::\+\+Max\+Holes = 128}
+
+Maximum number of holes that can be activated. \Hypertarget{class_u_i_v_smoke_hole_generator_component_a55d5a8ac0585653d2e1f45a6162b8918}\index{UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}!ObstacleObjectTypes@{ObstacleObjectTypes}}
+\index{ObstacleObjectTypes@{ObstacleObjectTypes}!UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}}
+\doxysubsubsection{\texorpdfstring{ObstacleObjectTypes}{ObstacleObjectTypes}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_generator_component_a55d5a8ac0585653d2e1f45a6162b8918} 
+TArray$<$TEnum\+As\+Byte$<$EObject\+Type\+Query$>$ $>$ UIVSmoke\+Hole\+Generator\+Component::\+\+Obstacle\+Object\+Types}
+
+Maximum number of holes that can be activated. \Hypertarget{class_u_i_v_smoke_hole_generator_component_aa2b0ae7af26b7556056531c5f1082dcb}\index{UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}!VoxelResolution@{VoxelResolution}}
+\index{VoxelResolution@{VoxelResolution}!UIVSmokeHoleGeneratorComponent@{UIVSmokeHoleGeneratorComponent}}
+\doxysubsubsection{\texorpdfstring{VoxelResolution}{VoxelResolution}}
+{\footnotesize\ttfamily \label{class_u_i_v_smoke_hole_generator_component_aa2b0ae7af26b7556056531c5f1082dcb} 
+FInt\+Vector UIVSmoke\+Hole\+Generator\+Component::\+\+Voxel\+Resolution = FInt\+Vector(64, 64, 64)}
+
+Hole voxel volume resolution. 
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Hole\+Generator\+Component.\+h\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Private/\+IVSmoke\+Hole\+Generator\+Component.\+cpp\end{DoxyCompactItemize}

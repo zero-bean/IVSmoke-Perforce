@@ -1,0 +1,114 @@
+\doxysection{IVSmoke\+Hole\+Preset.\+h}
+\hypertarget{_i_v_smoke_hole_preset_8h_source}{}\label{_i_v_smoke_hole_preset_8h_source}\index{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeHolePreset.h@{C:/Users/Jungle/Perforce/geb0598\_dev/IVSmokeProject/Plugins/IVSmoke/Source/IVSmoke/Public/IVSmokeHolePreset.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//\ Copyright\ (c)\ 2026,\ Team\ SDB.\ All\ rights\ reserved.}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}Engine/DataAsset.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}IVSmokeHolePreset.generated.h"{}}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00011\ UENUM(BlueprintType)}
+\DoxyCodeLine{00012\ \textcolor{keyword}{enum\ class}\ EIVSmokeHoleType\ :\ uint8}
+\DoxyCodeLine{00013\ \{}
+\DoxyCodeLine{00015\ \ \ \ \ Penetration,}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00018\ \ \ \ \ Explosion,}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00021\ \ \ \ \ Dynamic,}
+\DoxyCodeLine{00022\ \};}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00028\ UCLASS(BlueprintType)}
+\DoxyCodeLine{00029\ class\ IVSMOKE\_API\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset}{UIVSmokeHolePreset}}\ :\ public\ UPrimaryDataAsset}
+\DoxyCodeLine{00030\ \{}
+\DoxyCodeLine{00031\ \ \ \ \ GENERATED\_BODY()}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \textcolor{keyword}{protected}:}
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ PostLoad()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ BeginDestroy()\ \textcolor{keyword}{override};}
+\DoxyCodeLine{00036\ }
+\DoxyCodeLine{00037\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00038\ \ \ \ \ \textcolor{comment}{//\string~============================================================================}}
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{comment}{//\ Common}}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00045\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}})}
+\DoxyCodeLine{00046\ \ \ \ \ EIVSmokeHoleType\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_acb93f8d44ca74a2b0b313aa4c888274b}{HoleType}}\ =\ EIVSmokeHoleType::Penetration;}
+\DoxyCodeLine{00047\ }
+\DoxyCodeLine{00051\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.1"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}1000.0"{}},\ EditConditionHides,\ EditCondition\ =\ \textcolor{stringliteral}{"{}HoleType\ !=\ EIVSmokeHoleType::Dynamic"{}}))}
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a3b713bdef21708f036d291be731ab845}{Radius}}\ =\ 50.0f;}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00057\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.01"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}60.0"{}},\ Tooltip\ =\ \textcolor{stringliteral}{"{}Define\ how\ long\ the\ hole\ will\ last\ within\ the\ smoke"{}}))}
+\DoxyCodeLine{00058\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_aa18b922ee7aeba5183dd418ff071d248}{Duration}}\ =\ 3.0f;}
+\DoxyCodeLine{00059\ }
+\DoxyCodeLine{00064\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}1.0"{}},\ Tooltip\ =\ \textcolor{stringliteral}{"{}0\ =\ hard\ edge,\ 1\ =\ soft\ gradient"{}}))}
+\DoxyCodeLine{00065\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_ad6b22aaed79221289f4a5d3548b6e525}{Softness}}\ =\ 0.3f;}
+\DoxyCodeLine{00066\ }
+\DoxyCodeLine{00067\ \ \ \ \ \textcolor{comment}{//\string~============================================================================}}
+\DoxyCodeLine{00068\ \ \ \ \ \textcolor{comment}{//\ Explosion}}
+\DoxyCodeLine{00069\ }
+\DoxyCodeLine{00073\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Expansion"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}60.0"{}},\ EditConditionHides,\ EditCondition\ =\ \textcolor{stringliteral}{"{}HoleType\ ==\ EIVSmokeHoleType::Explosion"{}},}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ Tooltip\ =\ \textcolor{stringliteral}{"{}Expansion\ time\ is\ used\ for\ expansion-\/related\ curve\ values."{}}))}
+\DoxyCodeLine{00075\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a21567590774d935411783dcded46969e}{ExpansionDuration}}\ =\ 0.15f;}
+\DoxyCodeLine{00076\ }
+\DoxyCodeLine{00081\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Expansion"{}},\ meta\ =\ (EditConditionHides,\ EditCondition\ =\ \textcolor{stringliteral}{"{}HoleType\ ==\ EIVSmokeHoleType::Explosion"{}},}
+\DoxyCodeLine{00082\ \ \ \ \ \ \ \ \ Tooltip\ =\ \textcolor{stringliteral}{"{}Fade\ range\ curve\ over\ expansion\ time.\ Use\ normalized\ time\ between\ 0\ and\ 1"{}}))}
+\DoxyCodeLine{00083\ \ \ \ \ TObjectPtr<UCurveFloat>\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_ae9327b78b57a6872131b9db2b740a47f}{ExpansionFadeRangeCurveOverTime}};}
+\DoxyCodeLine{00084\ }
+\DoxyCodeLine{00091\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shrink"{}},\ meta\ =\ (EditConditionHides,\ EditCondition\ =\ \textcolor{stringliteral}{"{}HoleType\ ==\ EIVSmokeHoleType::Explosion"{}},}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ Tooltip\ =\ \textcolor{stringliteral}{"{}Fade\ range\ curve\ over\ shrink\ time.\ Use\ normalized\ time\ between\ 0\ and\ 1"{}}))}
+\DoxyCodeLine{00093\ \ \ \ \ TObjectPtr<UCurveFloat>\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a6c85440b4331d18ef05fd1830c617c5d}{ShrinkFadeRangeCurveOverTime}};}
+\DoxyCodeLine{00094\ }
+\DoxyCodeLine{00099\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Shrink"{}},\ meta\ =\ (EditConditionHides,\ EditCondition\ =\ \textcolor{stringliteral}{"{}HoleType\ ==\ EIVSmokeHoleType::Explosion"{}},}
+\DoxyCodeLine{00100\ \ \ \ \ \ \ \ \ Tooltip\ =\ \textcolor{stringliteral}{"{}Density\ multiply\ value\ curve\ over\ shrink\ time.\ Use\ normalized\ time\ between\ 0\ and\ 1"{}}))}
+\DoxyCodeLine{00101\ \ \ \ \ TObjectPtr<UCurveFloat>\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a199f71d3fcb67a73a62f75b7578ac497}{ShrinkDensityMulCurveOverTime}};}
+\DoxyCodeLine{00102\ }
+\DoxyCodeLine{00107\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Distortion"{}},\ meta\ =\ (EditConditionHides,\ EditCondition\ =\ \textcolor{stringliteral}{"{}HoleType\ ==\ EIVSmokeHoleType::Explosion"{}},}
+\DoxyCodeLine{00108\ \ \ \ \ \ \ \ \ Tooltip\ =\ \textcolor{stringliteral}{"{}Distortion\ degree\ curve\ over\ expansion\ time.\ Use\ normalized\ time\ between\ 0\ and\ 1"{}}))}
+\DoxyCodeLine{00109\ \ \ \ \ TObjectPtr<UCurveFloat>\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_ab10c50d4d7ffd9392da54f01b5b1d6cf}{DistortionCurveOverTime}};}
+\DoxyCodeLine{00110\ }
+\DoxyCodeLine{00115\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Distortion"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}1000.0"{}},\ EditConditionHides,\ EditCondition\ =\ \textcolor{stringliteral}{"{}HoleType\ ==\ EIVSmokeHoleType::Explosion"{}},}
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ Tooltip\ =\ \textcolor{stringliteral}{"{}Distortion\ degree\ max\ value."{}}))}
+\DoxyCodeLine{00117\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a8865ba3a05ee41731e0d7a4da4e6ee85}{DistortionDistance}}\ =\ 0.0f;}
+\DoxyCodeLine{00118\ }
+\DoxyCodeLine{00123\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke\ |\ Distortion"{}},\ meta\ =\ (EditConditionHides,\ EditCondition\ =\ \textcolor{stringliteral}{"{}HoleType\ ==\ EIVSmokeHoleType::Explosion"{}},}
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ Tooltip\ =\ \textcolor{stringliteral}{"{}Distortion\ degree\ curve\ over\ distance\ to\ explosion\ point.\ Use\ normalized\ x\ axis(distance)\ between\ 0\ and\ 1"{}}))}
+\DoxyCodeLine{00125\ \ \ \ \ TObjectPtr<UCurveFloat>\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a99cfe623120eda040ed1324dc31d33e8}{DistortionCurveOverDistance}};}
+\DoxyCodeLine{00126\ }
+\DoxyCodeLine{00127\ \ \ \ \ \textcolor{comment}{//\string~============================================================================}}
+\DoxyCodeLine{00128\ \ \ \ \ \textcolor{comment}{//\ Penetration}}
+\DoxyCodeLine{00129\ }
+\DoxyCodeLine{00133\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}0.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}60.0"{}},\ EditConditionHides,\ EditCondition\ =\ \textcolor{stringliteral}{"{}HoleType\ ==\ EIVSmokeHoleType::Penetration"{}},}
+\DoxyCodeLine{00134\ \ \ \ \ \ \ \ \ Tooltip\ =\ \textcolor{stringliteral}{"{}EndRadius\ represents\ the\ radius\ at\ the\ EndPosition\ in\ a\ penetration\ hole."{}}))}
+\DoxyCodeLine{00135\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a17dd06bd16f09c6596ae5988b95b1d9a}{EndRadius}}\ =\ 25.0f;}
+\DoxyCodeLine{00136\ }
+\DoxyCodeLine{00137\ \ \ \ \ \textcolor{comment}{//\string~============================================================================}}
+\DoxyCodeLine{00138\ \ \ \ \ \textcolor{comment}{//\ Dynamic}}
+\DoxyCodeLine{00139\ \ \ \ \ }
+\DoxyCodeLine{00143\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}},\ meta\ =\ (EditConditionHides,\ EditCondition\ =\ \textcolor{stringliteral}{"{}HoleType\ ==\ EIVSmokeHoleType::Dynamic"{}},}
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \ \ Tooltip\ =\ \textcolor{stringliteral}{"{}The\ size\ of\ a\ hole"{}}))}
+\DoxyCodeLine{00145\ \ \ \ \ FVector3f\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a88102446429f7eeca1644b282805a313}{Extent}}\ =\ FVector3f(50.f,\ 50.f,\ 50.f);}
+\DoxyCodeLine{00146\ }
+\DoxyCodeLine{00150\ \ \ \ \ UPROPERTY(EditAnywhere,\ BlueprintReadOnly,\ Category\ =\ \textcolor{stringliteral}{"{}IVSmoke"{}},\ meta\ =\ (ClampMin\ =\ \textcolor{stringliteral}{"{}10.0"{}},\ ClampMax\ =\ \textcolor{stringliteral}{"{}500.0"{}},\ EditConditionHides,\ EditCondition\ =\ \textcolor{stringliteral}{"{}HoleType\ ==\ EIVSmokeHoleType::Dynamic"{}},}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ Tooltip\ =\ \textcolor{stringliteral}{"{}Minimum\ travel\ distance\ to\ make\ a\ hole"{}}))}
+\DoxyCodeLine{00152\ \ \ \ \ \textcolor{keywordtype}{float}\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a50d94a7edf240aac96aaec0294c1d4fb}{DistanceThreshold}}\ =\ 50.0f;}
+\DoxyCodeLine{00153\ }
+\DoxyCodeLine{00154\ \ \ \ \ \textcolor{comment}{//\ ============================================================================}}
+\DoxyCodeLine{00155\ }
+\DoxyCodeLine{00157\ \ \ \ \ FORCEINLINE\ uint8\ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_preset_a9687dee2ec054de02a0fb8ce04cf2a42}{GetPresetID}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ CachedID;\ \}}
+\DoxyCodeLine{00158\ }
+\DoxyCodeLine{00163\ \ \ \ \ \textcolor{keyword}{static}\ TObjectPtr<UIVSmokeHolePreset>\ FindByID(\textcolor{keyword}{const}\ uint8\ InPresetID);}
+\DoxyCodeLine{00164\ }
+\DoxyCodeLine{00172\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ GetCurveSamples(\textcolor{keyword}{const}\ UCurveFloat*\ Curve,\ \textcolor{keyword}{const}\ int32\ SampleCount,\ \textcolor{keywordtype}{float}*\ OutCurveSamples);}
+\DoxyCodeLine{00173\ }
+\DoxyCodeLine{00178\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{float}\ GetFloatValue(\textcolor{keyword}{const}\ TObjectPtr<UCurveFloat>\ Curve,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ X);}
+\DoxyCodeLine{00179\ }
+\DoxyCodeLine{00180\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00182\ \ \ \ \ uint8\ CachedID\ =\ 0;}
+\DoxyCodeLine{00183\ }
+\DoxyCodeLine{00185\ \ \ \ \ \textcolor{keywordtype}{void}\ RegisterToGlobalRegistry();}
+\DoxyCodeLine{00186\ }
+\DoxyCodeLine{00188\ \ \ \ \ \textcolor{keywordtype}{void}\ UnregisterFromGlobalRegistry();}
+\DoxyCodeLine{00189\ \};}
+
+\end{DoxyCode}

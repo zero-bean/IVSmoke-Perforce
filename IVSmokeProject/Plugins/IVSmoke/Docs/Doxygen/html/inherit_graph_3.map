@@ -1,0 +1,29 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,309,113,336"/>
+<area shape="rect" id="Node000001" href="$class_f_i_v_smoke_copy_p_s.html" title=" " alt="" coords="216,5,348,32"/>
+<area shape="poly" id="edge4_Node000000_Node000001" title=" " alt="" coords="59,293,66,240,82,171,95,136,112,101,133,70,159,42,185,26,217,19,214,22,187,31,162,46,137,73,116,104,100,138,87,173,71,240,64,294"/>
+<area shape="rect" id="Node000002" href="$class_f_i_v_smoke_depth_sorted_composite_p_s.html" title=" " alt="" coords="163,56,400,83"/>
+<area shape="poly" id="edge5_Node000000_Node000002" title=" " alt="" coords="62,293,72,248,90,194,118,139,137,114,159,93,181,81,178,85,162,97,141,118,123,142,95,196,77,250,67,294"/>
+<area shape="rect" id="Node000003" href="$class_f_i_v_smoke_depth_to_variance_c_s.html" title=" " alt="" coords="181,107,382,133"/>
+<area shape="poly" id="edge6_Node000000_Node000003" title=" " alt="" coords="66,294,78,259,98,218,124,177,159,143,182,132,179,136,162,147,128,181,102,220,83,261,71,295"/>
+<area shape="rect" id="Node000004" href="$class_f_i_v_smoke_hole_carve_c_s.html" title="Compute shader that carves holes into 3D volume texture." alt="" coords="200,157,364,184"/>
+<area shape="poly" id="edge7_Node000000_Node000004" title=" " alt="" coords="72,295,107,242,131,216,159,194,201,178,198,182,162,198,135,220,111,246,77,297"/>
+<area shape="rect" id="Node000005" href="$class_f_i_v_smoke_multi_volume_ray_march_c_s.html" title=" " alt="" coords="165,208,398,235"/>
+<area shape="poly" id="edge8_Node000000_Node000005" title=" " alt="" coords="83,297,118,269,160,244,195,233,191,237,162,249,121,273,87,300"/>
+<area shape="rect" id="Node000006" href="$class_f_i_v_smoke_noise_generator_global_c_s.html" title=" " alt="" coords="167,259,397,285"/>
+<area shape="poly" id="edge9_Node000000_Node000006" title=" " alt="" coords="126,303,160,295,215,284,211,288,161,300,129,307"/>
+<area shape="rect" id="Node000007" href="$class_f_i_v_smoke_occupancy_build_c_s.html" title=" " alt="" coords="183,309,380,336"/>
+<area shape="poly" id="edge10_Node000000_Node000007" title=" " alt="" coords="127,320,185,321,180,324,130,325"/>
+<area shape="rect" id="Node000008" href="$class_f_i_v_smoke_sharpen_composite_p_s.html" title=" " alt="" coords="176,360,388,387"/>
+<area shape="poly" id="edge11_Node000000_Node000008" title=" " alt="" coords="127,338,161,345,215,358,210,361,160,351,129,343"/>
+<area shape="rect" id="Node000009" href="$class_f_i_v_smoke_structured_to_texture_c_s.html" title=" " alt="" coords="172,411,392,437"/>
+<area shape="poly" id="edge12_Node000000_Node000009" title=" " alt="" coords="85,344,121,372,162,396,195,409,190,411,160,401,118,376,86,349"/>
+<area shape="rect" id="Node000010" href="$class_f_i_v_smoke_tile_setup_c_s.html" title=" " alt="" coords="203,461,360,488"/>
+<area shape="poly" id="edge13_Node000000_Node000010" title=" " alt="" coords="74,347,111,400,135,426,162,447,205,465,200,467,159,452,131,429,107,403,74,352"/>
+<area shape="rect" id="Node000011" href="$class_f_i_v_smoke_translucency_composite_p_s.html" title=" " alt="" coords="161,512,403,539"/>
+<area shape="poly" id="edge14_Node000000_Node000011" title=" " alt="" coords="68,348,83,385,102,425,128,465,162,498,183,511,178,512,159,502,124,468,98,428,78,387,68,353"/>
+<area shape="rect" id="Node000012" href="$class_f_i_v_smoke_v_s_m_blur_c_s.html" title=" " alt="" coords="205,563,359,589"/>
+<area shape="poly" id="edge15_Node000000_Node000012" title=" " alt="" coords="65,349,77,395,95,449,123,503,141,528,162,549,182,561,207,571,201,571,180,566,159,553,137,531,118,506,90,451,72,397,64,354"/>
+<area shape="rect" id="Node000013" href="$class_f_i_v_smoke_voxel_f_x_a_a_c_s.html" title=" " alt="" coords="197,613,366,640"/>
+<area shape="poly" id="edge16_Node000000_Node000013" title=" " alt="" coords="62,349,71,405,87,472,100,507,116,541,137,572,162,599,179,610,199,621,194,620,176,615,159,603,133,576,112,544,95,509,82,474,66,406,62,354"/>
+</map>

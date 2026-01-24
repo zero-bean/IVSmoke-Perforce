@@ -1,0 +1,567 @@
+\doxysection{AIVSmoke\+Voxel\+Volume Class Reference}
+\hypertarget{class_a_i_v_smoke_voxel_volume}{}\label{class_a_i_v_smoke_voxel_volume}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Voxel\+Volume.\+h$>$}
+
+
+
+Inheritance diagram for AIVSmoke\+Voxel\+Volume:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{class_a_i_v_smoke_voxel_volume__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for AIVSmoke\+Voxel\+Volume:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=550pt]{class_a_i_v_smoke_voxel_volume__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_a_i_v_smoke_voxel_volume_a670bde562a7233d923b3cbdf22556990}\label{class_a_i_v_smoke_voxel_volume_a670bde562a7233d923b3cbdf22556990} 
+virtual void {\bfseries Tick} (float Delta\+Time) override
+\item 
+\Hypertarget{class_a_i_v_smoke_voxel_volume_a71ea89915b42f112b5d7f2f64b2bcd81}\label{class_a_i_v_smoke_voxel_volume_a71ea89915b42f112b5d7f2f64b2bcd81} 
+virtual bool {\bfseries Should\+Tick\+If\+Viewports\+Only} () const override
+\item 
+TObject\+Ptr$<$ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component}{UIVSmoke\+Hole\+Generator\+Component}} $>$ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a6d51d4f1c73c7834186997bb1c664805}{Get\+Hole\+Generator\+Component}} ()
+\item 
+TObject\+Ptr$<$ \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component}{UIVSmoke\+Collision\+Component}} $>$ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a1dfd67efe861143a057530cf1de0d1a5}{Get\+Collision\+Component}} ()
+\item 
+void \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a6fb3f863ca860e957c0c1947f085b128}{Initialize}} ()
+\item 
+void \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ae6190c2f9228a444868e8dc57beeec2f}{Start\+Simulation}} ()
+\item 
+void \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a72d3658c6eb8b7740e6b2295b98a46b5}{Stop\+Simulation}} (bool b\+Immediate=false)
+\item 
+void \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a93f666213573d20b90c235d9124b7da6}{Reset\+Simulation}} ()
+\item 
+FORCEINLINE EIVSmoke\+Voxel\+Volume\+State \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ac055a3198f3a80685efffefd3ceccb70}{Get\+Current\+State}} () const
+\item 
+FORCEINLINE const TArray$<$ float $>$ \& \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a91c4b7383d63ccc96cf259873179bc89}{Get\+Voxel\+Birth\+Times}} () const
+\item 
+FORCEINLINE const TArray$<$ float $>$ \& \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_adb31b217341a85071e97b580b9d1332b}{Get\+Voxel\+Death\+Times}} () const
+\item 
+FORCEINLINE FInt\+Vector \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ad4569de3f5dd820f4c9b4eb6bbd0a5f4}{Get\+Grid\+Resolution}} () const
+\item 
+FORCEINLINE FInt\+Vector \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ada640c55e6a6fa30898a346cad725afe}{Get\+Center\+Offset}} () const
+\item 
+FORCEINLINE float \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a656e9c7b4893bfcf47888cc1123fa6aa}{Get\+Voxel\+Size}} () const
+\item 
+FORCEINLINE EIVSmoke\+Dirty\+Level \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ad5ff71e988d86ae7f943cc7fa9ce4a0f}{Get\+Dirty\+Level}} () const
+\item 
+FORCEINLINE bool \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a6eb5b557c91507c3fe9b181d251818c6}{Is\+Voxel\+Data\+Dirty}} () const
+\item 
+FORCEINLINE void \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ae13f166844d19e1ac02831da62be8e94}{Clear\+Voxel\+Data\+Dirty}} ()
+\item 
+FORCEINLINE int32 \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a0e58b5b2bc27966c8e8d8c639799a3cd}{Get\+Voxel\+Buffer\+Size}} () const
+\item 
+FORCEINLINE int32 \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a8b360c4c2bcd9e9ec43511cf1f4329a6}{Get\+Active\+Voxel\+Num}} () const
+\item 
+FORCEINLINE const \doxymbox{\hyperlink{class_u_i_v_smoke_smoke_preset}{UIVSmoke\+Smoke\+Preset}} \texorpdfstring{$\ast$}{*} \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a08373d517af5de7e7f41bcdde16d608d}{Get\+Smoke\+Preset\+Override}} () const
+\item 
+FORCEINLINE FVector \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_aa5512344c657aeeb45708df1feb356fc}{Get\+Voxel\+World\+AABBMin}} () const
+\item 
+FORCEINLINE FVector \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a382268525f042f5d7a8d3fe245e8bf33}{Get\+Voxel\+World\+AABBMax}} () const
+\item 
+FORCEINLINE bool \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a53bcd34ab36a8edced1382b41514a6c0}{Is\+Voxel\+Active}} (int32 Index) const
+\item 
+FORCEINLINE bool \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a8ec37381d4324faed6bd339c334e4273}{Is\+Voxel\+Active}} (FInt\+Vector Grid\+Pos) const
+\item 
+FTexture\+RHIRef \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ad057b1abf45528c92ebd192aa22656a9}{Get\+Hole\+Texture}} () const
+\item 
+float \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a0bfc649c113f29ddc13367f0023e7aa5}{Get\+Sync\+World\+Time\+Seconds}} () const
+\item 
+void \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a6bb9b3b1da9a7b90aa755764f906dc41}{Start\+Preview\+Simulation}} ()
+\item 
+void \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a2d3bdf666016c010e2dac82e5cb05a9c}{Stop\+Preview\+Simulation}} ()
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+FInt\+Vector \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a9ac65f3432cebe1270ec362166de076f}{Volume\+Extent}} = FInt\+Vector(16, 16, 16)
+\item 
+FVector \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a7ac94e6fa1b5e405f86344e1758f1575}{Radii}} = FVector(1.\+0f, 1.\+0f, 1.\+0f)
+\item 
+float \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a6b4caab4220e38ea5ef49f8fa67bf767}{Voxel\+Size}} = 50.\+0f
+\item 
+int32 \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ac91ff2505673f6b8fef16523882c0417}{Max\+Voxel\+Num}} = 1000
+\item 
+bool \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ab014262f2b3853d39b11917ba3e2e1e6}{b\+Auto\+Start}} = false
+\item 
+bool \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_aed2685aa0c10a3bed0799f8e1e5893fa}{b\+Destroy\+On\+Finish}} = false
+\item 
+bool \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ad23cc54d625c40b54a59745289d334ca}{b\+Is\+Infinite}} = false
+\item 
+TObject\+Ptr$<$ \doxymbox{\hyperlink{class_u_i_v_smoke_smoke_preset}{UIVSmoke\+Smoke\+Preset}} $>$ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_af180602d8f27cf16f1eb3070d98da4fc}{Smoke\+Preset\+Override}}
+\item 
+float \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a7f6f92c9a2150fd42ed349805395f7f2}{Expansion\+Duration}} = 3.\+0f
+\item 
+float \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a5837d33af8adc2b43930f5c19b1b8d4d}{Sustain\+Duration}} = 5.\+0f
+\item 
+float \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a4233c1cdaf810100d2672699b2b96879}{Dissipation\+Duration}} = 2.\+0f
+\item 
+float \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a2f5ed5eb5d3dccaa786795fb1b905943}{Fade\+In\+Duration}} = 2.\+0f
+\item 
+float \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a7d92753fc9e0a1371b6abee219a07561}{Fade\+Out\+Duration}} = 2.\+0f
+\item 
+float \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ad026a2b12a58bd99e49600b562b404b1}{Expansion\+Noise}} = 100.\+0f
+\item 
+float \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_ad80330806a2b12bc75565574421e1dd6}{Dissipation\+Noise}} = 100.\+0f
+\item 
+TObject\+Ptr$<$ UCurve\+Float $>$ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a871fe8eb044c24a11598fac4a0add5a9}{Expansion\+Curve}}
+\item 
+TObject\+Ptr$<$ UCurve\+Float $>$ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_af3b5777030188732ca1bcd706d9123eb}{Dissipation\+Curve}}
+\item 
+bool \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_aee5112a26e67409d062bf6cfbd6788cd}{b\+Enable\+Simulation\+Collision}} = true
+\item 
+TEnum\+As\+Byte$<$ ECollision\+Channel $>$ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a54d6c8a4e1a1d151a337cf63aa36e4c8}{Voxel\+Collision\+Channel}} = ECC\+\_\+\+World\+Static
+\item 
+\doxymbox{\hyperlink{struct_f_i_v_smoke_debug_settings}{FIVSmoke\+Debug\+Settings}} \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a41da9ee7f907f7494752e9fb3fe10314}{Debug\+Settings}}
+\item 
+TObject\+Ptr$<$ UStatic\+Mesh $>$ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a62c48d011fa28ef6168850937fa57300}{Debug\+Voxel\+Mesh}}
+\item 
+TObject\+Ptr$<$ UMaterial\+Interface $>$ \doxymbox{\hyperlink{class_a_i_v_smoke_voxel_volume_a4d15ba929200aba896ef14157b549624}{Debug\+Voxel\+Material}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_a_i_v_smoke_voxel_volume_adf16d3a4149b030e9d01f4553e9841a4}\label{class_a_i_v_smoke_voxel_volume_adf16d3a4149b030e9d01f4553e9841a4} 
+virtual void {\bfseries Begin\+Play} () override
+\item 
+\Hypertarget{class_a_i_v_smoke_voxel_volume_aa39ff170e55d7616935bb673a7ee1f0a}\label{class_a_i_v_smoke_voxel_volume_aa39ff170e55d7616935bb673a7ee1f0a} 
+virtual void {\bfseries End\+Play} (const EEnd\+Play\+Reason::\+\+Type End\+Play\+Reason) override
+\item 
+\Hypertarget{class_a_i_v_smoke_voxel_volume_a7dbaeb49b92eb083b4a6b13f325ab9f5}\label{class_a_i_v_smoke_voxel_volume_a7dbaeb49b92eb083b4a6b13f325ab9f5} 
+virtual void {\bfseries Get\+Lifetime\+Replicated\+Props} (TArray$<$ FLifetime\+Property $>$ \&Out\+Lifetime\+Props) const override
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+The core volumetric actor that simulates dynamic smoke expansion using a deterministic voxel-\/based flood-\/fill algorithm.\hypertarget{class_a_i_v_smoke_voxel_volume_autotoc_md4}{}\doxysubsubsection{\texorpdfstring{Overview}{Overview}}\label{class_a_i_v_smoke_voxel_volume_autotoc_md4}
+This actor generates a 3D grid of voxels that expand outward from the center, navigating around obstacles defined by the collision settings. The simulation is\texorpdfstring{$\ast$}{*}deterministic, ensuring the same shape and timing across both Server and Clients without replicating individual voxel data.\hypertarget{class_a_i_v_smoke_voxel_volume_autotoc_md5}{}\doxysubsubsection{\texorpdfstring{Simulation Lifecycle}{Simulation Lifecycle}}\label{class_a_i_v_smoke_voxel_volume_autotoc_md5}
+The simulation state machine progresses based on the sum of duration and fade settings:\+
+\begin{DoxyEnumerate}
+\item {\bfseries{Idle}}:\+ Initial state.
+\item {\bfseries{Expansion}}:\+ Spawns voxels. Ends after {\ttfamily \doxylink{class_a_i_v_smoke_voxel_volume_a7f6f92c9a2150fd42ed349805395f7f2}{Expansion\+Duration} + \doxylink{class_a_i_v_smoke_voxel_volume_a2f5ed5eb5d3dccaa786795fb1b905943}{Fade\+In\+Duration}}.
+\item {\bfseries{Sustain}}:\+ Maintains the shape. Ends after {\ttfamily \doxylink{class_a_i_v_smoke_voxel_volume_a5837d33af8adc2b43930f5c19b1b8d4d}{Sustain\+Duration}}.
+\item {\bfseries{Dissipation}}:\+ Removes voxels. Ends after {\ttfamily \doxylink{class_a_i_v_smoke_voxel_volume_a4233c1cdaf810100d2672699b2b96879}{Dissipation\+Duration} + \doxylink{class_a_i_v_smoke_voxel_volume_a7d92753fc9e0a1371b6abee219a07561}{Fade\+Out\+Duration}}.
+\item {\bfseries{Finished}}:\+ Simulation complete.
+\end{DoxyEnumerate}\hypertarget{class_a_i_v_smoke_voxel_volume_autotoc_md6}{}\doxysubsubsection{\texorpdfstring{Network \& Execution}{Network \& Execution}}\label{class_a_i_v_smoke_voxel_volume_autotoc_md6}
+The simulation logic executes deterministically on both the Server and Client.
+\begin{DoxyItemize}
+\item The Server manages the authoritative state (State, Seed, Start\+Time) and replicates it to Clients.
+\item Clients execute the exact same flood-\/fill algorithm locally based on the replicated Seed and Time. 
+\end{DoxyItemize}
+
+\label{doc-func-members}
+\Hypertarget{class_a_i_v_smoke_voxel_volume_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_a_i_v_smoke_voxel_volume_ae13f166844d19e1ac02831da62be8e94}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!ClearVoxelDataDirty@{ClearVoxelDataDirty}}
+\index{ClearVoxelDataDirty@{ClearVoxelDataDirty}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{ClearVoxelDataDirty()}{ClearVoxelDataDirty()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_ae13f166844d19e1ac02831da62be8e94} 
+FORCEINLINE void AIVSmoke\+Voxel\+Volume::\+\+Clear\+Voxel\+Data\+Dirty (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Marks the voxel data as clean after a successful GPU upload. \begin{DoxyNote}{Note}
+Should only be called by the {\ttfamily IVSmoke\+Renderer}. 
+\end{DoxyNote}
+\Hypertarget{class_a_i_v_smoke_voxel_volume_a8b360c4c2bcd9e9ec43511cf1f4329a6}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!GetActiveVoxelNum@{GetActiveVoxelNum}}
+\index{GetActiveVoxelNum@{GetActiveVoxelNum}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{GetActiveVoxelNum()}{GetActiveVoxelNum()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a8b360c4c2bcd9e9ec43511cf1f4329a6} 
+FORCEINLINE int32 AIVSmoke\+Voxel\+Volume::\+\+Get\+Active\+Voxel\+Num (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns the number of active (non-\/zero density) voxels. \Hypertarget{class_a_i_v_smoke_voxel_volume_ada640c55e6a6fa30898a346cad725afe}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!GetCenterOffset@{GetCenterOffset}}
+\index{GetCenterOffset@{GetCenterOffset}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{GetCenterOffset()}{GetCenterOffset()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_ada640c55e6a6fa30898a346cad725afe} 
+FORCEINLINE FInt\+Vector AIVSmoke\+Voxel\+Volume::\+\+Get\+Center\+Offset (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns the center offset for grid-\/to-\/local coordinate conversion. \Hypertarget{class_a_i_v_smoke_voxel_volume_a1dfd67efe861143a057530cf1de0d1a5}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!GetCollisionComponent@{GetCollisionComponent}}
+\index{GetCollisionComponent@{GetCollisionComponent}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{GetCollisionComponent()}{GetCollisionComponent()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a1dfd67efe861143a057530cf1de0d1a5} 
+TObject\+Ptr$<$ \doxymbox{\hyperlink{class_u_i_v_smoke_collision_component}{UIVSmoke\+Collision\+Component}} $>$ AIVSmoke\+Voxel\+Volume::\+\+Get\+Collision\+Component (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Returns the component responsible for handling physical interactions and collision queries. Caches the result to avoid repeated lookups. Returns nullptr if the component is missing. \Hypertarget{class_a_i_v_smoke_voxel_volume_ac055a3198f3a80685efffefd3ceccb70}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!GetCurrentState@{GetCurrentState}}
+\index{GetCurrentState@{GetCurrentState}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{GetCurrentState()}{GetCurrentState()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_ac055a3198f3a80685efffefd3ceccb70} 
+FORCEINLINE EIVSmoke\+Voxel\+Volume\+State AIVSmoke\+Voxel\+Volume::\+\+Get\+Current\+State (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns the current phase of the simulation state machine. \Hypertarget{class_a_i_v_smoke_voxel_volume_ad5ff71e988d86ae7f943cc7fa9ce4a0f}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!GetDirtyLevel@{GetDirtyLevel}}
+\index{GetDirtyLevel@{GetDirtyLevel}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{GetDirtyLevel()}{GetDirtyLevel()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_ad5ff71e988d86ae7f943cc7fa9ce4a0f} 
+FORCEINLINE EIVSmoke\+Dirty\+Level AIVSmoke\+Voxel\+Volume::\+\+Get\+Dirty\+Level (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns the current dirty level for GPU buffer synchronization. \Hypertarget{class_a_i_v_smoke_voxel_volume_ad4569de3f5dd820f4c9b4eb6bbd0a5f4}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!GetGridResolution@{GetGridResolution}}
+\index{GetGridResolution@{GetGridResolution}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{GetGridResolution()}{GetGridResolution()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_ad4569de3f5dd820f4c9b4eb6bbd0a5f4} 
+FORCEINLINE FInt\+Vector AIVSmoke\+Voxel\+Volume::\+\+Get\+Grid\+Resolution (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns the grid resolution (dimensions of the voxel grid). \Hypertarget{class_a_i_v_smoke_voxel_volume_a6d51d4f1c73c7834186997bb1c664805}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!GetHoleGeneratorComponent@{GetHoleGeneratorComponent}}
+\index{GetHoleGeneratorComponent@{GetHoleGeneratorComponent}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{GetHoleGeneratorComponent()}{GetHoleGeneratorComponent()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a6d51d4f1c73c7834186997bb1c664805} 
+TObject\+Ptr$<$ \doxymbox{\hyperlink{class_u_i_v_smoke_hole_generator_component}{UIVSmoke\+Hole\+Generator\+Component}} $>$ AIVSmoke\+Voxel\+Volume::\+\+Get\+Hole\+Generator\+Component (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Returns the component responsible for generating holes (negative space) in the smoke. Caches the result to avoid repeated lookups. Returns nullptr if the component is missing. \Hypertarget{class_a_i_v_smoke_voxel_volume_ad057b1abf45528c92ebd192aa22656a9}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!GetHoleTexture@{GetHoleTexture}}
+\index{GetHoleTexture@{GetHoleTexture}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{GetHoleTexture()}{GetHoleTexture()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_ad057b1abf45528c92ebd192aa22656a9} 
+FTexture\+RHIRef AIVSmoke\+Voxel\+Volume::\+\+Get\+Hole\+Texture (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+Returns the RHI texture resource from the Hole\+Generator\+Component, if available. \Hypertarget{class_a_i_v_smoke_voxel_volume_a08373d517af5de7e7f41bcdde16d608d}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!GetSmokePresetOverride@{GetSmokePresetOverride}}
+\index{GetSmokePresetOverride@{GetSmokePresetOverride}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{GetSmokePresetOverride()}{GetSmokePresetOverride()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a08373d517af5de7e7f41bcdde16d608d} 
+FORCEINLINE const \doxymbox{\hyperlink{class_u_i_v_smoke_smoke_preset}{UIVSmoke\+Smoke\+Preset}} \texorpdfstring{$\ast$}{*} AIVSmoke\+Voxel\+Volume::\+\+Get\+Smoke\+Preset\+Override (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns the smoke preset override for this volume, or nullptr to use default. \Hypertarget{class_a_i_v_smoke_voxel_volume_a0bfc649c113f29ddc13367f0023e7aa5}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!GetSyncWorldTimeSeconds@{GetSyncWorldTimeSeconds}}
+\index{GetSyncWorldTimeSeconds@{GetSyncWorldTimeSeconds}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{GetSyncWorldTimeSeconds()}{GetSyncWorldTimeSeconds()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a0bfc649c113f29ddc13367f0023e7aa5} 
+float AIVSmoke\+Voxel\+Volume::\+\+Get\+Sync\+World\+Time\+Seconds (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+Returns the synchronized world time in seconds. Handles network time offsets to ensure clients see the simulation at the same progress as the server. \Hypertarget{class_a_i_v_smoke_voxel_volume_a91c4b7383d63ccc96cf259873179bc89}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!GetVoxelBirthTimes@{GetVoxelBirthTimes}}
+\index{GetVoxelBirthTimes@{GetVoxelBirthTimes}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{GetVoxelBirthTimes()}{GetVoxelBirthTimes()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a91c4b7383d63ccc96cf259873179bc89} 
+FORCEINLINE const TArray$<$ float $>$ \& AIVSmoke\+Voxel\+Volume::\+\+Get\+Voxel\+Birth\+Times (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns the raw array of timestamps indicating when each voxel was created (Server Time). \Hypertarget{class_a_i_v_smoke_voxel_volume_a0e58b5b2bc27966c8e8d8c639799a3cd}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!GetVoxelBufferSize@{GetVoxelBufferSize}}
+\index{GetVoxelBufferSize@{GetVoxelBufferSize}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{GetVoxelBufferSize()}{GetVoxelBufferSize()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a0e58b5b2bc27966c8e8d8c639799a3cd} 
+FORCEINLINE int32 AIVSmoke\+Voxel\+Volume::\+\+Get\+Voxel\+Buffer\+Size (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns the current buffer size (for detecting resize). \Hypertarget{class_a_i_v_smoke_voxel_volume_adb31b217341a85071e97b580b9d1332b}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!GetVoxelDeathTimes@{GetVoxelDeathTimes}}
+\index{GetVoxelDeathTimes@{GetVoxelDeathTimes}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{GetVoxelDeathTimes()}{GetVoxelDeathTimes()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_adb31b217341a85071e97b580b9d1332b} 
+FORCEINLINE const TArray$<$ float $>$ \& AIVSmoke\+Voxel\+Volume::\+\+Get\+Voxel\+Death\+Times (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns the raw array of timestamps indicating when each voxel was removed (Server Time). \Hypertarget{class_a_i_v_smoke_voxel_volume_a656e9c7b4893bfcf47888cc1123fa6aa}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!GetVoxelSize@{GetVoxelSize}}
+\index{GetVoxelSize@{GetVoxelSize}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{GetVoxelSize()}{GetVoxelSize()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a656e9c7b4893bfcf47888cc1123fa6aa} 
+FORCEINLINE float AIVSmoke\+Voxel\+Volume::\+\+Get\+Voxel\+Size (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns the world-\/space size of each voxel. \Hypertarget{class_a_i_v_smoke_voxel_volume_a382268525f042f5d7a8d3fe245e8bf33}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!GetVoxelWorldAABBMax@{GetVoxelWorldAABBMax}}
+\index{GetVoxelWorldAABBMax@{GetVoxelWorldAABBMax}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{GetVoxelWorldAABBMax()}{GetVoxelWorldAABBMax()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a382268525f042f5d7a8d3fe245e8bf33} 
+FORCEINLINE FVector AIVSmoke\+Voxel\+Volume::\+\+Get\+Voxel\+World\+AABBMax (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns the AABBMax of voxels. \Hypertarget{class_a_i_v_smoke_voxel_volume_aa5512344c657aeeb45708df1feb356fc}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!GetVoxelWorldAABBMin@{GetVoxelWorldAABBMin}}
+\index{GetVoxelWorldAABBMin@{GetVoxelWorldAABBMin}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{GetVoxelWorldAABBMin()}{GetVoxelWorldAABBMin()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_aa5512344c657aeeb45708df1feb356fc} 
+FORCEINLINE FVector AIVSmoke\+Voxel\+Volume::\+\+Get\+Voxel\+World\+AABBMin (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns the AABBMin of voxels. \Hypertarget{class_a_i_v_smoke_voxel_volume_a6fb3f863ca860e957c0c1947f085b128}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!Initialize@{Initialize}}
+\index{Initialize@{Initialize}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{Initialize()}{Initialize()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a6fb3f863ca860e957c0c1947f085b128} 
+void AIVSmoke\+Voxel\+Volume::\+\+Initialize (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Allocates memory for the voxel grid based on {\ttfamily \doxylink{class_a_i_v_smoke_voxel_volume_a9ac65f3432cebe1270ec362166de076f}{Volume\+Extent}}. Automatically called on Begin\+Play. Can be called manually to resize the grid at runtime, Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_a_i_v_smoke_voxel_volume_a6fb3f863ca860e957c0c1947f085b128_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_a_i_v_smoke_voxel_volume_a8ec37381d4324faed6bd339c334e4273}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!IsVoxelActive@{IsVoxelActive}}
+\index{IsVoxelActive@{IsVoxelActive}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{IsVoxelActive()}{IsVoxelActive()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a8ec37381d4324faed6bd339c334e4273} 
+FORCEINLINE bool AIVSmoke\+Voxel\+Volume::\+\+Is\+Voxel\+Active (\begin{DoxyParamCaption}\item[{FInt\+Vector}]{Grid\+Pos}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Checks if a voxel at the given grid coordinate is currently active.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Grid\+Pos} & 3D grid coordinate of the voxel. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+True if the voxel is active. 
+\end{DoxyReturn}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_a_i_v_smoke_voxel_volume_a8ec37381d4324faed6bd339c334e4273_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_a_i_v_smoke_voxel_volume_a53bcd34ab36a8edced1382b41514a6c0}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!IsVoxelActive@{IsVoxelActive}}
+\index{IsVoxelActive@{IsVoxelActive}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{IsVoxelActive()}{IsVoxelActive()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a53bcd34ab36a8edced1382b41514a6c0} 
+FORCEINLINE bool AIVSmoke\+Voxel\+Volume::\+\+Is\+Voxel\+Active (\begin{DoxyParamCaption}\item[{int32}]{Index}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Checks if a voxel at the given linear index is currently active.
+
+
+\begin{DoxyParams}{Parameters}
+{\em Index} & Linear index of the voxel. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+True if the voxel is active (bit set). 
+\end{DoxyReturn}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{class_a_i_v_smoke_voxel_volume_a53bcd34ab36a8edced1382b41514a6c0_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_a_i_v_smoke_voxel_volume_a6eb5b557c91507c3fe9b181d251818c6}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!IsVoxelDataDirty@{IsVoxelDataDirty}}
+\index{IsVoxelDataDirty@{IsVoxelDataDirty}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{IsVoxelDataDirty()}{IsVoxelDataDirty()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a6eb5b557c91507c3fe9b181d251818c6} 
+FORCEINLINE bool AIVSmoke\+Voxel\+Volume::\+\+Is\+Voxel\+Data\+Dirty (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const\hspace{0.3cm}{\ttfamily [inline]}}
+
+Returns true if voxel data has been modified since last GPU upload. \Hypertarget{class_a_i_v_smoke_voxel_volume_a93f666213573d20b90c235d9124b7da6}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!ResetSimulation@{ResetSimulation}}
+\index{ResetSimulation@{ResetSimulation}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{ResetSimulation()}{ResetSimulation()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a93f666213573d20b90c235d9124b7da6} 
+void AIVSmoke\+Voxel\+Volume::\+\+Reset\+Simulation (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Resets the simulation state to {\ttfamily Idle} and clears all voxel data. (Server Only) Increments the {\ttfamily Generation} counter to force all clients to reset and resync. Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=200pt]{class_a_i_v_smoke_voxel_volume_a93f666213573d20b90c235d9124b7da6_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_a_i_v_smoke_voxel_volume_a6bb9b3b1da9a7b90aa755764f906dc41}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!StartPreviewSimulation@{StartPreviewSimulation}}
+\index{StartPreviewSimulation@{StartPreviewSimulation}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{StartPreviewSimulation()}{StartPreviewSimulation()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a6bb9b3b1da9a7b90aa755764f906dc41} 
+void AIVSmoke\+Voxel\+Volume::\+\+Start\+Preview\+Simulation (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Runs a preview of the simulation directly in the Editor viewport without starting a Play In Editor (PIE) session. Use this to quickly iterate on parameters like {\ttfamily \doxylink{class_a_i_v_smoke_voxel_volume_a7f6f92c9a2150fd42ed349805395f7f2}{Expansion\+Duration}}, {\ttfamily Noise}, and {\ttfamily Curves}. \begin{DoxyNote}{Note}
+This resets the current simulation state. 
+\end{DoxyNote}
+\Hypertarget{class_a_i_v_smoke_voxel_volume_ae6190c2f9228a444868e8dc57beeec2f}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!StartSimulation@{StartSimulation}}
+\index{StartSimulation@{StartSimulation}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{StartSimulation()}{StartSimulation()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_ae6190c2f9228a444868e8dc57beeec2f} 
+void AIVSmoke\+Voxel\+Volume::\+\+Start\+Simulation (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Begins the simulation. (Server Only) Sets the state to {\ttfamily Expansion} and synchronizes the start time and random seed to clients. Has no effect if the simulation is already running. Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=200pt]{class_a_i_v_smoke_voxel_volume_ae6190c2f9228a444868e8dc57beeec2f_cgraph}
+\end{center}
+\end{figure}
+\Hypertarget{class_a_i_v_smoke_voxel_volume_a2d3bdf666016c010e2dac82e5cb05a9c}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!StopPreviewSimulation@{StopPreviewSimulation}}
+\index{StopPreviewSimulation@{StopPreviewSimulation}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{StopPreviewSimulation()}{StopPreviewSimulation()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a2d3bdf666016c010e2dac82e5cb05a9c} 
+void AIVSmoke\+Voxel\+Volume::\+\+Stop\+Preview\+Simulation (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+Stops the current editor preview simulation and clears all generated voxel data. Returns the actor to an Idle state. \Hypertarget{class_a_i_v_smoke_voxel_volume_a72d3658c6eb8b7740e6b2295b98a46b5}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!StopSimulation@{StopSimulation}}
+\index{StopSimulation@{StopSimulation}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{StopSimulation()}{StopSimulation()}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a72d3658c6eb8b7740e6b2295b98a46b5} 
+void AIVSmoke\+Voxel\+Volume::\+\+Stop\+Simulation (\begin{DoxyParamCaption}\item[{bool}]{b\+Immediate}{ = {\ttfamily false}}\end{DoxyParamCaption})}
+
+Stops the simulation and triggers the dissipation phase. (Server Only)
+
+
+\begin{DoxyParams}{Parameters}
+{\em b\+Immediate} & If true, skips the dissipation phase and instantly transitions to {\ttfamily Finished}, clearing all voxels. \\
+\hline
+\end{DoxyParams}
+Here is the call graph for this function:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=200pt]{class_a_i_v_smoke_voxel_volume_a72d3658c6eb8b7740e6b2295b98a46b5_cgraph}
+\end{center}
+\end{figure}
+
+
+\label{doc-variable-members}
+\Hypertarget{class_a_i_v_smoke_voxel_volume_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_a_i_v_smoke_voxel_volume_ab014262f2b3853d39b11917ba3e2e1e6}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!bAutoStart@{bAutoStart}}
+\index{bAutoStart@{bAutoStart}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{bAutoStart}{bAutoStart}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_ab014262f2b3853d39b11917ba3e2e1e6} 
+bool AIVSmoke\+Voxel\+Volume::\+b\+Auto\+Start = false}
+
+If true, the simulation starts automatically on Begin\+Play. \Hypertarget{class_a_i_v_smoke_voxel_volume_aed2685aa0c10a3bed0799f8e1e5893fa}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!bDestroyOnFinish@{bDestroyOnFinish}}
+\index{bDestroyOnFinish@{bDestroyOnFinish}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{bDestroyOnFinish}{bDestroyOnFinish}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_aed2685aa0c10a3bed0799f8e1e5893fa} 
+bool AIVSmoke\+Voxel\+Volume::\+b\+Destroy\+On\+Finish = false}
+
+If true, the actor is automatically destroyed when the simulation reaches the {\ttfamily Finished} state. \Hypertarget{class_a_i_v_smoke_voxel_volume_aee5112a26e67409d062bf6cfbd6788cd}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!bEnableSimulationCollision@{bEnableSimulationCollision}}
+\index{bEnableSimulationCollision@{bEnableSimulationCollision}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{bEnableSimulationCollision}{bEnableSimulationCollision}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_aee5112a26e67409d062bf6cfbd6788cd} 
+bool AIVSmoke\+Voxel\+Volume::\+b\+Enable\+Simulation\+Collision = true}
+
+If true, voxels perform collision checks against the world before spawning. Disable this to allow smoke to pass through walls, significantly reducing CPU cost. \Hypertarget{class_a_i_v_smoke_voxel_volume_ad23cc54d625c40b54a59745289d334ca}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!bIsInfinite@{bIsInfinite}}
+\index{bIsInfinite@{bIsInfinite}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{bIsInfinite}{bIsInfinite}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_ad23cc54d625c40b54a59745289d334ca} 
+bool AIVSmoke\+Voxel\+Volume::\+b\+Is\+Infinite = false}
+
+If true, the smoke stays in the {\ttfamily Sustain} phase indefinitely. \Hypertarget{class_a_i_v_smoke_voxel_volume_a41da9ee7f907f7494752e9fb3fe10314}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!DebugSettings@{DebugSettings}}
+\index{DebugSettings@{DebugSettings}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{DebugSettings}{DebugSettings}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a41da9ee7f907f7494752e9fb3fe10314} 
+\doxymbox{\hyperlink{struct_f_i_v_smoke_debug_settings}{FIVSmoke\+Debug\+Settings}} AIVSmoke\+Voxel\+Volume::\+\+Debug\+Settings}
+
+Configuration settings for visual debugging tools. \Hypertarget{class_a_i_v_smoke_voxel_volume_a4d15ba929200aba896ef14157b549624}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!DebugVoxelMaterial@{DebugVoxelMaterial}}
+\index{DebugVoxelMaterial@{DebugVoxelMaterial}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{DebugVoxelMaterial}{DebugVoxelMaterial}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a4d15ba929200aba896ef14157b549624} 
+TObject\+Ptr$<$UMaterial\+Interface$>$ AIVSmoke\+Voxel\+Volume::\+\+Debug\+Voxel\+Material}
+
+Optional material to apply to the debug voxel mesh. \Hypertarget{class_a_i_v_smoke_voxel_volume_a62c48d011fa28ef6168850937fa57300}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!DebugVoxelMesh@{DebugVoxelMesh}}
+\index{DebugVoxelMesh@{DebugVoxelMesh}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{DebugVoxelMesh}{DebugVoxelMesh}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a62c48d011fa28ef6168850937fa57300} 
+TObject\+Ptr$<$UStatic\+Mesh$>$ AIVSmoke\+Voxel\+Volume::\+\+Debug\+Voxel\+Mesh}
+
+Optional static mesh to use for voxel visualization when {\ttfamily b\+Show\+Voxel\+Mesh} is enabled in settings. \Hypertarget{class_a_i_v_smoke_voxel_volume_af3b5777030188732ca1bcd706d9123eb}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!DissipationCurve@{DissipationCurve}}
+\index{DissipationCurve@{DissipationCurve}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{DissipationCurve}{DissipationCurve}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_af3b5777030188732ca1bcd706d9123eb} 
+TObject\+Ptr$<$UCurve\+Float$>$ AIVSmoke\+Voxel\+Volume::\+\+Dissipation\+Curve}
+
+Defines the normalized rate of voxel survival over {\ttfamily \doxylink{class_a_i_v_smoke_voxel_volume_a4233c1cdaf810100d2672699b2b96879}{Dissipation\+Duration}}.
+\begin{DoxyItemize}
+\item X-\/axis (Time):\+ 0.\+0 to 1.\+0 (Normalized Duration)
+\item Y-\/axis (Value):\+ 1.\+0 to 0.\+0 (Fraction of voxels remaining) \begin{DoxyNote}{Note}
+The curve should be monotonically decreasing (start at 1.\+0, end at 0.\+0). 
+\end{DoxyNote}
+
+\end{DoxyItemize}\Hypertarget{class_a_i_v_smoke_voxel_volume_a4233c1cdaf810100d2672699b2b96879}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!DissipationDuration@{DissipationDuration}}
+\index{DissipationDuration@{DissipationDuration}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{DissipationDuration}{DissipationDuration}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a4233c1cdaf810100d2672699b2b96879} 
+float AIVSmoke\+Voxel\+Volume::\+\+Dissipation\+Duration = 2.\+0f}
+
+The duration (in seconds) of the voxel removal phase. The actual Dissipation state lasts for {\ttfamily \doxylink{class_a_i_v_smoke_voxel_volume_a4233c1cdaf810100d2672699b2b96879}{Dissipation\+Duration} + \doxylink{class_a_i_v_smoke_voxel_volume_a7d92753fc9e0a1371b6abee219a07561}{Fade\+Out\+Duration}}. \Hypertarget{class_a_i_v_smoke_voxel_volume_ad80330806a2b12bc75565574421e1dd6}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!DissipationNoise@{DissipationNoise}}
+\index{DissipationNoise@{DissipationNoise}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{DissipationNoise}{DissipationNoise}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_ad80330806a2b12bc75565574421e1dd6} 
+float AIVSmoke\+Voxel\+Volume::\+\+Dissipation\+Noise = 100.\+0f}
+
+Randomness added to the voxel removal order. Higher values cause the smoke to break apart more randomly during dissipation. \Hypertarget{class_a_i_v_smoke_voxel_volume_a871fe8eb044c24a11598fac4a0add5a9}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!ExpansionCurve@{ExpansionCurve}}
+\index{ExpansionCurve@{ExpansionCurve}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{ExpansionCurve}{ExpansionCurve}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a871fe8eb044c24a11598fac4a0add5a9} 
+TObject\+Ptr$<$UCurve\+Float$>$ AIVSmoke\+Voxel\+Volume::\+\+Expansion\+Curve}
+
+Defines the normalized rate of voxel spawning over {\ttfamily \doxylink{class_a_i_v_smoke_voxel_volume_a7f6f92c9a2150fd42ed349805395f7f2}{Expansion\+Duration}}.
+\begin{DoxyItemize}
+\item X-\/axis (Time):\+ 0.\+0 to 1.\+0 (Normalized Duration)
+\item Y-\/axis (Value):\+ 0.\+0 to 1.\+0 (Fraction of {\ttfamily \doxylink{class_a_i_v_smoke_voxel_volume_ac91ff2505673f6b8fef16523882c0417}{Max\+Voxel\+Num}} to spawn) \begin{DoxyNote}{Note}
+The curve should be monotonically increasing. 
+\end{DoxyNote}
+
+\end{DoxyItemize}\Hypertarget{class_a_i_v_smoke_voxel_volume_a7f6f92c9a2150fd42ed349805395f7f2}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!ExpansionDuration@{ExpansionDuration}}
+\index{ExpansionDuration@{ExpansionDuration}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{ExpansionDuration}{ExpansionDuration}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a7f6f92c9a2150fd42ed349805395f7f2} 
+float AIVSmoke\+Voxel\+Volume::\+\+Expansion\+Duration = 3.\+0f}
+
+The duration (in seconds) of the active expansion phase where voxels are spawned. The actual Expansion state lasts for {\ttfamily \doxylink{class_a_i_v_smoke_voxel_volume_a7f6f92c9a2150fd42ed349805395f7f2}{Expansion\+Duration} + \doxylink{class_a_i_v_smoke_voxel_volume_a2f5ed5eb5d3dccaa786795fb1b905943}{Fade\+In\+Duration}}. \Hypertarget{class_a_i_v_smoke_voxel_volume_ad026a2b12a58bd99e49600b562b404b1}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!ExpansionNoise@{ExpansionNoise}}
+\index{ExpansionNoise@{ExpansionNoise}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{ExpansionNoise}{ExpansionNoise}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_ad026a2b12a58bd99e49600b562b404b1} 
+float AIVSmoke\+Voxel\+Volume::\+\+Expansion\+Noise = 100.\+0f}
+
+Randomness added to the flood-\/fill pathfinding cost. Higher values create more irregular, jagged shapes instead of a perfect sphere. \Hypertarget{class_a_i_v_smoke_voxel_volume_a2f5ed5eb5d3dccaa786795fb1b905943}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!FadeInDuration@{FadeInDuration}}
+\index{FadeInDuration@{FadeInDuration}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{FadeInDuration}{FadeInDuration}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a2f5ed5eb5d3dccaa786795fb1b905943} 
+float AIVSmoke\+Voxel\+Volume::\+\+Fade\+In\+Duration = 2.\+0f}
+
+Additional time added to the Expansion phase to allow for opacity fade-\/in. \Hypertarget{class_a_i_v_smoke_voxel_volume_a7d92753fc9e0a1371b6abee219a07561}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!FadeOutDuration@{FadeOutDuration}}
+\index{FadeOutDuration@{FadeOutDuration}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{FadeOutDuration}{FadeOutDuration}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a7d92753fc9e0a1371b6abee219a07561} 
+float AIVSmoke\+Voxel\+Volume::\+\+Fade\+Out\+Duration = 2.\+0f}
+
+Additional time added to the Dissipation phase to allow for opacity fade-\/out. \Hypertarget{class_a_i_v_smoke_voxel_volume_ac91ff2505673f6b8fef16523882c0417}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!MaxVoxelNum@{MaxVoxelNum}}
+\index{MaxVoxelNum@{MaxVoxelNum}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{MaxVoxelNum}{MaxVoxelNum}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_ac91ff2505673f6b8fef16523882c0417} 
+int32 AIVSmoke\+Voxel\+Volume::\+\+Max\+Voxel\+Num = 1000}
+
+The hard limit on the number of active voxels. Simulation will stop spawning new voxels once this limit is reached. Use this to guarantee a fixed performance budget for this actor. \Hypertarget{class_a_i_v_smoke_voxel_volume_a7ac94e6fa1b5e405f86344e1758f1575}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!Radii@{Radii}}
+\index{Radii@{Radii}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{Radii}{Radii}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a7ac94e6fa1b5e405f86344e1758f1575} 
+FVector AIVSmoke\+Voxel\+Volume::\+\+Radii = FVector(1.\+0f, 1.\+0f, 1.\+0f)}
+
+Defines the relative aspect ratio of the smoke\textquotesingle{}s expansion shape per axis. These values act as ratios, not absolute units.
+\begin{DoxyItemize}
+\item Example:\+ (1.\+0, 1.\+0, 1.\+0) creates a spherical shape.
+\item Example:\+ (2.\+0, 1.\+0, 1.\+0) creates an ellipsoid that stretches twice as far along the X-\/axis. 
+\end{DoxyItemize}\Hypertarget{class_a_i_v_smoke_voxel_volume_af180602d8f27cf16f1eb3070d98da4fc}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!SmokePresetOverride@{SmokePresetOverride}}
+\index{SmokePresetOverride@{SmokePresetOverride}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{SmokePresetOverride}{SmokePresetOverride}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_af180602d8f27cf16f1eb3070d98da4fc} 
+TObject\+Ptr$<$\doxymbox{\hyperlink{class_u_i_v_smoke_smoke_preset}{UIVSmoke\+Smoke\+Preset}}$>$ AIVSmoke\+Voxel\+Volume::\+\+Smoke\+Preset\+Override}
+
+Optional Data Asset to override visual properties such as Smoke Color, Absorption, and Density. If set, the visual settings in this preset take precedence over the actor\textquotesingle{}s local settings. \begin{DoxySeeAlso}{See also}
+\doxylink{class_u_i_v_smoke_smoke_preset}{UIVSmoke\+Smoke\+Preset} 
+\end{DoxySeeAlso}
+\Hypertarget{class_a_i_v_smoke_voxel_volume_a5837d33af8adc2b43930f5c19b1b8d4d}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!SustainDuration@{SustainDuration}}
+\index{SustainDuration@{SustainDuration}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{SustainDuration}{SustainDuration}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a5837d33af8adc2b43930f5c19b1b8d4d} 
+float AIVSmoke\+Voxel\+Volume::\+\+Sustain\+Duration = 5.\+0f}
+
+The duration (in seconds) the smoke maintains its shape after expansion. Ignored if {\ttfamily \doxylink{class_a_i_v_smoke_voxel_volume_ad23cc54d625c40b54a59745289d334ca}{b\+Is\+Infinite}} is true. \Hypertarget{class_a_i_v_smoke_voxel_volume_a9ac65f3432cebe1270ec362166de076f}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!VolumeExtent@{VolumeExtent}}
+\index{VolumeExtent@{VolumeExtent}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{VolumeExtent}{VolumeExtent}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a9ac65f3432cebe1270ec362166de076f} 
+FInt\+Vector AIVSmoke\+Voxel\+Volume::\+\+Volume\+Extent = FInt\+Vector(16, 16, 16)}
+
+Half-\/size of the voxel grid in index units. The actual grid resolution will be {\ttfamily (Extent \texorpdfstring{$\ast$}{*} 2) -\/ 1} per axis. \begin{DoxyNote}{Note}
+Increasing this value exponentially increases memory usage. Keep it as low as possible. 
+\end{DoxyNote}
+\Hypertarget{class_a_i_v_smoke_voxel_volume_a54d6c8a4e1a1d151a337cf63aa36e4c8}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!VoxelCollisionChannel@{VoxelCollisionChannel}}
+\index{VoxelCollisionChannel@{VoxelCollisionChannel}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{VoxelCollisionChannel}{VoxelCollisionChannel}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a54d6c8a4e1a1d151a337cf63aa36e4c8} 
+TEnum\+As\+Byte$<$ECollision\+Channel$>$ AIVSmoke\+Voxel\+Volume::\+\+Voxel\+Collision\+Channel = ECC\+\_\+\+World\+Static}
+
+The collision channel used for obstacle detection during expansion. \Hypertarget{class_a_i_v_smoke_voxel_volume_a6b4caab4220e38ea5ef49f8fa67bf767}\index{AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}!VoxelSize@{VoxelSize}}
+\index{VoxelSize@{VoxelSize}!AIVSmokeVoxelVolume@{AIVSmokeVoxelVolume}}
+\doxysubsubsection{\texorpdfstring{VoxelSize}{VoxelSize}}
+{\footnotesize\ttfamily \label{class_a_i_v_smoke_voxel_volume_a6b4caab4220e38ea5ef49f8fa67bf767} 
+float AIVSmoke\+Voxel\+Volume::\+\+Voxel\+Size = 50.\+0f}
+
+World space size of a single voxel in centimeters. \begin{DoxyNote}{Note}
+Larger values cover more area with the same performance cost but reduce visual detail. Smaller values require more voxels (higher {\ttfamily \doxylink{class_a_i_v_smoke_voxel_volume_a9ac65f3432cebe1270ec362166de076f}{Volume\+Extent}} or {\ttfamily \doxylink{class_a_i_v_smoke_voxel_volume_ac91ff2505673f6b8fef16523882c0417}{Max\+Voxel\+Num}}) to cover the same area. 
+\end{DoxyNote}
+
+
+The documentation for this class was generated from the following files:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Voxel\+Volume.\+h\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Private/\+IVSmoke\+Voxel\+Volume.\+cpp\end{DoxyCompactItemize}

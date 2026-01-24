@@ -1,0 +1,85 @@
+\doxysection{FIVSmoke\+Occupancy\+Config Struct Reference}
+\hypertarget{struct_f_i_v_smoke_occupancy_config}{}\label{struct_f_i_v_smoke_occupancy_config}\index{FIVSmokeOccupancyConfig@{FIVSmokeOccupancyConfig}}
+
+
+{\ttfamily \+\#include $<$IVSmoke\+Ray\+March\+Pipeline.\+h$>$}
+
+
+
+Collaboration diagram for FIVSmoke\+Occupancy\+Config:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=213pt]{struct_f_i_v_smoke_occupancy_config__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static constexpr uint32 \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_a4eb121fccda2895443499fc3ceef93e0}{Tile\+SizeX}} = 16
+\item 
+\Hypertarget{struct_f_i_v_smoke_occupancy_config_a7fcd77f0d87227d356624c989c2b5b38}\label{struct_f_i_v_smoke_occupancy_config_a7fcd77f0d87227d356624c989c2b5b38} 
+static constexpr uint32 {\bfseries Tile\+SizeY} = 16
+\item 
+static constexpr uint32 \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_ae133d58a822de3eb0b93903625e7f84a}{Step\+Divisor}} = 4
+\item 
+static constexpr uint32 \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_ad9c43934dd3743b927d33007e522528f}{Max\+Volumes}} = 128
+\item 
+static constexpr uint32 \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_ae96cd7b47fe5fb1f235ae00763941558}{Tile\+Setup\+ThreadsX}} = 8
+\item 
+\Hypertarget{struct_f_i_v_smoke_occupancy_config_a9ed659159cd59bef40264af646b828f9}\label{struct_f_i_v_smoke_occupancy_config_a9ed659159cd59bef40264af646b828f9} 
+static constexpr uint32 {\bfseries Tile\+Setup\+ThreadsY} = 8
+\item 
+static constexpr uint32 \doxymbox{\hyperlink{struct_f_i_v_smoke_occupancy_config_abfa6088ef5125cca6d6806cb94483cf9}{Occupancy\+Build\+ThreadsX}} = 8
+\item 
+\Hypertarget{struct_f_i_v_smoke_occupancy_config_a23eabbcce7309fb69dc94aa48e6097f7}\label{struct_f_i_v_smoke_occupancy_config_a23eabbcce7309fb69dc94aa48e6097f7} 
+static constexpr uint32 {\bfseries Occupancy\+Build\+ThreadsY} = 8
+\item 
+\Hypertarget{struct_f_i_v_smoke_occupancy_config_a7b3d851d4b795fab9097250091b08c1d}\label{struct_f_i_v_smoke_occupancy_config_a7b3d851d4b795fab9097250091b08c1d} 
+static constexpr uint32 {\bfseries Occupancy\+Build\+ThreadsZ} = 4
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Occupancy system configuration constants. Tile-\/based occupancy for efficient empty space skipping.
+
+Memory Layout (1080p):\+ Tile\+Count:\+ 120 × 68 tiles (W/\+16 × H/\+16) Step\+Slices:\+ 32 (128 steps /\+ 4) Occupancy Texture:\+ 120 × 68 × 32 = 261,120 texels Per-\/texel:\+ uint4 (128 bits for 128 volumes) Total Memory:\+ \texorpdfstring{$\sim$}{\string~}8.4 MB (View + Light) 
+
+\label{doc-variable-members}
+\Hypertarget{struct_f_i_v_smoke_occupancy_config_doc-variable-members}
+\doxysubsection{Member Data Documentation}
+\Hypertarget{struct_f_i_v_smoke_occupancy_config_ad9c43934dd3743b927d33007e522528f}\index{FIVSmokeOccupancyConfig@{FIVSmokeOccupancyConfig}!MaxVolumes@{MaxVolumes}}
+\index{MaxVolumes@{MaxVolumes}!FIVSmokeOccupancyConfig@{FIVSmokeOccupancyConfig}}
+\doxysubsubsection{\texorpdfstring{MaxVolumes}{MaxVolumes}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_occupancy_config_ad9c43934dd3743b927d33007e522528f} 
+uint32 FIVSmoke\+Occupancy\+Config::\+\+Max\+Volumes = 128\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [constexpr]}}
+
+Maximum supported volumes (128 = uint4 bitmask). \Hypertarget{struct_f_i_v_smoke_occupancy_config_abfa6088ef5125cca6d6806cb94483cf9}\index{FIVSmokeOccupancyConfig@{FIVSmokeOccupancyConfig}!OccupancyBuildThreadsX@{OccupancyBuildThreadsX}}
+\index{OccupancyBuildThreadsX@{OccupancyBuildThreadsX}!FIVSmokeOccupancyConfig@{FIVSmokeOccupancyConfig}}
+\doxysubsubsection{\texorpdfstring{OccupancyBuildThreadsX}{OccupancyBuildThreadsX}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_occupancy_config_abfa6088ef5125cca6d6806cb94483cf9} 
+uint32 FIVSmoke\+Occupancy\+Config::\+\+Occupancy\+Build\+ThreadsX = 8\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [constexpr]}}
+
+Thread group size for occupancy build (8×8×4). \Hypertarget{struct_f_i_v_smoke_occupancy_config_ae133d58a822de3eb0b93903625e7f84a}\index{FIVSmokeOccupancyConfig@{FIVSmokeOccupancyConfig}!StepDivisor@{StepDivisor}}
+\index{StepDivisor@{StepDivisor}!FIVSmokeOccupancyConfig@{FIVSmokeOccupancyConfig}}
+\doxysubsubsection{\texorpdfstring{StepDivisor}{StepDivisor}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_occupancy_config_ae133d58a822de3eb0b93903625e7f84a} 
+uint32 FIVSmoke\+Occupancy\+Config::\+\+Step\+Divisor = 4\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [constexpr]}}
+
+Step divisor for depth slicing (128 steps /\+ 4 = 32 slices). \Hypertarget{struct_f_i_v_smoke_occupancy_config_ae96cd7b47fe5fb1f235ae00763941558}\index{FIVSmokeOccupancyConfig@{FIVSmokeOccupancyConfig}!TileSetupThreadsX@{TileSetupThreadsX}}
+\index{TileSetupThreadsX@{TileSetupThreadsX}!FIVSmokeOccupancyConfig@{FIVSmokeOccupancyConfig}}
+\doxysubsubsection{\texorpdfstring{TileSetupThreadsX}{TileSetupThreadsX}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_occupancy_config_ae96cd7b47fe5fb1f235ae00763941558} 
+uint32 FIVSmoke\+Occupancy\+Config::\+\+Tile\+Setup\+ThreadsX = 8\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [constexpr]}}
+
+Thread group size for tile setup (8×8 threads per tile). \Hypertarget{struct_f_i_v_smoke_occupancy_config_a4eb121fccda2895443499fc3ceef93e0}\index{FIVSmokeOccupancyConfig@{FIVSmokeOccupancyConfig}!TileSizeX@{TileSizeX}}
+\index{TileSizeX@{TileSizeX}!FIVSmokeOccupancyConfig@{FIVSmokeOccupancyConfig}}
+\doxysubsubsection{\texorpdfstring{TileSizeX}{TileSizeX}}
+{\footnotesize\ttfamily \label{struct_f_i_v_smoke_occupancy_config_a4eb121fccda2895443499fc3ceef93e0} 
+uint32 FIVSmoke\+Occupancy\+Config::\+\+Tile\+SizeX = 16\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [constexpr]}}
+
+Tile size in pixels (16×16 = 256 pixels per tile). 
+
+The documentation for this struct was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Ray\+March\+Pipeline.\+h\end{DoxyCompactItemize}

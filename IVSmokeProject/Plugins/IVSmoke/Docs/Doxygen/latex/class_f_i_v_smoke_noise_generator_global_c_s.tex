@@ -1,0 +1,65 @@
+\doxysection{FIVSmoke\+Noise\+Generator\+Global\+CS Class Reference}
+\hypertarget{class_f_i_v_smoke_noise_generator_global_c_s}{}\label{class_f_i_v_smoke_noise_generator_global_c_s}\index{FIVSmokeNoiseGeneratorGlobalCS@{FIVSmokeNoiseGeneratorGlobalCS}}
+
+
+Inheritance diagram for FIVSmoke\+Noise\+Generator\+Global\+CS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=245pt]{class_f_i_v_smoke_noise_generator_global_c_s__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for FIVSmoke\+Noise\+Generator\+Global\+CS:\+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=245pt]{class_f_i_v_smoke_noise_generator_global_c_s__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_noise_generator_global_c_s_a37f22d45a8cf1ef43d37ac4357d01c4d}\label{class_f_i_v_smoke_noise_generator_global_c_s_a37f22d45a8cf1ef43d37ac4357d01c4d} 
+{\bfseries DECLARE\+\_\+\+GLOBAL\+\_\+\+SHADER} (\doxymbox{\hyperlink{class_f_i_v_smoke_noise_generator_global_c_s}{FIVSmoke\+Noise\+Generator\+Global\+CS}})
+\item 
+\Hypertarget{class_f_i_v_smoke_noise_generator_global_c_s_a2045a5ab9120f1422b36dc9956169a34}\label{class_f_i_v_smoke_noise_generator_global_c_s_a2045a5ab9120f1422b36dc9956169a34} 
+{\bfseries SHADER\+\_\+\+USE\+\_\+\+PARAMETER\+\_\+\+STRUCT} (\doxymbox{\hyperlink{class_f_i_v_smoke_noise_generator_global_c_s}{FIVSmoke\+Noise\+Generator\+Global\+CS}}, FGlobal\+Shader)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static bool \doxymbox{\hyperlink{class_f_i_v_smoke_noise_generator_global_c_s_ab76a70a0103dfffd10049fa3d790be89}{Should\+Compile\+Permutation}} (const FGlobal\+Shader\+Permutation\+Parameters \&Parameters)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{class_f_i_v_smoke_noise_generator_global_c_s_a15b6b406b1dd67c9df79d6703657421f}\label{class_f_i_v_smoke_noise_generator_global_c_s_a15b6b406b1dd67c9df79d6703657421f} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeX} = 8
+\item 
+\Hypertarget{class_f_i_v_smoke_noise_generator_global_c_s_a2e12937df4b5733d0e20ebba92fb28e7}\label{class_f_i_v_smoke_noise_generator_global_c_s_a2e12937df4b5733d0e20ebba92fb28e7} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeY} = 8
+\item 
+\Hypertarget{class_f_i_v_smoke_noise_generator_global_c_s_a3eaa13575de36d730721347fdca021e4}\label{class_f_i_v_smoke_noise_generator_global_c_s_a3eaa13575de36d730721347fdca021e4} 
+static constexpr uint32 {\bfseries Thread\+Group\+SizeZ} = 8
+\item 
+\Hypertarget{class_f_i_v_smoke_noise_generator_global_c_s_a0173d7058ea28218e310090a5ed8e6fb}\label{class_f_i_v_smoke_noise_generator_global_c_s_a0173d7058ea28218e310090a5ed8e6fb} 
+static constexpr const TCHAR \texorpdfstring{$\ast$}{*} {\bfseries Event\+Name} = TEXT("{}IVSmoke\+Noise\+Generator\+Global\+CS"{})
+\end{DoxyCompactItemize}
+
+
+\label{doc-func-members}
+\Hypertarget{class_f_i_v_smoke_noise_generator_global_c_s_doc-func-members}
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_f_i_v_smoke_noise_generator_global_c_s_ab76a70a0103dfffd10049fa3d790be89}\index{FIVSmokeNoiseGeneratorGlobalCS@{FIVSmokeNoiseGeneratorGlobalCS}!ShouldCompilePermutation@{ShouldCompilePermutation}}
+\index{ShouldCompilePermutation@{ShouldCompilePermutation}!FIVSmokeNoiseGeneratorGlobalCS@{FIVSmokeNoiseGeneratorGlobalCS}}
+\doxysubsubsection{\texorpdfstring{ShouldCompilePermutation()}{ShouldCompilePermutation()}}
+{\footnotesize\ttfamily \label{class_f_i_v_smoke_noise_generator_global_c_s_ab76a70a0103dfffd10049fa3d790be89} 
+bool FIVSmoke\+Noise\+Generator\+Global\+CS::\+\+Should\+Compile\+Permutation (\begin{DoxyParamCaption}\item[{const FGlobal\+Shader\+Permutation\+Parameters \&}]{Parameters}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+Output noise volume texture. Texture resolution (voxel count per axis). Number of fractal octaves for noise generation. Wrap value for seamless tiling. Number of cells per axis for cellular noise. Noise amplitude (intensity). Size of each noise cell. Random seed for noise generation. 
+
+The documentation for this class was generated from the following file:\+\begin{DoxyCompactItemize}
+\item 
+C:\+/\+\+Users/\+\+Jungle/\+\+Perforce/\+geb0598\+\_\+dev/\+\+IVSmoke\+Project/\+\+Plugins/\+\+IVSmoke/\+\+Source/\+\+IVSmoke/\+\+Public/\+IVSmoke\+Shaders.\+h\end{DoxyCompactItemize}
