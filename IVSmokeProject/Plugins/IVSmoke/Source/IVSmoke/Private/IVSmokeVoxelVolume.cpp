@@ -189,11 +189,7 @@ void AIVSmokeVoxelVolume::PostEditMove(bool bFinished)
 
 void AIVSmokeVoxelVolume::Initialize()
 {
-	GridResolution.X = FMath::Max(1, (VolumeExtent.X * 2) - 1);
-	GridResolution.Y = FMath::Max(1, (VolumeExtent.Y * 2) - 1);
-	GridResolution.Z = FMath::Max(1, (VolumeExtent.Z * 2) - 1);
-
-	CenterOffset = VolumeExtent - FIntVector(1, 1, 1);
+	FIntVector GridResolution = GetGridResolution();
 
 	const int32 TotalGridSizeYZ = GridResolution.Y * GridResolution.Z;
 	const int32 TotalGridSize = GridResolution.X * TotalGridSizeYZ;
@@ -331,7 +327,7 @@ void AIVSmokeVoxelVolume::HandleStateTransition(EIVSmokeVoxelVolumeState NewStat
 
 		RandomStream.Initialize(ServerState.RandomSeed);
 
-		int32 CenterIndex = UIVSmokeGridLibrary::GridToIndex(CenterOffset, GridResolution);
+		int32 CenterIndex = UIVSmokeGridLibrary::GridToIndex(GetCenterOffset(), GetGridResolution());
 
 		if (VoxelCosts.IsValidIndex(CenterIndex))
 		{
@@ -364,20 +360,20 @@ void AIVSmokeVoxelVolume::ClearSimulationData()
 		Initialize();
 	}
 
+	FIntVector GridResolution = GetGridResolution();
+
 	const int32 TotalGridSizeYZ = GridResolution.Y * GridResolution.Z;
 	const int32 TotalGridSize = GridResolution.X * TotalGridSizeYZ;
 
-	// @todo Assertion Message
-	check(VoxelBirthTimes.Num() == TotalGridSize)
+	checkf(VoxelBirthTimes.Num() == TotalGridSize, TEXT("[AIVSmokeVoxelVolume::ClearSimulationData] Invalid Buffer Size : VoxelBirthTimes size %d does not match TotalGridSize %d."), VoxelBirthTimes.Num(), TotalGridSize);
 	FMemory::Memzero(VoxelBirthTimes.GetData(), VoxelBirthTimes.Num() * sizeof(float));
 
-	check(VoxelDeathTimes.Num() == TotalGridSize)
+	checkf(VoxelDeathTimes.Num() == TotalGridSize, TEXT("[AIVSmokeVoxelVolume::ClearSimulationData] Invalid Buffer Size : VoxelDeathTimes size %d does not match TotalGridSize %d."), VoxelDeathTimes.Num(), TotalGridSize);
 	FMemory::Memzero(VoxelDeathTimes.GetData(), VoxelDeathTimes.Num() * sizeof(float));
 
-	check(VoxelBits.Num() == TotalGridSizeYZ);
+	checkf(VoxelBits.Num() == TotalGridSizeYZ, TEXT("[AIVSmokeVoxelVolume::ClearSimulationData] Invalid Buffer Size : VoxelBits size %d does not match TotalGridSizeYZ %d."), VoxelBits.Num(), TotalGridSizeYZ);
 	FMemory::Memzero(VoxelBits.GetData(), VoxelBits.Num() * sizeof(uint64));
 
-	// @todo Change this to fixed point
 	VoxelCosts.Init(FLT_MAX, VoxelCosts.Num());
 
 	GeneratedVoxelIndices.Reset();
@@ -395,30 +391,14 @@ void AIVSmokeVoxelVolume::ClearSimulationData()
 	}
 }
 
-bool AIVSmokeVoxelVolume::IsVoxelBlocked(const UWorld* World, const FVector& WorldPos) const
-{
-	if (!World)
-	{
-		return false;
-	}
-
-	FCollisionQueryParams CollisionParams;
-	CollisionParams.bTraceComplex = false;
-
-	const float VoxelExtent = VoxelSize * 0.5f * CollisionExtentScale;
-	const FCollisionShape CollisionShape = FCollisionShape::MakeBox(FVector(VoxelExtent));
-	return World->OverlapBlockingTestByChannel(
-		WorldPos,
-		FQuat::Identity,
-		VoxelCollisionChannel,
-		CollisionShape,
-		CollisionParams
-	);
-}
-
 bool AIVSmokeVoxelVolume::IsConnectionBlocked(const UWorld* World, const FVector& BeginPos, const FVector& EndPos) const
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE_TEXT("IVSmoke::AIVSmokeVoxelVolume::IsConnectionBlocked");
+
+	if (!bEnableSimulationCollision)
+	{
+		return false;
+	}
 
 	if (!World)
 	{
@@ -599,6 +579,9 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 SpawnNum, float StartSimTime, f
 
 	FTransform ActorTrans = GetActorTransform();
 
+	FIntVector GridResolution = GetGridResolution();
+	FIntVector CenterOffset = GetCenterOffset();
+
 	int32 SpawnCount = 0;
 
 	FVector InvRadii;
@@ -717,6 +700,74 @@ void AIVSmokeVoxelVolume::ProcessDissipation(int32 RemoveNum, float StartSimTime
 	}
 }
 
+void AIVSmokeVoxelVolume::SetVoxelBirthTime(int32 Index, float BirthTime)
+{
+	if (!VoxelBirthTimes.IsValidIndex(Index))
+	{
+		return;
+	}
+
+	if (VoxelBirthTimes[Index] > 0.0f)
+	{
+		return;
+	}
+
+	float SafeBirthTime = FMath::Max(BirthTime, 0.001f);
+	VoxelBirthTimes[Index] = SafeBirthTime;
+
+	if (VoxelDeathTimes.IsValidIndex(Index))
+	{
+		VoxelDeathTimes[Index] = 0.0f;
+	}
+
+	FIntVector GridResolution = GetGridResolution();
+	FIntVector CenterOffset = GetCenterOffset();
+
+	UIVSmokeGridLibrary::SetVoxelBit(VoxelBits, Index, GridResolution, true);
+
+	++ActiveVoxelNum;
+	INC_DWORD_STAT(STAT_IVSmoke_CreatedVoxel);
+
+	DirtyLevel = EIVSmokeDirtyLevel::Dirty;
+
+	const FIntVector GridPos = UIVSmokeGridLibrary::IndexToGrid(Index, GridResolution);
+	const FVector LocalPos = UIVSmokeGridLibrary::GridToLocal(GridPos, VoxelSize, CenterOffset);
+	const FVector WorldPos = GetActorTransform().TransformPosition(LocalPos);
+	VoxelWorldAABBMin = FVector::Min(WorldPos, VoxelWorldAABBMin);
+	VoxelWorldAABBMax = FVector::Max(WorldPos, VoxelWorldAABBMax);
+}
+
+void AIVSmokeVoxelVolume::SetVoxelDeathTime(int32 Index, float DeathTime)
+{
+	if (!VoxelDeathTimes.IsValidIndex(Index))
+	{
+		return;
+	}
+
+	if (VoxelDeathTimes[Index] > 0.0f)
+	{
+		return;
+	}
+
+	const float SafeDeathTime = FMath::Max(DeathTime, 0.001f);
+	VoxelDeathTimes[Index] = SafeDeathTime;
+
+	FIntVector GridResolution = GetGridResolution();
+
+	UIVSmokeGridLibrary::SetVoxelBit(VoxelBits, Index, GridResolution, false);
+
+	--ActiveVoxelNum;
+	INC_DWORD_STAT(STAT_IVSmoke_DestroyedVoxel)
+
+	DirtyLevel = EIVSmokeDirtyLevel::Dirty;
+}
+
+#pragma endregion
+
+//~==============================================================================
+// Collision
+#pragma region Collision
+
 void AIVSmokeVoxelVolume::TryUpdateCollision(bool bForce)
 {
 	if (bIsFastForwarding)
@@ -728,7 +779,7 @@ void AIVSmokeVoxelVolume::TryUpdateCollision(bool bForce)
 	{
 		CollisionComponent->TryUpdateCollision(
 			VoxelBits,
-			GridResolution,
+			GetGridResolution(),
 			VoxelSize,
 			ActiveVoxelNum,
 			GetSyncWorldTimeSeconds(),
@@ -737,24 +788,6 @@ void AIVSmokeVoxelVolume::TryUpdateCollision(bool bForce)
 	}
 }
 
-float AIVSmokeVoxelVolume::GetSyncWorldTimeSeconds() const
-{
-	UWorld* World = GetWorld();
-	if (!World)
-	{
-		return 0.0f;
-	}
-
-	if (World->GetNetMode() == NM_Client)
-	{
-		if (AGameStateBase* GameState = World->GetGameState())
-		{
-			return GameState->GetServerWorldTimeSeconds();
-		}
-	}
-
-	return World->GetTimeSeconds();
-}
 #pragma endregion
 
 //~==============================================================================
@@ -789,61 +822,23 @@ FTextureRHIRef AIVSmokeVoxelVolume::GetHoleTexture() const
 	return nullptr;
 }
 
-void AIVSmokeVoxelVolume::SetVoxelBirthTime(int32 Index, float BirthTime)
+float AIVSmokeVoxelVolume::GetSyncWorldTimeSeconds() const
 {
-	if (!VoxelBirthTimes.IsValidIndex(Index))
+	UWorld* World = GetWorld();
+	if (!World)
 	{
-		return;
+		return 0.0f;
 	}
 
-	if (VoxelBirthTimes[Index] > 0.0f)
+	if (World->GetNetMode() == NM_Client)
 	{
-		return;
+		if (AGameStateBase* GameState = World->GetGameState())
+		{
+			return GameState->GetServerWorldTimeSeconds();
+		}
 	}
 
-	float SafeBirthTime = FMath::Max(BirthTime, 0.001f);
-	VoxelBirthTimes[Index] = SafeBirthTime;
-
-	if (VoxelDeathTimes.IsValidIndex(Index))
-	{
-		VoxelDeathTimes[Index] = 0.0f;
-	}
-
-	UIVSmokeGridLibrary::SetVoxelBit(VoxelBits, Index, GridResolution, true);
-
-	++ActiveVoxelNum;
-	INC_DWORD_STAT(STAT_IVSmoke_CreatedVoxel);
-
-	DirtyLevel = EIVSmokeDirtyLevel::Dirty;
-
-	const FIntVector GridPos = UIVSmokeGridLibrary::IndexToGrid(Index, GridResolution);
-	const FVector LocalPos = UIVSmokeGridLibrary::GridToLocal(GridPos, VoxelSize, CenterOffset);
-	const FVector WorldPos = GetActorTransform().TransformPosition(LocalPos);
-	VoxelWorldAABBMin = FVector::Min(WorldPos, VoxelWorldAABBMin);
-	VoxelWorldAABBMax = FVector::Max(WorldPos, VoxelWorldAABBMax);
-}
-
-void AIVSmokeVoxelVolume::SetVoxelDeathTime(int32 Index, float DeathTime)
-{
-	if (!VoxelDeathTimes.IsValidIndex(Index))
-	{
-		return;
-	}
-
-	if (VoxelDeathTimes[Index] > 0.0f)
-	{
-		return;
-	}
-
-	const float SafeDeathTime = FMath::Max(DeathTime, 0.001f);
-	VoxelDeathTimes[Index] = SafeDeathTime;
-
-	UIVSmokeGridLibrary::SetVoxelBit(VoxelBits, Index, GridResolution, false);
-
-	--ActiveVoxelNum;
-	INC_DWORD_STAT(STAT_IVSmoke_DestroyedVoxel)
-
-	DirtyLevel = EIVSmokeDirtyLevel::Dirty;
+	return World->GetTimeSeconds();
 }
 
 #pragma endregion
@@ -854,21 +849,9 @@ void AIVSmokeVoxelVolume::SetVoxelDeathTime(int32 Index, float DeathTime)
 
 void AIVSmokeVoxelVolume::PreviewSimulation()
 {
-	UWorld* World = GetWorld();
-	if (!World)
-	{
-		return;
-	}
-
 	bIsEditorPreviewing = true;
-	ClearSimulationData();
 
-	ServerState.RandomSeed = RandomSeed;
-	ServerState.State = EIVSmokeVoxelVolumeState::Expansion;
-	ServerState.ExpansionStartTime = World->GetTimeSeconds();
-	ServerState.Generation += 1;
-
-	OnRep_ServerState();
+	StartSimulation();
 }
 
 void AIVSmokeVoxelVolume::DrawDebugVisualization() const
@@ -904,6 +887,8 @@ void AIVSmokeVoxelVolume::DrawDebugBounds() const
 	{
 		return;
 	}
+
+	FIntVector GridResolution = GetGridResolution();
 
 	FVector TotalSize(
 		GridResolution.X * VoxelSize,
@@ -948,6 +933,9 @@ void AIVSmokeVoxelVolume::DrawDebugVoxelWireframes() const
 		{
 			continue;
 		}
+
+		FIntVector GridResolution = GetGridResolution();
+		FIntVector CenterOffset = GetCenterOffset();
 
 		FIntVector GridPos = UIVSmokeGridLibrary::IndexToGrid(VoxelIndex, GridResolution);
 		float NormHeight = static_cast<float>(GridPos.Z) / static_cast<float>(GridResolution.Z);
@@ -1015,6 +1003,9 @@ void AIVSmokeVoxelVolume::DrawDebugVoxelMeshes() const
 		{
 			continue;
 		}
+
+		FIntVector GridResolution = GetGridResolution();
+		FIntVector CenterOffset = GetCenterOffset();
 
 		FIntVector GridPos = UIVSmokeGridLibrary::IndexToGrid(VoxelIndex, GridResolution);
 
@@ -1091,6 +1082,8 @@ void AIVSmokeVoxelVolume::DrawDebugStatusText() const
 		Percent,
 		ExpansionHeap.Num()
 	);
+
+	FIntVector GridResolution = GetGridResolution();
 
 	FVector TextPos = GetActorLocation();
 	TextPos.Z += (GridResolution.Z * VoxelSize * 0.5f) + 50.0f;
