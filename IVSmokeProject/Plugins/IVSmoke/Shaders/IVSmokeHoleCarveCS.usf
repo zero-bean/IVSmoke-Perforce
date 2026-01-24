@@ -2,6 +2,7 @@
 // IVSmokeHoleCarveCS.usf - Compute shader for carving holes into smoke volume
 
 #include "/Engine/Public/Platform.ush"
+#define CURVE_SAMPLE_COUNT 16
 
 // ============================================================================
 // Output
@@ -15,23 +16,35 @@ RWTexture3D<float4> VolumeTexture;
 
 struct FHoleGPU
 {
-	// Block 1 (16 bytes)
-    float3 Position;
-    int HoleType;           // 0=Bullet, 1=Explosion, 2=Dynamic
+	// ============================================================================
+	// Common
+	float3 Position;
+	float CurLifeTime;
+	int HoleType; // 0 = Penetration, 1 = Explosion, 2 = Dynamic
+	float Radius;
+	float Duration;
+	float Softness;
 
-    // Block 2 (16 bytes)
-    float Radius;
-    float Lifetime;
-    float EdgeSoftness;
-    float NormalizedAge;
+	// ============================================================================
+	// Dynamic
+	float3 Extent;
+	float DynamicPadding;
 
-    // Block 3 (16 bytes)
-    float3 Extent;
-    float ExtensionTime;
+	// ============================================================================
+	// Explosion
+	float ExpansionDuration;
+	float CurExpansionFadeRangeOverTime;
+	float CurShrinkFadeRangeOverTime;
+	float CurShrinkDensityMulOverTime;
+	float CurDistortionOverTime;
+	float DistortionDistance;
+	float2 PresetExplosionPadding;
+	float DistortionCurveOverDistance[CURVE_SAMPLE_COUNT];
 
-    // Block 4 (16 bytes)
-    float DensityExtDelayTime;
-    float3 EndPosition;
+	// ============================================================================
+	// Penetration
+	float3 EndPosition;
+	float EndRadius;
 };
 
 StructuredBuffer<FHoleGPU> HoleBuffer;
@@ -68,6 +81,18 @@ float BoxSdf(float3 Point, float3 BoxHalfExtent)
 
 	return DistOutside + DistInside;
 }
+float DistortionCurveOverDistanceSampling(float Distance, int HoleIdx)
+{
+	Distance = saturate(Distance);
+	if (Distance == 1)
+	{
+		return HoleBuffer[HoleIdx].DistortionCurveOverDistance[CURVE_SAMPLE_COUNT - 1];
+	}
+	float f = Distance * (CURVE_SAMPLE_COUNT - 1);
+	int i = (int) floor(f);
+	float frac = f - i;
+	return lerp(HoleBuffer[HoleIdx].DistortionCurveOverDistance[i], HoleBuffer[HoleIdx].DistortionCurveOverDistance[i + 1], frac);
+}
 
 // ============================================================================
 // Utility Functions
@@ -88,90 +113,148 @@ float3 GetUVW(float3 WorldPos)
 // ============================================================================
 /**
  * @brief Calculate explosion hole
- * @param CurOffset		Vector from hole center to current point
+ * @param WorldPos		Explosion Center WorldPos
  * @param uvw			uvw (0 ~ 1)
- * @param Radius        Hole radius
- * @param NormalizedAge Hole lifetime progress (0=new, 1=expired)
- * @return Hole distortion uvw offset
+ * @param HoleIdx       Hole Index
+ * @param ExplosionFadePenetration		Explosion fade factor other holes
+ * @param ExplosionFadePenetrationTime	Explosion last expansion time
+ * @return float4(DistortionOffset, Denstiy)
  */
-float4 CalculateExplosionStrength(float3 CurOffset, float3 uvw, int HoleIdx, out float BulletFadeFactor, out float FadeEndTime)
+float4 Explosion(float3 WorldPos, float3 uvw, int HoleIdx, out float ExplosionFadePenetration, out float ExplosionFadePenetrationTime)
 {
 	FHoleGPU HoleData = HoleBuffer[HoleIdx];
-	float CurTime = HoleData.NormalizedAge * HoleData.Lifetime;
+	float4 Result = float4(0, 0, 0, 1);
+	float3 Offset = WorldPos - HoleData.Position;
+	float3 Dir = normalize(Offset);
+	float Dis = length(Offset);
 
-	float3 Dir = normalize(CurOffset);
-	float Dis = length(CurOffset);
 	float VolumeHeight = VolumeMax.z - VolumeMin.z;
 	float AlphaHeight = 100.0f;
+	
+	//PenetrationFade
+	ExplosionFadePenetration = saturate(HoleData.CurLifeTime / max(HoleData.ExpansionDuration, 0.001f));
+	ExplosionFadePenetration = Dis > HoleData.Radius ? 0 : ExplosionFadePenetration;
+	ExplosionFadePenetrationTime = HoleData.ExpansionDuration >= HoleData.CurLifeTime ? 0 : HoleData.ExpansionDuration - HoleData.CurLifeTime;
 
-	float3 Offset = float3(0, 0, 0);
-	float Density = 1;
-	float HeightDensity = 0;
-
-	float GrenadeStartTime = -HoleData.Lifetime * HoleData.NormalizedAge;
-	if (Dis < HoleData.Radius)
+	
+	//Fade
+	if (HoleData.CurLifeTime < HoleData.ExpansionDuration)
 	{
-		BulletFadeFactor = saturate(CurTime / HoleData.ExtensionTime);
+		//Expansion
+		float ExpansionNormalizedTime = HoleData.CurLifeTime / HoleData.ExpansionDuration;
+		float CurFadeRange = HoleData.CurExpansionFadeRangeOverTime * HoleData.Radius;
+		float SoftnessRange = HoleData.Radius * HoleData.Softness;
+		float SoftnessStart = CurFadeRange - SoftnessRange;
+
+		Result.a = saturate((Dis - SoftnessStart) / max(SoftnessRange, 0.001f));
 	}
 	else
 	{
-		BulletFadeFactor = 0;
+		//Shrink
+		float ShrinkNormalizedTime = saturate((HoleData.CurLifeTime - HoleData.ExpansionDuration) / max(0.001f, (HoleData.Duration - HoleData.ExpansionDuration)));
+		float CurFadeRange = HoleData.CurShrinkFadeRangeOverTime * HoleData.Radius;
+		float SoftnessRange = HoleData.Radius * HoleData.Softness;
+		float SoftnessStart = CurFadeRange - SoftnessRange;
+		float CurDensityMul = HoleData.CurShrinkDensityMulOverTime;
+
+		float LastExpansionFadeRange = HoleData.CurExpansionFadeRangeOverTime * HoleData.Radius;
+		float LastExpansionSoftnessStart = LastExpansionFadeRange - SoftnessRange;
+
+		float LastExpansionAlpha = saturate((Dis - LastExpansionSoftnessStart) / max(SoftnessRange, 0.001f));
+		float ShrinkAlpha = saturate((Dis - SoftnessStart) / max(SoftnessRange, 0.001f));
+
+		Result.a = lerp(LastExpansionAlpha, ShrinkAlpha, ShrinkNormalizedTime);
+
+		AlphaHeight = AlphaHeight + pow(ShrinkNormalizedTime, 5.5f) * (VolumeHeight - AlphaHeight);
 	}
-	FadeEndTime = GrenadeStartTime + HoleData.ExtensionTime;
-	if (CurTime < HoleData.ExtensionTime)
+	
+	//Expansion Distortion
+	float DistortionOverTime = HoleData.CurDistortionOverTime;
+	float DistortionOverDistance = min(HoleData.DistortionDistance, DistortionCurveOverDistanceSampling(Dis / HoleData.Radius, HoleIdx));
+	float CurDistortioinDistance = HoleData.Radius * DistortionOverTime * DistortionOverDistance;
+
+	if (CurDistortioinDistance > 0)
 	{
-		float ExtensionNormalizedTime = CurTime / HoleData.ExtensionTime;
-		const float DistortionMax = 0.7f * HoleData.Radius;
-
-		float Distortion = (1 - pow(saturate(Dis / HoleData.Radius), 1.5f)) * DistortionMax * ExtensionNormalizedTime;
-		if (Dis < HoleData.Radius)
+		if (HoleData.ExpansionDuration >= HoleData.CurLifeTime)
 		{
-			Distortion += DistortionMax * ExtensionNormalizedTime * 0.1f;
+			Result.rgb = -Dir * CurDistortioinDistance;
 		}
-		Offset = -Dir * Distortion;
-
-		//같은자리 두번 던지면 바닥 잔여연기 두번 퍼지는 아티팩트 눈에띔 그거 수정용
-		if (uvw.z * VolumeHeight < AlphaHeight)
-		{
-			Offset = float3(0, 0, 0);
-		}
-
-		float Bottom = max(HoleData.ExtensionTime - HoleData.DensityExtDelayTime, 0.001f);
-		float DensityExtNormalizedTime = saturate((CurTime - HoleData.DensityExtDelayTime) / Bottom);
-
-		float CurRadius = HoleData.Radius * pow(DensityExtNormalizedTime, 1.5f);
-		Density = saturate((Dis - CurRadius) / (CurRadius * max(0.05f, HoleData.EdgeSoftness)));
 	}
-	else
+	
+	//Distrotion artifact case
+	if (uvw.z * VolumeHeight < AlphaHeight)
 	{
-		//남은 시간 정규화
-		float Bottom = max(HoleData.Lifetime - HoleData.ExtensionTime, 0.001f);
-		float RemainderNormalizedTime = saturate((CurTime - HoleData.ExtensionTime) / Bottom);
-
-		//확장 마지막 density
-		float LastDensity = saturate((Dis - HoleData.Radius) / (HoleData.Radius * max(0.05f, HoleData.EdgeSoftness)));
-
-		float CurRadius = RemainderNormalizedTime * HoleData.Radius;
-		float CurDensity = saturate((Dis + CurRadius - HoleData.Radius) / HoleData.Radius);
-
-		Density = lerp(LastDensity, CurDensity, RemainderNormalizedTime);
-		AlphaHeight = AlphaHeight + pow(RemainderNormalizedTime, 2.5f) * (VolumeHeight - AlphaHeight);
+		Offset = float3(0, 0, 0);
 	}
 
+	//Height fade
 	float AlphaHeightUV_Z = max(0.01f, AlphaHeight / VolumeHeight);
-	HeightDensity = pow((1 - saturate(uvw.z / AlphaHeightUV_Z)), 1.2f);
+	float HeightDensity = pow((1 - saturate(uvw.z / AlphaHeightUV_Z)), 1.2f);
+	Result.a = max(Result.a, HeightDensity);
 
-	Density = max(Density, HeightDensity);
-	return float4(Offset, Density);
+
+	return Result;
 }
+
+// ============================================================================
+// Penetration Animation
+// ============================================================================
+/**
+ * @brief Calculate explosion hole
+ * @param WorldPos		Explosion Center WorldPos
+ * @param uvw			uvw (0 ~ 1)
+ * @param HoleIdx       Hole Index
+ * @param PenetrationHoleMakeTime		Penetration hit time
+ * @return float4(0, 0, 0, Denstiy)
+ */
+float4 Penetration(float3 WorldPos, float3 uvw, int HoleIdx, out float PenetrationHoleMakeTime)
+{
+	FHoleGPU HoleData = HoleBuffer[HoleIdx];
+	float4 Result = float4(0, 0, 0, 1);
+
+	float3 StartToEnd = HoleData.EndPosition - HoleData.Position;
+	float3 StartToCur = WorldPos - HoleData.Position;
+
+	float LengthStartToEnd = length(StartToEnd);
+	float3 DirStartToEnd;
+	float t;
+	if (LengthStartToEnd < 0.0001f)
+	{
+		t = 0;
+	}
+	else
+	{
+		DirStartToEnd = StartToEnd / LengthStartToEnd;
+		t = dot(StartToCur, DirStartToEnd);
+	}
+	
+	float tClamped = saturate(t / LengthStartToEnd);
+	float RadiusAtT = lerp(HoleData.Radius, HoleData.EndRadius, tClamped);
+	float3 ClosetPoint = HoleData.Position + DirStartToEnd * t;
+	float DisToAxis = length(WorldPos - ClosetPoint);
+	
+	if (DisToAxis < RadiusAtT)
+	{
+		float Dist = DisToAxis - RadiusAtT;
+		float EdgeWidth = HoleData.Radius * saturate(HoleData.Softness + 0.1);
+		float Falloff = saturate(-Dist / EdgeWidth);
+		float NormalizedTime = HoleData.CurLifeTime / HoleData.Duration;
+		float FadeOut = 1.0 - pow(NormalizedTime, 3.5f);
+		Result.a = 1 - Falloff * FadeOut;
+		PenetrationHoleMakeTime = -HoleData.CurLifeTime;
+	}
+	return Result;
+}
+
+
+
 // ============================================================================
 // Main Compute Shader
 // ============================================================================
 
 [numthreads(THREADGROUP_SIZEX, THREADGROUP_SIZEY, THREADGROUP_SIZEZ)]
 void MainCS(uint3 DTid : SV_DispatchThreadID)
-{
-	// Calculate actual voxel coordinate based on update region
+{ // Calculate actual voxel coordinate based on update region
 	int3 VoxelCoord = int3(DTid);
 
 	// Bounds check
@@ -184,71 +267,52 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
 	float3 uvw = GetUVW(WorldPos);
 
 	// Evaluate all holes
-	float4 GrenadeResult = float4(0, 0, 0, 1);
-	float BulletResult = 1.0f;
-	float DynamicResult = 1.0f;
+	float4 ExplosionResult = float4(0, 0, 0, 1);
+	float4 PenetrationResult = float4(0, 0, 0, 1.0f);
+	float4 DynamicResult = float4(0, 0, 0, 1);
+	float ExplosionFadePenetration = 0.0f;
+	float ExplosionFadePenetrationTime = 0.0f;
 
-	float BulletFadeFactor = 0.0f;
-	float FadeEndTime = 0.0f;
 	for (int HoleIdx = 0; HoleIdx < NumHoles; HoleIdx++)
 	{
 		FHoleGPU Hole = HoleBuffer[HoleIdx];
 
 		// Skip fully faded holes
-		if (Hole.NormalizedAge >= 1.0)
+		if (Hole.Duration < Hole.CurLifeTime)
 		{
 			continue;
 		}
 
-		float HoleDensity = 0.0f;
-
-		if(Hole.HoleType == 1)
+		if (Hole.HoleType == 1)
 		{
-			//grenade
-			float3 CurOffset = WorldPos - Hole.Position;
-			float CurBulletFadeFactor = 0.0f;
-			float CurFadeEndTime = 0.0f;
-			float4 HoleInfo = CalculateExplosionStrength(CurOffset, uvw, HoleIdx, CurBulletFadeFactor, CurFadeEndTime);
-			GrenadeResult.a = min(GrenadeResult.a, HoleInfo.a);
-			GrenadeResult.rgb += HoleInfo.rgb;
+			//Explosion
+			float CurExplosionFadePenetration = 1.0f;
+			float CurExplosionFadePenetrationTime = 0.0f;
+			float4 CurExplosionResult = Explosion(WorldPos, uvw, HoleIdx, CurExplosionFadePenetration, CurExplosionFadePenetrationTime);
 
-			if (CurBulletFadeFactor > BulletFadeFactor)
+			ExplosionResult.rgb += CurExplosionResult.rgb;
+			ExplosionResult.a = min(ExplosionResult.a, CurExplosionResult.a);
+
+			if (CurExplosionFadePenetration > ExplosionFadePenetration)
 			{
-				BulletFadeFactor = CurBulletFadeFactor;
-				FadeEndTime = CurFadeEndTime;
+				ExplosionFadePenetration = CurExplosionFadePenetration;
+				ExplosionFadePenetrationTime = CurExplosionFadePenetrationTime;
 			}
 		}
 		else if (Hole.HoleType == 0)
 		{
-			//bullet
-			float Dist = SegmentSdf(WorldPos, Hole.Position, Hole.EndPosition, Hole.Radius);
-
-			if (Dist < 0.0)
+			//Penetration
+			float CurPenetrationHoleMakeTime = 0.0f;
+			float4 CurPenetrationResult = Penetration(WorldPos, uvw, HoleIdx, CurPenetrationHoleMakeTime);
+			if (CurPenetrationHoleMakeTime < ExplosionFadePenetrationTime)
 			{
-				float EdgeWidth = Hole.Radius * saturate(Hole.EdgeSoftness + 0.1);
-				float Falloff = saturate(-Dist / EdgeWidth);
-				float FadeOut = 1.0 - pow(Hole.NormalizedAge, 3.5f);
-				HoleDensity = Falloff * FadeOut;
+				CurPenetrationResult.a = 1 - (1 - CurPenetrationResult.a) * (1 - ExplosionFadePenetration);
 			}
-
-			//여기선 Density 반대값으로 처리됨
-			float CurBulletDensity = HoleDensity;
-			if (BulletFadeFactor > 0)
-			{
-				float BulletStartTime = -Hole.Lifetime * Hole.NormalizedAge;
-				if (BulletStartTime < FadeEndTime)
-				{
-					CurBulletDensity = saturate(CurBulletDensity * (1 - BulletFadeFactor));
-				}
-			}
-
-			//여기서 0은 투명 1은 불투명으로 바꿈
-			CurBulletDensity = 1.0 - saturate(CurBulletDensity);
-			BulletResult = min(BulletResult, CurBulletDensity);
+			PenetrationResult.a = min(PenetrationResult.a, CurPenetrationResult.a);
 		}
 		else
 		{
-			// 1. 진행 방향 정렬 및 좌표 변환 (기존 궤적 로직 유지)
+		// 1. 진행 방향 정렬 및 좌표 변환 (기존 궤적 로직 유지)
 			float3 Diff = Hole.EndPosition - Hole.Position;
 			float MoveLen = length(Diff);
 			float3 Forward = (MoveLen > 0.1) ? Diff / MoveLen : float3(0, 0, 1);
@@ -260,7 +324,7 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
 
 			// 2. Extent 기반 설계 (구 + AABB + 구)
 			float3 h = Hole.Extent * 0.5; // 절반 크기(Half-Extent) 사용
-			h.y += MoveLen * 0.5;         // 이동 궤적에 따른 Y축 길이 연장
+			h.y += MoveLen * 0.5; // 이동 궤적에 따른 Y축 길이 연장
 
 			// [핵심] 박스의 너비(h.x)와 구체의 반지름을 일치시켜 너비 차이를 해결
 			float CapRadius = h.x;
@@ -271,21 +335,18 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
 			// 헬퍼 SDF 함수를 사용하여 형태 합성
 			// 구체의 중심을 박스의 상/하단 끝점(BodyHalfHeight)에 배치하여 절반이 겹치게 함
 			float DBox = BoxSdf(P, float3(h.x, h.y, BodyHalfHeight));
-			float DSphereTop = SphereSdf(P, float3(0, 0,  BodyHalfHeight), CapRadius);
+			float DSphereTop = SphereSdf(P, float3(0, 0, BodyHalfHeight), CapRadius);
 			float DSphereBot = SphereSdf(P, float3(0, 0, -BodyHalfHeight), CapRadius);
 
 			// 세 형태의 합집합(Union) 중 가장 가까운 표면 거리 선택
 			float Dist = min(DBox, min(DSphereTop, DSphereBot));
 
 			// 3. 감쇠(Falloff) 및 페이드 처리
-			float FalloffWidth = max(1.0, Hole.EdgeSoftness * CapRadius);
-			float Fade = 1.0 - pow(Hole.NormalizedAge, 2.0);
-			HoleDensity = saturate(-Dist / FalloffWidth);
-
+			float FalloffWidth = max(1.0, Hole.Softness * CapRadius);
+			float Fade = 1.0 - pow(Hole.CurLifeTime / Hole.Duration, 2.0);
+			float HoleDensity = saturate(-Dist / FalloffWidth);
 			DynamicResult = min(DynamicResult, 1.0 - (HoleDensity * Fade));
 		}
 	}
-
-	float CombinedAlpha = min(min(GrenadeResult.a, BulletResult), DynamicResult);
-    VolumeTexture[VoxelCoord] = float4(GrenadeResult.rgb, CombinedAlpha);
+	VolumeTexture[VoxelCoord] = float4(ExplosionResult.rgb, min(DynamicResult.a, min(ExplosionResult.a, PenetrationResult.a)));
 }

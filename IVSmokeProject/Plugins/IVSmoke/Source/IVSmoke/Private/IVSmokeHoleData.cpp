@@ -48,10 +48,7 @@ TArray<FIVSmokeHoleGPU> FIVSmokeHoleArray::GetHoleGPUData(const float CurrentSer
 			continue;
 		}
 
-		const float RemainingTime = Hole.ExpirationServerTime - CurrentServerTime;
-
-		FIVSmokeHoleGPU GPUHole = FIVSmokeHoleGPU(Hole, *Preset.Get());
-		GPUHole.SetNormalizedAge(RemainingTime);
+		FIVSmokeHoleGPU GPUHole = FIVSmokeHoleGPU(Hole, *Preset.Get(), CurrentServerTime);
 
 		if (Preset->HoleType == EIVSmokeHoleType::Penetration)
 		{
@@ -79,32 +76,46 @@ TArray<FIVSmokeHoleGPU> FIVSmokeHoleArray::GetHoleGPUData(const float CurrentSer
 	return GPUBuffer;
 }
 
-FIVSmokeHoleGPU::FIVSmokeHoleGPU(const FIVSmokeHoleData& HoleData, const UIVSmokeHolePreset& Preset)
+FIVSmokeHoleGPU::FIVSmokeHoleGPU(const FIVSmokeHoleData& DynamicHoleData, const UIVSmokeHolePreset& Preset, const float CurrentServerTime)
 {
-	Position = HoleData.Position;
-	EndPosition = HoleData.EndPosition;
+	Position = FVector3f(DynamicHoleData.Position);
+	EndPosition = FVector3f(DynamicHoleData.EndPosition);
 
 	HoleType = static_cast<int32>(Preset.HoleType);
 	Radius = Preset.Radius;
-	Lifetime = Preset.Lifetime;
-	EdgeSoftness = Preset.EdgeSoftness;
+	Duration = Preset.Duration;
+	if (Duration == 0)
+	{
+		return;
+	}
+	Softness = Preset.Softness;
+	ExpansionDuration = Preset.ExpansionDuration;
+
+	//SetTime
+	float RemainingTime = DynamicHoleData.ExpirationServerTime - CurrentServerTime;
+	CurLifeTime = Duration - RemainingTime;
+	float NormalizedTime = FMath::Clamp(CurLifeTime / Duration, 0.0f, 1.0f);
 
 	switch (Preset.HoleType)
 	{
 	case EIVSmokeHoleType::Explosion:
-		ExtensionTime = Preset.ExtensionTime;
-		DensityExtDelayTime = Preset.DensityExtDelayTime;
+	{
+		float ExpansionNormalizedTime = FMath::Clamp(CurLifeTime / Preset.ExpansionDuration, 0.0f, 1.0f);
+		float ShrinkNormalizedTime = FMath::Clamp((CurLifeTime - Preset.ExpansionDuration) / (Preset.Duration - Preset.ExpansionDuration), 0.0f, 1.0f);
+
+		CurExpansionFadeRangeOverTime = UIVSmokeHolePreset::GetFloatValue(Preset.ExpansionFadeRangeCurveOverTime, ExpansionNormalizedTime);
+		CurShrinkFadeRangeOverTime = UIVSmokeHolePreset::GetFloatValue(Preset.ShrinkFadeRangeCurveOverTime, ShrinkNormalizedTime);
+		CurShrinkDensityMulOverTime = UIVSmokeHolePreset::GetFloatValue(Preset.ShrinkDensityMulCurveOverTime, ShrinkNormalizedTime);
+		CurDistortionOverTime = UIVSmokeHolePreset::GetFloatValue(Preset.DistortionCurveOverTime, ExpansionNormalizedTime);
+		DistortionDistance = Preset.DistortionDistance;
+		UIVSmokeHolePreset::GetCurveSamples(Preset.DistortionCurveOverDistance.Get(), FIVSmokeHoleCarveCS::CurveSampleCount, DistortionCurveOverDistance);
 		break;
+	}
 	case EIVSmokeHoleType::Penetration:
+		EndRadius = Preset.EndRadius;
 		break;
 	case EIVSmokeHoleType::Dynamic:
 		Extent = Preset.Extent;
 		break;
 	}
-}
-
-void FIVSmokeHoleGPU::SetNormalizedAge(const float RemainingTime)
-{
-	const float ElapsedTime = Lifetime - RemainingTime;
-	NormalizedAge = FMath::Clamp(ElapsedTime / Lifetime, 0.0f, 1.0f);
 }

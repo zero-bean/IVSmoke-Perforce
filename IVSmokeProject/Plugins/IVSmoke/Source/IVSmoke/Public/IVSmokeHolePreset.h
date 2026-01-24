@@ -34,39 +34,47 @@ public:
 	EIVSmokeHoleType HoleType = EIVSmokeHoleType::Penetration;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
+		meta = (ClampMin = "0.1", ClampMax = "500.0"))
+	float StartRadius = 50.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
 		meta = (ClampMin = "0.1", ClampMax = "500.0", EditConditionHides,
 			EditCondition = "HoleType != EIVSmokeHoleType::Dynamic"))
 	float Radius = 50.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
-		meta = (ClampMin = "0.01", ClampMax = "60.0",
-			Tooltip = "Define how long the hole will last within the smoke"))
-	float Lifetime = 3.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
-		meta = (ClampMin = "0.0", ClampMax = "1.0",
-			Tooltip = "0 = hard edge, 1 = soft gradient"))
-	float EdgeSoftness = 0.3f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke", meta = (ClampMin = "0.01", ClampMax = "60.0", Tooltip = "Define how long the hole will last within the smoke"))
+	float Duration = 3.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke", meta = (ClampMin = "0.0", ClampMax = "1.0", Tooltip = "0 = hard edge, 1 = soft gradient"))
+	float Softness = 0.3f;
 
 	// ============================================================================
-	// Explosion
+	// Only Explosion
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke", meta = (ClampMin = "0.0", ClampMax = "60.0", EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Explosion"))
+	float ExpansionDuration;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke", meta = (EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Explosion"))
+	TObjectPtr<UCurveFloat> ExpansionFadeRangeCurveOverTime;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke", meta = (EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Explosion"))
+	TObjectPtr<UCurveFloat> ShrinkFadeRangeCurveOverTime;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke", meta = (EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Explosion"))
+	TObjectPtr<UCurveFloat> ShrinkDensityMulCurveOverTime;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
-		meta = (ClampMin = "0.01", ClampMax = "10.0", EditConditionHides,
-			EditCondition = "HoleType == EIVSmokeHoleType::Explosion"))
-	float ExtensionTime;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
-		meta = (ClampMin = "0.0", ClampMax = "1.0", EditConditionHides,
-			EditCondition = "HoleType == EIVSmokeHoleType::Explosion"))
-	float DensityExtDelayTime;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke", meta = (EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Explosion"))
+	TObjectPtr<UCurveFloat> DistortionCurveOverTime;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke", meta = (ClampMin = "0.0", ClampMax = "1000.0", EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Explosion"))
+	float DistortionDistance;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke", meta = (EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Explosion"))
+	TObjectPtr<UCurveFloat> DistortionCurveOverDistance;
 
 	// ============================================================================
-	// Dynamic
+	// Only Penetration
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke", meta = (ClampMin = "0.0", ClampMax = "60.0", EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Penetration"))
+	float EndRadius = 25.0f;
+
+	// ============================================================================
+	// Only Dynamic
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
 		meta = (EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Dynamic"))
-	FVector3f Extent = FVector3f(50.0f, 50.0f, 50.0f);
-
+	FVector3f Extent = FVector3f(50.f, 50.f, 50.f);
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke",
 		meta = (ClampMin = "10.0", ClampMax = "500.0", EditConditionHides,
 			EditCondition = "HoleType == EIVSmokeHoleType::Dynamic"))
@@ -75,7 +83,12 @@ public:
 	// ============================================================================
 
 	static TObjectPtr<UIVSmokeHolePreset> FindByID(const uint8 InPresetID);
+
 	FORCEINLINE uint8 GetPresetID() const {return CachedID;}
+
+	static void GetCurveSamples(const UCurveFloat* Curve, const int32 SampleCount, float* OutCurveSamples);
+
+	static float GetFloatValue(const TObjectPtr<UCurveFloat> Curve, const float t);
 
 private:
 	uint8 CachedID = 0;

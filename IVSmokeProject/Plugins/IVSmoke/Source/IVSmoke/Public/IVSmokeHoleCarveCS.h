@@ -16,6 +16,7 @@
 class IVSMOKE_API FIVSmokeHoleCarveCS : public FGlobalShader
 {
 public:
+	static constexpr uint32 CurveSampleCount = 16;
 	static constexpr uint32 ThreadGroupSizeX = 8;
 	static constexpr uint32 ThreadGroupSizeY = 8;
 	static constexpr uint32 ThreadGroupSizeZ = 8;
@@ -57,5 +58,6 @@ public:
 		OutEnvironment.SetDefine(TEXT("THREADGROUP_SIZEX"), ThreadGroupSizeX);
 		OutEnvironment.SetDefine(TEXT("THREADGROUP_SIZEY"), ThreadGroupSizeY);
 		OutEnvironment.SetDefine(TEXT("THREADGROUP_SIZEZ"), ThreadGroupSizeZ);
+		OutEnvironment.SetDefine(TEXT("CURVE_SAMPLE_COUNT"), CurveSampleCount);
 	}
 };

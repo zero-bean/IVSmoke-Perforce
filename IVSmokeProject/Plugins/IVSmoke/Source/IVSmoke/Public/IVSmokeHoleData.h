@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Net/Serialization/FastArraySerializer.h"
+#include "IVSmokeHoleCarveCS.h"
 #include "IVSmokeHoleData.generated.h"
 
 struct FIVSmokeHoleArray;
@@ -133,33 +134,35 @@ struct TStructOpsTypeTraits<FIVSmokeHoleArray> : public TStructOpsTypeTraitsBase
 struct alignas(16) FIVSmokeHoleGPU
 {
 	FIVSmokeHoleGPU() = default;
-	FIVSmokeHoleGPU(const FIVSmokeHoleData& HoleData, const UIVSmokeHolePreset& Preset);
+	FIVSmokeHoleGPU(const FIVSmokeHoleData& DynamicHoleData, const UIVSmokeHolePreset& Preset, const float CurrentServerTime);
 
 	// ============================================================================
 	// Common
-
 	FVector3f Position;
-	int32 HoleType;
+	float CurLifeTime;
+	int HoleType; // 0 = Penetration, 1 = Explosion, 2 = Dynamic
 	float Radius;
-	float Lifetime;
-	float EdgeSoftness;
-	float NormalizedAge;
+	float Duration;
+	float Softness;
 
 	// ============================================================================
 	// Dynamic
-
 	FVector3f Extent;
+	float DynamicPadding;
 
 	// ============================================================================
 	// Explosion
-
-	float ExtensionTime; //0.07f * 2.4f;
-	float DensityExtDelayTime;
+	float ExpansionDuration;
+	float CurExpansionFadeRangeOverTime;
+	float CurShrinkFadeRangeOverTime;
+	float CurShrinkDensityMulOverTime;
+	float CurDistortionOverTime;
+	float DistortionDistance;
+	FVector2f PresetExplosionPadding;
+	float DistortionCurveOverDistance[FIVSmokeHoleCarveCS::CurveSampleCount];
 
 	// ============================================================================
 	// Penetration
-
 	FVector3f EndPosition;
-
-	void SetNormalizedAge(const float RemainingTime);
+	float EndRadius;
 };

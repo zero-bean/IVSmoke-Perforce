@@ -155,9 +155,9 @@ void UIVSmokeHoleGeneratorComponent::Internal_RequestPenetrationHole_Implementat
 		return;
 	}
 
-	if (Preset->Lifetime <= 0.0f)
+	if (Preset->Duration <= 0.0f)
 	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestPenetrationHole] Invalid Lifetime: %f"), Preset->Lifetime);
+		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestPenetrationHole] Invalid Lifetime: %f"), Preset->Duration);
 		return;
 	}
 
@@ -179,7 +179,7 @@ void UIVSmokeHoleGeneratorComponent::Internal_RequestPenetrationHole_Implementat
 	HoleData.Position = EntryPoint;
 	HoleData.EndPosition = ExitPoint;
 	HoleData.PresetID = PresetID;
-	HoleData.ExpirationServerTime = GetSyncedTime() + Preset->Lifetime;
+	HoleData.ExpirationServerTime = GetSyncedTime() + Preset->Duration;
 	Authority_CreateHole(HoleData);
 }
 
@@ -192,9 +192,9 @@ void UIVSmokeHoleGeneratorComponent::Internal_RequestExplosionHole_Implementatio
 		return;
 	}
 
-	if (Preset->Lifetime <= 0.0f)
+	if (Preset->Duration <= 0.0f)
 	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestExplosionHole] Invalid Lifetime: %f"), Preset->Lifetime);
+		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestExplosionHole] Invalid Lifetime: %f"), Preset->Duration);
 		return;
 	}
 
@@ -218,7 +218,7 @@ void UIVSmokeHoleGeneratorComponent::Internal_RequestExplosionHole_Implementatio
 	HoleData.Position = Origin;
 	HoleData.EndPosition = Origin;
 	HoleData.PresetID = PresetID;
-	HoleData.ExpirationServerTime = GetSyncedTime() + Preset->Lifetime;
+	HoleData.ExpirationServerTime = GetSyncedTime() + Preset->Duration;
 	Authority_CreateHole(HoleData);
 }
 
@@ -231,9 +231,9 @@ void UIVSmokeHoleGeneratorComponent::Internal_RequestDynamicHole_Implementation(
 		return;
 	}
 
-	if (Preset->Lifetime <= 0.0f)
+	if (Preset->Duration <= 0.0f)
 	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestDynamicHole] Invalid Lifetime: %f"), Preset->Lifetime);
+		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestDynamicHole] Invalid Duration: %f"), Preset->Duration);
 		return;
 	}
 
@@ -413,7 +413,7 @@ void UIVSmokeHoleGeneratorComponent::Authority_UpdateDynamicSubjectList()
 		HoleData.Position = LastPos;
 		HoleData.EndPosition = CurrentPos;
 		HoleData.PresetID = DynamicSubject.PresetID;
-		HoleData.ExpirationServerTime = CurrentTime + Preset->Lifetime;
+		HoleData.ExpirationServerTime = CurrentTime + Preset->Duration;
 		Authority_CreateHole(HoleData);
 
 		// 3. Update registered object
