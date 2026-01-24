@@ -75,11 +75,11 @@ void UIVSmokeHolePreset::GetCurveSamples(const UCurveFloat* Curve, const int32 S
 	}
 	OutCurveSamples[SampleCount - 1] = Curve->GetFloatValue(1);
 }
-float UIVSmokeHolePreset::GetFloatValue(const TObjectPtr<UCurveFloat> Curve, const float t)
+float UIVSmokeHolePreset::GetFloatValue(const TObjectPtr<UCurveFloat> Curve, const float X)
 {
 	if (Curve.Get())
 	{
-		return Curve.Get()->GetFloatValue(t);
+		return Curve.Get()->GetFloatValue(X);
 	}
 	return 0;
 }
