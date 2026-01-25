@@ -2,13 +2,14 @@
 
 #include "IVSmokeVoxelVolume.h"
 
+#include "Components/InstancedStaticMeshComponent.h"
+#include "Engine/World.h"
+#include "GameFramework/GameStateBase.h"
 #include "IVSmoke.h"
 #include "IVSmokeCollisionComponent.h"
 #include "IVSmokeGridLibrary.h"
-#include "IVSmokeRenderer.h"
-#include "Components/InstancedStaticMeshComponent.h"
 #include "IVSmokeHoleGeneratorComponent.h"
-#include "GameFramework/GameStateBase.h"
+#include "IVSmokeRenderer.h"
 #include "Net/UnrealNetwork.h"
 
 DECLARE_CYCLE_STAT(TEXT("Update Expansion"),	STAT_IVSmoke_UpdateExpansion,		STATGROUP_IVSmoke);

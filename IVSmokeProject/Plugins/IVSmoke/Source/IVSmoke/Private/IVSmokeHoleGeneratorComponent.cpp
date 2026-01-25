@@ -1,19 +1,22 @@
 // Copyright (c) 2026, Team SDB. All rights reserved.
 
 #include "IVSmokeHoleGeneratorComponent.h"
-#include "IVSmokeHolePreset.h"
-#include "IVSmokeHoleCarveCS.h"
+
 #include "Engine/TextureRenderTargetVolume.h"
+#include "Engine/World.h"
+#include "GameFramework/GameStateBase.h"
+#include "GlobalShader.h"
+#include "IVSmoke.h"
+#include "IVSmokeHoleCarveCS.h"
+#include "IVSmokeHolePreset.h"
+#include "IVSmokePostProcessPass.h"
+#include "IVSmokeVoxelVolume.h"
+#include "Net/UnrealNetwork.h"
+#include "RHICommandList.h"
 #include "RenderGraphBuilder.h"
 #include "RenderGraphUtils.h"
 #include "RenderingThread.h"
-#include "RHICommandList.h"
-#include "GlobalShader.h"
-#include "IVSmoke.h"
-#include "GameFramework/GameStateBase.h"
-#include "Net/UnrealNetwork.h"
-#include "IVSmokeVoxelVolume.h"
-#include "IVSmokePostProcessPass.h"
+#include "TextureResource.h"
 
 UIVSmokeHoleGeneratorComponent::UIVSmokeHoleGeneratorComponent()
 	: bHoleTextureDirty(false)

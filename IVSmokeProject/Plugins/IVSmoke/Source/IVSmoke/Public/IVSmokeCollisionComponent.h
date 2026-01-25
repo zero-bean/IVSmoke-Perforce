@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/PrimitiveComponent.h"
+#include "Engine/CollisionProfile.h"
 #include "IVSmokeCollisionComponent.generated.h"
 
 /**

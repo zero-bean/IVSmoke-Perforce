@@ -3,8 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "IVSmokeGridLibrary.h"
+#include "Curves/CurveFloat.h"
 #include "GameFramework/Actor.h"
+#include "IVSmokeGridLibrary.h"
+#include "RHI.h"
+#include "RHIResources.h"
+#include "TimerManager.h"
 #include "UObject/ObjectMacros.h"
 #include "IVSmokeVoxelVolume.generated.h"
 

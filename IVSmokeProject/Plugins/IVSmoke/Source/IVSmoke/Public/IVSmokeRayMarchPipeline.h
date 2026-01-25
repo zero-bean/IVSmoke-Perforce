@@ -4,10 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GlobalShader.h"
-#include "ShaderParameterStruct.h"
 #include "RenderGraphUtils.h"
 #include "SceneTexturesConfig.h"
 #include "SceneView.h"
+#include "Shader.h"
+#include "ShaderCompilerCore.h"
+#include "ShaderParameterStruct.h"
 
 // Forward declarations
 struct FIVSmokeVolumeGPUData;

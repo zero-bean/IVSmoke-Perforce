@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "TextureResource.h"
 #include "Engine/TextureRenderTarget2D.h"
 
 class USceneCaptureComponent2D;
