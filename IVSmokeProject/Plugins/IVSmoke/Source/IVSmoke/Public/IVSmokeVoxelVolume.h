@@ -551,10 +551,10 @@ private:
 	bool bIsFastForwarding = false;
 
 	/** World-space bounding box minimum of all active voxels. */
-	FVector VoxelWorldAABBMin;
+	FVector VoxelWorldAABBMin = FVector(FLT_MAX, FLT_MAX, FLT_MAX);
 
 	/** World-space bounding box maximum of all active voxels. */
-	FVector VoxelWorldAABBMax;
+	FVector VoxelWorldAABBMax = FVector(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 	/** Timestamp when each voxel was spawned. */
 	TArray<float> VoxelBirthTimes;
