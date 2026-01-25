@@ -202,17 +202,24 @@ float4 Penetration(float3 WorldPos, float3 UVW, int HoleIdx, out float Penetrati
 	float LengthStartToEnd = length(StartToEnd);
 	float3 DirStartToEnd;
 	float t;
+	float tClamped;
 	if (LengthStartToEnd < 0.0001f)
 	{
 		t = 0;
+		tClamped = 0;
 	}
 	else
 	{
 		DirStartToEnd = StartToEnd / LengthStartToEnd;
 		t = dot(StartToCur, DirStartToEnd);
+		tClamped = t / LengthStartToEnd;
 	}
 
-	float tClamped = saturate(t / LengthStartToEnd);
+	if (tClamped < 0 || tClamped > 1)
+	{
+		return Result;
+	}
+	
 	float RadiusAtT = lerp(HoleData.Radius, HoleData.EndRadius, tClamped);
 	float3 ClosetPoint = HoleData.Position + DirStartToEnd * t;
 	float DisToAxis = length(WorldPos - ClosetPoint);
@@ -220,8 +227,8 @@ float4 Penetration(float3 WorldPos, float3 UVW, int HoleIdx, out float Penetrati
 	if (DisToAxis < RadiusAtT)
 	{
 		float Dist = DisToAxis - RadiusAtT;
-		float EdgeWidth = HoleData.Radius * saturate(HoleData.Softness + 0.1);
-		float Falloff = saturate(-Dist / EdgeWidth);
+		float EdgeWidth = RadiusAtT * saturate(HoleData.Softness + 0.1);
+		float Falloff = saturate(-Dist / max(EdgeWidth, 0.01f));
 		float NormalizedTime = HoleData.CurLifeTime / HoleData.Duration;
 		float FadeOut = 1.0 - pow(NormalizedTime, 3.5f);
 		Result.a = 1 - Falloff * FadeOut;
