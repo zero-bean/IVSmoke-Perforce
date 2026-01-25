@@ -4,6 +4,8 @@
 #include "IVSmokeSceneViewExtension.h"
 #include "Interfaces/IPluginManager.h"
 #include "Misc/CoreDelegates.h"
+#include "Misc/Paths.h"
+#include "Stats/Stats.h"
 
 DEFINE_LOG_CATEGORY(LogIVSmoke);
 

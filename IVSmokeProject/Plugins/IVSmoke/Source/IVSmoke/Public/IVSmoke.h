@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Modules/ModuleManager.h"
+#include "ShaderCore.h"
 
 /** Log category for IVSmoke plugin */
 DECLARE_LOG_CATEGORY_EXTERN(LogIVSmoke, Log, All);

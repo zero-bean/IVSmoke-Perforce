@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Curves/CurveFloat.h"
 #include "Engine/DataAsset.h"
 #include "IVSmokeHolePreset.generated.h"
 
@@ -136,7 +137,7 @@ public:
 
 	//~============================================================================
 	// Dynamic
-	
+
 	/**
 	* The size of a hole
 	*/
