@@ -371,9 +371,9 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	FTileData Tile = TileDataBuffer[TileIndex];
 
 	// Quick rejection: no volumes intersect this tile
-	// TotalVolumeLength == 0 means no ray-volume intersections computed in TileSetup
-	// This works correctly regardless of volume count (unlike VolumeMask which only covers first 32)
-	if (Tile.TotalVolumeLength <= 0.0)
+	// Use VolumeMask128 which correctly covers all 128 volumes
+	// (TotalVolumeLength only checks first 32 due to MAX_SORT_INTERVALS limit)
+	if (!AnyVolumePresent(Tile.VolumeMask128))
 	{
 		SmokeAlbedoTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
 		SmokeMaskTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);

@@ -167,15 +167,20 @@ public:
 	//~==============================================================================
 	// Thread-Safe Render Data (Game Thread Render Thread)
 
+	/** Maximum number of volumes supported for rendering. */
+	static constexpr int32 MaxSupportedVolumes = 128;
+
 	/**
 	 * Prepare render data from all registered volumes.
 	 * Must be called on Game Thread.
 	 * Copies and packs all volume data for safe Render Thread access.
+	 * If volume count exceeds MaxSupportedVolumes (128), filters by distance from camera.
 	 *
 	 * @param InVolumes Array of volumes to process
+	 * @param CameraPosition Camera world position for distance-based filtering
 	 * @return Packed render data ready for Render Thread
 	 */
-	FIVSmokePackedRenderData PrepareRenderData(const TArray<AIVSmokeVoxelVolume*>& InVolumes);
+	FIVSmokePackedRenderData PrepareRenderData(const TArray<AIVSmokeVoxelVolume*>& InVolumes, const FVector& CameraPosition);
 
 	/**
 	 * Set cached render data for next frame.

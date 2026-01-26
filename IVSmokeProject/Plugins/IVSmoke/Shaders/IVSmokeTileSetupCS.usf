@@ -103,6 +103,12 @@ void MainCS(
 	TileScreenMin.y *= -1.0;
 	TileScreenMax.y *= -1.0;
 
+	// Swap Y after flip (Y flip inverts min/max relationship)
+	float ScreenMinY = min(TileScreenMin.y, TileScreenMax.y);
+	float ScreenMaxY = max(TileScreenMin.y, TileScreenMax.y);
+	TileScreenMin.y = ScreenMinY;
+	TileScreenMax.y = ScreenMaxY;
+
 	// Compute all 4 corner rays + center ray for conservative bounds
 	float2 CornerScreenPos[5];
 	CornerScreenPos[0] = float2(TileScreenMin.x, TileScreenMin.y);  // Top-Left

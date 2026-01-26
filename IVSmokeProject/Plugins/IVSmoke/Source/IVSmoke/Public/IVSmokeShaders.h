@@ -125,6 +125,8 @@ public:
 		SHADER_PARAMETER(FIntVector, VoxelAtlasCount)
 		/** Current game time for fade animation calculation. */
 		SHADER_PARAMETER(float, GameTime)
+		/** Number of active volumes (for bounds checking). */
+		SHADER_PARAMETER(int32, VolumeCount)
 	END_SHADER_PARAMETER_STRUCT()
 
 public:

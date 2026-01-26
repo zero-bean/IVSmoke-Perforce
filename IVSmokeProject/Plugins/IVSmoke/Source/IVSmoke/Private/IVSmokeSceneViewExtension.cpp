@@ -77,8 +77,15 @@ void FIVSmokeSceneViewExtension::BeginRenderViewFamily(FSceneViewFamily& InViewF
 		return;
 	}
 
+	// Get camera position from first view for distance-based filtering
+	FVector CameraPosition = FVector::ZeroVector;
+	if (InViewFamily.Views.Num() > 0 && InViewFamily.Views[0])
+	{
+		CameraPosition = InViewFamily.Views[0]->ViewLocation;
+	}
+
 	// Prepare render data on Game Thread (all Volume data access happens here)
-	FIVSmokePackedRenderData RenderData = Renderer.PrepareRenderData(ValidVolumes);
+	FIVSmokePackedRenderData RenderData = Renderer.PrepareRenderData(ValidVolumes, CameraPosition);
 	
 	// Transfer to Render Thread via command queue
 	ENQUEUE_RENDER_COMMAND(IVSmokeSetRenderData)(

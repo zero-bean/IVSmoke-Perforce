@@ -11,6 +11,7 @@ int3 VoxelResolution;
 int PackedInterval;
 int3 VoxelAtlasCount;
 float GameTime;
+int VolumeCount;
 
 bool IsValidTime(float t)
 {
@@ -44,6 +45,13 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	AtlasID.z = PixelCoord.z / SliceSize.z;
 
 	uint VolumeIndex = AtlasID.x + AtlasID.y * VoxelAtlasCount.x + AtlasID.z * VoxelAtlasCount.x * VoxelAtlasCount.y;
+
+	// Bounds check: skip slots beyond actual volume count
+	if (VolumeIndex >= (uint)VolumeCount)
+	{
+		Desti[PixelCoord] = 0.0f;
+		return;
+	}
 
 	int3 LocalPos = PixelCoord % SliceSize;
 	if (any(LocalPos >= VoxelResolution))

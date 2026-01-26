@@ -314,7 +314,7 @@ bool FIVSmokeRenderer::HasVolumes() const
 //~==============================================================================
 // Thread-Safe Render Data Preparation
 
-FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmokeVoxelVolume*>& InVolumes)
+FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmokeVoxelVolume*>& InVolumes, const FVector& CameraPosition)
 {
 	// Must be called on Game Thread
 	check(IsInGameThread());
@@ -326,13 +326,38 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		return Result;
 	}
 
-	Result.VolumeCount = InVolumes.Num();
+	// Filter volumes if exceeding maximum supported count
+	TArray<AIVSmokeVoxelVolume*> FilteredVolumes;
+	if (InVolumes.Num() > MaxSupportedVolumes)
+	{
+		UE_LOG(LogIVSmoke, Warning,
+			TEXT("[FIVSmokeRenderer::PrepareRenderData] Volume count (%d) exceeds maximum (%d). "
+				 "Farthest volumes from camera will be excluded."),
+			InVolumes.Num(), MaxSupportedVolumes
+		);
+
+		// Copy and sort by distance from camera (closest first)
+		FilteredVolumes = InVolumes;
+		FilteredVolumes.Sort([&CameraPosition](const AIVSmokeVoxelVolume& A, const AIVSmokeVoxelVolume& B)
+		{
+			const float DistA = FVector::DistSquared(CameraPosition, A.GetActorLocation());
+			const float DistB = FVector::DistSquared(CameraPosition, B.GetActorLocation());
+			return DistA < DistB;
+		});
+
+		// Keep only the closest MaxSupportedVolumes
+		FilteredVolumes.SetNum(MaxSupportedVolumes);
+	}
+
+	const TArray<AIVSmokeVoxelVolume*>& VolumesToProcess = (FilteredVolumes.Num() > 0) ? FilteredVolumes : InVolumes;
+
+	Result.VolumeCount = VolumesToProcess.Num();
 	Result.VolumeDataArray.Reserve(Result.VolumeCount);
 	Result.HoleTextures.Reserve(Result.VolumeCount);
 	Result.HoleTextureSizes.Reserve(Result.VolumeCount);
 
 	// Get resolution info from first valid volume
-	for (AIVSmokeVoxelVolume* Volume : InVolumes)
+	for (AIVSmokeVoxelVolume* Volume : VolumesToProcess)
 	{
 		if (Volume)
 		{
@@ -369,9 +394,9 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 	Result.PackedVoxelDeathTimes.Reserve(TotalVoxelSize);
 
 	// Collect data from all volumes (Game Thread - safe to access)
-	for (int32 i = 0; i < InVolumes.Num(); ++i)
+	for (int32 i = 0; i < VolumesToProcess.Num(); ++i)
 	{
-		AIVSmokeVoxelVolume* Volume = InVolumes[i];
+		AIVSmokeVoxelVolume* Volume = VolumesToProcess[i];
 		if (!Volume)
 		{
 			continue;
@@ -385,7 +410,7 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		const TArray<float>& VoxelDeathTimes = Volume->GetVoxelDeathTimes();
 		Result.PackedVoxelDeathTimes.Append(VoxelDeathTimes);
 
-		if (i < InVolumes.Num() - 1)
+		if (i < VolumesToProcess.Num() - 1)
 		{
 			Result.PackedVoxelBirthTimes.Append(VoxelIntervalData);
 			Result.PackedVoxelDeathTimes.Append(VoxelIntervalData);
@@ -489,7 +514,7 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		Result.ScatteringAnisotropy = Settings->ScatteringAnisotropy;
 
 		// Get world from first volume (single lookup, reused for light detection and shadow capture)
-		UWorld* World = (InVolumes.Num() > 0 && InVolumes[0]) ? InVolumes[0]->GetWorld() : nullptr;
+		UWorld* World = (VolumesToProcess.Num() > 0 && VolumesToProcess[0]) ? VolumesToProcess[0]->GetWorld() : nullptr;
 
 		// Light Direction and Color
 		// Priority: Settings Override > World DirectionalLight > Default
@@ -548,7 +573,7 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		Result.CascadeBlendRange = Settings->CascadeBlendRange;
 
 		// Skip shadow capture if we're already inside a shadow capture render pass (prevents infinite recursion)
-		if (Settings->bEnableExternalShadowing && InVolumes.Num() > 0 && !bIsCapturingShadow)
+		if (Settings->bEnableExternalShadowing && VolumesToProcess.Num() > 0 && !bIsCapturingShadow)
 		{
 			// Per-frame guard: Only update once per actual engine frame
 			// PrepareRenderData can be called multiple times per frame (multiple views)
@@ -568,23 +593,23 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 					bIsCapturingShadow = true;
 
 					// Get camera position from first volume's world (or use centroid of volumes)
-					FVector CameraPosition = FVector::ZeroVector;
-					FVector CameraForward = FVector(1.0f, 0.0f, 0.0f);
+					FVector CSMCameraPosition = FVector::ZeroVector;
+					FVector CSMCameraForward = FVector(1.0f, 0.0f, 0.0f);
 
 					// Try to get player camera position
 					if (APlayerController* PC = World->GetFirstPlayerController())
 					{
 						if (APlayerCameraManager* CameraManager = PC->PlayerCameraManager)
 						{
-							CameraPosition = CameraManager->GetCameraLocation();
-							CameraForward = CameraManager->GetCameraRotation().Vector();
+							CSMCameraPosition = CameraManager->GetCameraLocation();
+							CSMCameraForward = CameraManager->GetCameraRotation().Vector();
 						}
 					}
 
 					// Update CSM with current frame
 					CSMRenderer->Update(
-						CameraPosition,
-						CameraForward,
+						CSMCameraPosition,
+						CSMCameraForward,
 						Result.LightDirection,
 						CurrentFrameNumber
 					);
@@ -627,9 +652,9 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 
 	Result.bIsValid = Result.VolumeDataArray.Num() && Result.PackedVoxelBirthTimes.Num() > 0 && Result.PackedVoxelDeathTimes.Num() > 0;
 
-	if (InVolumes.Num() > 0 && InVolumes[0])
+	if (VolumesToProcess.Num() > 0 && VolumesToProcess[0])
 	{
-		Result.GameTime = InVolumes[0]->GetSyncWorldTimeSeconds();
+		Result.GameTime = VolumesToProcess[0]->GetSyncWorldTimeSeconds();
 	}
 	else
 	{
@@ -1152,6 +1177,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	StructuredCopyParams->PackedInterval = TexturePackInterval;
 	StructuredCopyParams->VoxelAtlasCount = VoxelAtlasCount;
 	StructuredCopyParams->GameTime = RenderData.GameTime;
+	StructuredCopyParams->VolumeCount = VolumeCount;
 
 	FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeStructuredToTextureCS>(
 		GraphBuilder,

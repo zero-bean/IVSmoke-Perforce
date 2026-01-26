@@ -513,9 +513,9 @@ uint ComputeSliceIndex(
 // Performance: O(N log²N) for sort + O(N) for merge, where N = volume count
 // Memory: MAX_SORT_INTERVALS * 2 floats in registers
 
-/** Maximum intervals to sort (limited for register pressure). Increase if 32+ volumes overlap on a single ray. */
+/** Maximum intervals to sort. Matches MAX_VOLUMES for consistent 128 volume support. */
 #ifndef MAX_SORT_INTERVALS
-#define MAX_SORT_INTERVALS 32
+#define MAX_SORT_INTERVALS 128
 #endif
 
 /**
@@ -680,20 +680,22 @@ float ComputeMergedVolumeLength(
 	FRayInterval Intervals[MAX_SORT_INTERVALS];
 	uint IntervalCount = 0;
 
-	// Collect ray-volume intersections
-	uint MaxVolumes = min(VolumeCount, uint(MAX_SORT_INTERVALS));
-
+	// Collect ray-volume intersections from ALL volumes (up to 128)
+	// Only store up to MAX_SORT_INTERVALS intervals due to array size limit
 	[loop]
-	for (uint v = 0; v < MaxVolumes; v++)
+	for (uint v = 0; v < VolumeCount; v++)
 	{
 		FVolumeGPUData Vol = VolumeDataBuffer[v];
 
 		float EntryT, ExitT;
 		if (RayAABBIntersection(RayOrigin, RayDir, Vol.VolumeWorldAABBMin, Vol.VolumeWorldAABBMax, EntryT, ExitT))
 		{
-			Intervals[IntervalCount].Near = max(EntryT, 0.0);
-			Intervals[IntervalCount].Far = ExitT;
-			IntervalCount++;
+			if (IntervalCount < MAX_SORT_INTERVALS)
+			{
+				Intervals[IntervalCount].Near = max(EntryT, 0.0);
+				Intervals[IntervalCount].Far = ExitT;
+				IntervalCount++;
+			}
 		}
 	}
 
