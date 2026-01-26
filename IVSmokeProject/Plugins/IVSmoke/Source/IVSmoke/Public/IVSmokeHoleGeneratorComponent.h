@@ -103,7 +103,7 @@ public:
 	int32 MaxHoles = 128;
 
 	/** Hole voxel volume resolution. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Hole | Optimization", meta = (ClampMin = "16", ClampMax = "128"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Hole | Optimization", meta = (ClampMin = "64", ClampMax = "128"))
 	FIntVector VoxelResolution = FIntVector(64, 64, 64);
 
 	/** Maximum number of holes that can be activated. */
