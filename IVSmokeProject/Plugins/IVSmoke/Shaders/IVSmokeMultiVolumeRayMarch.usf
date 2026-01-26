@@ -89,6 +89,8 @@ int PackedInterval;
 Texture3D<float> PackedVoxelAtlas;
 Texture3D<float4> PackedHoleAtlas;
 int3 VoxelTexSize;
+int3 PackedVoxelTexSize;
+int3 VoxelAtlasCount;
 int3 HoleTexSize;
 int3 PackedHoleTexSize;
 int3 HoleAtlasCount;
@@ -174,16 +176,23 @@ float GetNoise(float3 WorldPos)
 	return NoiseVolume.SampleLevel(LinearRepeat_Sampler, uvw, 0);
 }
 
-float3 GetVoxelUVW(float3 WorldPos, uint VolumeIdx, int TexZSize)
+float3 GetVoxelUVW(float3 WorldPos, uint VolumeIdx)
 {
 	FVolumeGPUData Vol = VolumeDataBuffer[VolumeIdx];
 	float3 uvw = (WorldPos - Vol.VolumeWorldAABBMin) / (Vol.VolumeWorldAABBMax - Vol.VolumeWorldAABBMin);
-	int AtlasTexZSize = TexZSize * NumActiveVolumes + PackedInterval * (NumActiveVolumes - 1);
-	int zMinTex = (TexZSize + PackedInterval) * VolumeIdx;
-	int zMaxTex = zMinTex + TexZSize;
-	float zMinUV = (float)zMinTex / AtlasTexZSize;
-	float zMaxUV = (float)zMaxTex / AtlasTexZSize;
-	uvw.z = lerp(zMinUV, zMaxUV, uvw.z);
+
+	// 3D Grid atlas indexing (same pattern as GetHoleUVW)
+	int3 VoxelAtlasID;
+	VoxelAtlasID.x = VolumeIdx % VoxelAtlasCount.x;
+	VoxelAtlasID.y = (VolumeIdx / VoxelAtlasCount.x) % VoxelAtlasCount.y;
+	VoxelAtlasID.z = VolumeIdx / (VoxelAtlasCount.x * VoxelAtlasCount.y);
+
+	int3 MinTexPos = VoxelAtlasID * (VoxelTexSize + PackedInterval);
+	int3 MaxTexPos = MinTexPos + VoxelTexSize;
+	float3 MinUV = (float3)MinTexPos / PackedVoxelTexSize;
+	float3 MaxUV = (float3)MaxTexPos / PackedVoxelTexSize;
+	uvw = lerp(MinUV, MaxUV, uvw);
+
 	return uvw;
 }
 
@@ -215,7 +224,7 @@ float4 GetHoleSampling(float3 WorldPos, uint VolumeIdx)
 
 float GetVoxelDensity(float3 WorldPos, uint VolumeIdx)
 {
-	float3 uvw = GetVoxelUVW(WorldPos, VolumeIdx, VoxelTexSize.z);
+	float3 uvw = GetVoxelUVW(WorldPos, VolumeIdx);
 	return PackedVoxelAtlas.Sample(LinearBorder_Sampler, uvw);
 }
 

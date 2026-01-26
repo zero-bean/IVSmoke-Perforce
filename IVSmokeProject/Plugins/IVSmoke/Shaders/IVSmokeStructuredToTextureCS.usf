@@ -9,6 +9,7 @@ StructuredBuffer<FVolumeGPUData> VolumeDataBuffer;
 int3 TexSize;
 int3 VoxelResolution;
 int PackedInterval;
+int3 VoxelAtlasCount;
 float GameTime;
 
 bool IsValidTime(float t)
@@ -35,11 +36,17 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 		return;
 	}
 
-	int SliceHeight = VoxelResolution.z + PackedInterval;
-	uint VolumeIndex = PixelCoord.z / SliceHeight;
+	// 3D Grid atlas indexing
+	int3 SliceSize = VoxelResolution + PackedInterval;
+	int3 AtlasID;
+	AtlasID.x = PixelCoord.x / SliceSize.x;
+	AtlasID.y = PixelCoord.y / SliceSize.y;
+	AtlasID.z = PixelCoord.z / SliceSize.z;
 
-	int LocalZ = PixelCoord.z % SliceHeight;
-	if (LocalZ >= VoxelResolution.z)
+	uint VolumeIndex = AtlasID.x + AtlasID.y * VoxelAtlasCount.x + AtlasID.z * VoxelAtlasCount.x * VoxelAtlasCount.y;
+
+	int3 LocalPos = PixelCoord % SliceSize;
+	if (any(LocalPos >= VoxelResolution))
 	{
 		Desti[PixelCoord] = 0.0f;
 		return;
@@ -47,7 +54,7 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 
 	FVolumeGPUData VolumeData = VolumeDataBuffer[VolumeIndex];
 
-	uint LocalIdx = PixelCoord.x + VoxelResolution.x * PixelCoord.y + VoxelResolution.x * VoxelResolution.y * LocalZ;
+	uint LocalIdx = LocalPos.x + VoxelResolution.x * LocalPos.y + VoxelResolution.x * VoxelResolution.y * LocalPos.z;
 	uint SourceIdx = VolumeData.VoxelBufferOffset + LocalIdx;
 
 	float BirthTime = BirthTimes[SourceIdx];

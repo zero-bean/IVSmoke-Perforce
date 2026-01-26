@@ -1042,13 +1042,14 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	const int32 TexturePackMaxSize = 2048;
 	const FIntVector VoxelResolution = RenderData.VoxelResolution;
 	const FIntVector HoleResolution = RenderData.HoleResolution;
+	const FIntVector VoxelAtlasCount = GetAtlasTexCount(VoxelResolution, VolumeCount, TexturePackInterval, TexturePackMaxSize);
 	const FIntVector HoleAtlasCount = GetAtlasTexCount(HoleResolution, VolumeCount, TexturePackInterval, TexturePackMaxSize);
 
-	// Voxel Atlas: 1D Z-stack (must match CollectVolumeRenderData packing)
+	// Voxel Atlas: 3D packing
 	const FIntVector VoxelAtlasResolution = FIntVector(
-		VoxelResolution.X,
-		VoxelResolution.Y,
-		VoxelResolution.Z * VolumeCount + TexturePackInterval * (VolumeCount - 1)
+		VoxelResolution.X * VoxelAtlasCount.X + TexturePackInterval * (VoxelAtlasCount.X - 1),
+		VoxelResolution.Y * VoxelAtlasCount.Y + TexturePackInterval * (VoxelAtlasCount.Y - 1),
+		VoxelResolution.Z * VoxelAtlasCount.Z + TexturePackInterval * (VoxelAtlasCount.Z - 1)
 	);
 	const FIntVector VoxelAtlasFXAAResolution = VoxelAtlasResolution * 1;
 
@@ -1148,6 +1149,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	StructuredCopyParams->TexSize = VoxelAtlasResolution;
 	StructuredCopyParams->VoxelResolution = RenderData.VoxelResolution;
 	StructuredCopyParams->PackedInterval = TexturePackInterval;
+	StructuredCopyParams->VoxelAtlasCount = VoxelAtlasCount;
 	StructuredCopyParams->GameTime = RenderData.GameTime;
 
 	FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeStructuredToTextureCS>(
@@ -1306,6 +1308,8 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->PackedInterval = TexturePackInterval;
 	Parameters->PackedVoxelAtlas = GraphBuilder.CreateSRV(PackedVoxelAtlasFXAA);
 	Parameters->VoxelTexSize = VoxelResolution;
+	Parameters->PackedVoxelTexSize = VoxelAtlasResolution;
+	Parameters->VoxelAtlasCount = VoxelAtlasCount;
 	Parameters->PackedHoleAtlas = GraphBuilder.CreateSRV(PackedHoleAtlas);
 	Parameters->HoleTexSize = HoleResolution;
 	Parameters->PackedHoleTexSize = HoleAtlasResolution;

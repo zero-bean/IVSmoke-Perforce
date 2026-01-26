@@ -119,8 +119,10 @@ public:
 		SHADER_PARAMETER(FIntVector, TexSize)
 		/** Voxel resolution per volume. */
 		SHADER_PARAMETER(FIntVector, VoxelResolution)
-		/** Number of volumes packed per row in atlas. */
+		/** Spacing between volumes in atlas. */
 		SHADER_PARAMETER(int32, PackedInterval)
+		/** Number of volumes per axis in atlas (3D grid layout). */
+		SHADER_PARAMETER(FIntVector, VoxelAtlasCount)
 		/** Current game time for fade animation calculation. */
 		SHADER_PARAMETER(float, GameTime)
 	END_SHADER_PARAMETER_STRUCT()

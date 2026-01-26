@@ -314,6 +314,8 @@ public:
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D, PackedVoxelAtlas)
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D, PackedHoleAtlas)
 		SHADER_PARAMETER(FIntVector, VoxelTexSize)
+		SHADER_PARAMETER(FIntVector, PackedVoxelTexSize)
+		SHADER_PARAMETER(FIntVector, VoxelAtlasCount)
 		SHADER_PARAMETER(FIntVector, HoleTexSize)
 		SHADER_PARAMETER(FIntVector, PackedHoleTexSize)
 		SHADER_PARAMETER(FIntVector, HoleAtlasCount)
