@@ -226,9 +226,6 @@ struct alignas(16) FIVSmokeHoleGPU
 
 	FVector2f PresetExplosionPadding;
 
-	/** These values sampled from DistanceCurveOverDistance. */
-	float DistortionCurveOverDistance[FIVSmokeHoleCarveCS::CurveSampleCount];
-
 	//~============================================================================
 	// Penetration
 
