@@ -10,7 +10,32 @@
 struct FIVSmokeHoleArray;
 class UIVSmokeHoleGeneratorComponent;
 class UIVSmokeHolePreset;
+class UTexture2D;
 struct FIVSmokeHoleGPU;
+
+/**
+ * @struct FIVSmokeHoleNoiseSettings
+ * @brief Noise settings for hole shape distortion.
+ */
+USTRUCT()
+struct IVSMOKE_API FIVSmokeHoleNoiseSettings
+{
+	GENERATED_BODY()
+
+	/** Noise texture for shape distortion. */
+	UPROPERTY(EditAnywhere, Category = "Noise", meta = (Tooltip = "Noise texture for shape distortion."))
+	TObjectPtr<UTexture2D> Texture;
+
+	/** Noise strength. 0 = no noise, 1 = full effect. */
+	UPROPERTY(EditAnywhere, Category = "Noise", meta = (ClampMin = "0.0", ClampMax = "1.0",
+		Tooltip = "Noise strength. 0 = no noise, 1 = full effect."))
+	float Strength = 0.0f;
+
+	/** Noise UV scale. Higher = more detailed patterns. */
+	UPROPERTY(EditAnywhere, Category = "Noise", meta = (ClampMin = "0.1", ClampMax = "2.0",
+		Tooltip = "Noise UV scale. Higher = more detailed patterns."))
+	float Scale = 1.0f;
+};
 
 /**
  * @struct FIVSmokeHoleDynamicSubject
@@ -45,7 +70,7 @@ struct IVSMOKE_API FIVSmokeHoleDynamicSubject
  * @struct FIVSmokeHoleData
  * @brief Network-optimized hole data structure.
  */
-USTRUCT(BlueprintType)
+USTRUCT()
 struct IVSMOKE_API FIVSmokeHoleData : public FFastArraySerializerItem
 {
 	GENERATED_BODY()

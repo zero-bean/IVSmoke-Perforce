@@ -121,6 +121,20 @@ public:
 
 		// Hole parameters
 		SHADER_PARAMETER(int32, NumHoles)
+
+		// Noise textures (per HoleType)
+		SHADER_PARAMETER_TEXTURE(Texture2D, PenetrationNoiseTexture)
+		SHADER_PARAMETER_TEXTURE(Texture2D, ExplosionNoiseTexture)
+		SHADER_PARAMETER_TEXTURE(Texture2D, DynamicNoiseTexture)
+		SHADER_PARAMETER_SAMPLER(SamplerState, NoiseSampler)
+
+		// Noise parameters (per HoleType)
+		SHADER_PARAMETER(float, PenetrationNoiseStrength)
+		SHADER_PARAMETER(float, PenetrationNoiseScale)
+		SHADER_PARAMETER(float, ExplosionNoiseStrength)
+		SHADER_PARAMETER(float, ExplosionNoiseScale)
+		SHADER_PARAMETER(float, DynamicNoiseStrength)
+		SHADER_PARAMETER(float, DynamicNoiseScale)
 	END_SHADER_PARAMETER_STRUCT()
 
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)

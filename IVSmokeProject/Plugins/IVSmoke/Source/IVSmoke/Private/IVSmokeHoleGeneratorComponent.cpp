@@ -475,8 +475,27 @@ void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 	const int32 NumHoles = ActiveHoles.Num();
 	const int32 CapturedBlurStep = BlurStep;
 
+	// Capture noise settings for render thread
+	FTextureRHIRef PenetrationNoiseTextureRHI = PenetrationNoise.Texture && PenetrationNoise.Texture->GetResource()
+		? PenetrationNoise.Texture->GetResource()->TextureRHI : nullptr;
+	FTextureRHIRef ExplosionNoiseTextureRHI = ExplosionNoise.Texture && ExplosionNoise.Texture->GetResource()
+		? ExplosionNoise.Texture->GetResource()->TextureRHI : nullptr;
+	FTextureRHIRef DynamicNoiseTextureRHI = DynamicNoise.Texture && DynamicNoise.Texture->GetResource()
+		? DynamicNoise.Texture->GetResource()->TextureRHI : nullptr;
+
+	const float CapturedPenetrationNoiseStrength = PenetrationNoise.Strength;
+	const float CapturedPenetrationNoiseScale = PenetrationNoise.Scale;
+	const float CapturedExplosionNoiseStrength = ExplosionNoise.Strength;
+	const float CapturedExplosionNoiseScale = ExplosionNoise.Scale;
+	const float CapturedDynamicNoiseStrength = DynamicNoise.Strength;
+	const float CapturedDynamicNoiseScale = DynamicNoise.Scale;
+
 	ENQUEUE_RENDER_COMMAND(IVSmokeHoleCarveFullRebuild)(
-		[Texture, GPUHoles = MoveTemp(GPUHoles), WorldVolumeMin, WorldVolumeMax, Resolution, NumHoles, CapturedBlurStep]
+		[Texture, GPUHoles = MoveTemp(GPUHoles), WorldVolumeMin, WorldVolumeMax, Resolution, NumHoles, CapturedBlurStep,
+		 PenetrationNoiseTextureRHI, ExplosionNoiseTextureRHI, DynamicNoiseTextureRHI,
+		 CapturedPenetrationNoiseStrength, CapturedPenetrationNoiseScale,
+		 CapturedExplosionNoiseStrength, CapturedExplosionNoiseScale,
+		 CapturedDynamicNoiseStrength, CapturedDynamicNoiseScale]
 		(FRHICommandListImmediate& RHICmdList)
 		{
 			FRDGBuilder GraphBuilder(RHICmdList);
@@ -504,6 +523,20 @@ void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 			CarveParameters->VolumeMax = WorldVolumeMax;
 			CarveParameters->Resolution = Resolution;
 			CarveParameters->NumHoles = NumHoles;
+
+			// Noise textures (use GWhiteTexture as fallback for null textures)
+			CarveParameters->PenetrationNoiseTexture = PenetrationNoiseTextureRHI ? PenetrationNoiseTextureRHI : GWhiteTexture->TextureRHI;
+			CarveParameters->ExplosionNoiseTexture = ExplosionNoiseTextureRHI ? ExplosionNoiseTextureRHI : GWhiteTexture->TextureRHI;
+			CarveParameters->DynamicNoiseTexture = DynamicNoiseTextureRHI ? DynamicNoiseTextureRHI : GWhiteTexture->TextureRHI;
+			CarveParameters->NoiseSampler = TStaticSamplerState<SF_Bilinear, AM_Wrap, AM_Wrap, AM_Wrap>::GetRHI();
+
+			// Noise parameters
+			CarveParameters->PenetrationNoiseStrength = CapturedPenetrationNoiseStrength;
+			CarveParameters->PenetrationNoiseScale = CapturedPenetrationNoiseScale;
+			CarveParameters->ExplosionNoiseStrength = CapturedExplosionNoiseStrength;
+			CarveParameters->ExplosionNoiseScale = CapturedExplosionNoiseScale;
+			CarveParameters->DynamicNoiseStrength = CapturedDynamicNoiseStrength;
+			CarveParameters->DynamicNoiseScale = CapturedDynamicNoiseScale;
 
 			const TShaderMapRef<FIVSmokeHoleCarveCS> CarveShader(GetGlobalShaderMap(GMaxRHIFeatureLevel));
 			FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeHoleCarveCS>(GraphBuilder, GetGlobalShaderMap(GMaxRHIFeatureLevel), CarveShader, CarveParameters, Resolution);

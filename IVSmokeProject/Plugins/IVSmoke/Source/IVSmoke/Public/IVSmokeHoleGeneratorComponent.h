@@ -6,6 +6,7 @@
 #include "IVSmokeHoleData.h"
 #include "IVSmokeHoleGeneratorComponent.generated.h"
 
+class UTexture2D;
 class UTextureRenderTargetVolume;
 class UIVSmokeHolePreset;
 
@@ -99,22 +100,34 @@ private:
 public:
 
 	/** Maximum number of holes that can be activated. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Hole | Optimization", meta = (ClampMin = "1", ClampMax = "512"))
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Hole | Configuration", meta = (ClampMin = "1", ClampMax = "512"))
 	int32 MaxHoles = 128;
 
 	/** Hole voxel volume resolution. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Hole | Optimization", meta = (ClampMin = "64", ClampMax = "128"))
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Hole | Configuration", meta = (ClampMin = "64", ClampMax = "128"))
 	FIntVector VoxelResolution = FIntVector(64, 64, 64);
 
+	/** Maximum number of holes that can be activated. */
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Hole | Configuration",
+		meta = (ToolTip = "Select the type of obstacle that will block the penetration hole"))
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObstacleObjectTypes;
+
 	/** Blur radius in voxels. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Hole | Optimization", meta = (ClampMin = "0", ClampMax = "4",
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Hole | Configuration", meta = (ClampMin = "0", ClampMax = "4",
 		Tooltip = "samples the surrounding pixels to reduce the aliasing. Recommended value is 2."))
 	int32 BlurStep = 2;
 
-	/** Maximum number of holes that can be activated. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Hole | Collision",
-		meta = (ToolTip = "Select the type of obstacle that will block the penetration hole"))
-	TArray<TEnumAsByte<EObjectTypeQuery>> ObstacleObjectTypes;
+	/** Noise settings for penetration holes. */
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Hole | Noise")
+	FIVSmokeHoleNoiseSettings PenetrationNoise;
+
+	/** Noise settings for explosion holes. */
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Hole | Noise")
+	FIVSmokeHoleNoiseSettings ExplosionNoise;
+
+	/** Noise settings for dynamic holes. */
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Hole | Noise")
+	FIVSmokeHoleNoiseSettings DynamicNoise;
 
 	/** Get synchronized server time. */
 	float GetSyncedTime() const;

@@ -50,6 +50,21 @@ int3 Resolution;
 int NumHoles;
 
 //~============================================================================
+// Noise Textures and Parameters
+
+Texture2D PenetrationNoiseTexture;
+Texture2D ExplosionNoiseTexture;
+Texture2D DynamicNoiseTexture;
+SamplerState NoiseSampler;
+
+float PenetrationNoiseStrength;
+float PenetrationNoiseScale;
+float ExplosionNoiseStrength;
+float ExplosionNoiseScale;
+float DynamicNoiseStrength;
+float DynamicNoiseScale;
+
+//~============================================================================
 // Signed Distance Field Utility Functions
 
 float SphereSdf(float3 Point, float3 Center, float SphereRadius)
@@ -81,6 +96,55 @@ float3 GetUVW(float3 WorldPos)
 }
 
 //~============================================================================
+// Noise Sampling
+
+/**
+ * @brief Sample noise offset for edge distortion based on HoleType
+ * @param WorldPos      World position to sample noise at
+ * @param HoleType      0 = Penetration, 1 = Explosion, 2 = Dynamic
+ * @param EdgeWidth     Width of the edge/falloff region
+ * @param EdgeFactor    How much we're in the edge region (0 = far from edge, 1 = at edge)
+ * @return Distance offset to apply (positive = expand outward, negative = shrink inward)
+ */
+float SampleEdgeNoiseOffset(float3 WorldPos, int HoleType, float EdgeWidth, float EdgeFactor)
+{
+	float2 NoiseUV;
+	float NoiseValue;
+	float Strength;
+	float Scale;
+
+	if (HoleType == 0)
+	{
+		// Penetration
+		Scale = PenetrationNoiseScale;
+		Strength = PenetrationNoiseStrength;
+		NoiseUV = WorldPos.xy * Scale * 0.01;
+		NoiseValue = PenetrationNoiseTexture.SampleLevel(NoiseSampler, NoiseUV, 0).r;
+	}
+	else if (HoleType == 1)
+	{
+		// Explosion
+		Scale = ExplosionNoiseScale;
+		Strength = ExplosionNoiseStrength;
+		NoiseUV = WorldPos.xy * Scale * 0.01;
+		NoiseValue = ExplosionNoiseTexture.SampleLevel(NoiseSampler, NoiseUV, 0).r;
+	}
+	else
+	{
+		// Dynamic
+		Scale = DynamicNoiseScale;
+		Strength = DynamicNoiseStrength;
+		NoiseUV = WorldPos.xz * Scale * 0.01;
+		NoiseValue = DynamicNoiseTexture.SampleLevel(NoiseSampler, NoiseUV, 0).r;
+	}
+
+	// Convert [0,1] noise to [-1,1] range for zeroing center of hole
+	// Apply strength and edge factor (only distort near the edge, not inside the hole)
+	float NoiseOffset = (NoiseValue - 0.5) * 2.0 * Strength * EdgeWidth * EdgeFactor;
+	return NoiseOffset;
+}
+
+//~============================================================================
 // Explosion Animation
 
 /**
@@ -100,38 +164,50 @@ float4 Explosion(float3 WorldPos, float3 UVW, int HoleIdx, out float ExplosionFa
 	float3 Dir = normalize(Offset);
 	float Dis = length(Offset);
 
+	float Radius = HoleData.Radius;
+	float SoftnessRange = Radius * HoleData.Softness;
+
 	float VolumeHeight = VolumeMax.z - VolumeMin.z;
 	float AlphaHeight = 100.0f;
 
 	//PenetrationFade
 	ExplosionFadePenetration = saturate(HoleData.CurLifeTime / max(HoleData.ExpansionDuration, 0.001f));
-	ExplosionFadePenetration = Dis > HoleData.Radius ? 0 : ExplosionFadePenetration;
+	ExplosionFadePenetration = Dis > Radius ? 0 : ExplosionFadePenetration;
 	ExplosionFadePenetrationTime = HoleData.ExpansionDuration >= HoleData.CurLifeTime ? 0 : HoleData.ExpansionDuration - HoleData.CurLifeTime;
 
 	//Fade
 	if (HoleData.CurLifeTime < HoleData.ExpansionDuration)
 	{
 		//Expansion
-		float CurFadeRange = HoleData.CurExpansionFadeRangeOverTime * HoleData.Radius;
-		float SoftnessRange = HoleData.Radius * HoleData.Softness;
+		float CurFadeRange = HoleData.CurExpansionFadeRangeOverTime * Radius;
 		float SoftnessStart = CurFadeRange - SoftnessRange;
+		float DistToEdge = Dis - SoftnessStart;
 
-		Result.a = saturate((Dis - SoftnessStart) / max(SoftnessRange, 0.001f));
+		// Apply noise only to edge region
+		float EdgeFactor = 1.0 - saturate(abs(DistToEdge) / max(SoftnessRange, 0.001f));
+		float NoiseOffset = SampleEdgeNoiseOffset(WorldPos, 1, SoftnessRange, EdgeFactor);
+		float NoisedDistToEdge = DistToEdge - NoiseOffset;
+
+		Result.a = saturate(NoisedDistToEdge / max(SoftnessRange, 0.001f));
 	}
 	else
 	{
 		//Shrink
 		float ShrinkNormalizedTime = saturate((HoleData.CurLifeTime - HoleData.ExpansionDuration) / max(0.001f, (HoleData.Duration - HoleData.ExpansionDuration)));
-		float CurFadeRange = HoleData.CurShrinkFadeRangeOverTime * HoleData.Radius;
-		float SoftnessRange = HoleData.Radius * HoleData.Softness;
+		float CurFadeRange = HoleData.CurShrinkFadeRangeOverTime * Radius;
 		float SoftnessStart = CurFadeRange - SoftnessRange;
 		float CurDensityMul = HoleData.CurShrinkDensityMulOverTime;
 
-		float LastExpansionFadeRange = HoleData.CurExpansionFadeRangeOverTime * HoleData.Radius;
+		float LastExpansionFadeRange = HoleData.CurExpansionFadeRangeOverTime * Radius;
 		float LastExpansionSoftnessStart = LastExpansionFadeRange - SoftnessRange;
 
-		float LastExpansionAlpha = saturate((Dis - LastExpansionSoftnessStart) / max(SoftnessRange, 0.001f));
-		float ShrinkAlpha = saturate((Dis - SoftnessStart) / max(SoftnessRange, 0.001f)) * CurDensityMul;
+		// Calculate edge factors for noise
+		float DistToEdge = Dis - SoftnessStart;
+		float EdgeFactor = 1.0 - saturate(abs(DistToEdge) / max(SoftnessRange, 0.001f));
+		float NoiseOffset = SampleEdgeNoiseOffset(WorldPos, 1, SoftnessRange, EdgeFactor);
+
+		float LastExpansionAlpha = saturate((Dis - LastExpansionSoftnessStart - NoiseOffset) / max(SoftnessRange, 0.001f));
+		float ShrinkAlpha = saturate((Dis - SoftnessStart - NoiseOffset) / max(SoftnessRange, 0.001f)) * CurDensityMul;
 
 		Result.a = lerp(LastExpansionAlpha, ShrinkAlpha, ShrinkNormalizedTime);
 
@@ -140,7 +216,7 @@ float4 Explosion(float3 WorldPos, float3 UVW, int HoleIdx, out float ExplosionFa
 
 	//Expansion Distortion
 	float DistortionOverTime = HoleData.CurDistortionOverTime;
-	float DistortionOverDistance = smoothstep(0, 1, 1 - Dis / HoleData.Radius);
+	float DistortionOverDistance = smoothstep(0, 1, 1 - Dis / Radius);
 	float CurDistortionDistance = HoleData.DistortionDistance * DistortionOverTime * DistortionOverDistance;
 
 	if (CurDistortionDistance > 0)
@@ -209,11 +285,17 @@ float4 Penetration(float3 WorldPos, float3 UVW, int HoleIdx, out float Penetrati
 	float3 ClosetPoint = HoleData.Position + DirStartToEnd * t;
 	float DisToAxis = length(WorldPos - ClosetPoint);
 
-	if (DisToAxis < RadiusAtT)
+	float EdgeWidth = RadiusAtT * saturate(HoleData.Softness + 0.1);
+	float Dist = DisToAxis - RadiusAtT;
+
+	// Apply noise only to the edge region (EdgeFactor: 1 at edge, 0 far from edge)
+	float EdgeFactor = 1.0 - saturate(abs(Dist) / max(EdgeWidth, 0.01f));
+	float NoiseOffset = SampleEdgeNoiseOffset(WorldPos, 0, EdgeWidth, EdgeFactor);
+	float NoisedDist = Dist - NoiseOffset;  // Subtract: positive noise expands hole outward
+
+	if (NoisedDist < 0)
 	{
-		float Dist = DisToAxis - RadiusAtT;
-		float EdgeWidth = RadiusAtT * saturate(HoleData.Softness + 0.1);
-		float Falloff = saturate(-Dist / max(EdgeWidth, 0.01f));
+		float Falloff = saturate(-NoisedDist / max(EdgeWidth, 0.01f));
 		float NormalizedTime = HoleData.CurLifeTime / HoleData.Duration;
 		float FadeOut = 1.0 - pow(NormalizedTime, 3.5f);
 		Result.a = 1 - Falloff * FadeOut;
@@ -315,11 +397,16 @@ void MainCS(uint3 DTid : SV_DispatchThreadID)
 			float DSphereBot = SphereSdf(P, float3(0, 0, -BodyHalfHeight), CapRadius);
 			float Dist = min(DBox, min(DSphereTop, DSphereBot));
 
-			// 4. Apply falloff and fade over lifetime
+			// 4. Apply noise only to the edge region
 			float FalloffWidth = max(1.0, Hole.Softness * CapRadius);
+			float EdgeFactor = 1.0 - saturate(abs(Dist) / FalloffWidth);
+			float NoiseOffset = SampleEdgeNoiseOffset(WorldPos, 2, FalloffWidth, EdgeFactor);
+			float NoisedDist = Dist - NoiseOffset;
+
+			// 5. Apply falloff and fade over lifetime
 			float LifetimeRatio = Hole.CurLifeTime / Hole.Duration;
 			float Fade = 1.0 - LifetimeRatio * LifetimeRatio;
-			float HoleDensity = saturate(-Dist / FalloffWidth);
+			float HoleDensity = saturate(-NoisedDist / FalloffWidth);
 
 			DynamicResult.a = min(DynamicResult.a, 1.0 - (HoleDensity * Fade));
 		}
