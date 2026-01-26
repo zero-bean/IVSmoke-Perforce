@@ -34,7 +34,6 @@ struct FHoleGPU
 	float CurDistortionOverTime;
 	float DistortionDistance;
 	float2 PresetExplosionPadding;
-	float DistortionCurveOverDistance[CURVE_SAMPLE_COUNT];
 
 	// Penetration
 	float3 EndPosition;
@@ -66,19 +65,6 @@ float BoxSdf(float3 Point, float3 BoxHalfExtent)
 	float DistInside = min(max(PointMinusExtent.x, max(PointMinusExtent.y, PointMinusExtent.z)), 0.0);
 
 	return DistOutside + DistInside;
-}
-
-float DistortionCurveOverDistanceSampling(float Distance, int HoleIdx)
-{
-	Distance = saturate(Distance);
-	if (Distance == 1)
-	{
-		return HoleBuffer[HoleIdx].DistortionCurveOverDistance[CURVE_SAMPLE_COUNT - 1];
-	}
-	float f = Distance * (CURVE_SAMPLE_COUNT - 1);
-	int i = (int) floor(f);
-	float Frac = f - i;
-	return lerp(HoleBuffer[HoleIdx].DistortionCurveOverDistance[i], HoleBuffer[HoleIdx].DistortionCurveOverDistance[i + 1], Frac);
 }
 
 //~============================================================================
@@ -155,8 +141,8 @@ float4 Explosion(float3 WorldPos, float3 UVW, int HoleIdx, out float ExplosionFa
 
 	//Expansion Distortion
 	float DistortionOverTime = HoleData.CurDistortionOverTime;
-	float DistortionOverDistance = min(HoleData.DistortionDistance, DistortionCurveOverDistanceSampling(Dis / HoleData.Radius, HoleIdx));
-	float CurDistortionDistance = HoleData.Radius * DistortionOverTime * DistortionOverDistance;
+	float DistortionOverDistance = smoothstep(0, 1, 1 - Dis / HoleData.Radius);
+	float CurDistortionDistance = HoleData.DistortionDistance * DistortionOverTime * DistortionOverDistance;
 
 	if (CurDistortionDistance > 0)
 	{
