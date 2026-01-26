@@ -7,6 +7,7 @@
 #include "PostProcess/PostProcessMaterialInputs.h"
 #include "ScreenPass.h"
 #include "RenderingThread.h"
+#include "GameFramework/GameStateBase.h"
 
 TSharedPtr<FIVSmokeSceneViewExtension, ESPMode::ThreadSafe> FIVSmokeSceneViewExtension::Instance;
 
@@ -40,6 +41,24 @@ void FIVSmokeSceneViewExtension::BeginRenderViewFamily(FSceneViewFamily& InViewF
 		return;
 	}
 
+
+	UWorld* World = nullptr;
+	if (Renderer.bIsServerTimeSynced() == false && GEngine)
+	{
+		World = GEngine->GetCurrentPlayWorld();
+		if (World)
+		{
+			if (AGameStateBase* GS = World->GetGameState())
+			{
+				float LocalTime = World->GetTimeSeconds();
+				float ServerTime = GS->GetServerWorldTimeSeconds();
+				Renderer.SetServerTimeOffset(ServerTime - LocalTime);
+			}
+		}
+	}
+	
+
+
 	// Collect valid volumes under lock
 	TArray<AIVSmokeVoxelVolume*> ValidVolumes;
 	{
@@ -60,7 +79,7 @@ void FIVSmokeSceneViewExtension::BeginRenderViewFamily(FSceneViewFamily& InViewF
 
 	// Prepare render data on Game Thread (all Volume data access happens here)
 	FIVSmokePackedRenderData RenderData = Renderer.PrepareRenderData(ValidVolumes);
-
+	
 	// Transfer to Render Thread via command queue
 	ENQUEUE_RENDER_COMMAND(IVSmokeSetRenderData)(
 		[&Renderer, RenderData = MoveTemp(RenderData)](FRHICommandListImmediate& RHICmdList) mutable

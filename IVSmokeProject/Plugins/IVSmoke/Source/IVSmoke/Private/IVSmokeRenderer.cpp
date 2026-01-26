@@ -58,7 +58,8 @@ void FIVSmokeRenderer::Shutdown()
 		NoiseVolume->RemoveFromRoot();
 		NoiseVolume = nullptr;
 	}
-	ElapsedTime = 0.0f;
+	ServerTimeOffset = 0;
+	bServerTimeSynced = false;
 
 	CleanupCSM();
 }
@@ -1277,8 +1278,8 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	Parameters->LinearRepeat_Sampler = TStaticSamplerState<SF_Trilinear, AM_Wrap, AM_Wrap, AM_Wrap>::GetRHI();
 
 	// Time
-	ElapsedTime = View.Family->Time.GetRealTimeSeconds();
-	Parameters->ElapsedTime = ElapsedTime;
+	//Parameters->ElapsedTime = View.Family->Time.GetRealTimeSeconds();
+	Parameters->ElapsedTime = View.Family->Time.GetRealTimeSeconds() + ServerTimeOffset;
 
 	// Viewport
 	Parameters->TexSize = FIntPoint(TexSize.X, TexSize.Y);

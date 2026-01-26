@@ -158,6 +158,12 @@ public:
 	/** Access to volumes mutex (for thread-safe iteration). */
 	FCriticalSection& GetVolumesMutex() const { return VolumesMutex; }
 
+	/** Check if server time offset was set. */
+	bool bIsServerTimeSynced() const { return bServerTimeSynced; }
+
+	/** SetServerTimeOffset for smoke wind animation. */
+	void SetServerTimeOffset(const float InServerTimeOffset) { bServerTimeSynced = true;  ServerTimeOffset = InServerTimeOffset; }
+
 	//~==============================================================================
 	// Thread-Safe Render Data (Game Thread Render Thread)
 
@@ -366,8 +372,11 @@ private:
 	/** Shared noise volume texture for all smoke rendering. Prevent GC via AddToRoot. */
 	UTextureRenderTargetVolume* NoiseVolume = nullptr;
 
-	/** Elapsed time for animation. */
-	float ElapsedTime = 0.0f;
+	/** True if server time offset has been initialized (one-time sync completed). */
+	bool bServerTimeSynced = false;
+
+	/** ServerTime offset for animation. (ServerTime = LocalTime + Offset) */
+	float ServerTimeOffset = 0.0f;
 
 	//~==============================================================================
 	// External Shadowing (CSM - Cascaded Shadow Maps)
