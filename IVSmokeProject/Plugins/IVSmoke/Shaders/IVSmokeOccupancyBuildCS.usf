@@ -223,16 +223,16 @@ void MainCS(
 	// (no point computing light for empty cells)
 	if (AnyVolumePresent(ViewMask))
 	{
-		// Light direction: from sample toward light source
+		// Light direction: must match RayMarchCS's LightDirection usage
 		// Handle zero-length LightDirection by defaulting to up vector
 		float LightDirLen = length(LightDirection);
-		float3 ToLight = (LightDirLen > 0.001) ? (-LightDirection / LightDirLen) : float3(0, 0, 1);
+		float3 ToLight = (LightDirLen > 0.001) ? (LightDirection / LightDirLen) : float3(0, 0, 1);
 
-		FVolumeMaskIterator LightIt = InitVolumeMaskIterator(TileVolumeMask);
-		while (LightIt.bValid)
+		// Iterate ALL volumes for light occupancy (not just TileVolumeMask)
+		// Light rays can intersect volumes outside the tile's view frustum
+		[loop]
+		for (uint v = 0; v < ClampedVolumeCount; v++)
 		{
-			uint v = GetCurrentVolumeIndex(LightIt);
-
 			float3 VolMin = SharedVolumeMin[v];
 			float3 VolMax = SharedVolumeMax[v];
 
@@ -245,8 +245,6 @@ void MainCS(
 			{
 				SetVolumeBit(LightMask, v);
 			}
-
-			AdvanceVolumeMaskIterator(LightIt);
 		}
 	}
 
