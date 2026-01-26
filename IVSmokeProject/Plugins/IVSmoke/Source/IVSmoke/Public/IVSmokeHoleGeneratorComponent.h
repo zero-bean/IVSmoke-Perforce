@@ -73,7 +73,7 @@ private:
 	void Authority_CleanupExpiredHoles();
 
 	/** Calculate penetration entry & exit points via raycast. */
-	bool Authority_CalculatePenetrationPoints(const FVector3f& Origin, const FVector3f& Direction, const float Radius, FVector3f& OutEntry, FVector3f& OutExit);
+	bool Authority_CalculatePenetrationPoints(const FVector3f& Origin, const FVector3f& Direction, const float BulletThickness, FVector3f& OutEntry, FVector3f& OutExit);
 
 	/** Manage the dynamic object's life cycle and update dynamic hole. */
 	void Authority_UpdateDynamicSubjectList();

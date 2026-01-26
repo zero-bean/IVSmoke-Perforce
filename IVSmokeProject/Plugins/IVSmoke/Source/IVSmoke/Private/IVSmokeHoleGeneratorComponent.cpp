@@ -172,7 +172,7 @@ void UIVSmokeHoleGeneratorComponent::Internal_RequestPenetrationHole_Implementat
 
 	// 1. Check whether it passes through the smoke volume
 	FVector3f EntryPoint, ExitPoint;
-	if (!Authority_CalculatePenetrationPoints(InOrigin, InDirection, Preset->Radius, EntryPoint, ExitPoint))
+	if (!Authority_CalculatePenetrationPoints(InOrigin, InDirection, Preset->BulletThickness, EntryPoint, ExitPoint))
 	{
 		return;
 	}
@@ -315,7 +315,7 @@ void UIVSmokeHoleGeneratorComponent::Authority_CleanupExpiredHoles()
 }
 
 bool UIVSmokeHoleGeneratorComponent::Authority_CalculatePenetrationPoints(
-	const FVector3f& Origin, const FVector3f& Direction, const float Radius, FVector3f& OutEntry, FVector3f& OutExit)
+	const FVector3f& Origin, const FVector3f& Direction, const float BulletThickness, FVector3f& OutEntry, FVector3f& OutExit)
 {
 	FVector3f NormalizedDirection = Direction.GetSafeNormal();
 	if (NormalizedDirection.IsNearlyZero())
@@ -357,7 +357,7 @@ bool UIVSmokeHoleGeneratorComponent::Authority_CalculatePenetrationPoints(
 	{
 		FHitResult ObstacleHit;
 		FCollisionQueryParams WorldParams;
-		const FCollisionShape SweepShape = FCollisionShape::MakeSphere(Radius);
+		const FCollisionShape SweepShape = FCollisionShape::MakeSphere(BulletThickness);
 		const FCollisionObjectQueryParams ObjectParams(ObstacleObjectTypes);
 
 		if (GetWorld()->SweepSingleByObjectType(

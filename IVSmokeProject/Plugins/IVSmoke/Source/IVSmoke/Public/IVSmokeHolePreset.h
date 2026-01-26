@@ -135,6 +135,14 @@ public:
 		Tooltip = "EndRadius represents the radius at the EndPosition in a penetration hole."))
 	float EndRadius = 25.0f;
 
+	/**
+	 * Bullet thickness for obstacle collision detection.
+	 * Larger values make bullets more likely to be blocked by nearby walls.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke", meta = (ClampMin = "0.1", ClampMax = "50.0", EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Penetration",
+		Tooltip = "Bullet thickness for obstacle detection. Larger values make bullets more likely to be blocked by nearby walls."))
+	float BulletThickness = 5.0f;
+
 	//~============================================================================
 	// Dynamic
 
