@@ -12,6 +12,7 @@
 #include "UObject/ObjectMacros.h"
 #include "IVSmokeVoxelVolume.generated.h"
 
+class UBoxComponent;
 class UIVSmokeCollisionComponent;
 class UIVSmokeSmokePreset;
 class UIVSmokeHoleGeneratorComponent;
@@ -171,6 +172,8 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual bool ShouldTickIfViewportsOnly() const override;
 
+	virtual void OnConstruction(const FTransform& Transform) override;
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual void PostEditMove(bool bFinished) override;
@@ -197,6 +200,10 @@ public:
 	 * Caches the result to avoid repeated lookups. Returns nullptr if the component is missing.
 	 */
 	TObjectPtr<UIVSmokeCollisionComponent> GetCollisionComponent();
+
+	/** Defines the overall bounding volume of the smoke actor and is used as the root component. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "IVSmoke")
+	TObjectPtr<UBoxComponent> VolumeBoundComponent;
 
 private:
 	/**
@@ -731,9 +738,6 @@ public:
 private:
 	/** Main entry point for drawing all enabled debug visualizations per frame. */
 	void DrawDebugVisualization() const;
-
-	/** Draws the outer bounding box of the voxel volume. */
-	void DrawDebugBounds() const;
 
 	/** Draws lightweight wireframe cubes for active voxels. */
 	void DrawDebugVoxelWireframes() const;
