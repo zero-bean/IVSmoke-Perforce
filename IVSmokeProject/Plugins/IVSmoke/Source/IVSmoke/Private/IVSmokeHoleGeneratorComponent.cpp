@@ -493,6 +493,14 @@ void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 		return;
 	}
 
+	if (HoleTexture->SizeX != VoxelResolution.X ||
+		HoleTexture->SizeY != VoxelResolution.Y ||
+		HoleTexture->SizeZ != VoxelResolution.Z)
+	{
+		Local_InitializeHoleTexture();
+		return;
+	}
+
 	const FTextureRenderTargetResource* RenderTargetResource = HoleTexture->GameThread_GetRenderTargetResource();
 	if (!RenderTargetResource)
 	{

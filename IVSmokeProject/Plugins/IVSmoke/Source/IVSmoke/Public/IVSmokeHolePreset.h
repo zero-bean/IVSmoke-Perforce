@@ -123,7 +123,7 @@ public:
 	/**
 	 * EndRadius represents the radius at the EndPosition in a penetration hole.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke", meta = (ClampMin = "0.0", ClampMax = "60.0", EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Penetration",
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke", meta = (ClampMin = "0.0", ClampMax = "1000.0", EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Penetration",
 		Tooltip = "EndRadius represents the radius at the EndPosition in a penetration hole."))
 	float EndRadius = 25.0f;
 
