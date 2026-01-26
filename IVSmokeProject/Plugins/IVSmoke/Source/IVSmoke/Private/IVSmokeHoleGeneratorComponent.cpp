@@ -7,12 +7,13 @@
 #include "GameFramework/GameStateBase.h"
 #include "GlobalShader.h"
 #include "IVSmoke.h"
-#include "IVSmokeHoleCarveCS.h"
+#include "IVSmokeHoleShaders.h"
 #include "IVSmokeHolePreset.h"
 #include "IVSmokePostProcessPass.h"
 #include "IVSmokeVoxelVolume.h"
 #include "Net/UnrealNetwork.h"
 #include "RHICommandList.h"
+#include "RHIStaticStates.h"
 #include "RenderGraphBuilder.h"
 #include "RenderGraphUtils.h"
 #include "RenderingThread.h"
@@ -467,15 +468,15 @@ void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 		return;
 	}
 
+	FTextureRHIRef Texture = RenderTargetResource->GetRenderTargetTexture();
 	const FVector3f WorldVolumeMin = FVector3f(VoxelVolume->GetVoxelWorldAABBMin());
 	const FVector3f WorldVolumeMax = FVector3f(VoxelVolume->GetVoxelWorldAABBMax());
-
 	const FIntVector Resolution = VoxelResolution;
 	const int32 NumHoles = ActiveHoles.Num();
-	FTextureRHIRef Texture = RenderTargetResource->GetRenderTargetTexture();
+	const int32 CapturedBlurStep = BlurStep;
 
 	ENQUEUE_RENDER_COMMAND(IVSmokeHoleCarveFullRebuild)(
-		[Texture, GPUHoles = MoveTemp(GPUHoles), WorldVolumeMin, WorldVolumeMax, Resolution, NumHoles]
+		[Texture, GPUHoles = MoveTemp(GPUHoles), WorldVolumeMin, WorldVolumeMax, Resolution, NumHoles, CapturedBlurStep]
 		(FRHICommandListImmediate& RHICmdList)
 		{
 			FRDGBuilder GraphBuilder(RHICmdList);
@@ -493,16 +494,70 @@ void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 				sizeof(FIVSmokeHoleGPU) * GPUHoles.Num()
 			);
 
-			FIVSmokeHoleCarveCS::FParameters* Parameters = GraphBuilder.AllocParameters<FIVSmokeHoleCarveCS::FParameters>();
-			Parameters->VolumeTexture = GraphBuilder.CreateUAV(RDGTexture);
-			Parameters->HoleBuffer = GraphBuilder.CreateSRV(HoleBuffer);
-			Parameters->VolumeMin = WorldVolumeMin;
-			Parameters->VolumeMax = WorldVolumeMax;
-			Parameters->Resolution = Resolution;
-			Parameters->NumHoles = NumHoles;
+			// ============================================================================
+			// Pass 1: Hole Carve
+			// ============================================================================
+			FIVSmokeHoleCarveCS::FParameters* CarveParameters = GraphBuilder.AllocParameters<FIVSmokeHoleCarveCS::FParameters>();
+			CarveParameters->VolumeTexture = GraphBuilder.CreateUAV(RDGTexture);
+			CarveParameters->HoleBuffer = GraphBuilder.CreateSRV(HoleBuffer);
+			CarveParameters->VolumeMin = WorldVolumeMin;
+			CarveParameters->VolumeMax = WorldVolumeMax;
+			CarveParameters->Resolution = Resolution;
+			CarveParameters->NumHoles = NumHoles;
 
-			const TShaderMapRef<FIVSmokeHoleCarveCS> ComputeShader(GetGlobalShaderMap(GMaxRHIFeatureLevel));
-			FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeHoleCarveCS>(GraphBuilder, GetGlobalShaderMap(GMaxRHIFeatureLevel), ComputeShader, Parameters, Resolution);
+			const TShaderMapRef<FIVSmokeHoleCarveCS> CarveShader(GetGlobalShaderMap(GMaxRHIFeatureLevel));
+			FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeHoleCarveCS>(GraphBuilder, GetGlobalShaderMap(GMaxRHIFeatureLevel), CarveShader, CarveParameters, Resolution);
+
+			// ============================================================================
+			// Pass 2-4: Separable Gaussian Blur (X, Y, Z)
+			// ============================================================================
+			if (CapturedBlurStep > 0)
+			{
+				// Create ping-pong texture for blur
+				const FRDGTextureDesc BlurTexDesc = FRDGTextureDesc::Create3D(
+					FIntVector(Resolution.X, Resolution.Y, Resolution.Z),
+					PF_FloatRGBA,
+					FClearValueBinding::Black,
+					TexCreate_ShaderResource | TexCreate_UAV
+				);
+				const FRDGTextureRef BlurTempTexture = GraphBuilder.CreateTexture(BlurTexDesc, TEXT("IVSmokeHoleBlurTemp"));
+
+				const TShaderMapRef<FIVSmokeHoleBlurCS> BlurShader(GetGlobalShaderMap(GMaxRHIFeatureLevel));
+				FRHISamplerState* LinearClampSampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
+
+				// Blur directions
+				const FIntVector BlurDirections[3] = {
+					FIntVector(1, 0, 0),  // X
+					FIntVector(0, 1, 0),  // Y
+					FIntVector(0, 0, 1)   // Z
+				};
+
+				const FRDGTextureRef PingPong[2] = { RDGTexture, BlurTempTexture };
+				int32 CurrentInput = 0;
+
+				for (int32 i = 0; i < 3; ++i)
+				{
+					FIVSmokeHoleBlurCS::FParameters* BlurParameters = GraphBuilder.AllocParameters<FIVSmokeHoleBlurCS::FParameters>();
+					BlurParameters->InputTexture = GraphBuilder.CreateSRV(PingPong[CurrentInput]);
+					BlurParameters->InputSampler = LinearClampSampler;
+					BlurParameters->OutputTexture = GraphBuilder.CreateUAV(PingPong[1 - CurrentInput]);
+					BlurParameters->Resolution = Resolution;
+					BlurParameters->BlurDirection = BlurDirections[i];
+					BlurParameters->BlurStep = CapturedBlurStep;
+
+					FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeHoleBlurCS>(GraphBuilder,
+						GetGlobalShaderMap(GMaxRHIFeatureLevel), BlurShader, BlurParameters, Resolution);
+
+					CurrentInput = 1 - CurrentInput;
+				}
+
+				// If final result is in BlurTempTexture (CurrentInput == 1), copy back to RDGTexture
+				if (CurrentInput == 1)
+				{
+					AddCopyTexturePass(GraphBuilder, BlurTempTexture, RDGTexture, FRHICopyTextureInfo());
+				}
+			}
+
 			GraphBuilder.Execute();
 		}
 	);

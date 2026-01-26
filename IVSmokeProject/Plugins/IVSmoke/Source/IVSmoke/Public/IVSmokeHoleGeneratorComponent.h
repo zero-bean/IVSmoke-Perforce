@@ -106,8 +106,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Hole | Optimization", meta = (ClampMin = "64", ClampMax = "128"))
 	FIntVector VoxelResolution = FIntVector(64, 64, 64);
 
+	/** Blur radius in voxels. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Hole | Optimization", meta = (ClampMin = "0", ClampMax = "4",
+		Tooltip = "samples the surrounding pixels to reduce the aliasing. Recommended value is 2."))
+	int32 BlurStep = 2;
+
 	/** Maximum number of holes that can be activated. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Hole | Configuration",
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Hole | Collision",
 		meta = (ToolTip = "Select the type of obstacle that will block the penetration hole"))
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObstacleObjectTypes;
 

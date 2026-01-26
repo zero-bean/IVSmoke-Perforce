@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Net/Serialization/FastArraySerializer.h"
-#include "IVSmokeHoleCarveCS.h"
+#include "IVSmokeHoleShaders.h"
 #include "IVSmokeHoleData.generated.h"
 
 struct FIVSmokeHoleArray;
@@ -158,80 +158,3 @@ struct TStructOpsTypeTraits<FIVSmokeHoleArray> : public TStructOpsTypeTraitsBase
 	};
 };
 
-/**
- * @struct FIVSmokeHoleGPU
- * @brief Built from FIVSmokeHoleData + UIVSmokeHolePreset at render time.
- */
-struct alignas(16) FIVSmokeHoleGPU
-{
-	FIVSmokeHoleGPU() = default;
-
-	/**
-	 * You can Constructs a FIVSmokeHoleGPU using DynamicHoleData, Preset, and server time.
-	 * @param DynamicHoleData		Dynamic hole data.
-	 * @param Preset				HolePreset defined as DataAsset. 
-	 * @param CurrentServerTime		The CurrentServerTime is obtained through the GetSyncedTime function.
-	 */
-	FIVSmokeHoleGPU(const FIVSmokeHoleData& DynamicHoleData, const UIVSmokeHolePreset& Preset, const float CurrentServerTime);
-
-	//~============================================================================
-	// Common
-
-	/** The central point of hole creation. */
-	FVector3f Position;
-
-	/** Time after hole is called creation. */
-	float CurLifeTime;
-
-	/** 0 = Penetration, 1 = Explosion, 2 = Dynamic */
-	int HoleType;
-
-	/** Radius value used to calculate values related to the range. */
-	float Radius;
-
-	/** Total duration. */
-	float Duration;
-
-	/** Edge smooth range. */
-	float Softness;
-
-	//~============================================================================
-	// Dynamic
-
-	/** the size of a hole. */
-	FVector3f Extent;
-
-	float DynamicPadding;
-
-	//~============================================================================
-	// Explosion
-
-	/** Expansion time used only for Explosion. */
-	float ExpansionDuration;
-
-	/** Current fadeRange extracted from ExpansionFadeRangeCurveOverTime with values normalized to expansion time. */
-	float CurExpansionFadeRangeOverTime;
-
-	/** Current fadeRange extracted from ShrinkFadeRangeCurveOverTime with values normalized to shrink time. */
-	float CurShrinkFadeRangeOverTime;
-
-	/** Current density extracted from ShrinkDensityMulCurveOverTime with values normalized to shrink time. */
-	float CurShrinkDensityMulOverTime;
-
-	/** Current distortion extracted from DistortionCurveOverTime with values normalized to expansion time. */
-	float CurDistortionOverTime;
-
-	/** Distortion degree max value. */
-	float DistortionDistance;
-
-	FVector2f PresetExplosionPadding;
-
-	//~============================================================================
-	// Penetration
-
-	/** The point at which the trajectory of the penetration ends. */
-	FVector3f EndPosition;
-
-	/** Radius at the end position. */
-	float EndRadius;
-};

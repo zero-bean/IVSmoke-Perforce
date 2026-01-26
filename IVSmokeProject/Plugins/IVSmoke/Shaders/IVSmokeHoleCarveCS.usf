@@ -2,7 +2,6 @@
 // IVSmokeHoleCarveCS.usf - Compute shader for carving holes into smoke volume
 
 #include "/Engine/Public/Platform.ush"
-#define CURVE_SAMPLE_COUNT 16
 
 //~============================================================================
 // Output
@@ -205,7 +204,7 @@ float4 Penetration(float3 WorldPos, float3 UVW, int HoleIdx, out float Penetrati
 	{
 		return Result;
 	}
-	
+
 	float RadiusAtT = lerp(HoleData.Radius, HoleData.EndRadius, tClamped);
 	float3 ClosetPoint = HoleData.Position + DirStartToEnd * t;
 	float DisToAxis = length(WorldPos - ClosetPoint);
