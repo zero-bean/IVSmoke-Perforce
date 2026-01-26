@@ -164,15 +164,6 @@ public:
 	static TObjectPtr<UIVSmokeHolePreset> FindByID(const uint8 InPresetID);
 
 	/**
-	 * Samples the value from 0 to 1 of the curve by SampleCount and store the OutCurveSamples.
-	 * if the curve is nullptr, early return
-	 * @param Curve				Curve to be sampled
-	 * @param SampleCount		SampleCount. It should match the array size of the OutCurveSamples.
-	 * @param OutCurveSamples	Sampled array.
-	 */
-	static void GetCurveSamples(const UCurveFloat* Curve, const int32 SampleCount, float* OutCurveSamples);
-
-	/**
 	 * Returns the y value corresponding to the x value of the curve.
 	 * If the curve is nullptr, return 0.
 	 */

@@ -61,20 +61,7 @@ TObjectPtr<UIVSmokeHolePreset> UIVSmokeHolePreset::FindByID(const uint8 InPreset
 {
 	return GHolePresetRegistry.FindRef(InPresetID).Get();
 }
-void UIVSmokeHolePreset::GetCurveSamples(const UCurveFloat* Curve, const int32 SampleCount, float* OutCurveSamples)
-{
-	if (Curve == nullptr)
-	{
-		return;
-	}
-	OutCurveSamples[0] = Curve->GetFloatValue(0);
-	float SampleCountRCP = 1.0f / (SampleCount - 1);
-	for (int i = 1; i < SampleCount - 1; i++)
-	{
-		OutCurveSamples[i] = Curve->GetFloatValue(i * SampleCountRCP);
-	}
-	OutCurveSamples[SampleCount - 1] = Curve->GetFloatValue(1);
-}
+
 float UIVSmokeHolePreset::GetFloatValue(const TObjectPtr<UCurveFloat> Curve, const float X)
 {
 	if (Curve.Get())
