@@ -94,20 +94,20 @@ public:
 	TObjectPtr<UCurveFloat> ShrinkFadeRangeCurveOverTime;
 
 	/**
-	 * Density multiply value curve over shrink time.
-	 * Use normalized time between 0 and 1
+	 * Density exp value over shrink time.
+	 * 1 - pow((1 - NormalizedTime), ExpValue)
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Shrink", meta = (EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Explosion",
-		Tooltip = "Density multiply value curve over shrink time. Use normalized time between 0 and 1"))
-	TObjectPtr<UCurveFloat> ShrinkDensityMulCurveOverTime;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Shrink", meta = (ClampMin = "1.0", ClampMax = "5.0", EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Explosion",
+		Tooltip = "Density Exp value over shrink time. 1 - pow((1 - NormalizedTime), ExpValue)"))
+	float ShrinkDensityExpOverTime = 5.0;
 
 	/**
-	 * Distortion degree curve over expansion time.
-	 * Use normalized time between 0 and 1
+	 * Distortion exp value over expansion time.
+	 * 1 - pow((1 - NormalizedTime), ExpValue)
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Distortion", meta = (EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Explosion",
-		Tooltip = "Distortion degree curve over expansion time. Use normalized time between 0 and 1"))
-	TObjectPtr<UCurveFloat> DistortionCurveOverTime;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Distortion", meta = (ClampMin = "1.0", ClampMax = "5.0", EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Explosion",
+		Tooltip = "Distortion exp value over expansion time. 1 - pow((1 - NormalizedTime), ExpValue)"))
+	float DistortionExpOverTime = 1.0f;
 
 	/**
 	 * Distortion degree max value.
@@ -115,15 +115,7 @@ public:
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Distortion", meta = (ClampMin = "0.0", ClampMax = "1000.0", EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Explosion",
 		Tooltip = "Distortion degree max value."))
-	float DistortionDistance = 0.0f;
-
-	/**
-	 * Distortion degree curve over distance to explosion point.
-	 * Use normalized x axis(distance) between 0 and 1
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Distortion", meta = (EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Explosion",
-		Tooltip = "Distortion degree curve over distance to explosion point. Use normalized x axis(distance) between 0 and 1"))
-	TObjectPtr<UCurveFloat> DistortionCurveOverDistance;
+	float DistortionDistance = 250.0f;
 
 	//~============================================================================
 	// Penetration

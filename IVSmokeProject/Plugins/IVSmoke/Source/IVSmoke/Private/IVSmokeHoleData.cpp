@@ -105,10 +105,9 @@ FIVSmokeHoleGPU::FIVSmokeHoleGPU(const FIVSmokeHoleData& DynamicHoleData, const 
 
 		CurExpansionFadeRangeOverTime = UIVSmokeHolePreset::GetFloatValue(Preset.ExpansionFadeRangeCurveOverTime, ExpansionNormalizedTime);
 		CurShrinkFadeRangeOverTime = UIVSmokeHolePreset::GetFloatValue(Preset.ShrinkFadeRangeCurveOverTime, ShrinkNormalizedTime);
-		CurShrinkDensityMulOverTime = UIVSmokeHolePreset::GetFloatValue(Preset.ShrinkDensityMulCurveOverTime, ShrinkNormalizedTime);
-		CurDistortionOverTime = UIVSmokeHolePreset::GetFloatValue(Preset.DistortionCurveOverTime, ExpansionNormalizedTime);
+		CurShrinkDensityMulOverTime = 1 - FMath::Pow((1 - ShrinkNormalizedTime), Preset.ShrinkDensityExpOverTime);
+		CurDistortionOverTime = 1 - FMath::Pow((1 - ExpansionNormalizedTime), Preset.DistortionExpOverTime);
 		DistortionDistance = Preset.DistortionDistance;
-		UIVSmokeHolePreset::GetCurveSamples(Preset.DistortionCurveOverDistance.Get(), FIVSmokeHoleCarveCS::CurveSampleCount, DistortionCurveOverDistance);
 		break;
 	}
 	case EIVSmokeHoleType::Penetration:
