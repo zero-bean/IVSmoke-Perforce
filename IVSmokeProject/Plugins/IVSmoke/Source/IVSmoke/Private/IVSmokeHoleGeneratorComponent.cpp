@@ -67,9 +67,16 @@ void UIVSmokeHoleGeneratorComponent::TickComponent(const float DeltaTime, const 
 
 	// 4. Client & Standalone rebuild texture
 #if !UE_SERVER
-	if (bHoleTextureDirty && ActiveHoles.Num() > 0)
+	if (bHoleTextureDirty)
 	{
-		Local_RebuildHoleTexture();
+		if (ActiveHoles.Num() > 0)
+		{
+			Local_RebuildHoleTexture();
+		}
+		else
+		{
+			Local_ClearHoleTexture();
+		}
 		MarkHoleTextureDirty(false);
 	}
 #endif
@@ -445,6 +452,38 @@ void UIVSmokeHoleGeneratorComponent::Local_InitializeHoleTexture()
 	HoleTexture->ClearColor = FLinearColor::White;
 	HoleTexture->SRGB = false;
 	HoleTexture->UpdateResourceImmediate(true);
+}
+
+void UIVSmokeHoleGeneratorComponent::Local_ClearHoleTexture()
+{
+	if (!HoleTexture)
+	{
+		return;
+	}
+
+	FTextureRenderTargetResource* RenderTargetResource = HoleTexture->GameThread_GetRenderTargetResource();
+	if (!RenderTargetResource)
+	{
+		return;
+	}
+
+	FTextureRHIRef Texture = RenderTargetResource->GetRenderTargetTexture();
+
+	ENQUEUE_RENDER_COMMAND(IVSmokeHoleClear)(
+		[Texture](FRHICommandListImmediate& RHICmdList)
+		{
+			FRDGBuilder GraphBuilder(RHICmdList);
+
+			const FRDGTextureRef RDGTexture = GraphBuilder.RegisterExternalTexture(
+				CreateRenderTarget(Texture, TEXT("IVSmokeHoleTextureClear"))
+			);
+
+			// Clear to white (1,1,1,1) = no holes = full smoke density
+			AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(RDGTexture), FVector4f(1.0f, 1.0f, 1.0f, 1.0f));
+
+			GraphBuilder.Execute();
+		}
+	);
 }
 
 void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()

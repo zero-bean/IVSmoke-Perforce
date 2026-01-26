@@ -1112,7 +1112,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	FRDGTextureRef PackedHoleAtlas = GraphBuilder.CreateTexture(HoleAtlasDesc, TEXT("IVSmoke_PackedHoleAtlas"));
 
 	// Clear Hole Atlas
-	AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(PackedHoleAtlas), 1.0f);
+	AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(PackedHoleAtlas), FVector4(1.0f, 1.0f, 1.0f, 1.0f));
 
 	// Copy Hole Textures to Atlas
 	FRHICopyTextureInfo HoleCpyInfo;

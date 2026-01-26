@@ -90,6 +90,9 @@ private:
 	/** Initialize 3D texture for hole data. */
 	void Local_InitializeHoleTexture();
 
+	/** Clear hole texture to white. Called when all holes have expired. */
+	void Local_ClearHoleTexture();
+
 	/** Rebuild entire hole texture from ActiveHoles. (todo: must be refactored) */
 	void Local_RebuildHoleTexture();
 #pragma endregion
