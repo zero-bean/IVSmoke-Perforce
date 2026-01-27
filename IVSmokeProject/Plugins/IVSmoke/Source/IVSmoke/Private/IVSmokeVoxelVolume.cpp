@@ -60,7 +60,10 @@ AIVSmokeVoxelVolume::AIVSmokeVoxelVolume()
 
 void AIVSmokeVoxelVolume::BeginPlay()
 {
-	ServerState = FIVSmokeServerState();
+	if (HasAuthority())
+	{
+		ServerState = FIVSmokeServerState();
+	}
 
 	Initialize();
 
@@ -277,6 +280,15 @@ void AIVSmokeVoxelVolume::OnRep_ServerState()
 	UWorld* World = GetWorld();
 	if (World && World->GetNetMode() == NM_Client)
 	{
+		if (!HasActorBegunPlay())
+		{
+			FTimerHandle RetryHandle;
+			World->GetTimerManager().SetTimer(RetryHandle, this, &AIVSmokeVoxelVolume::OnRep_ServerState, 0.1f, false);
+
+			UE_LOG(LogIVSmoke, Log, TEXT("[AIVSmokeVoxelVolume::OnRep_ServerState] BeginPlay not yet called. Retrying in 0.1s..."));
+			return;
+		}
+
 		AGameStateBase* GameState = World->GetGameState();
 
 		if (!GameState || GameState->GetServerWorldTimeSeconds() == 0.0f)
@@ -287,11 +299,6 @@ void AIVSmokeVoxelVolume::OnRep_ServerState()
 			UE_LOG(LogIVSmoke, Warning, TEXT("[AIVSmokeVoxelVolume::OnRep_ServerState] GameState not ready yet. Retrying in 0.1s..."));
 			return;
 		}
-	}
-
-	if (!bIsInitialized)
-	{
-		Initialize();
 	}
 
 	if (LocalGeneration != ServerState.Generation)
@@ -324,7 +331,7 @@ void AIVSmokeVoxelVolume::HandleStateTransition(EIVSmokeVoxelVolumeState NewStat
 		break;
 	case EIVSmokeVoxelVolumeState::Expansion:
 	{
-		if (LocalState != EIVSmokeVoxelVolumeState::Idle ||
+		if (LocalState != EIVSmokeVoxelVolumeState::Idle &&
 			LocalState != EIVSmokeVoxelVolumeState::Finished)
 		{
 			ClearSimulationData();

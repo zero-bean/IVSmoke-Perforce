@@ -549,6 +549,11 @@ void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 	}
 
 	FTextureRHIRef Texture = RenderTargetResource->GetRenderTargetTexture();
+	if (!Texture.IsValid())
+	{
+		return;
+	}
+
 	const FVector3f WorldVolumeMin = FVector3f(VoxelVolume->GetVoxelWorldAABBMin());
 	const FVector3f WorldVolumeMax = FVector3f(VoxelVolume->GetVoxelWorldAABBMax());
 	const FIntVector Resolution = VoxelResolution;
