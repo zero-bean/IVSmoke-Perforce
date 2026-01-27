@@ -190,37 +190,14 @@ void FIVSmokeCSMRenderer::Update(
 
 void FIVSmokeCSMRenderer::UpdateCascadePriorities(uint32 FrameNumber)
 {
-	if (!bEnablePriorityUpdate)
+	// TODO: Priority update system disabled due to texel snapping synchronization issues.
+	// When a cascade is not updated, its texel-snapped position becomes stale relative to
+	// the current camera position, causing shadow flickering.
+	// Re-implement with proper synchronization: either update VP matrix every frame
+	// (even when not capturing), or use per-cascade camera positions for cascade selection.
+	for (FIVSmokeCascadeData& Cascade : Cascades)
 	{
-		// Update all cascades every frame
-		for (FIVSmokeCascadeData& Cascade : Cascades)
-		{
-			Cascade.bNeedsCapture = true;
-		}
-		return;
-	}
-
-	const int32 NumCascades = Cascades.Num();
-	const int32 MidCascade = NumCascades / 2;
-
-	for (int32 i = 0; i < NumCascades; i++)
-	{
-		int32 UpdateInterval;
-
-		if (i < MidCascade)
-		{
-			// Near cascades: update frequently
-			UpdateInterval = NearCascadeUpdateInterval;
-		}
-		else
-		{
-			// Far cascades: update less frequently
-			// Interpolate between near and far intervals based on cascade position
-			float t = (float)(i - MidCascade) / (float)(NumCascades - MidCascade);
-			UpdateInterval = FMath::RoundToInt(FMath::Lerp((float)NearCascadeUpdateInterval, (float)FarCascadeUpdateInterval, t));
-		}
-
-		Cascades[i].bNeedsCapture = (FrameNumber % UpdateInterval == 0);
+		Cascade.bNeedsCapture = true;
 	}
 }
 

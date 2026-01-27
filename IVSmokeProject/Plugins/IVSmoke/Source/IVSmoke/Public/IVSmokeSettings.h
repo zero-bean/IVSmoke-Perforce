@@ -303,16 +303,17 @@ public:
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Shadows | External", meta = (ClampMin = "0.0", ClampMax = "0.5", EditCondition = "bShowAdvancedOptions && bEnableExternalShadowing && bEnableVSM", EditConditionHides))
 	float VSMLightBleedingReduction = 0.2f;
 
-	/** Enable priority-based cascade updates for performance. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Shadows | External", meta = (EditCondition = "bShowAdvancedOptions && bEnableExternalShadowing", EditConditionHides))
-	bool bEnablePriorityUpdate = true;
+	// TODO: Priority Update system disabled - causes shadow flickering due to texel snapping
+	// synchronization issues. Properties kept for serialization compatibility.
+	// See IVSmokeCSMRenderer::UpdateCascadePriorities for details.
 
-	/** Near cascade update interval (frames). */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Shadows | External", meta = (ClampMin = "1", ClampMax = "4", EditCondition = "bShowAdvancedOptions && bEnableExternalShadowing && bEnablePriorityUpdate", EditConditionHides))
+	UPROPERTY()
+	bool bEnablePriorityUpdate = false;
+
+	UPROPERTY()
 	int32 NearCascadeUpdateInterval = 1;
 
-	/** Far cascade update interval (frames). */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Shadows | External", meta = (ClampMin = "1", ClampMax = "16", EditCondition = "bShowAdvancedOptions && bEnableExternalShadowing && bEnablePriorityUpdate", EditConditionHides))
+	UPROPERTY()
 	int32 FarCascadeUpdateInterval = 4;
 
 	//~==============================================================================
