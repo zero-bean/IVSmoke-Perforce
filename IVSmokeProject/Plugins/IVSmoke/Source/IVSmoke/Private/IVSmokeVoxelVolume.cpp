@@ -287,18 +287,9 @@ void AIVSmokeVoxelVolume::OnRep_ServerState()
 	UWorld* World = GetWorld();
 	if (World && World->GetNetMode() == NM_Client)
 	{
-		if (!HasActorBegunPlay())
-		{
-			FTimerHandle RetryHandle;
-			World->GetTimerManager().SetTimer(RetryHandle, this, &AIVSmokeVoxelVolume::OnRep_ServerState, 0.1f, false);
-
-			UE_LOG(LogIVSmoke, Log, TEXT("[AIVSmokeVoxelVolume::OnRep_ServerState] BeginPlay not yet called. Retrying in 0.1s..."));
-			return;
-		}
-
 		AGameStateBase* GameState = World->GetGameState();
 
-		if (!GameState || GameState->GetServerWorldTimeSeconds() == 0.0f)
+		if (!bIsInitialized || !GameState || GameState->GetServerWorldTimeSeconds() == 0.0f)
 		{
 			FTimerHandle RetryHandle;
 			World->GetTimerManager().SetTimer(RetryHandle, this, &AIVSmokeVoxelVolume::OnRep_ServerState, 0.1f, false);
@@ -535,7 +526,6 @@ void AIVSmokeVoxelVolume::FastForwardSimulation()
 
 	bIsFastForwarding = false;
 }
-
 
 void AIVSmokeVoxelVolume::UpdateExpansion()
 {
