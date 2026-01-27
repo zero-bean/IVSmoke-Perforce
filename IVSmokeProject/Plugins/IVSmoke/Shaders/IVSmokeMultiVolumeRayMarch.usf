@@ -234,9 +234,8 @@ float GetDensityForVolume(float3 Position, uint VolumeIdx)
 	float4 HoleInfo = GetHoleSampling(Position, VolumeIdx);
 
 	float3 distortionPos = Position + HoleInfo.rgb;
-	float VoxelDistortionDensity = GetVoxelDensity(distortionPos, VolumeIdx);
-	float VoxelDensity = lerp(GetVoxelDensity(Position, VolumeIdx), VoxelDistortionDensity, 0.35f);
 
+	float VoxelDensity = GetVoxelDensity(lerp(Position, distortionPos, 0.35f), VolumeIdx);
 	float Noise = GetNoise(distortionPos);
 
 	float CurDensity = saturate(0.7f - Noise) * VoxelDensity;

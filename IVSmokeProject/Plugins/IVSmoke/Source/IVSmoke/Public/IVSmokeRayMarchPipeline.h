@@ -40,9 +40,9 @@ struct FIVSmokeOccupancyConfig
 	/** Maximum supported volumes (128 = uint4 bitmask). */
 	static constexpr uint32 MaxVolumes = 128;
 
-	/** Thread group size for tile setup (8×8 threads per tile). */
-	static constexpr uint32 TileSetupThreadsX = 8;
-	static constexpr uint32 TileSetupThreadsY = 8;
+	/** Thread group size for tile setup (64×1 threads for parallel Bitonic Sort). */
+	static constexpr uint32 TileSetupThreadsX = 64;
+	static constexpr uint32 TileSetupThreadsY = 1;
 
 	/** Thread group size for occupancy build (8×8×4). */
 	static constexpr uint32 OccupancyBuildThreadsX = 8;
