@@ -24,6 +24,16 @@ UIVSmokeHoleGeneratorComponent::UIVSmokeHoleGeneratorComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	SetIsReplicatedByDefault(true);
+	SetGenerateOverlapEvents(true);
+}
+
+void UIVSmokeHoleGeneratorComponent::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	// Prevent projectiles from being blocked by this box
+	SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	SetCollisionResponseToAllChannels(ECR_Overlap);
 }
 
 void UIVSmokeHoleGeneratorComponent::BeginPlay()
@@ -365,6 +375,7 @@ bool UIVSmokeHoleGeneratorComponent::Authority_CalculatePenetrationPoints(
 	{
 		FHitResult ObstacleHit;
 		FCollisionQueryParams WorldParams;
+		WorldParams.AddIgnoredComponent(this);
 		const FCollisionShape SweepShape = FCollisionShape::MakeSphere(BulletThickness);
 		const FCollisionObjectQueryParams ObjectParams(ObstacleObjectTypes);
 
@@ -410,6 +421,8 @@ void UIVSmokeHoleGeneratorComponent::Authority_UpdateDynamicSubjectList()
 
 		if (!SmokeVolume.IsInside(CurrentPos))
 		{
+			UE_LOG(LogIVSmoke, Log, TEXT("[UpdateDynamicSubjectList] Outside volume - Pos: %s, VolumeMin: %s, VolumeMax: %s"),
+				*CurrentPos.ToString(), *SmokeVolume.Min.ToString(), *SmokeVolume.Max.ToString());
 			continue;
 		}
 

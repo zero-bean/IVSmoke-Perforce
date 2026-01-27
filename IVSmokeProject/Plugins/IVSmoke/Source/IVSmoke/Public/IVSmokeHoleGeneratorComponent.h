@@ -21,6 +21,7 @@ class IVSMOKE_API UIVSmokeHoleGeneratorComponent : public UBoxComponent
 
 public:
 	UIVSmokeHoleGeneratorComponent();
+	virtual void PostInitProperties() override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -112,7 +113,7 @@ public:
 
 	/** Maximum number of holes that can be activated. */
 	UPROPERTY(EditAnywhere, Category = "IVSmoke | Hole | Configuration",
-		meta = (ToolTip = "Select the type of obstacle that will block the penetration hole"))
+		meta = (ToolTip = "Select the type of obstacle that will block the penetration hole in the smoke"))
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObstacleObjectTypes;
 
 	/** Blur radius in voxels. */
