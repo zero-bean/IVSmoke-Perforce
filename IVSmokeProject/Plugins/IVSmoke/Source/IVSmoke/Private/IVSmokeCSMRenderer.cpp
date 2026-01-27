@@ -55,8 +55,9 @@ void FIVSmokeCSMRenderer::Initialize(UWorld* World, int32 NumCascades, int32 Res
 
 	// Create owner actor for capture components
 	FActorSpawnParameters SpawnParams;
-	SpawnParams.Name = TEXT("IVSmokeCSMCaptureOwner");
 	SpawnParams.ObjectFlags |= RF_Transient;
+	// Don't specify a fixed name - let the engine generate a unique one to avoid conflicts
+	// when transitioning between Editor Preview and PIE (both may have the level loaded)
 	AActor* Owner = World->SpawnActor<AActor>(AActor::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
 	if (!Owner)
 	{

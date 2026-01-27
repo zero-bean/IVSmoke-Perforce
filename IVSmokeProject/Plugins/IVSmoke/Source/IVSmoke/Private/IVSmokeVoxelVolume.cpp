@@ -9,8 +9,11 @@
 #include "IVSmokeCollisionComponent.h"
 #include "IVSmokeGridLibrary.h"
 #include "IVSmokeHoleGeneratorComponent.h"
-#include "IVSmokeRenderer.h"
 #include "Net/UnrealNetwork.h"
+
+#if WITH_EDITOR
+#include "Editor.h"
+#endif
 
 DECLARE_CYCLE_STAT(TEXT("Update Expansion"),	STAT_IVSmoke_UpdateExpansion,		STATGROUP_IVSmoke);
 DECLARE_CYCLE_STAT(TEXT("Update Sustain"),		STAT_IVSmoke_UpdateSustain,			STATGROUP_IVSmoke);
@@ -71,10 +74,6 @@ void AIVSmokeVoxelVolume::BeginPlay()
 
 	Super::BeginPlay();
 
-#if !UE_SERVER
-	FIVSmokeRenderer::Get().AddVolume(this);
-#endif
-
 	HoleGeneratorComponent = FindComponentByClass<UIVSmokeHoleGeneratorComponent>();
 
 	CollisionComponent = FindComponentByClass<UIVSmokeCollisionComponent>();
@@ -90,9 +89,8 @@ void AIVSmokeVoxelVolume::BeginPlay()
 
 void AIVSmokeVoxelVolume::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-#if !UE_SERVER
-	FIVSmokeRenderer::Get().RemoveVolume(this);
-#endif
+	// Reset state so ShouldRender() returns false (prevents rendering after PIE exit)
+	ServerState.State = EIVSmokeVoxelVolumeState::Idle;
 
 	Super::EndPlay(EndPlayReason);
 }
@@ -197,6 +195,15 @@ void AIVSmokeVoxelVolume::PostEditChangeProperty(struct FPropertyChangedEvent& P
 			PropertyName == GET_MEMBER_NAME_CHECKED(AIVSmokeVoxelVolume, Radii)				||
 			PropertyName == GET_MEMBER_NAME_CHECKED(AIVSmokeVoxelVolume, ExpansionNoise)	||
 			PropertyName == GET_MEMBER_NAME_CHECKED(AIVSmokeVoxelVolume, DissipationNoise);
+
+	// Handle bDebugEnabled toggle: stop preview if disabled during preview
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(FIVSmokeDebugSettings, bDebugEnabled))
+	{
+		if (!DebugSettings.bDebugEnabled && bIsEditorPreviewing)
+		{
+			StopPreviewSimulation();
+		}
+	}
 
 	if (DebugSettings.bDebugEnabled)
 	{
@@ -912,6 +919,47 @@ void AIVSmokeVoxelVolume::TryUpdateCollision(bool bForce)
 //~==============================================================================
 // Data Access
 #pragma region DataAccess
+
+bool AIVSmokeVoxelVolume::ShouldRender() const
+{
+	// Respect Actor visibility
+#if WITH_EDITOR
+	// Editor: check both editor visibility (Outliner eye icon) and game visibility
+	if (IsHiddenEd() || IsHidden())
+	{
+		return false;
+	}
+
+	// Editor preview mode: special handling
+	if (bIsEditorPreviewing)
+	{
+		// If PIE is running, don't render editor preview volumes
+		// This prevents conflicts between editor and PIE worlds
+		if (GEditor && GEditor->IsPlayingSessionInEditor())
+		{
+			return false;
+		}
+
+		// Check debug settings
+		if (!DebugSettings.bDebugEnabled || !DebugSettings.bRenderSmokeInPreview)
+		{
+			return false;
+		}
+	}
+#else
+	// Runtime: check game visibility only
+	if (IsHidden())
+	{
+		return false;
+	}
+#endif
+
+	const EIVSmokeVoxelVolumeState State = ServerState.State;
+	return State == EIVSmokeVoxelVolumeState::Expansion
+		|| State == EIVSmokeVoxelVolumeState::Sustain
+		|| State == EIVSmokeVoxelVolumeState::Dissipation;
+}
+
 TObjectPtr<UIVSmokeHoleGeneratorComponent> AIVSmokeVoxelVolume::GetHoleGeneratorComponent()
 {
 	if (!IsValid(HoleGeneratorComponent))

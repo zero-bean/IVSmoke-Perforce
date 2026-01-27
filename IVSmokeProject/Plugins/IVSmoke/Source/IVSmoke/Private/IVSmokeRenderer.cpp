@@ -295,33 +295,6 @@ const UIVSmokeSmokePreset* FIVSmokeRenderer::GetEffectivePreset(const AIVSmokeVo
 }
 
 //~==============================================================================
-// Volume Management
-
-void FIVSmokeRenderer::AddVolume(AIVSmokeVoxelVolume* Volume)
-{
-	FScopeLock Lock(&VolumesMutex);
-	Volumes.AddUnique(Volume);
-
-	// Auto-initialize on first volume
-	if (!IsInitialized())
-	{
-		Initialize();
-	}
-}
-
-void FIVSmokeRenderer::RemoveVolume(AIVSmokeVoxelVolume* Volume)
-{
-	FScopeLock Lock(&VolumesMutex);
-	Volumes.Remove(Volume);
-}
-
-bool FIVSmokeRenderer::HasVolumes() const
-{
-	FScopeLock Lock(&VolumesMutex);
-	return Volumes.Num() > 0;
-}
-
-//~==============================================================================
 // Thread-Safe Render Data Preparation
 
 FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmokeVoxelVolume*>& InVolumes, const FVector& CameraPosition)
@@ -334,6 +307,24 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 	if (InVolumes.Num() == 0)
 	{
 		return Result;
+	}
+
+	// Lazy initialization on first render
+	if (!IsInitialized())
+	{
+		Initialize();
+	}
+
+	// Detect world change (Editor ↔ PIE transition)
+	// CSM captures are bound to a specific world, so we must cleanup when world changes
+	UWorld* CurrentWorld = InVolumes[0] ? InVolumes[0]->GetWorld() : nullptr;
+	if (CurrentWorld && LastRenderedWorld.Get() != CurrentWorld)
+	{
+		UE_LOG(LogIVSmoke, Log, TEXT("[FIVSmokeRenderer::PrepareRenderData] World changed. Cleaning up CSM and cached data."));
+		CleanupCSM();
+		CachedRenderData.Reset();
+		bServerTimeSynced = false;
+		LastRenderedWorld = CurrentWorld;
 	}
 
 	// Filter volumes if exceeding maximum supported count
@@ -691,11 +682,46 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 
 	FScreenPassTexture SceneColor(SceneColorSlice);
 
-	// Check if rendering is enabled - passthrough if disabled
+	// Get settings with null check
 	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
-	if (!Settings->bEnableSmokeRendering)
+	if (!Settings)
 	{
 		return SceneColor;
+	}
+
+	// Helper lambda for TranslucencyAfterDOF passthrough
+	// In this mode, we must return SeparateTranslucency (not SceneColor) to preserve translucent objects
+	auto GetPassthroughTexture = [&]() -> FScreenPassTexture
+	{
+		if (Settings->RenderPass == EIVSmokeRenderPass::TranslucencyAfterDOF)
+		{
+			FScreenPassTextureSlice SeparateTranslucencySlice = Inputs.GetInput(EPostProcessMaterialInput::SeparateTranslucency);
+			if (SeparateTranslucencySlice.IsValid())
+			{
+				return FScreenPassTexture(SeparateTranslucencySlice);
+			}
+		}
+		return SceneColor;
+	};
+
+	// Check if rendering is enabled - passthrough if disabled
+	if (!Settings->bEnableSmokeRendering)
+	{
+		return GetPassthroughTexture();
+	}
+
+	// Get cached render data (prepared on Game Thread via BeginRenderViewFamily)
+	// Use copy instead of MoveTemp - multiple views in same frame share the same data
+	FIVSmokePackedRenderData RenderData;
+	{
+		FScopeLock Lock(&RenderDataMutex);
+		RenderData = CachedRenderData;  // Copy - don't consume, other views may need it
+	}
+
+	// Early out if no valid render data - avoid unnecessary texture allocations
+	if (!RenderData.bIsValid)
+	{
+		return GetPassthroughTexture();
 	}
 
 	FScreenPassRenderTarget Output = Inputs.OverrideOutput;
@@ -741,19 +767,6 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 		PF_FloatRGBA,
 		HalfSize
 	);
-
-	// Get cached render data (prepared on Game Thread via BeginRenderViewFamily)
-	// Use copy instead of MoveTemp - multiple views in same frame share the same data
-	FIVSmokePackedRenderData RenderData;
-	{
-		FScopeLock Lock(&RenderDataMutex);
-		RenderData = CachedRenderData;  // Copy - don't consume, other views may need it
-	}
-
-	if (!RenderData.bIsValid)
-	{
-		return SceneColor;
-	}
 
 	// Update stats (1-second interval)
 	UpdateStatsIfNeeded(RenderData, ViewportSize);

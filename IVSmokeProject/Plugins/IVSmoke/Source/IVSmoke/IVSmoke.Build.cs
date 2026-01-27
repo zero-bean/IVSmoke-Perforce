@@ -32,5 +32,11 @@ public class IVSmoke : ModuleRules
 				"NetCore"
 			}
 		);
+
+		// Editor-only dependencies
+		if (Target.bBuildEditor)
+		{
+			PrivateDependencyModuleNames.Add("UnrealEd");
+		}
 	}
 }

@@ -112,6 +112,10 @@ struct FIVSmokeDebugSettings
 	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
 	bool bDebugEnabled = true;
 
+	/** If true, smoke is rendered during editor preview. Disable to see only debug visualization without smoke. */
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled"))
+	bool bRenderSmokeInPreview = true;
+
 	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled"))
 	EIVSmokeDebugViewMode ViewMode = EIVSmokeDebugViewMode::SolidColor;
 
@@ -614,6 +618,12 @@ private:
 public:
 	/** Returns the current phase of the simulation state machine. */
 	FORCEINLINE EIVSmokeVoxelVolumeState GetCurrentState() const { return ServerState.State; }
+
+	/**
+	 * Returns true if this volume should be rendered.
+	 * Used by SceneViewExtension to filter active volumes without explicit registration.
+	 */
+	bool ShouldRender() const;
 
 	/** Returns the raw array of timestamps indicating when each voxel was created (Server Time). */
 	FORCEINLINE const TArray<float>& GetVoxelBirthTimes() const { return VoxelBirthTimes; }

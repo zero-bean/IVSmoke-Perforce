@@ -140,24 +140,6 @@ public:
 	/** Check if renderer is initialized with valid resources. */
 	bool IsInitialized() const { return NoiseVolume != nullptr; }
 
-	//~==============================================================================
-	// Volume Management
-
-	/** Register a smoke volume for rendering. */
-	void AddVolume(AIVSmokeVoxelVolume* Volume);
-
-	/** Unregister a smoke volume from rendering. */
-	void RemoveVolume(AIVSmokeVoxelVolume* Volume);
-
-	/** Check if any volumes are registered for rendering. */
-	bool HasVolumes() const;
-
-	/** Access to volumes array (for PrepareRenderData). */
-	const TArray<TWeakObjectPtr<AIVSmokeVoxelVolume>>& GetVolumes() const { return Volumes; }
-
-	/** Access to volumes mutex (for thread-safe iteration). */
-	FCriticalSection& GetVolumesMutex() const { return VolumesMutex; }
-
 	/** Check if server time offset was set. */
 	bool bIsServerTimeSynced() const { return bServerTimeSynced; }
 
@@ -371,9 +353,6 @@ private:
 	//~==============================================================================
 	// State
 
-	TArray<TWeakObjectPtr<AIVSmokeVoxelVolume>> Volumes;
-	mutable FCriticalSection VolumesMutex;
-
 	/** Shared noise volume texture for all smoke rendering. Prevent GC via AddToRoot. */
 	UTextureRenderTargetVolume* NoiseVolume = nullptr;
 
@@ -385,6 +364,9 @@ private:
 
 	//~==============================================================================
 	// External Shadowing (CSM - Cascaded Shadow Maps)
+
+	/** Last world used for rendering. Used to detect world changes (Editor ↔ PIE). */
+	TWeakObjectPtr<UWorld> LastRenderedWorld;
 
 	/** CSM renderer (manages all cascade captures). */
 	TUniquePtr<FIVSmokeCSMRenderer> CSMRenderer;

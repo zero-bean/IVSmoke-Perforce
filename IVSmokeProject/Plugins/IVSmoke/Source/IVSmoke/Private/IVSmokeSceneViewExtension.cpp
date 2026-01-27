@@ -7,6 +7,7 @@
 #include "PostProcess/PostProcessMaterialInputs.h"
 #include "ScreenPass.h"
 #include "RenderingThread.h"
+#include "EngineUtils.h"
 #include "GameFramework/GameStateBase.h"
 
 TSharedPtr<FIVSmokeSceneViewExtension, ESPMode::ThreadSafe> FIVSmokeSceneViewExtension::Instance;
@@ -35,45 +36,48 @@ void FIVSmokeSceneViewExtension::BeginRenderViewFamily(FSceneViewFamily& InViewF
 	// This ensures render data is prepared exactly once per frame
 	FIVSmokeRenderer& Renderer = FIVSmokeRenderer::Get();
 
-	// Skip if no volumes
-	if (!Renderer.HasVolumes())
+	// Get world from ViewFamily
+	UWorld* World = nullptr;
+	if (InViewFamily.Scene)
+	{
+		World = InViewFamily.Scene->GetWorld();
+	}
+
+	if (!World)
 	{
 		return;
 	}
 
-
-	UWorld* World = nullptr;
-	if (Renderer.bIsServerTimeSynced() == false && GEngine)
+	// Sync server time if needed
+	if (!Renderer.bIsServerTimeSynced())
 	{
-		World = GEngine->GetCurrentPlayWorld();
-		if (World)
+		if (AGameStateBase* GS = World->GetGameState())
 		{
-			if (AGameStateBase* GS = World->GetGameState())
-			{
-				float LocalTime = World->GetTimeSeconds();
-				float ServerTime = GS->GetServerWorldTimeSeconds();
-				Renderer.SetServerTimeOffset(ServerTime - LocalTime);
-			}
+			float LocalTime = World->GetTimeSeconds();
+			float ServerTime = GS->GetServerWorldTimeSeconds();
+			Renderer.SetServerTimeOffset(ServerTime - LocalTime);
 		}
 	}
-	
 
-
-	// Collect valid volumes under lock
+	// Collect renderable volumes using TActorIterator (Pull-based pattern)
 	TArray<AIVSmokeVoxelVolume*> ValidVolumes;
+	for (TActorIterator<AIVSmokeVoxelVolume> It(World); It; ++It)
 	{
-		FScopeLock Lock(&Renderer.GetVolumesMutex());
-		for (const auto& WeakVolume : Renderer.GetVolumes())
+		if (It->ShouldRender())
 		{
-			if (AIVSmokeVoxelVolume* Volume = WeakVolume.Get())
-			{
-				ValidVolumes.Add(Volume);
-			}
+			ValidVolumes.Add(*It);
 		}
 	}
 
 	if (ValidVolumes.Num() == 0)
 	{
+		// Clear cached render data to stop rendering
+		ENQUEUE_RENDER_COMMAND(IVSmokeClearRenderData)(
+			[&Renderer](FRHICommandListImmediate& RHICmdList)
+			{
+				Renderer.SetCachedRenderData(FIVSmokePackedRenderData());
+			}
+		);
 		return;
 	}
 
@@ -98,7 +102,9 @@ void FIVSmokeSceneViewExtension::BeginRenderViewFamily(FSceneViewFamily& InViewF
 
 bool FIVSmokeSceneViewExtension::IsActiveThisFrame_Internal(const FSceneViewExtensionContext& Context) const
 {
-	return FIVSmokeRenderer::Get().HasVolumes();
+	// Always active - actual filtering happens in BeginRenderViewFamily via TActorIterator
+	// This is intentional: the cost of iterating 128 volumes per frame is negligible (~1μs)
+	return true;
 }
 
 void FIVSmokeSceneViewExtension::SubscribeToPostProcessingPass(
