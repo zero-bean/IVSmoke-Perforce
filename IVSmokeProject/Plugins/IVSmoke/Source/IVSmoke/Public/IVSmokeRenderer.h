@@ -213,7 +213,7 @@ private:
 	FIVSmokeRenderer();   // Defined in cpp for TUniquePtr with forward-declared types
 	~FIVSmokeRenderer();
 
-	FIntVector GetAtlasTexCount(const FIntVector& TexSize, const int32 TexCount, const int32 TexturePackInterval, const int32 TexturePackMaxSize);
+	FIntVector GetAtlasTexCount(const FIntVector& TexSize, const int32 TexCount, const int32 TexturePackInterval, const int32 TexturePackMaxSize) const;
 	//~==============================================================================
 	// Resource Management
 
@@ -427,4 +427,29 @@ private:
 
 	/** Mutex for thread-safe access to CachedRenderData. */
 	mutable FCriticalSection RenderDataMutex;
+
+	//~==============================================================================
+	// Stats Tracking
+
+	/** Last time stats were updated (for 1-second interval). */
+	double LastStatUpdateTime = 0.0;
+
+	/** Cached memory sizes for stat reporting. */
+	int64 CachedNoiseVolumeSize = 0;
+	int64 CachedCSMSize = 0;
+	int64 CachedPerFrameSize = 0;
+
+	/** Update stats if 1 second has passed since last update. */
+	void UpdateStatsIfNeeded(const FIVSmokePackedRenderData& RenderData, const FIntPoint& ViewportSize);
+
+	/** Calculate per-frame texture memory usage. */
+	int64 CalculatePerFrameTextureSize(
+		const FIntPoint& ViewportSize,
+		int32 VolumeCount,
+		const FIntVector& VoxelResolution,
+		const FIntVector& HoleResolution
+	) const;
+
+	/** Update all stat values. */
+	void UpdateAllStats();
 };

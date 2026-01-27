@@ -20,6 +20,8 @@
 #include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/SceneComponent.h"
+#include "RHI.h"
+#include "Engine/TextureRenderTarget2D.h"
 
 #if !UE_SERVER
 FIVSmokeRenderer& FIVSmokeRenderer::Get()
@@ -63,7 +65,7 @@ void FIVSmokeRenderer::Shutdown()
 
 	CleanupCSM();
 }
-FIntVector FIVSmokeRenderer::GetAtlasTexCount(const FIntVector& TexSize, const int32 TexCount, const int32 TexturePackInterval, const int32 TexturePackMaxSize)
+FIntVector FIVSmokeRenderer::GetAtlasTexCount(const FIntVector& TexSize, const int32 TexCount, const int32 TexturePackInterval, const int32 TexturePackMaxSize) const
 {
 	int QuotientX = TexturePackMaxSize / (TexSize.X + TexturePackInterval);
 	int QuotientY = TexturePackMaxSize / (TexSize.Y + TexturePackInterval);
@@ -217,6 +219,14 @@ void FIVSmokeRenderer::CreateNoiseVolume()
 	NoiseVolume->ClearColor = FLinearColor::Black;
 	NoiseVolume->SRGB = false;
 	NoiseVolume->UpdateResourceImmediate(true);
+
+	// Cache noise volume size for stats
+	CachedNoiseVolumeSize = CalculateImageBytes(
+		NoiseSettings.TexSize,
+		NoiseSettings.TexSize,
+		NoiseSettings.TexSize,
+		PF_R16F
+	);
 
 	// Run compute shader to generate noise
 	FTextureRenderTargetResource* RenderTargetResource = NoiseVolume->GameThread_GetRenderTargetResource();
@@ -744,6 +754,9 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	{
 		return SceneColor;
 	}
+
+	// Update stats (1-second interval)
+	UpdateStatsIfNeeded(RenderData, ViewportSize);
 
 	//~==========================================================================
 	// Ray March Pass (1/2 Resolution)
@@ -1536,5 +1549,112 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 		Parameters,
 		FIntVector(TexSize.X, TexSize.Y, 1)
 	);
+}
+
+//~==============================================================================
+// Stats Tracking
+
+void FIVSmokeRenderer::UpdateStatsIfNeeded(const FIVSmokePackedRenderData& RenderData, const FIntPoint& ViewportSize)
+{
+	const double CurrentTime = FPlatformTime::Seconds();
+	if (CurrentTime - LastStatUpdateTime < 1.0)
+	{
+		return;
+	}
+	LastStatUpdateTime = CurrentTime;
+
+	// Calculate per-frame texture size
+	CachedPerFrameSize = CalculatePerFrameTextureSize(
+		ViewportSize,
+		RenderData.VolumeCount,
+		RenderData.VoxelResolution,
+		RenderData.HoleResolution
+	);
+
+	// Calculate CSM size using CalcTextureMemorySizeEnum
+	CachedCSMSize = 0;
+	if (CSMRenderer && CSMRenderer->IsInitialized())
+	{
+		const TArray<FIVSmokeCascadeData>& Cascades = CSMRenderer->GetCascades();
+		for (const FIVSmokeCascadeData& Cascade : Cascades)
+		{
+			if (Cascade.DepthRT)
+			{
+				CachedCSMSize += Cascade.DepthRT->CalcTextureMemorySizeEnum(TMC_ResidentMips);
+			}
+			if (Cascade.VSMRT)
+			{
+				CachedCSMSize += Cascade.VSMRT->CalcTextureMemorySizeEnum(TMC_ResidentMips);
+			}
+		}
+	}
+
+	// Update all stats
+	UpdateAllStats();
+}
+
+int64 FIVSmokeRenderer::CalculatePerFrameTextureSize(
+	const FIntPoint& ViewportSize,
+	int32 VolumeCount,
+	const FIntVector& VoxelResolution,
+	const FIntVector& HoleResolution
+) const
+{
+	if (VolumeCount == 0)
+	{
+		return 0;
+	}
+
+	int64 TotalSize = 0;
+
+	// Half-resolution Smoke Albedo + Mask (PF_FloatRGBA)
+	const FIntPoint HalfSize(FMath::Max(1, ViewportSize.X / 2), FMath::Max(1, ViewportSize.Y / 2));
+	TotalSize += CalculateImageBytes(HalfSize.X, HalfSize.Y, 1, PF_FloatRGBA) * 2;
+
+	// Voxel Atlas: Use existing GetAtlasTexCount logic constants
+	const int32 TexturePackInterval = 4;
+	const int32 TexturePackMaxSize = 2048;
+
+	FIntVector VoxelAtlasCount = GetAtlasTexCount(VoxelResolution, VolumeCount, TexturePackInterval, TexturePackMaxSize);
+	FIntVector VoxelAtlasResolution(
+		VoxelResolution.X * VoxelAtlasCount.X + TexturePackInterval * (VoxelAtlasCount.X - 1),
+		VoxelResolution.Y * VoxelAtlasCount.Y + TexturePackInterval * (VoxelAtlasCount.Y - 1),
+		VoxelResolution.Z * VoxelAtlasCount.Z + TexturePackInterval * (VoxelAtlasCount.Z - 1)
+	);
+	// PackedVoxelAtlas (PF_R32_FLOAT) + PackedVoxelAtlasFXAA (PF_R32_FLOAT)
+	TotalSize += CalculateImageBytes(VoxelAtlasResolution.X, VoxelAtlasResolution.Y, VoxelAtlasResolution.Z, PF_R32_FLOAT) * 2;
+
+	// Hole Atlas (PF_FloatRGBA)
+	FIntVector HoleAtlasCount = GetAtlasTexCount(HoleResolution, VolumeCount, TexturePackInterval, TexturePackMaxSize);
+	FIntVector HoleAtlasResolution(
+		HoleResolution.X * HoleAtlasCount.X + TexturePackInterval * (HoleAtlasCount.X - 1),
+		HoleResolution.Y * HoleAtlasCount.Y + TexturePackInterval * (HoleAtlasCount.Y - 1),
+		HoleResolution.Z * HoleAtlasCount.Z + TexturePackInterval * (HoleAtlasCount.Z - 1)
+	);
+	TotalSize += CalculateImageBytes(HoleAtlasResolution.X, HoleAtlasResolution.Y, HoleAtlasResolution.Z, PF_FloatRGBA);
+
+	// Occupancy textures (View + Light): Use FIVSmokeOccupancyConfig constants
+	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
+	if (Settings)
+	{
+		const FIntPoint TileCount(
+			(ViewportSize.X + FIVSmokeOccupancyConfig::TileSizeX - 1) / FIVSmokeOccupancyConfig::TileSizeX,
+			(ViewportSize.Y + FIVSmokeOccupancyConfig::TileSizeY - 1) / FIVSmokeOccupancyConfig::TileSizeY
+		);
+		const uint32 StepSliceCount = (Settings->GetEffectiveMaxSteps() + FIVSmokeOccupancyConfig::StepDivisor - 1) / FIVSmokeOccupancyConfig::StepDivisor;
+		// uint4 = 16 bytes per texel, 2 textures (View + Light)
+		TotalSize += CalculateImageBytes(TileCount.X, TileCount.Y, StepSliceCount, PF_R32G32B32A32_UINT) * 2;
+	}
+
+	return TotalSize;
+}
+
+void FIVSmokeRenderer::UpdateAllStats()
+{
+	// Memory stats
+	SET_MEMORY_STAT(STAT_IVSmoke_NoiseVolume, CachedNoiseVolumeSize);
+	SET_MEMORY_STAT(STAT_IVSmoke_CSMShadowMaps, CachedCSMSize);
+	SET_MEMORY_STAT(STAT_IVSmoke_PerFrameTextures, CachedPerFrameSize);
+	SET_MEMORY_STAT(STAT_IVSmoke_TotalVRAM, CachedNoiseVolumeSize + CachedCSMSize + CachedPerFrameSize);
 }
 #endif
