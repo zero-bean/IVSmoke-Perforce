@@ -710,9 +710,17 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 SpawnNum, float StartSimTime, f
 		}
 
 		FIntVector CurrentGrid = UIVSmokeGridLibrary::IndexToGrid(CurrentNode.Index, GridResolution);
+
+		FVector CurrentLocalPos = UIVSmokeGridLibrary::GridToLocal(CurrentGrid, VoxelSize, CenterOffset);
+		float CurNormX = CurrentLocalPos.X * InvRadii.X;
+		float CurNormY = CurrentLocalPos.Y * InvRadii.Y;
+		float CurNormZ = CurrentLocalPos.Z * InvRadii.Z;
+		float CurrentDist = FMath::Sqrt(CurNormX * CurNormX + CurNormY * CurNormY + CurNormZ * CurNormZ);
+
 		for (const FIntVector& Direction : FloodFillDirections)
 		{
 			FIntVector NextGrid = CurrentGrid + Direction;
+
 			if (NextGrid.X < 0 || NextGrid.X >= GridResolution.X ||
 				NextGrid.Y < 0 || NextGrid.Y >= GridResolution.Y ||
 				NextGrid.Z < 0 || NextGrid.Z >= GridResolution.Z)
@@ -721,20 +729,47 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 SpawnNum, float StartSimTime, f
 			}
 
 			int32 NextIndex = UIVSmokeGridLibrary::GridToIndex(NextGrid, GridResolution);
+
 			if (VoxelCosts[NextIndex] != FLT_MAX)
 			{
 				continue;
 			}
 
 			FVector NextLocalPos = UIVSmokeGridLibrary::GridToLocal(NextGrid, VoxelSize, CenterOffset);
-			float NormX = NextLocalPos.X * InvRadii.X;
-			float NormY = NextLocalPos.Y * InvRadii.Y;
-			float NormZ = NextLocalPos.Z * InvRadii.Z;
+			float NextNormX = NextLocalPos.X * InvRadii.X;
+			float NextNormY = NextLocalPos.Y * InvRadii.Y;
+			float NextNormZ = NextLocalPos.Z * InvRadii.Z;
+			float NextDist = FMath::Sqrt(NextNormX * NextNormX + NextNormY * NextNormY + NextNormZ * NextNormZ);
 
-			float DistCost = FMath::Sqrt((NormX * NormX) + (NormY * NormY) + (NormZ * NormZ));
+			float DeltaDist = NextDist - CurrentDist;
+
+			float DeltaCost = 0.0f;
+
+			if (DeltaDist >= 0.0f)
+			{
+				DeltaCost = DeltaDist;
+			}
+			else
+			{
+				float AxisInvRadius = 1.0f;
+				if (Direction.X != 0)
+				{
+					AxisInvRadius = Radii.X;
+				}
+				else if (Direction.Y != 0)
+				{
+					AxisInvRadius = Radii.Y;
+				}
+				else if (Direction.Z != 0)
+				{
+					AxisInvRadius = Radii.Z;
+				}
+				DeltaCost = VoxelSize * AxisInvRadius;
+			}
+
 			float NoiseCost = RandomStream.FRandRange(0.0f, ExpansionNoise);
+			float ExpansionCost = CurrentNode.Cost + DeltaCost + NoiseCost;
 
-			float ExpansionCost = DistCost + NoiseCost;
 			if (ExpansionCost < VoxelCosts[NextIndex])
 			{
 				VoxelCosts[NextIndex] = ExpansionCost;
