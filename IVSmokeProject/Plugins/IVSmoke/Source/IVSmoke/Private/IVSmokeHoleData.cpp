@@ -28,6 +28,12 @@ void FIVSmokeHoleData::PreReplicatedRemove(const FIVSmokeHoleArray& InArray)
 	}
 }
 
+void FIVSmokeHoleArray::Empty()
+{
+	Items.Empty();
+	MarkArrayDirty();
+}
+
 TArray<FIVSmokeHoleGPU> FIVSmokeHoleArray::GetHoleGPUData(const float CurrentServerTime) const
 {
 	TArray<FIVSmokeHoleGPU> GPUBuffer;

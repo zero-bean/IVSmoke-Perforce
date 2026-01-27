@@ -44,6 +44,10 @@ public:
 	/** Request registration of tracking dynamic object such as human and vehicle */
 	UFUNCTION(BlueprintCallable, Category = "IVSmoke | Hole | API")
 	void RequestTrackDynamicObject(AActor* TargetActor, UIVSmokeHolePreset* Preset);
+
+	/** Reset all holes and dynamic subjects to initial state. */
+	UFUNCTION(BlueprintCallable, Category = "IVSmoke | Hole | API")
+	void RequestReset();
 #pragma endregion
 
 	//~============================================================================

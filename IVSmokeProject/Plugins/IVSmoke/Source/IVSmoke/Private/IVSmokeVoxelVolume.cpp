@@ -406,6 +406,11 @@ void AIVSmokeVoxelVolume::ClearSimulationData()
 	{
 		CollisionComponent->ResetCollision();
 	}
+
+	if (HoleGeneratorComponent)
+	{
+		HoleGeneratorComponent->RequestReset();
+	}
 }
 
 bool AIVSmokeVoxelVolume::IsConnectionBlocked(const UWorld* World, const FVector& BeginPos, const FVector& EndPos) const

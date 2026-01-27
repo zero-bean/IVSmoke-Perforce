@@ -162,6 +162,22 @@ void UIVSmokeHoleGeneratorComponent::RequestTrackDynamicObject(AActor* TargetAct
 
 	Internal_RequestDynamicHole(TargetActor, Preset->GetPresetID());
 }
+
+void UIVSmokeHoleGeneratorComponent::RequestReset()
+{
+	// 1. Clear all active holes
+	ActiveHoles.Empty();
+
+	// 2. Clear all dynamic subjects
+	DynamicSubjectList.Empty();
+
+	// 3. Clear hole texture
+#if !UE_SERVER
+	Local_ClearHoleTexture();
+#endif
+
+	MarkHoleTextureDirty(false);
+}
 #pragma endregion
 
 //~============================================================================
@@ -481,6 +497,10 @@ void UIVSmokeHoleGeneratorComponent::Local_ClearHoleTexture()
 	}
 
 	FTextureRHIRef Texture = RenderTargetResource->GetRenderTargetTexture();
+	if (!Texture.IsValid())
+	{
+		return;
+	}
 
 	ENQUEUE_RENDER_COMMAND(IVSmokeHoleClear)(
 		[Texture](FRHICommandListImmediate& RHICmdList)

@@ -169,6 +169,9 @@ public:
 	/** Reserve size items array */
 	FORCEINLINE void Reserve(const int32 Number) { Items.Reserve(Number); }
 
+	/** Empty items array and mark dirty. */
+	void Empty();
+
 	/** Converts items array into an array of GPU-compatible hole data structures. */
 	TArray<FIVSmokeHoleGPU> GetHoleGPUData(const float CurrentServerTime) const;
 };
