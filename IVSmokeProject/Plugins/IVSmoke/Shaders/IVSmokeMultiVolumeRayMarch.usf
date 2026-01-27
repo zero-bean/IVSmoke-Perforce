@@ -154,6 +154,7 @@ float ExternalShadowAmbient;
 
 // Temporal
 uint FrameNumber;
+float JitterIntensity;
 
 // Include CSM sampling functions (must come after uniform declarations)
 #include "/Plugin/IVSmoke/IVSmokeCSM.usf"
@@ -433,8 +434,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	// Slice skip handles empty space jumps, so steps are used for actual volume content.
 	float StepSize = max(MinStepSize, Tile.TotalVolumeLength / float(MaxSteps));
 
-	// Blue Noise Jitter
-	float Jitter = BlueNoiseScalar(PixelCoord, FrameNumber % 64);
+	// Blue Noise Jitter (intensity configurable to reduce flickering at density boundaries)
+	float Jitter = BlueNoiseScalar(PixelCoord, FrameNumber % 64) * JitterIntensity;
 	float T = TMin + Jitter * StepSize;
 
 	// Slice parameters for occupancy lookup

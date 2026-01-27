@@ -374,6 +374,7 @@ public:
 
 		// Temporal (for TAA integration)
 		SHADER_PARAMETER(uint32, FrameNumber)
+		SHADER_PARAMETER(float, JitterIntensity)
 	END_SHADER_PARAMETER_STRUCT()
 
 	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)

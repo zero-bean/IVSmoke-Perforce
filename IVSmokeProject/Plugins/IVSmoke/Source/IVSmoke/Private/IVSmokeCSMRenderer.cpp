@@ -532,6 +532,13 @@ void FIVSmokeCSMRenderer::ConfigureCaptureComponent(USceneCaptureComponent2D* Ca
 	CaptureComponent->ShowFlags.SetTranslucency(false);
 	CaptureComponent->ShowFlags.SetParticles(false);
 	CaptureComponent->ShowFlags.SetDecals(false);
+
+	// --- Optionally disable skeletal meshes (characters) ---
+	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
+	if (Settings && !Settings->bCaptureSkeletalMeshes)
+	{
+		CaptureComponent->ShowFlags.SetSkeletalMeshes(false);
+	}
 }
 
 //~==============================================================================
