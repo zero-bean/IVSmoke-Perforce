@@ -424,6 +424,7 @@ bool AIVSmokeVoxelVolume::IsConnectionBlocked(const UWorld* World, const FVector
 
 	FCollisionQueryParams CollisionParams;
 	CollisionParams.bTraceComplex = false;
+	CollisionParams.AddIgnoredActor(this);
 
 	FHitResult HitResult;
 	return World->LineTraceSingleByChannel(

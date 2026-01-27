@@ -19,6 +19,18 @@ UIVSmokeCollisionComponent::UIVSmokeCollisionComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 
 	SetGenerateOverlapEvents(false);
+
+	Mobility = EComponentMobility::Movable;
+
+	BodyInstance.SetCollisionProfileName(UCollisionProfile::CustomCollisionProfileName);
+
+	BodyInstance.SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+
+	BodyInstance.SetObjectType(ECC_WorldDynamic);
+
+	BodyInstance.SetResponseToAllChannels(ECR_Ignore);
+
+	BodyInstance.SetResponseToChannel(ECC_Visibility, ECR_Block);
 }
 
 UBodySetup* UIVSmokeCollisionComponent::GetBodySetup()
@@ -41,8 +53,12 @@ void UIVSmokeCollisionComponent::OnCreatePhysicsState()
 
 void UIVSmokeCollisionComponent::TryUpdateCollision(const TArray<uint64>& VoxelBitArray, const FIntVector& GridResolution, float VoxelSize, int32 ActiveVoxelNum, float SyncTime, bool bForce)
 {
-	if (!bCollisionEnabled)
+	if (GetCollisionEnabled() == ECollisionEnabled::NoCollision)
 	{
+		if (VoxelBodySetup && VoxelBodySetup->AggGeom.BoxElems.Num() > 0)
+		{
+			ResetCollision();
+		}
 		return;
 	}
 
@@ -197,40 +213,12 @@ void UIVSmokeCollisionComponent::ResetCollision()
 	RecreatePhysicsState();
 }
 
-void UIVSmokeCollisionComponent::ApplyCollisionSettings()
-{
-	bool bUseProfile = !SmokeCollisionProfileName.IsNone() &&
-						SmokeCollisionProfileName != UCollisionProfile::NoCollision_ProfileName &&
-						SmokeCollisionProfileName != UCollisionProfile::CustomCollisionProfileName;
-
-	if (bUseProfile)
-	{
-		BodyInstance.SetCollisionProfileName(SmokeCollisionProfileName);
-	}
-	else
-	{
-		BodyInstance.SetCollisionProfileName(UCollisionProfile::CustomCollisionProfileName);
-		BodyInstance.SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		BodyInstance.SetObjectType(ECC_WorldDynamic);
-		BodyInstance.SetResponseToAllChannels(ECR_Ignore);
-
-		for (const auto& Channel : BlockChannelArray)
-		{
-			BodyInstance.SetResponseToChannel(Channel, ECR_Block);
-		}
-	}
-
-	BodyInstance.UpdatePhysicsFilterData();
-}
-
 void UIVSmokeCollisionComponent::FinalizePhysicsUpdate()
 {
 	if (!VoxelBodySetup)
 	{
 		return;
 	}
-
-	ApplyCollisionSettings();
 
 	VoxelBodySetup->InvalidatePhysicsData();
 	VoxelBodySetup->CreatePhysicsMeshes();

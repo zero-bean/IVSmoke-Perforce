@@ -16,10 +16,12 @@
  * larger boxes to minimize the physics cost.
  *
  * ## Usage
- * This is primarily designed for query-only interactions, such as:
- * - Blocking AI Line of Sight (Visibility channel).
- * - Preventing camera clipping.
- * - Simple projectile blocking.
+ * This component uses the standard Collision category in the Details panel.
+ * By default, it is configured for Query-Only interactions:
+ * - Visibility: Blocked (Blocks AI Line of Sight).
+ * - Others: Ignored (Players can walk through).
+ *
+ * You can customize these responses in the Collision Presets (set to 'Custom').
  *
  * @note Frequent updates to collision geometry are expensive. Use `MinCollisionUpdateInterval`
  * and `MinCollisionUpdateVoxelNum` to throttle updates.
@@ -71,21 +73,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "IVSmoke | Config")
 	bool bCollisionEnabled = true;
 
-	/**
-	 * The collision profile to apply to the generated geometry.
-	 * Defaults to `NoCollision`. Change this to `BlockAll` or a custom profile to enable interaction.
-	 */
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Config", meta = (EditCondition = "bCollisionEnabled"))
-	FName SmokeCollisionProfileName = UCollisionProfile::NoCollision_ProfileName;
-
-	/**
-	 * List of specific collision channels to set to `ECR_Block`.
-	 * Useful if you want to block only specific traces (e.g., Visibility) without affecting physical movement.
-	 * Overrides the settings from `SmokeCollisionProfileName` if specified.
-	 */
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Config", meta = (EditCondition = "bCollisionEnabled"))
-	TArray<TEnumAsByte<ECollisionChannel>> BlockChannelArray;
-
 	/** The minimum number of voxel changes (spawned or destroyed) required to trigger a physics geometry rebuild. */
 	UPROPERTY(EditAnywhere, Category = "IVSmoke | Config", meta = (EditCondition = "bCollisionEnabled", ClampMin = "1", UIMin = "10", UIMax = "1000"))
 	int32 MinCollisionUpdateVoxelNum = 50;
@@ -102,9 +89,6 @@ private:
 	 * @note This is a computationally expensive operation (O(N) on grid size).
 	 */
 	void UpdateCollision(const TArray<uint64>& VoxelBitArray, const FIntVector& GridResolution, float VoxelSize);
-
-	/** Applies the user-configured collision profile and channel responses to the generated BodyInstance. */
-	void ApplyCollisionSettings();
 
 	/** Commits the new geometry to the physics engine. */
 	void FinalizePhysicsUpdate();
