@@ -111,8 +111,7 @@ FIVSmokeHoleGPU::FIVSmokeHoleGPU(const FIVSmokeHoleData& DynamicHoleData, const 
 
 		CurExpansionFadeRangeOverTime = Preset.ExpansionFadeRangeCurveOverTime ? UIVSmokeHolePreset::GetFloatValue(Preset.ExpansionFadeRangeCurveOverTime, ExpansionNormalizedTime) : ExpansionNormalizedTime;
 		CurShrinkFadeRangeOverTime = Preset.ShrinkFadeRangeCurveOverTime ? UIVSmokeHolePreset::GetFloatValue(Preset.ShrinkFadeRangeCurveOverTime, ShrinkNormalizedTime) : 1 - ShrinkNormalizedTime;
-		CurShrinkDensityMulOverTime = 1 - FMath::Pow((1 - ShrinkNormalizedTime), Preset.ShrinkDensityExpOverTime);
-		CurDistortionOverTime = 1 - FMath::Pow((1 - ExpansionNormalizedTime), Preset.DistortionExpOverTime);
+		DistortionExpOverTime = Preset.DistortionExpOverTime;
 		DistortionDistance = Preset.DistortionDistance;
 		break;
 	}

@@ -69,16 +69,13 @@ struct alignas(16) FIVSmokeHoleGPU
 	/** Current fadeRange extracted from ShrinkFadeRangeCurveOverTime with values normalized to shrink time. */
 	float CurShrinkFadeRangeOverTime;
 
-	/** Current density extracted from ShrinkDensityMulCurveOverTime with values normalized to shrink time. */
-	float CurShrinkDensityMulOverTime;
-
-	/** Current distortion extracted from DistortionCurveOverTime with values normalized to expansion time. */
-	float CurDistortionOverTime;
+	/** Exponential value of the calculation of the distortion value over expansion time. */
+	float DistortionExpOverTime;
 
 	/** Distortion degree max value. */
 	float DistortionDistance;
 
-	FVector2f PresetExplosionPadding;
+	FVector3f PresetExplosionPadding;
 
 	//~============================================================================
 	// Penetration

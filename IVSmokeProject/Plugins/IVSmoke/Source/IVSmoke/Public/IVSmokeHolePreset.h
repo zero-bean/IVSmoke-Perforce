@@ -94,14 +94,6 @@ public:
 	TObjectPtr<UCurveFloat> ShrinkFadeRangeCurveOverTime;
 
 	/**
-	 * Density exp value over shrink time.
-	 * 1 - pow((1 - NormalizedTime), ExpValue)
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Shrink", meta = (ClampMin = "1.0", ClampMax = "5.0", EditConditionHides, EditCondition = "HoleType == EIVSmokeHoleType::Explosion",
-		Tooltip = "Density Exp value over shrink time. 1 - pow((1 - NormalizedTime), ExpValue)"))
-	float ShrinkDensityExpOverTime = 5.0;
-
-	/**
 	 * Distortion exp value over expansion time.
 	 * 1 - pow((1 - NormalizedTime), ExpValue)
 	 */

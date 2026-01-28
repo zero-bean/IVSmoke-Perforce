@@ -29,10 +29,9 @@ struct FHoleGPU
 	float ExpansionDuration;
 	float CurExpansionFadeRangeOverTime;
 	float CurShrinkFadeRangeOverTime;
-	float CurShrinkDensityMulOverTime;
-	float CurDistortionOverTime;
+	float DistortionExpOverTime;
 	float DistortionDistance;
-	float2 PresetExplosionPadding;
+	float3 PresetExplosionPadding;
 
 	// Penetration
 	float3 EndPosition;
@@ -179,6 +178,7 @@ float4 Explosion(float3 WorldPos, float3 UVW, int HoleIdx, out float ExplosionFa
 	if (HoleData.CurLifeTime < HoleData.ExpansionDuration)
 	{
 		//Expansion
+		float ExpansionNormalizedTime = saturate(HoleData.CurLifeTime / max(0.001f, HoleData.ExpansionDuration));
 		float CurFadeRange = HoleData.CurExpansionFadeRangeOverTime * Radius;
 		float SoftnessStart = CurFadeRange - SoftnessRange;
 		float DistToEdge = Dis - SoftnessStart;
@@ -189,6 +189,26 @@ float4 Explosion(float3 WorldPos, float3 UVW, int HoleIdx, out float ExplosionFa
 		float NoisedDistToEdge = DistToEdge - NoiseOffset;
 
 		Result.a = saturate(NoisedDistToEdge / max(SoftnessRange, 0.001f));
+
+		//Expansion Distortion
+		float DistortionOverTime = saturate(1 - pow(1 - ExpansionNormalizedTime, HoleData.DistortionExpOverTime));
+		float DistortionOverDistance = smoothstep(0, 1, 1 - Dis / Radius);
+		float CurDistortionDistance = HoleData.DistortionDistance * DistortionOverTime * DistortionOverDistance;
+
+		if (CurDistortionDistance > 0)
+		{
+			if (HoleData.ExpansionDuration >= HoleData.CurLifeTime)
+			{
+				Result.rgb = -Dir * CurDistortionDistance;
+			}
+		}
+
+		//Distortion artifact case
+		if (UVW.z * VolumeHeight < AlphaHeight)
+		{
+			Result.rgb = float3(0, 0, 0);
+		}
+		
 	}
 	else
 	{
@@ -196,8 +216,7 @@ float4 Explosion(float3 WorldPos, float3 UVW, int HoleIdx, out float ExplosionFa
 		float ShrinkNormalizedTime = saturate((HoleData.CurLifeTime - HoleData.ExpansionDuration) / max(0.001f, (HoleData.Duration - HoleData.ExpansionDuration)));
 		float CurFadeRange = HoleData.CurShrinkFadeRangeOverTime * Radius;
 		float SoftnessStart = CurFadeRange - SoftnessRange;
-		float CurDensityMul = HoleData.CurShrinkDensityMulOverTime;
-
+		
 		float LastExpansionFadeRange = HoleData.CurExpansionFadeRangeOverTime * Radius;
 		float LastExpansionSoftnessStart = LastExpansionFadeRange - SoftnessRange;
 
@@ -207,30 +226,13 @@ float4 Explosion(float3 WorldPos, float3 UVW, int HoleIdx, out float ExplosionFa
 		float NoiseOffset = SampleEdgeNoiseOffset(WorldPos, 1, SoftnessRange, EdgeFactor);
 
 		float LastExpansionAlpha = saturate((Dis - LastExpansionSoftnessStart - NoiseOffset) / max(SoftnessRange, 0.001f));
-		float ShrinkAlpha = saturate((Dis - SoftnessStart - NoiseOffset) / max(SoftnessRange, 0.001f)) * CurDensityMul;
+		float ShrinkAlpha = saturate((Dis - SoftnessStart - NoiseOffset) / max(SoftnessRange, 0.001f));
+		float AlphaOverTime = Dis < CurFadeRange ? Dis / CurFadeRange * saturate(pow(ShrinkNormalizedTime, 2.0f)) : 1;
 
 		Result.a = lerp(LastExpansionAlpha, ShrinkAlpha, ShrinkNormalizedTime);
+		Result.a = lerp(Result.a, lerp(Result.a, AlphaOverTime, pow(ShrinkNormalizedTime, 2.0f)), 0.5f * ShrinkNormalizedTime);
 
 		AlphaHeight = AlphaHeight + pow(ShrinkNormalizedTime, 5.5f) * (VolumeHeight - AlphaHeight);
-	}
-
-	//Expansion Distortion
-	float DistortionOverTime = HoleData.CurDistortionOverTime;
-	float DistortionOverDistance = smoothstep(0, 1, 1 - Dis / Radius);
-	float CurDistortionDistance = HoleData.DistortionDistance * DistortionOverTime * DistortionOverDistance;
-
-	if (CurDistortionDistance > 0)
-	{
-		if (HoleData.ExpansionDuration >= HoleData.CurLifeTime)
-		{
-			Result.rgb = -Dir * CurDistortionDistance;
-		}
-	}
-
-	//Distortion artifact case
-	if (UVW.z * VolumeHeight < AlphaHeight)
-	{
-		Offset = float3(0, 0, 0);
 	}
 
 	//Height fade
