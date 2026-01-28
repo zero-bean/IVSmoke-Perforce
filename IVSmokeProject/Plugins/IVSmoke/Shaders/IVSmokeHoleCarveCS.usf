@@ -160,6 +160,7 @@ float4 Explosion(float3 WorldPos, float3 UVW, int HoleIdx, out float ExplosionFa
 	FHoleGPU HoleData = HoleBuffer[HoleIdx];
 	float4 Result = float4(0, 0, 0, 1);
 	float3 Offset = WorldPos - HoleData.Position;
+	Offset.z = Offset.z * 0.7f;
 	float3 Dir = normalize(Offset);
 	float Dis = length(Offset);
 
@@ -227,10 +228,10 @@ float4 Explosion(float3 WorldPos, float3 UVW, int HoleIdx, out float ExplosionFa
 
 		float LastExpansionAlpha = saturate((Dis - LastExpansionSoftnessStart - NoiseOffset) / max(SoftnessRange, 0.001f));
 		float ShrinkAlpha = saturate((Dis - SoftnessStart - NoiseOffset) / max(SoftnessRange, 0.001f));
-		float AlphaOverTime = Dis < CurFadeRange ? Dis / CurFadeRange * saturate(pow(ShrinkNormalizedTime, 2.0f)) : 1;
+		float AlphaOverTime = Dis < CurFadeRange ? saturate(Dis / CurFadeRange) * pow(ShrinkNormalizedTime, 1.0f) : 1;
 
 		Result.a = lerp(LastExpansionAlpha, ShrinkAlpha, ShrinkNormalizedTime);
-		Result.a = lerp(Result.a, lerp(Result.a, AlphaOverTime, pow(ShrinkNormalizedTime, 2.0f)), 0.5f * ShrinkNormalizedTime);
+		Result.a = lerp(Result.a, pow(AlphaOverTime, 1.5f), ShrinkNormalizedTime);
 
 		AlphaHeight = AlphaHeight + pow(ShrinkNormalizedTime, 5.5f) * (VolumeHeight - AlphaHeight);
 	}
