@@ -115,7 +115,7 @@ void FIVSmokeRenderer::InitializeCSM(UWorld* World)
 	}
 
 	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
-	if (!Settings || !Settings->bEnableExternalShadowing)
+	if (!Settings || !Settings->IsExternalShadowingEnabled())
 	{
 		return;
 	}
@@ -131,9 +131,9 @@ void FIVSmokeRenderer::InitializeCSM(UWorld* World)
 	{
 		CSMRenderer->Initialize(
 			World,
-			Settings->NumShadowCascades,
-			Settings->CascadeResolution,
-			Settings->ShadowMaxDistance
+			Settings->GetEffectiveNumCascades(),
+			Settings->GetEffectiveCascadeResolution(),
+			Settings->GetEffectiveShadowMaxDistance()
 		);
 	}
 
@@ -565,8 +565,8 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		}
 
 		// Self-shadowing
-		Result.bEnableSelfShadowing = Settings->bEnableSelfShadowing;
-		Result.LightMarchingSteps = Settings->LightMarchingSteps;
+		Result.bEnableSelfShadowing = Settings->IsSelfShadowingEnabled();
+		Result.LightMarchingSteps = Settings->GetEffectiveLightMarchingSteps();
 		Result.LightMarchingDistance = Settings->LightMarchingDistance;
 		Result.LightMarchingExpFactor = Settings->LightMarchingExpFactor;
 		Result.ShadowAmbient = Settings->ShadowAmbient;
@@ -583,7 +583,7 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		Result.CascadeBlendRange = Settings->CascadeBlendRange;
 
 		// Skip shadow capture if we're already inside a shadow capture render pass (prevents infinite recursion)
-		if (Settings->bEnableExternalShadowing && VolumesToProcess.Num() > 0 && !bIsCapturingShadow)
+		if (Settings->IsExternalShadowingEnabled() && VolumesToProcess.Num() > 0 && !bIsCapturingShadow)
 		{
 			// Per-frame guard: Only update once per actual engine frame
 			// PrepareRenderData can be called multiple times per frame (multiple views)
