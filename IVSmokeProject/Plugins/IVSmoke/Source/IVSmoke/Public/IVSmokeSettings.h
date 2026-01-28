@@ -334,7 +334,7 @@ public:
 	/** Sharpening/blurring of the smoke composite.
 	 *  Positive = sharpen, Zero = no filter, Negative = blur. */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Appearance", meta = (ClampMin = "-1.0", ClampMax = "1.0"))
-	float Sharpness = 0.0f;
+	float Sharpness = 0.4f;
 
 	/** Volume edge range offset for density falloff. */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Appearance", meta = (ClampMin = "0.0", ClampMax = "1.0", EditCondition = "bShowAdvancedOptions", EditConditionHides))
@@ -342,11 +342,11 @@ public:
 
 	/** Noise-based edge fade offset. */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Appearance", meta = (ClampMin = "-1.0", ClampMax = "1.0", EditCondition = "bShowAdvancedOptions", EditConditionHides))
-	float VolumeEdgeNoiseFadeOffset = 0.04f;
+	float VolumeEdgeNoiseFadeOffset = 0.1f;
 
 	/** Edge fade sharpness factor. */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Appearance", meta = (ClampMin = "0.1", ClampMax = "10.0", EditCondition = "bShowAdvancedOptions", EditConditionHides))
-	float VolumeEdgeFadeSharpness = 3.5f;
+	float VolumeEdgeFadeSharpness = 3.0f;
 
 	//~==============================================================================
 	// Lighting
