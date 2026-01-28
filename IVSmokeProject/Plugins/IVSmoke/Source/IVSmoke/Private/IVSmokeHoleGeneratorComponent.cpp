@@ -106,64 +106,7 @@ void UIVSmokeHoleGeneratorComponent::GetLifetimeReplicatedProps(TArray<FLifetime
 //~============================================================================
 // Public API (Blueprint & C++)
 #pragma region API
-void UIVSmokeHoleGeneratorComponent::RequestPenetrationHole(const FVector3f InOrigin, const FVector3f Direction, UIVSmokeHolePreset* Preset)
-{
-	if (!Preset)
-	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[RequestPenetrationHole] Preset is null"));
-		return;
-	}
-
-	if (Preset->HoleType != EIVSmokeHoleType::Penetration)
-	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[RequestPenetrationHole] Preset is not Penetration type"));
-		return;
-	}
-
-	Internal_RequestPenetrationHole(InOrigin, Direction, Preset->GetPresetID());
-}
-
-void UIVSmokeHoleGeneratorComponent::RequestExplosionHole(const FVector3f Origin, UIVSmokeHolePreset* Preset)
-{
-	if (!Preset)
-	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[RequestExplosionHole] Preset is null"));
-		return;
-	}
-
-	if (Preset->HoleType != EIVSmokeHoleType::Explosion)
-	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[RequestExplosionHole] Preset is not Explosion type"));
-		return;
-	}
-
-	Internal_RequestExplosionHole(Origin, Preset->GetPresetID());
-}
-
-void UIVSmokeHoleGeneratorComponent::RequestTrackDynamicObject(AActor* TargetActor, UIVSmokeHolePreset* Preset)
-{
-	if (!TargetActor)
-	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[RequestTrackDynamicObject] TargetActor is null"));
-		return;
-	}
-
-	if (!Preset)
-	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[RequestTrackDynamicObject] Preset is null"));
-		return;
-	}
-
-	if (Preset->HoleType != EIVSmokeHoleType::Dynamic)
-	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[RequestTrackDynamicObject] Preset is not Dynamic type"));
-		return;
-	}
-
-	Internal_RequestDynamicHole(TargetActor, Preset->GetPresetID());
-}
-
-void UIVSmokeHoleGeneratorComponent::RequestReset()
+void UIVSmokeHoleGeneratorComponent::Reset()
 {
 	// 1. Clear all active holes
 	ActiveHoles.Empty();
@@ -181,26 +124,26 @@ void UIVSmokeHoleGeneratorComponent::RequestReset()
 #pragma endregion
 
 //~============================================================================
-// Internal Server RPC
-#pragma region Server RPC
-void UIVSmokeHoleGeneratorComponent::Internal_RequestPenetrationHole_Implementation(const FVector3f& InOrigin, const FVector3f& InDirection, const uint8 PresetID)
+// Execute (Called by UIVSmokeHoleRequestComponent on Server)
+#pragma region Execute
+void UIVSmokeHoleGeneratorComponent::CreatePenetrationHole(const FVector3f& InOrigin, const FVector3f& InDirection, const uint8 PresetID)
 {
 	const TObjectPtr<UIVSmokeHolePreset> Preset = UIVSmokeHolePreset::FindByID(PresetID);
 	if (!Preset)
 	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestPenetrationHole] Invalid PresetID: %d"), PresetID);
+		UE_LOG(LogIVSmoke, Warning, TEXT("[CreatePenetrationHole] Invalid PresetID: %d"), PresetID);
 		return;
 	}
 
 	if (Preset->Duration <= 0.0f)
 	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestPenetrationHole] Invalid Lifetime: %f"), Preset->Duration);
+		UE_LOG(LogIVSmoke, Warning, TEXT("[CreatePenetrationHole] Invalid Lifetime: %f"), Preset->Duration);
 		return;
 	}
 
 	if (Preset->HoleType != EIVSmokeHoleType::Penetration)
 	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestPenetrationHole] Preset is not Penetration type"));
+		UE_LOG(LogIVSmoke, Warning, TEXT("[CreatePenetrationHole] Preset is not Penetration type"));
 		return;
 	}
 
@@ -220,24 +163,24 @@ void UIVSmokeHoleGeneratorComponent::Internal_RequestPenetrationHole_Implementat
 	Authority_CreateHole(HoleData);
 }
 
-void UIVSmokeHoleGeneratorComponent::Internal_RequestExplosionHole_Implementation(const FVector3f& Origin, const uint8 PresetID)
+void UIVSmokeHoleGeneratorComponent::CreateExplosionHole(const FVector3f& Origin, const uint8 PresetID)
 {
 	const TObjectPtr<UIVSmokeHolePreset> Preset = UIVSmokeHolePreset::FindByID(PresetID);
 	if (!Preset)
 	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestExplosionHole] Invalid PresetID: %d"), PresetID);
+		UE_LOG(LogIVSmoke, Warning, TEXT("[CreateExplosionHole] Invalid PresetID: %d"), PresetID);
 		return;
 	}
 
 	if (Preset->Duration <= 0.0f)
 	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestExplosionHole] Invalid Lifetime: %f"), Preset->Duration);
+		UE_LOG(LogIVSmoke, Warning, TEXT("[CreateExplosionHole] Invalid Lifetime: %f"), Preset->Duration);
 		return;
 	}
 
 	if (Preset->HoleType != EIVSmokeHoleType::Explosion)
 	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestExplosionHole] Preset is not Explosion type"));
+		UE_LOG(LogIVSmoke, Warning, TEXT("[CreateExplosionHole] Preset is not Explosion type"));
 		return;
 	}
 
@@ -259,24 +202,24 @@ void UIVSmokeHoleGeneratorComponent::Internal_RequestExplosionHole_Implementatio
 	Authority_CreateHole(HoleData);
 }
 
-void UIVSmokeHoleGeneratorComponent::Internal_RequestDynamicHole_Implementation(AActor* TargetActor, const uint8 PresetID)
+void UIVSmokeHoleGeneratorComponent::RegisterTrackDynamicHole(AActor* TargetActor, const uint8 PresetID)
 {
 	const TObjectPtr<UIVSmokeHolePreset> Preset = UIVSmokeHolePreset::FindByID(PresetID);
 	if (!Preset)
 	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestDynamicHole] Invalid PresetID: %d"), PresetID);
+		UE_LOG(LogIVSmoke, Warning, TEXT("[RegisterTrackDynamicHole] Invalid PresetID: %d"), PresetID);
 		return;
 	}
 
 	if (Preset->Duration <= 0.0f)
 	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestDynamicHole] Invalid Duration: %f"), Preset->Duration);
+		UE_LOG(LogIVSmoke, Warning, TEXT("[RegisterTrackDynamicHole] Invalid Duration: %f"), Preset->Duration);
 		return;
 	}
 
 	if (Preset->HoleType != EIVSmokeHoleType::Dynamic)
 	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestDynamicHole] Preset is not Dynamic type"));
+		UE_LOG(LogIVSmoke, Warning, TEXT("[RegisterTrackDynamicHole] Preset is not Dynamic type"));
 		return;
 	}
 
@@ -285,7 +228,7 @@ void UIVSmokeHoleGeneratorComponent::Internal_RequestDynamicHole_Implementation(
 	{
 		if (Tracker.TargetActor == TargetActor)
 		{
-			UE_LOG(LogIVSmoke, Warning, TEXT("[Internal_RequestDynamicHole] Actor already registered"));
+			UE_LOG(LogIVSmoke, Warning, TEXT("[RegisterTrackDynamicHole] Actor already registered"));
 			return;
 		}
 	}
@@ -298,7 +241,7 @@ void UIVSmokeHoleGeneratorComponent::Internal_RequestDynamicHole_Implementation(
 	NewDynamicSubject.LastWorldRotation = TargetActor->GetActorQuat();
 	DynamicSubjectList.Add(NewDynamicSubject);
 }
-#pragma endregion
+#pragma endregion Execute
 
 //~============================================================================
 // Authority Only
@@ -437,8 +380,6 @@ void UIVSmokeHoleGeneratorComponent::Authority_UpdateDynamicSubjectList()
 
 		if (!SmokeVolume.IsInside(CurrentPos))
 		{
-			UE_LOG(LogIVSmoke, Log, TEXT("[UpdateDynamicSubjectList] Outside volume - Pos: %s, VolumeMin: %s, VolumeMax: %s"),
-				*CurrentPos.ToString(), *SmokeVolume.Min.ToString(), *SmokeVolume.Max.ToString());
 			continue;
 		}
 

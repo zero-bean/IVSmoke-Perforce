@@ -33,35 +33,18 @@ protected:
 	// Public API (Blueprint & C++)
 #pragma region API
 public:
-	/** Request a penetration hole such as bullet, projectile and hitscan */
-	UFUNCTION(BlueprintCallable, Category = "IVSmoke | Hole | API")
-	void RequestPenetrationHole(const FVector3f Origin, const FVector3f Direction, UIVSmokeHolePreset* Preset);
-
-	/** Request an explosion hole at the specified origin. such as grenade (todo: must be refactored) */
-	UFUNCTION(BlueprintCallable, Category = "IVSmoke | Hole | API")
-	void RequestExplosionHole(const FVector3f Origin, UIVSmokeHolePreset* Preset);
-
-	/** Request registration of tracking dynamic object such as human and vehicle */
-	UFUNCTION(BlueprintCallable, Category = "IVSmoke | Hole | API")
-	void RequestTrackDynamicObject(AActor* TargetActor, UIVSmokeHolePreset* Preset);
-
 	/** Reset all holes and dynamic subjects to initial state. */
 	UFUNCTION(BlueprintCallable, Category = "IVSmoke | Hole | API")
-	void RequestReset();
-#pragma endregion
+	void Reset();
 
-	//~============================================================================
-	// Internal Server RPC
-#pragma region Server RPC
-private:
-	UFUNCTION(Server, Reliable)
-	void Internal_RequestPenetrationHole(const FVector3f& Origin, const FVector3f& Direction, const uint8 PresetID);
+	/** Create penetration hole. Called on server via UIVSmokeHoleRequestComponent. */
+	void CreatePenetrationHole(const FVector3f& Origin, const FVector3f& Direction, const uint8 PresetID);
 
-	UFUNCTION(Server, Reliable)
-	void Internal_RequestExplosionHole(const FVector3f& Origin, const uint8 PresetID);
+	/** Create explosion hole. Called on server via UIVSmokeHoleRequestComponent. */
+	void CreateExplosionHole(const FVector3f& Origin, const uint8 PresetID);
 
-	UFUNCTION(Server, Reliable)
-	void Internal_RequestDynamicHole(AActor* TargetActor, const uint8 PresetID);
+	/** Register dynamic object. Called on server via UIVSmokeHoleRequestComponent. */
+	void RegisterTrackDynamicHole(AActor* TargetActor, const uint8 PresetID);
 #pragma endregion
 
 	//~============================================================================

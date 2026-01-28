@@ -414,7 +414,7 @@ void AIVSmokeVoxelVolume::ClearSimulationData()
 
 	if (HoleGeneratorComponent)
 	{
-		HoleGeneratorComponent->RequestReset();
+		HoleGeneratorComponent->Reset();
 	}
 }
 
