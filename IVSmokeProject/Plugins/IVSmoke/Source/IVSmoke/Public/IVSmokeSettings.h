@@ -348,11 +348,6 @@ public:
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Appearance", meta = (ClampMin = "0.1", ClampMax = "10.0", EditCondition = "bShowAdvancedOptions", EditConditionHides))
 	float VolumeEdgeFadeSharpness = 3.5f;
 
-	/** Temporal jitter intensity for ray marching (0-1).
-	 *  Lower values reduce flickering at density boundaries but may increase banding. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Appearance", meta = (ClampMin = "0.0", ClampMax = "1.0", EditCondition = "bShowAdvancedOptions", EditConditionHides))
-	float JitterIntensity = 1.0f;
-
 	//~==============================================================================
 	// Lighting
 

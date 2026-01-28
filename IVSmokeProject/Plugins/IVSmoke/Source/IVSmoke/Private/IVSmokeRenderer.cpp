@@ -1584,7 +1584,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 
 	// Temporal
 	Parameters->FrameNumber = View.Family->FrameNumber;
-	Parameters->JitterIntensity = Settings ? Settings->JitterIntensity : 1.0f;
+	Parameters->JitterIntensity = 1.0f;
 
 	// Dispatch
 	FIVSmokePostProcessPass::AddComputeShaderPass<FIVSmokeMultiVolumeRayMarchCS>(
