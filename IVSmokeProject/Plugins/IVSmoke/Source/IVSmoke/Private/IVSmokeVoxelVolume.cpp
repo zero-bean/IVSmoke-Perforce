@@ -241,12 +241,12 @@ void AIVSmokeVoxelVolume::Initialize()
 
 	if (VoxelBirthTimes.Num() != TotalGridSize)
 	{
-		VoxelBirthTimes.SetNumUninitialized(TotalGridSize);
+		VoxelBirthTimes.SetNumZeroed(TotalGridSize);
 	}
 
 	if (VoxelDeathTimes.Num() != TotalGridSize)
 	{
-		VoxelDeathTimes.SetNumUninitialized(TotalGridSize);
+		VoxelDeathTimes.SetNumZeroed(TotalGridSize);
 	}
 
 	if (VoxelCosts.Num() != TotalGridSize)
@@ -496,7 +496,10 @@ void AIVSmokeVoxelVolume::ResetSimulationInternal()
 	ServerState.SustainStartTime = 0.0f;
 	ServerState.DissipationStartTime = 0.0f;
 
-	HandleStateTransition(ServerState.State);
+	// HandleStateTransition(Idle)은 LocalState가 이미 Idle이면 스킵됨
+	// Reset은 항상 확실히 초기화해야 하므로 직접 호출
+	ClearSimulationData();
+	LocalState = EIVSmokeVoxelVolumeState::Idle;
 }
 
 void AIVSmokeVoxelVolume::FastForwardSimulation()

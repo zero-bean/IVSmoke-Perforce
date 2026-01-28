@@ -1060,7 +1060,7 @@ FRDGTextureRef FIVSmokeRenderer::AddSmokeVisualPass(FRDGBuilder& GraphBuilder, c
 
 	if (SmokeVisualMat == nullptr)
 	{
-		UE_LOG(LogIVSmoke, Display, TEXT("SmokeVisualMaterial is none"));
+		// UE_LOG(LogIVSmoke, Display, TEXT("SmokeVisualMaterial is none"));
 		return SmokeTex;
 	}
 
@@ -1168,8 +1168,8 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	);
 	FRDGTextureRef PackedHoleAtlas = GraphBuilder.CreateTexture(HoleAtlasDesc, TEXT("IVSmoke_PackedHoleAtlas"));
 
-	// Clear Hole Atlas
-	AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(PackedHoleAtlas), 0.0f);
+	// Clear Hole Atlas with alpha = 1 (so density is not zeroed when HoleTexture is missing)
+	AddClearUAVPass(GraphBuilder, GraphBuilder.CreateUAV(PackedHoleAtlas), FLinearColor(0.0f, 0.0f, 0.0f, 1.0f));
 
 	// Copy Hole Textures to Atlas
 	FRHICopyTextureInfo HoleCpyInfo;
