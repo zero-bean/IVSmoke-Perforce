@@ -41,6 +41,8 @@ AIVSmokeVoxelVolume::AIVSmokeVoxelVolume()
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 
+	Tags.Add(IVSmokeVoxelVolumeTag);
+
 	VolumeBoundComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Volume Bound Component"));
 	RootComponent = VolumeBoundComponent;
 

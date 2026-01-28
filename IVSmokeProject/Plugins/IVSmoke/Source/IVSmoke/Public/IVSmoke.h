@@ -5,6 +5,8 @@
 #include "Modules/ModuleManager.h"
 #include "ShaderCore.h"
 
+inline const FName IVSmokeVoxelVolumeTag = TEXT("IVSmoke.AIVSmokeVoxelVolumeTag");
+
 /** Log category for IVSmoke plugin */
 DECLARE_LOG_CATEGORY_EXTERN(LogIVSmoke, Log, All);
 

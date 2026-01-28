@@ -124,8 +124,8 @@ void UIVSmokeHoleGeneratorComponent::Reset()
 #pragma endregion
 
 //~============================================================================
-// Execute (Called by UIVSmokeHoleRequestComponent on Server)
-#pragma region Execute
+// Public API Called by UIVSmokeHoleRequestComponent
+#pragma region API
 void UIVSmokeHoleGeneratorComponent::CreatePenetrationHole(const FVector3f& InOrigin, const FVector3f& InDirection, const uint8 PresetID)
 {
 	const TObjectPtr<UIVSmokeHolePreset> Preset = UIVSmokeHolePreset::FindByID(PresetID);
@@ -241,7 +241,7 @@ void UIVSmokeHoleGeneratorComponent::RegisterTrackDynamicHole(AActor* TargetActo
 	NewDynamicSubject.LastWorldRotation = TargetActor->GetActorQuat();
 	DynamicSubjectList.Add(NewDynamicSubject);
 }
-#pragma endregion Execute
+#pragma endregion
 
 //~============================================================================
 // Authority Only
@@ -332,17 +332,27 @@ bool UIVSmokeHoleGeneratorComponent::Authority_CalculatePenetrationPoints(
 	// 3. Obstacle detection using SphereTrace between Entry and Exit
 	if (ObstacleObjectTypes.Num() > 0)
 	{
-		FHitResult ObstacleHit;
+		TArray<FHitResult> HitResults;
 		FCollisionQueryParams WorldParams;
 		WorldParams.AddIgnoredComponent(this);
 		const FCollisionShape SweepShape = FCollisionShape::MakeSphere(BulletThickness);
 		const FCollisionObjectQueryParams ObjectParams(ObstacleObjectTypes);
 
-		if (GetWorld()->SweepSingleByObjectType(
-			ObstacleHit, FVector(OutEntry), FVector(OutExit), FQuat::Identity,
+		if (GetWorld()->SweepMultiByObjectType(
+			HitResults, FVector(OutEntry), FVector(OutExit), FQuat::Identity,
 			ObjectParams, SweepShape, WorldParams))
 		{
-			OutExit = FVector3f(ObstacleHit.Location);
+			for (const FHitResult& Hit : HitResults)
+			{
+				if (AActor* HitActor = Hit.GetActor())
+				{
+					if (!HitActor->ActorHasTag(IVSmokeVoxelVolumeTag))
+					{
+						OutExit = FVector3f(Hit.Location);
+						break;
+					}
+				}
+			}
 		}
 	}
 
