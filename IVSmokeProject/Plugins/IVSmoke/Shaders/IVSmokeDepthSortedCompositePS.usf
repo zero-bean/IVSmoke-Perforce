@@ -11,7 +11,7 @@
 // Input Textures
 
 // Smoke layer (from ray marching CS)
-Texture2D SmokeAlbedoTex;
+Texture2D SmokeVisualTex;
 Texture2D SmokeMaskTex;
 
 // Particle layer (from Separate Translucency)
@@ -25,12 +25,13 @@ SamplerState LinearClamp_Sampler;
 // Viewport - Texture Extents for UV calculation
 
 // Texture Extents (UV = SvPosition / TexExtent)
-float2 SmokeTexExtent;
-
-// Sharpness filter (matching TranslucencyComposite)
-float Sharpness;
+float2 ViewportSize;
+float2 ViewRectMin;
 
 float4 InvDeviceZToWorldZTransform;
+
+int AlphaType; // 0 = Use Alpha as it is, 1 = Alpha <= CutOffValue ? 0 : 1
+float AlphaThreshold;
 
 //~==============================================================================
 // Helper Functions
@@ -56,97 +57,33 @@ void MainPS(
 	// UV Calculation - Extent based
 	// UV = SvPosition / TexExtent (direct texel-to-UV mapping)
 
-	float2 SmokeUV = SvPosition.xy / SmokeTexExtent;
+	float2 SmokeUV = (SvPosition.xy - ViewRectMin) / ViewportSize;
 
 	// Get actual texture dimensions for accurate UV (CL 277 style)
 	uint TranslucencyWidth, TranslucencyHeight;
 	SeparateTranslucencyTex.GetDimensions(TranslucencyWidth, TranslucencyHeight);
-	float2 TranslucencyUV = SvPosition.xy / float2(TranslucencyWidth, TranslucencyHeight);
+	float2 TranslucencyUV = (SvPosition.xy - ViewRectMin) / float2(TranslucencyWidth, TranslucencyHeight);
 
-	//~======================================================================
-	// Sample Input Textures with Sharpness Filtering
-
-	// Texel size for filtering
-	float2 TexelSize = 2.0f / SmokeTexExtent;
-
-	// Sample center values
-	float4 smokeAlbedoCenter = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV);
-	float2 smokeMaskCenter = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV).rg;
-
-	// Apply Sharpness filter (matching TranslucencyComposite)
-	float4 filteredSmoke;
-	float filteredMask;
-
-	if (Sharpness >= 0.0)
+	float4 SmokeVisual = SmokeVisualTex.Sample(LinearClamp_Sampler, SmokeUV);
+	float2 SmokeMask = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV).rg;
+	
+	float SmokeAlpha = 0;
+	if (AlphaType == 0)
 	{
-		// Laplacian sharpening
-		float4 albedo_n = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(0, 1));
-		float4 albedo_e = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(1, 0));
-		float4 albedo_s = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(0, -1));
-		float4 albedo_w = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(-1, 0));
-
-		float neighbor = Sharpness * -1.0f;
-		float center = Sharpness * 4.0f + 1.0f;
-		filteredSmoke = albedo_n * neighbor + albedo_e * neighbor + smokeAlbedoCenter * center + albedo_s * neighbor + albedo_w * neighbor;
-		filteredMask = smokeMaskCenter.r;
+		//0 = Use Alpha as it is,
+		SmokeAlpha = SmokeVisual.a;
 	}
 	else
 	{
-		// 3x3 Gaussian-like blur
-		float4 a0 = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(-1, -1));
-		float4 a1 = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 0, -1));
-		float4 a2 = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 1, -1));
-		float4 a3 = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(-1,  0));
-		float4 a4 = smokeAlbedoCenter;
-		float4 a5 = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 1,  0));
-		float4 a6 = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(-1,  1));
-		float4 a7 = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 0,  1));
-		float4 a8 = SmokeAlbedoTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 1,  1));
-
-		float m0 = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(-1, -1)).r;
-		float m1 = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 0, -1)).r;
-		float m2 = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 1, -1)).r;
-		float m3 = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(-1,  0)).r;
-		float m4 = smokeMaskCenter.r;
-		float m5 = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 1,  0)).r;
-		float m6 = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2(-1,  1)).r;
-		float m7 = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 0,  1)).r;
-		float m8 = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV + TexelSize * float2( 1,  1)).r;
-
-		float4 blurredAlbedo = (a0 + a2 + a6 + a8) + (a1 + a3 + a5 + a7) * 2.0 + a4 * 4.0;
-		blurredAlbedo /= 16.0;
-
-		float blurredMask = (m0 + m2 + m6 + m8) + (m1 + m3 + m5 + m7) * 2.0 + m4 * 4.0;
-		blurredMask /= 16.0;
-
-		float blurAmount = saturate(-Sharpness);
-		filteredSmoke = lerp(smokeAlbedoCenter, blurredAlbedo, blurAmount);
-		filteredMask = lerp(smokeMaskCenter.r, blurredMask, blurAmount);
+		// 1 = Alpha <= CutOffValue ? 0 : 1
+		SmokeAlpha = SmokeVisual.a <= AlphaThreshold ? 0 : 1;
 	}
-
-	// Use filtered values
-	float SmokeAlpha = filteredMask;
-	float SmokeRayDepth = smokeMaskCenter.g;  // Depth is not filtered (need accurate value)
-
+	
 	// Particle layer (Separate Translucency: premultiplied alpha in RGB, transmittance in A)
-	float4 ParticleData = SeparateTranslucencyTex.Sample(LinearClamp_Sampler, TranslucencyUV);
-	float3 ParticleColorPremul = ParticleData.rgb;
-	float ParticleTransmittance = ParticleData.a;
+	float4 ParticleScene = SeparateTranslucencyTex.Sample(LinearClamp_Sampler, TranslucencyUV);
+	float3 ParticleColorPremul = ParticleScene.rgb;
+	float ParticleTransmittance = ParticleScene.a;
 	float ParticleAlpha = 1.0 - ParticleTransmittance;
-
-	//~======================================================================
-	// Calculate Transmittance
-
-	// SmokeAlpha from SmokeMaskTex = opacity (0 = transparent, 1 = opaque)
-	// SmokeTransmittance = how much background shows through (1 - alpha)
-	float SmokeTransmittance = 1.0 - saturate(SmokeAlpha);
-
-	// HDR burn-through prevention (matching IVSmokeCompositePS.usf)
-	// Ray marching early termination (Transmittance > 0.01) can leak HDR
-	if (SmokeTransmittance < 0.02)
-	{
-		SmokeTransmittance = max(0.0, (SmokeTransmittance - 0.01) * 2.0);
-	}
 
 	//~======================================================================
 	// Depth Comparison
@@ -161,7 +98,7 @@ void MainPS(
 	float CustomDeviceZ = SceneTexturesStruct.CustomDepthTexture.Load(int3(PixelCoord, 0)).r;
 
 	// Convert CustomDepth device-Z to linear world depth
-	float ParticleLinearDepth = 100000.0;  // Default: very far (no particles)
+	float ParticleLinearDepth = 100000.0; // Default: very far (no particles)
 	if (HasValidCustomDepth(CustomDeviceZ))
 	{
 		// InvDeviceZToWorldZTransform converts device Z to linear depth
@@ -171,7 +108,7 @@ void MainPS(
 	}
 
 	// Use smoke ray depth directly (already in linear units)
-	float SmokeLinearDepth = SmokeRayDepth;
+	float SmokeLinearDepth = SmokeMask.g;
 
 	// Depth comparison: lower value = closer to camera
 	// SmokeInFront = true if smoke is closer than particles
@@ -202,8 +139,8 @@ void MainPS(
 	if (!bHasParticles)
 	{
 		// Smoke only: RGB = AccumulatedColor (pre-multiplied), A = Transmittance
-		FinalColor = filteredSmoke.rgb;
-		FinalTransmittance = SmokeTransmittance;
+		FinalColor = SmokeVisual.rgb;
+		FinalTransmittance = saturate(1 - SmokeAlpha);
 	}
 	// No smoke case - particles only
 	else if (SmokeAlpha < 0.001)
@@ -221,8 +158,8 @@ void MainPS(
 			// Composite: Smoke OVER Particles (both pre-multiplied)
 			// RGB = Smoke + Particles * SmokeTransmittance
 			// A   = SmokeTransmittance * ParticleTransmittance (combined transmittance)
-			FinalColor = filteredSmoke.rgb + ParticleColorPremul * SmokeTransmittance;
-			FinalTransmittance = SmokeTransmittance * ParticleTransmittance;
+			FinalColor = SmokeVisual.rgb + ParticleColorPremul * saturate(1 - SmokeAlpha);
+			FinalTransmittance = saturate(1 - SmokeAlpha) * ParticleTransmittance;
 		}
 		else
 		{
@@ -230,8 +167,8 @@ void MainPS(
 			// Composite: Particles OVER Smoke (both pre-multiplied)
 			// RGB = Particles + Smoke * ParticleTransmittance
 			// A   = ParticleTransmittance * SmokeTransmittance (combined transmittance)
-			FinalColor = ParticleColorPremul + filteredSmoke.rgb * ParticleTransmittance;
-			FinalTransmittance = ParticleTransmittance * SmokeTransmittance;
+			FinalColor = ParticleColorPremul + SmokeVisual.rgb * ParticleTransmittance;
+			FinalTransmittance = ParticleTransmittance * saturate(1 - SmokeAlpha);
 		}
 	}
 

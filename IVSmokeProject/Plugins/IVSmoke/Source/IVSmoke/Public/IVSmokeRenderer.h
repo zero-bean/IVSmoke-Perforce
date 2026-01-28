@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "ScreenPass.h"
 #include "IVSmokeShaders.h"
+#include "IVSmokeSettings.h"
 
 class AIVSmokeVoxelVolume;
 class FRDGBuilder;
@@ -15,7 +16,6 @@ struct FPostProcessMaterialInputs;
 class FIVSmokeCSMRenderer;
 class FIVSmokeVSMProcessor;
 struct FIVSmokeOccupancyResources;
-
 //~==============================================================================
 // Render Data Structures (Thread-Safe Data Transfer)
 
@@ -97,6 +97,12 @@ struct IVSMOKE_API FIVSmokePackedRenderData
 	/** Game World Time */
 	float GameTime = 0.0f;
 
+	/** Rendering Info */
+	UMaterialInterface* SmokeVisualMaterial;
+	EIVSmokeVisualAlphaType VisualAlphaType;
+	float AlphaThreshold;
+	float LowOpacityRemapThreshold;
+
 	/** Reset to invalid state */
 	void Reset()
 	{
@@ -116,6 +122,8 @@ struct IVSMOKE_API FIVSmokePackedRenderData
 		CSMSplitDistances.Empty();
 		CSMLightCameraPositions.Empty();
 		CSMLightCameraForwards.Empty();
+
+		SmokeVisualMaterial = nullptr;
 	}
 };
 
@@ -240,30 +248,6 @@ private:
 	);
 
 	/**
-	 * Sharpen Composite PS Pass.
-	 * Blends ray marching result (Dual RT) with scene color and applies sharpening/blurring.
-	 *
-	 * @param GraphBuilder       RDG builder
-	 * @param View               Current scene view
-	 * @param SceneTex           Scene color texture
-	 * @param SmokeAlbedoTex     Smoke color texture from ray marching
-	 * @param SmokeMaskTex       Smoke opacity mask from ray marching
-	 * @param Output             Final render target
-	 * @param ViewportSize       Size of the viewport for UV calculation
-	 * @param Sharpness          Sharpen/blur amount (-1 to 1, 0 = no filter)
-	 */
-	void AddSharpenCompositePass(
-		FRDGBuilder& GraphBuilder,
-		const FSceneView& View,
-		FRDGTextureRef SceneTex,
-		FRDGTextureRef SmokeAlbedoTex,
-		FRDGTextureRef SmokeMaskTex,
-		const FScreenPassRenderTarget& Output,
-		const FIntPoint& ViewportSize,
-		float Sharpness
-	);
-
-	/**
 	 * Copy/Resize Pass using bilinear sampling.
 	 * Used for upscaling (1/2 resolution to Full) to improve quality.
 	 *
@@ -299,31 +283,78 @@ private:
 	);
 
 	/**
+	 * Filtering pass after upsampling.
+	 *
+	 * @param GraphBuilder      RDG builder
+	 * @param RenderData		RenderData ref
+	 * @param View              Current scene view
+	 * @param SceneTex			SceneColor texture
+	 * @param SmokeAlbedo       SmokeAlbedo texture from ray marching
+	 * @param SmokeMask			SmokeMask texture form ray marching
+	 * @param TexSize			Output texture size
+	 */
+	FRDGTextureRef AddUpsampleFilterPass(FRDGBuilder& GraphBuilder, const FIVSmokePackedRenderData& RenderData, const FSceneView& View,
+		FRDGTextureRef SceneTex, FRDGTextureRef SmokeAlbedo, FRDGTextureRef SmokeMask, const FIntPoint& TexSize);
+
+	/**
+	 * Visual pass after Upsample Filtering.
+	 *
+	 * @param GraphBuilder			RDG builder
+	 * @param View					Current scene view
+	 * @param SmokeTex				Smoke texture after SmokeVisual pass
+	 * @param SceneTex				SceneColor texture
+	 * @param TexSize				Output texture size
+	 */
+	FRDGTextureRef AddSmokeVisualPass(FRDGBuilder& GraphBuilder, const FSceneView& View, FRDGTextureRef SmokeTex, FRDGTextureRef SceneTex, const FIntPoint& TexSize);
+
+	/**
+	 * Composite PS Pass.
+	 * Blends ray marching result (Dual RT) with scene color and applies sharpening/blurring.
+	 *
+	 * @param GraphBuilder			RDG builder
+	 * @param RenderData			RenderData ref
+	 * @param View					Current scene view
+	 * @param SceneTex				Scene color texture
+	 * @param SmokeVisualTex		Smoke texture after smoke visual pass
+	 * @param SmokeMaskTex			Smoke opacity mask from ray marching
+	 * @param Output				Final render target
+	 * @param ViewportSize			Size of the viewport for UV calculation
+	 */
+	void AddCompositePass(
+		FRDGBuilder& GraphBuilder,
+		const FIVSmokePackedRenderData& RenderData,
+		const FSceneView& View,
+		FRDGTextureRef SceneTex,
+		FRDGTextureRef SmokeVisualTex,
+		FRDGTextureRef SmokeMaskTex,
+		const FScreenPassRenderTarget& Output,
+		const FIntPoint& ViewportSize);
+
+	/**
 	 * Translucency Composite PS Pass.
 	 * Composites smoke OVER particles for TranslucencyAfterDOF mode.
 	 * Engine will composite result with SceneColor using alpha as transmittance.
 	 *
 	 * @param GraphBuilder       RDG builder
+	 * @param RenderData		 RenderData ref
 	 * @param View               Current scene view
-	 * @param SmokeAlbedoTex     Smoke color texture from ray marching
+	 * @param SmokeVisualTex	 Smoke texture after smoke visual pass
 	 * @param SmokeMaskTex       Smoke opacity mask from ray marching
 	 * @param ParticlesTex       SeparateTranslucency texture (particles)
 	 * @param Output             Final render target
-	 * @param SmokeTexExtent     Smoke texture extent (= ViewportSize)
 	 * @param ParticlesTexExtent Particles texture extent
-	 * @param Sharpness          Sharpen/blur amount (-1 to 1, 0 = no filter)
+	 * @param ViewportSize       Size of the viewport for UV calculation
 	 */
 	void AddTranslucencyCompositePass(
 		FRDGBuilder& GraphBuilder,
+		const FIVSmokePackedRenderData& RenderData,
 		const FSceneView& View,
-		FRDGTextureRef SmokeAlbedoTex,
+		FRDGTextureRef SmokeVisualTex,
 		FRDGTextureRef SmokeMaskTex,
 		FRDGTextureRef ParticlesTex,
 		const FScreenPassRenderTarget& Output,
-		const FIntPoint& SmokeTexExtent,
 		const FIntPoint& ParticlesTexExtent,
-		float Sharpness
-	);
+		const FIntPoint& ViewportSize);
 
 	/**
 	 * Depth-Sorted Composite PS Pass.
@@ -331,24 +362,23 @@ private:
 	 * Accesses CustomDepth and SceneDepth via SceneTexturesStruct uniform buffer.
 	 *
 	 * @param GraphBuilder            RDG builder
+	 * @param RenderData			  RenderData ref
 	 * @param View                    Current scene view
-	 * @param SmokeAlbedoTex          Smoke color texture from ray marching
+	 * @param SmokeVisualTex          Smoke texture after smoke visual pass
 	 * @param SmokeMaskTex            Smoke opacity mask from ray marching
 	 * @param SeparateTranslucencyTex Particle layer from SeparateTranslucency
 	 * @param Output                  Final render target
-	 * @param SmokeTexExtent          Smoke texture extent (= ViewportSize)
-	 * @param Sharpness               Sharpen/blur amount (-1 to 1, 0 = no filter)
+	 * @param ViewportSize            Size of the viewport for UV calculation
 	 */
 	void AddDepthSortedCompositePass(
 		FRDGBuilder& GraphBuilder,
+		const FIVSmokePackedRenderData& RenderData,
 		const FSceneView& View,
-		FRDGTextureRef SmokeAlbedoTex,
+		FRDGTextureRef SmokeVisualTex,
 		FRDGTextureRef SmokeMaskTex,
 		FRDGTextureRef SeparateTranslucencyTex,
 		const FScreenPassRenderTarget& Output,
-		const FIntPoint& SmokeTexExtent,
-		float Sharpness
-	);
+		const FIntPoint& ViewportSize);
 
 	//~==============================================================================
 	// State

@@ -87,6 +87,21 @@ enum class EIVSmokeQualityLevel : uint8
 	Custom UMETA(DisplayName = "Custom")
 };
 
+
+/**
+ * Alpha processing type in composite pass.
+ */
+UENUM(BlueprintType)
+enum class EIVSmokeVisualAlphaType : uint8
+{
+	/** Use SmokeVisualMaterial alpha value */
+	Alpha UMETA(DisplayName = "Use Alpha (0 ~ 1)"),
+
+	/** Alpha <= AlphaThreshold ? 0 : 1 */
+	CutOff UMETA(DisplayName = "CutOff (Alpha <= AlphaThreshold ? 0 : 1)"),
+};
+
+
 /**
  * Global settings for IVSmoke plugin.
  * Accessible via Project Settings > Plugins > IVSmoke.
@@ -111,9 +126,12 @@ public:
 	virtual FName GetCategoryName() const override { return TEXT("Plugins"); }
 	virtual FName GetSectionName() const override { return TEXT("IVSmoke"); }
 
+	UMaterialInterface* GetSmokeVisualMaterial() const;
+
 #if WITH_EDITOR
 	virtual FText GetSectionText() const override { return NSLOCTEXT("IVSmoke", "SettingsSection", "IVSmoke"); }
 	virtual FText GetSectionDescription() const override { return NSLOCTEXT("IVSmoke", "SettingsDescription", "Configure IVSmoke volumetric smoke settings"); }
+	virtual void PostInitProperties() override;
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 
@@ -343,6 +361,23 @@ public:
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering")
 	EIVSmokeRenderPass RenderPass = EIVSmokeRenderPass::AfterDOF;
 
+	/** It is used in Visual Pass, which is called after upsample filter pass */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering")
+	FSoftObjectPath SmokeVisualMaterial;
+
+	/** Alpha processing type in composite pass. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering")
+	EIVSmokeVisualAlphaType VisualAlphaType = EIVSmokeVisualAlphaType::Alpha;
+
+	/** Minimum alpha threshold for rendering. Pixels with alpha below this value will be discarded. Only used when VisualAlphaType is CutOff. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering", meta = (ClampMin = "0.0", ClampMax = "1.0", EditCondition = "VisualAlphaType == EIVSmokeVisualAlphaType::CutOff", EditConditionHides))
+	float AlphaThreshold = 0.0f;
+
+	/** Upper bound threshold for low-opacity remapping to suppress HDR burn-through and low-density artifacts. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering", meta = (ClampMin = "0.0", ClampMax = "0.5", EditCondition = "bEnableLowOpacityRemap == true", EditConditionHides))
+	float LowOpacityRemapThreshold = 0.02f;
+
+
 	/** Use CustomDepth for depth-based sorting with particles.
 	 *  Only available when RenderPass = TranslucencyAfterDOF. */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering", meta = (DisplayName = "Use CustomDepth Sorting", EditCondition = "bShowAdvancedOptions && RenderPass==EIVSmokeRenderPass::TranslucencyAfterDOF", EditConditionHides))
@@ -354,4 +389,10 @@ public:
 	/** Show debug visualization for smoke volumes. */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Debug")
 	bool bShowDebugVolumes = false;
+
+
+private:
+
+	/** Cached smoke visual material. */
+	UMaterialInterface* CachedSmokeVisualMaterial;
 };

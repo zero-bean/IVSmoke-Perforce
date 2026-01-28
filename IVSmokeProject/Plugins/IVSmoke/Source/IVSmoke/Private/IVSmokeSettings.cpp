@@ -5,7 +5,7 @@
 
 UIVSmokeSettings::UIVSmokeSettings()
 {
-	// Default noise settings are initialized in FIVSmokeNoiseSettings
+
 }
 
 const UIVSmokeSettings* UIVSmokeSettings::Get()
@@ -44,13 +44,40 @@ float UIVSmokeSettings::GetEffectiveMinStepSize() const
 		return CustomMinStepSize;
 	}
 }
+UMaterialInterface* UIVSmokeSettings::GetSmokeVisualMaterial() const
+{
+	if (CachedSmokeVisualMaterial != nullptr)
+	{
+		return CachedSmokeVisualMaterial;
+	}
+	return nullptr;
+}
 
 #if WITH_EDITOR
+void UIVSmokeSettings::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	CachedSmokeVisualMaterial = Cast<UMaterialInterface>(SmokeVisualMaterial.TryLoad());
+	if (CachedSmokeVisualMaterial == nullptr)
+	{
+		UE_LOG(LogTemp, Display, TEXT("Smoke visual material is none wtf"));
+	}
+}
 void UIVSmokeSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
 	// Global settings are read directly from UIVSmokeSettings::Get() each frame,
 	// so no manual refresh is needed when properties change.
+
+	CachedSmokeVisualMaterial = Cast<UMaterialInterface>(SmokeVisualMaterial.TryLoad());
+	
+	UE_LOG(LogTemp, Display, TEXT("Smoke visual material change"));
+	if (CachedSmokeVisualMaterial == nullptr)
+	{
+		UE_LOG(LogTemp, Display, TEXT("WHY NULL WTF"));	
+	}
+	
 }
 #endif
