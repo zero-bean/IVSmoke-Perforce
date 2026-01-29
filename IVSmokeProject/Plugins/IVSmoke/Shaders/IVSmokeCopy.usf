@@ -10,5 +10,5 @@ void MainPS(
 	out float4 OutColor : SV_Target0)
 {
 	float2 UV = SvPosition.xy / ViewportSize;
-	OutColor = float4(MainTex.Sample(LinearRepeat_Sampler, UV).rgb, 1);
+	OutColor = MainTex.Sample(LinearRepeat_Sampler, UV);
 }

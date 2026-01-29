@@ -12,7 +12,8 @@
 
 // Smoke layer (from ray marching CS)
 Texture2D SmokeVisualTex;
-Texture2D SmokeMaskTex;
+Texture2D SmokeLocalPosAlphaTex;
+Texture2D SmokeWorldPosDepthTex;
 
 // Particle layer (from Separate Translucency)
 Texture2D SeparateTranslucencyTex;
@@ -65,7 +66,7 @@ void MainPS(
 	float2 TranslucencyUV = (SvPosition.xy - ViewRectMin) / float2(TranslucencyWidth, TranslucencyHeight);
 
 	float4 SmokeVisual = SmokeVisualTex.Sample(LinearClamp_Sampler, SmokeUV);
-	float2 SmokeMask = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV).rg;
+	float SmokeLinearDepth = SmokeWorldPosDepthTex.Sample(LinearClamp_Sampler, SmokeUV).a;
 	
 	float SmokeAlpha = 0;
 	if (AlphaType == 0)
@@ -106,9 +107,6 @@ void MainPS(
 			+ InvDeviceZToWorldZTransform.y
 			+ 1.0 / (CustomDeviceZ * InvDeviceZToWorldZTransform.z - InvDeviceZToWorldZTransform.w);
 	}
-
-	// Use smoke ray depth directly (already in linear units)
-	float SmokeLinearDepth = SmokeMask.g;
 
 	// Depth comparison: lower value = closer to camera
 	// SmokeInFront = true if smoke is closer than particles

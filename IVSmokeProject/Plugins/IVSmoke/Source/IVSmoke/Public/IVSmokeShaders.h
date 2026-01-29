@@ -180,8 +180,8 @@ public:
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SceneTex)
 		/** Smoke albedo (color) from ray marching. */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeTex)
-		/** Smoke opacity mask from ray marching. */
-		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeMaskTex)
+		/** Smoke (LocalPos, Alpha) from ray marching. */
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeLocalPosAlphaTex)
 		/** Linear sampler with repeat addressing. */
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearClamp_Sampler)
 		/** Viewport size for UV calculation. */
@@ -248,7 +248,7 @@ public:
 		/** Smoke albedo (color) from ray marching. */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeAlbedoTex)
 		/** Smoke opacity mask from ray marching. */
-		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeMaskTex)
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeLocalPosAlphaTex)
 		/** Linear sampler with repeat addressing. */
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearClamp_Sampler)
 		/** Sharpen/blur amount (-1 to 1, 0 = no filter). */
@@ -289,8 +289,8 @@ public:
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 		/** Smoke visual texture from SmokeVisualPass. */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeVisualTex)
-		/** Smoke opacity mask from ray marching. */
-		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeMaskTex)
+		/** Smoke (LocalPos, Alpha) from ray marching. */
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeLocalPosAlphaTex)
 		/** SeparateTranslucency texture (particles). */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, ParticleSceneTex)
 		/** Linear sampler for texture filtering. */
@@ -335,8 +335,10 @@ public:
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 		/** Smoke visual texture from SmokeVisualPass. */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeVisualTex)
-		/** Smoke opacity mask from ray marching. */
-		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeMaskTex)
+		/** Smoke (LocalPos, Alpha) from ray marching. */
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeLocalPosAlphaTex)
+		/** Smoke (WorldPos, Depth) from ray marching. */
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeWorldPosDepthTex)
 
 		/** SeparateTranslucency texture (particles). */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SeparateTranslucencyTex)

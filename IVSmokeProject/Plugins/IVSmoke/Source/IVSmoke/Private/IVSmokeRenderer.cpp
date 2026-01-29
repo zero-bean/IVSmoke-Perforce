@@ -760,22 +760,10 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 		FMath::Max(1, ViewportSize.Y / 2)
 	);
 
-	// Create Dual Render Target textures at 1/2 resolution
-	FRDGTextureRef SmokeAlbedoTex = FIVSmokePostProcessPass::CreateOutputTexture(
-		GraphBuilder,
-		SceneColor.Texture,
-		TEXT("IVSmokeAlbedoTex_Half"),
-		PF_FloatRGBA,
-		HalfSize
-	);
-
-	FRDGTextureRef SmokeMaskTex = FIVSmokePostProcessPass::CreateOutputTexture(
-		GraphBuilder,
-		SceneColor.Texture,
-		TEXT("IVSmokeMaskTex_Half"),
-		PF_FloatRGBA,
-		HalfSize
-	);
+	// Create Render Target textures at 1/2 resolution
+	FRDGTextureRef SmokeAlbedoTex = FIVSmokePostProcessPass::CreateOutputTexture(GraphBuilder, SceneColor.Texture, TEXT("IVSmokeAlbedoTex_Half"), PF_FloatRGBA, HalfSize);
+	FRDGTextureRef SmokeLocalPosAlphaTex = FIVSmokePostProcessPass::CreateOutputTexture(GraphBuilder, SceneColor.Texture, TEXT("IVSmokeLocalPosAlphaTex_Half"), PF_FloatRGBA, HalfSize);
+	FRDGTextureRef SmokeWorldPosDepthTex = FIVSmokePostProcessPass::CreateOutputTexture(GraphBuilder, SceneColor.Texture, TEXT("IVSmokeWorldPosDepthTex_Half"), PF_FloatRGBA, HalfSize);
 
 	// Update stats (1-second interval)
 	UpdateStatsIfNeeded(RenderData, ViewportSize);
@@ -784,25 +772,22 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	// Ray March Pass (1/2 Resolution)
 	// Multi-Volume Ray Marching with Occupancy Optimization (Three-Pass Pipeline).
 	// Uses tile-based occupancy grid for efficient empty space skipping.
-	AddMultiVolumeRayMarchPass(GraphBuilder, View, RenderData, SmokeAlbedoTex, SmokeMaskTex, HalfSize, ViewportSize, ViewRectMin);
+	AddMultiVolumeRayMarchPass(GraphBuilder, View, RenderData, SmokeAlbedoTex, SmokeLocalPosAlphaTex, SmokeWorldPosDepthTex, HalfSize, ViewportSize, ViewRectMin);
 
 	//~==========================================================================
 	// Upscaling (1/2 to Full)
 	// Single-step bilinear upscaling smooths IGN grain patterns.
-
-	// Albedo: 1/2 Full
 	FRDGTextureRef SmokeAlbedoFull = AddCopyPass(GraphBuilder, View, SmokeAlbedoTex, ViewportSize, TEXT("IVSmokeAlbedoTex_Full"));
-
-	// Mask: 1/2 Full
-	FRDGTextureRef SmokeMaskFull = AddCopyPass(GraphBuilder, View, SmokeMaskTex, ViewportSize, TEXT("IVSmokeMaskTex_Full"));
+	FRDGTextureRef SmokeLocalPosAlphaFull = AddCopyPass(GraphBuilder, View, SmokeLocalPosAlphaTex, ViewportSize, TEXT("IVSmokeLocalPosAlphaTex_Full"));
+	FRDGTextureRef SmokeWorldPosDepthFull = AddCopyPass(GraphBuilder, View, SmokeWorldPosDepthTex, ViewportSize, TEXT("IVSmokeWorldPosDepthTex_Full"));
 
 	//~==========================================================================
 	// Upsample Filter Pass
-	FRDGTextureRef SmokeTex = AddUpsampleFilterPass(GraphBuilder, RenderData, View, SceneColor.Texture, SmokeAlbedoFull, SmokeMaskFull, ViewportSize);
+	FRDGTextureRef SmokeTex = AddUpsampleFilterPass(GraphBuilder, RenderData, View, SceneColor.Texture, SmokeAlbedoFull, SmokeLocalPosAlphaFull, ViewportSize);
 
 	//~==========================================================================
 	// Visual Pass
-	FRDGTextureRef SmokeVisualTex = AddSmokeVisualPass(GraphBuilder, View, SmokeTex, SceneColor.Texture, ViewportSize);
+	FRDGTextureRef SmokeVisualTex = AddSmokeVisualPass(GraphBuilder, View, SmokeTex, SmokeLocalPosAlphaFull, SmokeWorldPosDepthFull, SceneColor.Texture, ViewportSize);
 
 	//~==========================================================================
 	// Composite Pass
@@ -825,7 +810,7 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 		const FIntPoint SmokeExtent = ViewportSize;
 
 		AddDepthSortedCompositePass(GraphBuilder, RenderData, View, SmokeVisualTex,
-			SmokeMaskFull, ParticlesTex.Texture, SortedOutput, ViewportSize);
+			SmokeLocalPosAlphaFull, SmokeWorldPosDepthFull, ParticlesTex.Texture, SortedOutput, ViewportSize);
 
 		return FScreenPassTexture(SortedOutput);
 	}
@@ -847,14 +832,14 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 		const FIntPoint ParticlesExtent(ParticlesTex.Texture->Desc.Extent.X, ParticlesTex.Texture->Desc.Extent.Y);
 
 
-		AddTranslucencyCompositePass(GraphBuilder, RenderData, View, SmokeVisualTex, SmokeMaskFull,
+		AddTranslucencyCompositePass(GraphBuilder, RenderData, View, SmokeVisualTex, SmokeLocalPosAlphaFull,
 			ParticlesTex.Texture, TranslucencyOutput, ParticlesExtent, ViewportSize);
 
 		return FScreenPassTexture(TranslucencyOutput);
 	}
 	else
 	{
-		AddCompositePass(GraphBuilder, RenderData, View, SceneColor.Texture, SmokeVisualTex, SmokeMaskFull, Output, ViewportSize);
+		AddCompositePass(GraphBuilder, RenderData, View, SceneColor.Texture, SmokeVisualTex, SmokeLocalPosAlphaFull, Output, ViewportSize);
 		return FScreenPassTexture(Output);
 	}
 }
@@ -868,7 +853,7 @@ void FIVSmokeRenderer::AddCompositePass(
 	const FSceneView& View,
 	FRDGTextureRef SceneTex,
 	FRDGTextureRef SmokeVisualTex,
-	FRDGTextureRef SmokeMaskTex,
+	FRDGTextureRef SmokeLocalPosAlphaTex,
 	const FScreenPassRenderTarget& Output,
 	const FIntPoint& ViewportSize)
 {
@@ -878,7 +863,7 @@ void FIVSmokeRenderer::AddCompositePass(
 	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeCompositePS::FParameters>();
 	Parameters->SceneTex = SceneTex;
 	Parameters->SmokeTex = SmokeVisualTex;
-	Parameters->SmokeMaskTex = SmokeMaskTex;
+	Parameters->SmokeLocalPosAlphaTex = SmokeLocalPosAlphaTex;
 	Parameters->LinearClamp_Sampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
 	Parameters->ViewportSize = FVector2f(ViewportSize);
 	Parameters->ViewRectMin = FVector2f(Output.ViewRect.Min);
@@ -895,7 +880,7 @@ void FIVSmokeRenderer::AddTranslucencyCompositePass(
 	const FIVSmokePackedRenderData& RenderData,
 	const FSceneView& View,
 	FRDGTextureRef SmokeVisualTex,
-	FRDGTextureRef SmokeMaskTex,
+	FRDGTextureRef SmokeLocalPosAlphaTex,
 	FRDGTextureRef ParticlesTex,
 	const FScreenPassRenderTarget& Output,
 	const FIntPoint& ParticlesTexExtent,
@@ -906,7 +891,7 @@ void FIVSmokeRenderer::AddTranslucencyCompositePass(
 		
 		auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeTranslucencyCompositePS::FParameters>();
 		Parameters->SmokeVisualTex = SmokeVisualTex;
-		Parameters->SmokeMaskTex = SmokeMaskTex;
+		Parameters->SmokeLocalPosAlphaTex = SmokeLocalPosAlphaTex;
 		Parameters->ParticleSceneTex = ParticlesTex;
 		Parameters->LinearClamp_Sampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
 		Parameters->ParticlesTexExtent = FVector2f(ParticlesTexExtent);
@@ -924,7 +909,8 @@ void FIVSmokeRenderer::AddDepthSortedCompositePass(
 	const FIVSmokePackedRenderData& RenderData,
 	const FSceneView& View,
 	FRDGTextureRef SmokeVisualTex,
-	FRDGTextureRef SmokeMaskTex,
+	FRDGTextureRef SmokeLocalPosAlphaTex,
+	FRDGTextureRef SmokeWorldPosDepthTex,
 	FRDGTextureRef SeparateTranslucencyTex,
 	const FScreenPassRenderTarget& Output,
 	const FIntPoint& ViewportSize)
@@ -936,7 +922,8 @@ void FIVSmokeRenderer::AddDepthSortedCompositePass(
 
 	// Smoke layer (from ray marching CS)
 	Parameters->SmokeVisualTex = SmokeVisualTex;
-	Parameters->SmokeMaskTex = SmokeMaskTex;
+	Parameters->SmokeLocalPosAlphaTex = SmokeLocalPosAlphaTex;
+	Parameters->SmokeWorldPosDepthTex = SmokeWorldPosDepthTex;
 
 	// Particle layer (from Separate Translucency)
 	Parameters->SeparateTranslucencyTex = SeparateTranslucencyTex;
@@ -1019,7 +1006,8 @@ void FIVSmokeRenderer::AddCopyPass(
 
 //~==============================================================================
 // Upsample Filtering Pass
-FRDGTextureRef FIVSmokeRenderer::AddUpsampleFilterPass(FRDGBuilder& GraphBuilder, const FIVSmokePackedRenderData& RenderData, const FSceneView& View, FRDGTextureRef SceneTex, FRDGTextureRef SmokeAlbedo, FRDGTextureRef SmokeMask, const FIntPoint& TexSize)
+FRDGTextureRef FIVSmokeRenderer::AddUpsampleFilterPass(FRDGBuilder& GraphBuilder, const FIVSmokePackedRenderData& RenderData, const FSceneView& View,
+	FRDGTextureRef SceneTex, FRDGTextureRef SmokeAlbedo, FRDGTextureRef SmokeLocalPosAlpha, const FIntPoint& TexSize)
 {
 	FRDGTextureRef SmokeTex = FIVSmokePostProcessPass::CreateOutputTexture(
 		GraphBuilder,
@@ -1034,7 +1022,7 @@ FRDGTextureRef FIVSmokeRenderer::AddUpsampleFilterPass(FRDGBuilder& GraphBuilder
 	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeUpsampleFilterPS::FParameters>();
 	Parameters->SceneTex = SceneTex;
 	Parameters->SmokeAlbedoTex = SmokeAlbedo;
-	Parameters->SmokeMaskTex = SmokeMask;
+	Parameters->SmokeLocalPosAlphaTex = SmokeLocalPosAlpha;
 	Parameters->LinearClamp_Sampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
 	Parameters->Sharpness = RenderData.Sharpness;
 	Parameters->ViewportSize = TexSize;
@@ -1053,7 +1041,7 @@ FRDGTextureRef FIVSmokeRenderer::AddUpsampleFilterPass(FRDGBuilder& GraphBuilder
 
 //~==============================================================================
 // Smoke Visual Pass
-FRDGTextureRef FIVSmokeRenderer::AddSmokeVisualPass(FRDGBuilder& GraphBuilder, const FSceneView& View, FRDGTextureRef SmokeTex, FRDGTextureRef SceneTex, const FIntPoint& TexSize)
+FRDGTextureRef FIVSmokeRenderer::AddSmokeVisualPass(FRDGBuilder& GraphBuilder, const FSceneView& View, FRDGTextureRef SmokeTex, FRDGTextureRef SmokeLocalPosAlphaTex, FRDGTextureRef SmokeWorldPosDepthTex, FRDGTextureRef SceneTex, const FIntPoint& TexSize)
 {
 	const UIVSmokeSettings* Setting = UIVSmokeSettings::Get();
 	UMaterialInterface* SmokeVisualMat = Setting->GetSmokeVisualMaterial();
@@ -1066,11 +1054,14 @@ FRDGTextureRef FIVSmokeRenderer::AddSmokeVisualPass(FRDGBuilder& GraphBuilder, c
 
 	FPostProcessMaterialInputs PostProcessInputs;
 
-	// SmokeTex → PostProcessInput0 (SceneColor를 통해)
+	// SmokeTex → PostProcessInput0
 	PostProcessInputs.SetInput(GraphBuilder, EPostProcessMaterialInput::SceneColor, FScreenPassTexture(SmokeTex));
 
-	// SceneTex → PostProcessInput1 (SeparateTranslucency를 통해)
-	PostProcessInputs.SetInput(GraphBuilder, EPostProcessMaterialInput::SeparateTranslucency, FScreenPassTexture(SceneTex));
+	// SmokeLocalPosAlphaTex → PostProcessInput1
+	PostProcessInputs.SetInput(GraphBuilder, EPostProcessMaterialInput::SeparateTranslucency, FScreenPassTexture(SmokeLocalPosAlphaTex));
+
+	// SmokeWorldPosDepthTex → PostProcessInput4
+	PostProcessInputs.SetInput(GraphBuilder, EPostProcessMaterialInput::Velocity, FScreenPassTexture(SmokeWorldPosDepthTex));
 
 	PostProcessInputs.SceneTextures = GetSceneTextureShaderParameters(View);
 
@@ -1103,7 +1094,8 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	const FSceneView& View,
 	const FIVSmokePackedRenderData& RenderData,
 	FRDGTextureRef SmokeAlbedoTex,
-	FRDGTextureRef SmokeMaskTex,
+	FRDGTextureRef SmokeLocalPosAlphaTex,
+	FRDGTextureRef SmokeWorldPosDepthTex,
 	const FIntPoint& TexSize,
 	const FIntPoint& ViewportSize,
 	const FIntPoint& ViewRectMin)
@@ -1336,7 +1328,8 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 
 	// Output (Dual Render Target)
 	Parameters->SmokeAlbedoTex = GraphBuilder.CreateUAV(FRDGTextureUAVDesc(SmokeAlbedoTex));
-	Parameters->SmokeMaskTex = GraphBuilder.CreateUAV(FRDGTextureUAVDesc(SmokeMaskTex));
+	Parameters->SmokeLocalPosAlphaTex = GraphBuilder.CreateUAV(FRDGTextureUAVDesc(SmokeLocalPosAlphaTex));
+	Parameters->SmokeWorldPosDepthTex = GraphBuilder.CreateUAV(FRDGTextureUAVDesc(SmokeWorldPosDepthTex));
 
 	// Occupancy inputs
 	Parameters->TileDataBuffer = GraphBuilder.CreateSRV(OccResources.TileDataBuffer);

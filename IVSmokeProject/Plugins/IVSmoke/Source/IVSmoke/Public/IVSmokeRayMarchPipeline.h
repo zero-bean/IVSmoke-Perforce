@@ -265,7 +265,8 @@ public:
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 		// Output (Dual Render Target)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float4>, SmokeAlbedoTex)
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float4>, SmokeMaskTex)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float4>, SmokeLocalPosAlphaTex)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float4>, SmokeWorldPosDepthTex)
 
 		// Occupancy inputs
 		SHADER_PARAMETER_RDG_BUFFER_SRV(StructuredBuffer<FIVSmokeTileData>, TileDataBuffer)

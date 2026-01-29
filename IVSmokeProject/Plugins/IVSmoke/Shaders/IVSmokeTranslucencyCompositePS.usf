@@ -7,7 +7,7 @@
 #include "/Engine/Private/ScreenPass.ush"
 
 Texture2D SmokeVisualTex;
-Texture2D SmokeMaskTex;
+Texture2D SmokeLocalPosAlphaTex;
 Texture2D ParticleSceneTex;
 SamplerState LinearClamp_Sampler;
 float2 ParticlesTexExtent;
@@ -26,7 +26,6 @@ void MainPS(
 
 	// Sample smoke textures using smoke UV
 	float4 SmokeVisual = SmokeVisualTex.Sample(LinearClamp_Sampler, SmokeUV);
-	float2 SmokeMask = SmokeMaskTex.Sample(LinearClamp_Sampler, SmokeUV).rg;
 	float4 ParticleScene = ParticleSceneTex.Sample(LinearClamp_Sampler, ParticlesUV);
 
 	float SmokeAlpha = 0;
@@ -48,31 +47,4 @@ void MainPS(
 	float TotalTransmittance = ParticlesTransmittance * saturate(1 - SmokeAlpha);
 	OutColor.rgb = SmokeVisual.rgb + ParticleScene.rgb * saturate(1 - SmokeAlpha);
 	OutColor.a = TotalTransmittance;
-	
-	// Composite: Smoke OVER Particles
-	// Engine will then composite our result OVER SceneColor
-	//
-	// UE5 SeparateTranslucency composition formula (ComposeSeparateTranslucency.usf):
-	//   Final = SceneColor * Translucency.a * Modulation + Translucency.rgb
-	// Where Translucency.a is transmittance (how much SceneColor shows through)
-	//
-	// We want: Smoke OVER Particles OVER Scene
-	// = Smoke + (Particles + Scene * ParticlesTrans) * SmokeTrans
-	// = Smoke + Particles * SmokeTrans + Scene * ParticlesTrans * SmokeTrans
-	//
-	// So we output:
-	//   RGB = Smoke + Particles * SmokeTrans
-	//   A = ParticlesTrans * SmokeTrans (total transmittance to Scene)
-
-	// SeparateTranslucency alpha IS transmittance (not opacity!)
-	// particles.a = 1.0 means no particles (full transmittance)
-	// particles.a = 0.0 means fully opaque particles
-
-
-	//float particlesTransmittance = particles.a; // Use directly, don't invert!
-	//float totalTransmittance = particlesTransmittance * smokeTransmittance;
-
-	//OutColor.rgb = filteredSmoke.rgb + particles.rgb * smokeTransmittance;
-	//OutColor.a = totalTransmittance;
-	//OutColor = float4(1, 1, 1, 1);
 }

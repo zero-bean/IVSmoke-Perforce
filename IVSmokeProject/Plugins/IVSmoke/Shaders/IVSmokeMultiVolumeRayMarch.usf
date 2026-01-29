@@ -40,7 +40,8 @@
 
 // Output (Dual Render Target)
 RWTexture2D<float4> SmokeAlbedoTex;
-RWTexture2D<float4> SmokeMaskTex;
+RWTexture2D<float4> SmokeLocalPosAlphaTex;
+RWTexture2D<float4> SmokeWorldPosDepthTex;
 
 // Occupancy inputs
 StructuredBuffer<FTileData> TileDataBuffer;
@@ -376,7 +377,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	if (!AnyVolumePresent(Tile.VolumeMask128))
 	{
 		SmokeAlbedoTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
-		SmokeMaskTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		SmokeLocalPosAlphaTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		SmokeWorldPosDepthTex[PixelCoord] = float4(0, 0, 0, 0);
 		return;
 	}
 
@@ -417,7 +419,8 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	if (TMax <= TMin)
 	{
 		SmokeAlbedoTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
-		SmokeMaskTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		SmokeLocalPosAlphaTex[PixelCoord] = float4(0.0, 0.0, 0.0, 0.0);
+		SmokeWorldPosDepthTex[PixelCoord] = float4(0, 0, 0, 0);
 		return;
 	}
 
@@ -453,6 +456,9 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	// Warp divergence: Pixels in same tile share occupancy data, so slice skips are coherent.
 	int Step = 0;
 
+	float3 NearWorldPos;
+	float3 NearLocalPos;
+	bool bNearSet = false;
 	[loop]
 	while (Step < MaxSteps && Transmittance > 0.05 && T <= TMax)
 	{
@@ -512,6 +518,12 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 
 				if (Density > 0.001)
 				{
+					if (bNearSet == false)
+					{
+						bNearSet = true;
+						NearWorldPos = WorldPos;
+						NearLocalPos = WorldPos - (Vol.VolumeWorldAABBMin + Vol.VolumeWorldAABBMax) * 0.5f;
+					}
 					TotalDensity += Density;
 					WeightedColor += Vol.SmokeColor * Density;
 				}
@@ -613,5 +625,6 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 
 	float Alpha = 1.0 - RemappedTransmittance;
 	SmokeAlbedoTex[PixelCoord] = float4(AccumulatedColor, 1.0);
-	SmokeMaskTex[PixelCoord] = float4(Alpha, FirstHitDepth, 0.0, 0.0);
+	SmokeLocalPosAlphaTex[PixelCoord] = float4(NearLocalPos, Alpha);
+	SmokeWorldPosDepthTex[PixelCoord] = float4(NearWorldPos, FirstHitDepth);
 }

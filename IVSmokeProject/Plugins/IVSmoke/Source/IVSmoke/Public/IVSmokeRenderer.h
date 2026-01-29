@@ -241,7 +241,8 @@ private:
 		const FSceneView& View,
 		const FIVSmokePackedRenderData& RenderData,
 		FRDGTextureRef SmokeAlbedoTex,
-		FRDGTextureRef SmokeMaskTex,
+		FRDGTextureRef SmokeLocalPosAlpha,
+		FRDGTextureRef SmokeWorldPosDepth,
 		const FIntPoint& TexSize,
 		const FIntPoint& ViewportSize,
 		const FIntPoint& ViewRectMin
@@ -285,40 +286,42 @@ private:
 	/**
 	 * Filtering pass after upsampling.
 	 *
-	 * @param GraphBuilder      RDG builder
-	 * @param RenderData		RenderData ref
-	 * @param View              Current scene view
-	 * @param SceneTex			SceneColor texture
-	 * @param SmokeAlbedo       SmokeAlbedo texture from ray marching
-	 * @param SmokeMask			SmokeMask texture form ray marching
-	 * @param TexSize			Output texture size
+	 * @param GraphBuilder			RDG builder
+	 * @param RenderData			RenderData ref
+	 * @param View					Current scene view
+	 * @param SceneTex				SceneColor texture
+	 * @param SmokeAlbedo			SmokeAlbedo texture from ray marching
+	 * @param SmokeLocalPosAlpha	Smoke (local position, alpha) texture from ray marching
+	 * @param TexSize				Output texture size
 	 */
 	FRDGTextureRef AddUpsampleFilterPass(FRDGBuilder& GraphBuilder, const FIVSmokePackedRenderData& RenderData, const FSceneView& View,
-		FRDGTextureRef SceneTex, FRDGTextureRef SmokeAlbedo, FRDGTextureRef SmokeMask, const FIntPoint& TexSize);
+		FRDGTextureRef SceneTex, FRDGTextureRef SmokeAlbedo, FRDGTextureRef SmokeLocalPosAlpha, const FIntPoint& TexSize);
 
 	/**
 	 * Visual pass after Upsample Filtering.
 	 *
-	 * @param GraphBuilder			RDG builder
-	 * @param View					Current scene view
-	 * @param SmokeTex				Smoke texture after SmokeVisual pass
-	 * @param SceneTex				SceneColor texture
-	 * @param TexSize				Output texture size
+	 * @param GraphBuilder				RDG builder
+	 * @param View						Current scene view
+	 * @param SmokeTex					Smoke texture after SmokeVisual pass
+	 * @param SmokeLocalPosAlphaTex		Smoke (local position, alpha) texture from ray marching
+	 * @param SmokeWorldPosDepthTex		Smoke (world position, linear depth) texture from ray marching
+	 * @param SceneTex,					Scene texture
+	 * @param TexSize					Output texture size
 	 */
-	FRDGTextureRef AddSmokeVisualPass(FRDGBuilder& GraphBuilder, const FSceneView& View, FRDGTextureRef SmokeTex, FRDGTextureRef SceneTex, const FIntPoint& TexSize);
+	FRDGTextureRef AddSmokeVisualPass(FRDGBuilder& GraphBuilder, const FSceneView& View, FRDGTextureRef SmokeTex, FRDGTextureRef SmokeLocalPosAlphaTex, FRDGTextureRef SmokeWorldPosDepthTex, FRDGTextureRef SceneTex, const FIntPoint& TexSize);
 
 	/**
 	 * Composite PS Pass.
 	 * Blends ray marching result (Dual RT) with scene color and applies sharpening/blurring.
 	 *
-	 * @param GraphBuilder			RDG builder
-	 * @param RenderData			RenderData ref
-	 * @param View					Current scene view
-	 * @param SceneTex				Scene color texture
-	 * @param SmokeVisualTex		Smoke texture after smoke visual pass
-	 * @param SmokeMaskTex			Smoke opacity mask from ray marching
-	 * @param Output				Final render target
-	 * @param ViewportSize			Size of the viewport for UV calculation
+	 * @param GraphBuilder				RDG builder
+	 * @param RenderData				RenderData ref
+	 * @param View						Current scene view
+	 * @param SceneTex					Scene color texture
+	 * @param SmokeVisualTex			Smoke texture after smoke visual pass
+	 * @param SmokeLocalPosAlphaTex		Smoke (local position, alpha) texture from ray marching
+	 * @param Output					Final render target
+	 * @param ViewportSize				Size of the viewport for UV calculation
 	 */
 	void AddCompositePass(
 		FRDGBuilder& GraphBuilder,
@@ -326,7 +329,7 @@ private:
 		const FSceneView& View,
 		FRDGTextureRef SceneTex,
 		FRDGTextureRef SmokeVisualTex,
-		FRDGTextureRef SmokeMaskTex,
+		FRDGTextureRef SmokeLocalPosAlphaTex,
 		const FScreenPassRenderTarget& Output,
 		const FIntPoint& ViewportSize);
 
@@ -335,22 +338,22 @@ private:
 	 * Composites smoke OVER particles for TranslucencyAfterDOF mode.
 	 * Engine will composite result with SceneColor using alpha as transmittance.
 	 *
-	 * @param GraphBuilder       RDG builder
-	 * @param RenderData		 RenderData ref
-	 * @param View               Current scene view
-	 * @param SmokeVisualTex	 Smoke texture after smoke visual pass
-	 * @param SmokeMaskTex       Smoke opacity mask from ray marching
-	 * @param ParticlesTex       SeparateTranslucency texture (particles)
-	 * @param Output             Final render target
-	 * @param ParticlesTexExtent Particles texture extent
-	 * @param ViewportSize       Size of the viewport for UV calculation
+	 * @param GraphBuilder				RDG builder
+	 * @param RenderData				RenderData ref
+	 * @param View						Current scene view
+	 * @param SmokeVisualTex			Smoke texture after smoke visual pass
+	 * @param SmokeLocalPosAlphaTex		Smoke (local position, alpha) texture from ray marching
+	 * @param ParticlesTex				SeparateTranslucency texture (particles)
+	 * @param Output					Final render target
+	 * @param ParticlesTexExtent		Particles texture extent
+	 * @param ViewportSize				Size of the viewport for UV calculation
 	 */
 	void AddTranslucencyCompositePass(
 		FRDGBuilder& GraphBuilder,
 		const FIVSmokePackedRenderData& RenderData,
 		const FSceneView& View,
 		FRDGTextureRef SmokeVisualTex,
-		FRDGTextureRef SmokeMaskTex,
+		FRDGTextureRef SmokeLocalPosAlphaTex,
 		FRDGTextureRef ParticlesTex,
 		const FScreenPassRenderTarget& Output,
 		const FIntPoint& ParticlesTexExtent,
@@ -361,21 +364,23 @@ private:
 	 * Compares Z values to determine front/back ordering, then applies standard over blending.
 	 * Accesses CustomDepth and SceneDepth via SceneTexturesStruct uniform buffer.
 	 *
-	 * @param GraphBuilder            RDG builder
-	 * @param RenderData			  RenderData ref
-	 * @param View                    Current scene view
-	 * @param SmokeVisualTex          Smoke texture after smoke visual pass
-	 * @param SmokeMaskTex            Smoke opacity mask from ray marching
-	 * @param SeparateTranslucencyTex Particle layer from SeparateTranslucency
-	 * @param Output                  Final render target
-	 * @param ViewportSize            Size of the viewport for UV calculation
+	 * @param GraphBuilder				RDG builder
+	 * @param RenderData				RenderData ref
+	 * @param View						Current scene view
+	 * @param SmokeVisualTex			Smoke texture after smoke visual pass
+	 * @param SmokeLocalPosAlphaTex		Smoke (local position, alpha) texture from ray marching
+	 * @param SmokeWorldPosDepthTex		Smoke (world position, linear depth) texture from ray marching
+	 * @param SeparateTranslucencyTex	Particle layer from SeparateTranslucency
+	 * @param Output					Final render target
+	 * @param ViewportSize				Size of the viewport for UV calculation
 	 */
 	void AddDepthSortedCompositePass(
 		FRDGBuilder& GraphBuilder,
 		const FIVSmokePackedRenderData& RenderData,
 		const FSceneView& View,
 		FRDGTextureRef SmokeVisualTex,
-		FRDGTextureRef SmokeMaskTex,
+		FRDGTextureRef SmokeLocalPosAlphaTex,
+		FRDGTextureRef SmokeWorldPosDepthTex,
 		FRDGTextureRef SeparateTranslucencyTex,
 		const FScreenPassRenderTarget& Output,
 		const FIntPoint& ViewportSize);
