@@ -323,6 +323,7 @@ private:
 	 * Visual pass after Upsample Filtering.
 	 *
 	 * @param GraphBuilder				RDG builder
+	 * @param RenderData				RenderData ref
 	 * @param View						Current scene view
 	 * @param SmokeTex					Smoke texture after SmokeVisual pass
 	 * @param SmokeLocalPosAlphaTex		Smoke (local position, alpha) texture from ray marching
@@ -330,7 +331,7 @@ private:
 	 * @param SceneTex,					Scene texture
 	 * @param TexSize					Output texture size
 	 */
-	FRDGTextureRef AddSmokeVisualPass(FRDGBuilder& GraphBuilder, const FSceneView& View, FRDGTextureRef SmokeTex, FRDGTextureRef SmokeLocalPosAlphaTex, FRDGTextureRef SmokeWorldPosDepthTex, FRDGTextureRef SceneTex, const FIntPoint& TexSize);
+	FRDGTextureRef AddSmokeVisualPass(FRDGBuilder& GraphBuilder, const FIVSmokePackedRenderData& RenderData, const FSceneView& View, FRDGTextureRef SmokeTex, FRDGTextureRef SmokeLocalPosAlphaTex, FRDGTextureRef SmokeWorldPosDepthTex, FRDGTextureRef SceneTex, const FIntPoint& TexSize);
 
 	/**
 	 * Composite PS Pass.

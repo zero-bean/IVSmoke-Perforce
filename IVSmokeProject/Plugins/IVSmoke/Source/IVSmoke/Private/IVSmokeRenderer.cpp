@@ -781,7 +781,7 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 
 	//~==========================================================================
 	// Visual Pass
-	FRDGTextureRef SmokeVisualTex = AddSmokeVisualPass(GraphBuilder, View, SmokeTex, SmokeLocalPosAlphaFull, SmokeWorldPosDepthFull, SceneColor.Texture, ViewportSize);
+	FRDGTextureRef SmokeVisualTex = AddSmokeVisualPass(GraphBuilder, RenderData, View, SmokeTex, SmokeLocalPosAlphaFull, SmokeWorldPosDepthFull, SceneColor.Texture, ViewportSize);
 
 	//~==========================================================================
 	// Composite Pass
@@ -1035,10 +1035,9 @@ FRDGTextureRef FIVSmokeRenderer::AddUpsampleFilterPass(FRDGBuilder& GraphBuilder
 
 //~==============================================================================
 // Smoke Visual Pass
-FRDGTextureRef FIVSmokeRenderer::AddSmokeVisualPass(FRDGBuilder& GraphBuilder, const FSceneView& View, FRDGTextureRef SmokeTex, FRDGTextureRef SmokeLocalPosAlphaTex, FRDGTextureRef SmokeWorldPosDepthTex, FRDGTextureRef SceneTex, const FIntPoint& TexSize)
+FRDGTextureRef FIVSmokeRenderer::AddSmokeVisualPass(FRDGBuilder& GraphBuilder, const FIVSmokePackedRenderData& RenderData, const FSceneView& View, FRDGTextureRef SmokeTex, FRDGTextureRef SmokeLocalPosAlphaTex, FRDGTextureRef SmokeWorldPosDepthTex, FRDGTextureRef SceneTex, const FIntPoint& TexSize)
 {
-	const UIVSmokeSettings* Setting = UIVSmokeSettings::Get();
-	UMaterialInterface* SmokeVisualMat = Setting->GetSmokeVisualMaterial();
+	UMaterialInterface* SmokeVisualMat = RenderData.SmokeVisualMaterial;
 
 	if (SmokeVisualMat == nullptr)
 	{

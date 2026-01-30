@@ -2,6 +2,8 @@
 
 #include "IVSmokeSettings.h"
 #include "IVSmokeRenderer.h"
+#include "IVSmoke.h"
+
 
 UIVSmokeSettings::UIVSmokeSettings()
 {
@@ -159,10 +161,14 @@ void UIVSmokeSettings::PostInitProperties()
 {
 	Super::PostInitProperties();
 
-	CachedSmokeVisualMaterial = Cast<UMaterialInterface>(SmokeVisualMaterial.TryLoad());
-	if (CachedSmokeVisualMaterial == nullptr)
+	UMaterialInterface* MaterialInterface = Cast<UMaterialInterface>(SmokeVisualMaterial.TryLoad());
+	if (MaterialInterface->GetMaterial()->MaterialDomain != MD_PostProcess)
 	{
-		UE_LOG(LogTemp, Display, TEXT("Smoke visual material is none wtf"));
+		UE_LOG(LogIVSmoke, Warning, TEXT("SmokeVisualMaterial must use PostProcess domain (Current: %d)"), (int32)(MaterialInterface->GetMaterial()->MaterialDomain));
+	}
+	else
+	{
+		CachedSmokeVisualMaterial = MaterialInterface;
 	}
 }
 void UIVSmokeSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
@@ -172,13 +178,22 @@ void UIVSmokeSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyCha
 	// Global settings are read directly from UIVSmokeSettings::Get() each frame,
 	// so no manual refresh is needed when properties change.
 
-	CachedSmokeVisualMaterial = Cast<UMaterialInterface>(SmokeVisualMaterial.TryLoad());
+	UMaterialInterface* MaterialInterface = Cast<UMaterialInterface>(SmokeVisualMaterial.TryLoad());
 	
-	UE_LOG(LogTemp, Display, TEXT("Smoke visual material change"));
-	if (CachedSmokeVisualMaterial == nullptr)
+	if (MaterialInterface == nullptr)
 	{
-		UE_LOG(LogTemp, Display, TEXT("WHY NULL WTF"));	
+
 	}
-	
+	else
+	{
+		if (MaterialInterface->GetMaterial()->MaterialDomain != MD_PostProcess)
+		{
+			UE_LOG(LogIVSmoke, Warning, TEXT("SmokeVisualMaterial must use PostProcess domain (Current: %d)"), (int32)(MaterialInterface->GetMaterial()->MaterialDomain));
+		}
+		else
+		{
+			CachedSmokeVisualMaterial = MaterialInterface;
+		}
+	}
 }
 #endif
