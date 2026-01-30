@@ -6,6 +6,7 @@
 #include "ScreenPass.h"
 #include "IVSmokeShaders.h"
 #include "IVSmokeSettings.h"
+#include "IVSmokeVisualMaterialPreset.h"
 
 class AIVSmokeVoxelVolume;
 class FRDGBuilder;
@@ -120,10 +121,10 @@ struct IVSMOKE_API FIVSmokePackedRenderData
 	float GameTime = 0.0f;
 
 	/** Rendering Info */
-	UMaterialInterface* SmokeVisualMaterial;
-	EIVSmokeVisualAlphaType VisualAlphaType;
-	float AlphaThreshold;
-	float LowOpacityRemapThreshold;
+	UMaterialInterface* SmokeVisualMaterial = nullptr;
+	EIVSmokeVisualAlphaType VisualAlphaType = EIVSmokeVisualAlphaType::Alpha;
+	float AlphaThreshold = 0.0f;
+	float LowOpacityRemapThreshold = 0.02f;
 
 	/** Reset to invalid state */
 	void Reset()

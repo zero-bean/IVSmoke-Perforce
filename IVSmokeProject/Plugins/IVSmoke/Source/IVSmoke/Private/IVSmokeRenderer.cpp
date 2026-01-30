@@ -25,6 +25,7 @@
 #include "Materials/MaterialRenderProxy.h"
 #include "MaterialShader.h"
 #include "MaterialShaderType.h"
+#include "IVSmokeVisualMaterialPreset.h"
 
 #if !UE_SERVER
 FIVSmokeRenderer& FIVSmokeRenderer::Get()
@@ -512,10 +513,13 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		Result.ScatteringAnisotropy = Settings->ScatteringAnisotropy;
 
 		//Rendering
-		Result.SmokeVisualMaterial = Settings->GetSmokeVisualMaterial();
-		Result.VisualAlphaType = Settings->VisualAlphaType;
-		Result.AlphaThreshold = Settings->AlphaThreshold;
-		Result.LowOpacityRemapThreshold = Settings->LowOpacityRemapThreshold;
+		if (Settings->GetVisualMaterialPreset())
+		{
+			Result.SmokeVisualMaterial = Settings->GetVisualMaterialPreset()->SmokeVisualMaterial.Get();
+			Result.VisualAlphaType = Settings->GetVisualMaterialPreset()->VisualAlphaType;
+			Result.AlphaThreshold = Settings->GetVisualMaterialPreset()->AlphaThreshold;
+			Result.LowOpacityRemapThreshold = Settings->GetVisualMaterialPreset()->LowOpacityRemapThreshold;
+		}
 
 		// Get world from first volume (single lookup, reused for light detection and shadow capture)
 		UWorld* World = (VolumesToProcess.Num() > 0 && VolumesToProcess[0]) ? VolumesToProcess[0]->GetWorld() : nullptr;

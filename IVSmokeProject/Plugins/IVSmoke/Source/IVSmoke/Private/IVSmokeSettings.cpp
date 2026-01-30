@@ -3,6 +3,7 @@
 #include "IVSmokeSettings.h"
 #include "IVSmokeRenderer.h"
 #include "IVSmoke.h"
+#include "IVSmokeVisualMaterialPreset.h"
 
 
 UIVSmokeSettings::UIVSmokeSettings()
@@ -147,11 +148,11 @@ float UIVSmokeSettings::GetEffectiveShadowMaxDistance() const
 	uint8 MappedIndex = IVSmokeQualityPresets::GlobalToExternalShadow[static_cast<uint8>(GlobalQuality)];
 	return IVSmokeQualityPresets::ExternalShadowMaxDistance[MappedIndex];
 }
-UMaterialInterface* UIVSmokeSettings::GetSmokeVisualMaterial() const
+UIVSmokeVisualMaterialPreset* UIVSmokeSettings::GetVisualMaterialPreset() const
 {
-	if (CachedSmokeVisualMaterial != nullptr)
+	if (CachedVisualMaterialPreset != nullptr)
 	{
-		return CachedSmokeVisualMaterial;
+		return CachedVisualMaterialPreset;
 	}
 	return nullptr;
 }
@@ -161,15 +162,7 @@ void UIVSmokeSettings::PostInitProperties()
 {
 	Super::PostInitProperties();
 
-	UMaterialInterface* MaterialInterface = Cast<UMaterialInterface>(SmokeVisualMaterial.TryLoad());
-	if (MaterialInterface->GetMaterial()->MaterialDomain != MD_PostProcess)
-	{
-		UE_LOG(LogIVSmoke, Warning, TEXT("SmokeVisualMaterial must use PostProcess domain (Current: %d)"), (int32)(MaterialInterface->GetMaterial()->MaterialDomain));
-	}
-	else
-	{
-		CachedSmokeVisualMaterial = MaterialInterface;
-	}
+	CachedVisualMaterialPreset = Cast<UIVSmokeVisualMaterialPreset>(SmokeVisualMaterialPreset.TryLoad());
 }
 void UIVSmokeSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
@@ -178,22 +171,6 @@ void UIVSmokeSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyCha
 	// Global settings are read directly from UIVSmokeSettings::Get() each frame,
 	// so no manual refresh is needed when properties change.
 
-	UMaterialInterface* MaterialInterface = Cast<UMaterialInterface>(SmokeVisualMaterial.TryLoad());
-	
-	if (MaterialInterface == nullptr)
-	{
-
-	}
-	else
-	{
-		if (MaterialInterface->GetMaterial()->MaterialDomain != MD_PostProcess)
-		{
-			UE_LOG(LogIVSmoke, Warning, TEXT("SmokeVisualMaterial must use PostProcess domain (Current: %d)"), (int32)(MaterialInterface->GetMaterial()->MaterialDomain));
-		}
-		else
-		{
-			CachedSmokeVisualMaterial = MaterialInterface;
-		}
-	}
+	CachedVisualMaterialPreset = Cast<UIVSmokeVisualMaterialPreset>(SmokeVisualMaterialPreset.TryLoad());
 }
 #endif

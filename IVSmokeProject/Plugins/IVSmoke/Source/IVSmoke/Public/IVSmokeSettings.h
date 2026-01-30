@@ -117,21 +117,7 @@ enum class EIVSmokeExternalShadowQuality : uint8
 	Custom UMETA(DisplayName = "Custom")
 };
 
-
-/**
- * Alpha processing type in composite pass.
- */
-UENUM(BlueprintType)
-enum class EIVSmokeVisualAlphaType : uint8
-{
-	/** Use SmokeVisualMaterial alpha value */
-	Alpha UMETA(DisplayName = "Use Alpha (0 ~ 1)"),
-
-	/** Alpha <= AlphaThreshold ? 0 : 1 */
-	CutOff UMETA(DisplayName = "CutOff (Alpha <= AlphaThreshold ? 0 : 1)"),
-};
-
-
+class UIVSmokeVisualMaterialPreset;
 /**
  * Global settings for IVSmoke plugin.
  * Accessible via Project Settings > Plugins > IVSmoke.
@@ -156,7 +142,7 @@ public:
 	virtual FName GetCategoryName() const override { return TEXT("Plugins"); }
 	virtual FName GetSectionName() const override { return TEXT("IVSmoke"); }
 
-	UMaterialInterface* GetSmokeVisualMaterial() const;
+	UIVSmokeVisualMaterialPreset* GetVisualMaterialPreset() const;
 
 #if WITH_EDITOR
 	virtual FText GetSectionText() const override { return NSLOCTEXT("IVSmoke", "SettingsSection", "IVSmoke"); }
@@ -188,15 +174,15 @@ public:
 	/** Custom: Maximum ray marching steps (32-1024). */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Quality",
 		meta = (ClampMin = "32", ClampMax = "1024",
-				EditCondition = "GlobalQuality==EIVSmokeGlobalQuality::Custom && RayMarchQuality==EIVSmokeRayMarchQuality::Custom",
-				EditConditionHides))
+			EditCondition = "GlobalQuality==EIVSmokeGlobalQuality::Custom && RayMarchQuality==EIVSmokeRayMarchQuality::Custom",
+			EditConditionHides))
 	int32 CustomMaxSteps = 256;
 
 	/** Custom: Minimum step size in world units (5-100). */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Quality",
 		meta = (ClampMin = "5.0", ClampMax = "100.0",
-				EditCondition = "GlobalQuality==EIVSmokeGlobalQuality::Custom && RayMarchQuality==EIVSmokeRayMarchQuality::Custom",
-				EditConditionHides))
+			EditCondition = "GlobalQuality==EIVSmokeGlobalQuality::Custom && RayMarchQuality==EIVSmokeRayMarchQuality::Custom",
+			EditConditionHides))
 	float CustomMinStepSize = 25.0f;
 
 	/** Self-shadow quality level. */
@@ -207,8 +193,8 @@ public:
 	/** Custom: Number of light marching steps (1-16). */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Quality",
 		meta = (ClampMin = "1", ClampMax = "16",
-				EditCondition = "GlobalQuality==EIVSmokeGlobalQuality::Custom && SelfShadowQuality==EIVSmokeSelfShadowQuality::Custom",
-				EditConditionHides))
+			EditCondition = "GlobalQuality==EIVSmokeGlobalQuality::Custom && SelfShadowQuality==EIVSmokeSelfShadowQuality::Custom",
+			EditConditionHides))
 	int32 CustomLightMarchingSteps = 6;
 
 	/** External shadow quality level. */
@@ -219,22 +205,22 @@ public:
 	/** Custom: Number of shadow cascades (1-6). */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Quality",
 		meta = (ClampMin = "1", ClampMax = "6",
-				EditCondition = "GlobalQuality==EIVSmokeGlobalQuality::Custom && ExternalShadowQuality==EIVSmokeExternalShadowQuality::Custom",
-				EditConditionHides))
+			EditCondition = "GlobalQuality==EIVSmokeGlobalQuality::Custom && ExternalShadowQuality==EIVSmokeExternalShadowQuality::Custom",
+			EditConditionHides))
 	int32 CustomNumCascades = 4;
 
 	/** Custom: Shadow map resolution per cascade (256-2048). */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Quality",
 		meta = (ClampMin = "256", ClampMax = "2048",
-				EditCondition = "GlobalQuality==EIVSmokeGlobalQuality::Custom && ExternalShadowQuality==EIVSmokeExternalShadowQuality::Custom",
-				EditConditionHides))
+			EditCondition = "GlobalQuality==EIVSmokeGlobalQuality::Custom && ExternalShadowQuality==EIVSmokeExternalShadowQuality::Custom",
+			EditConditionHides))
 	int32 CustomCascadeResolution = 512;
 
 	/** Custom: Maximum shadow distance in centimeters (1000-100000). */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Quality",
 		meta = (ClampMin = "1000", ClampMax = "100000",
-				EditCondition = "GlobalQuality==EIVSmokeGlobalQuality::Custom && ExternalShadowQuality==EIVSmokeExternalShadowQuality::Custom",
-				EditConditionHides))
+			EditCondition = "GlobalQuality==EIVSmokeGlobalQuality::Custom && ExternalShadowQuality==EIVSmokeExternalShadowQuality::Custom",
+			EditConditionHides))
 	float CustomShadowMaxDistance = 50000.0f;
 
 	//~==============================================================================
@@ -417,21 +403,9 @@ public:
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering")
 	EIVSmokeRenderPass RenderPass = EIVSmokeRenderPass::AfterDOF;
 
-	/** It is used in Visual Pass, which is called after upsample filter pass */
+	/** Smoke visual material data asset. */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering")
-	FSoftObjectPath SmokeVisualMaterial;
-
-	/** Alpha processing type in composite pass. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering")
-	EIVSmokeVisualAlphaType VisualAlphaType = EIVSmokeVisualAlphaType::Alpha;
-
-	/** Minimum alpha threshold for rendering. Pixels with alpha below this value will be discarded. Only used when VisualAlphaType is CutOff. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering", meta = (ClampMin = "0.0", ClampMax = "1.0", EditCondition = "VisualAlphaType == EIVSmokeVisualAlphaType::CutOff", EditConditionHides))
-	float AlphaThreshold = 0.0f;
-
-	/** Upper bound threshold for low-opacity remapping to suppress HDR burn-through and low-density artifacts. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering", meta = (ClampMin = "0.0", ClampMax = "0.5", EditCondition = "bEnableLowOpacityRemap == true", EditConditionHides))
-	float LowOpacityRemapThreshold = 0.02f;
+	FSoftObjectPath SmokeVisualMaterialPreset;
 
 
 	/** Use CustomDepth for depth-based sorting with particles.
@@ -449,6 +423,6 @@ public:
 
 private:
 
-	/** Cached smoke visual material. */
-	UMaterialInterface* CachedSmokeVisualMaterial;
+	/** Cached smoke visual material preset. */
+	UIVSmokeVisualMaterialPreset* CachedVisualMaterialPreset;
 };
