@@ -109,35 +109,35 @@ struct FIVSmokeDebugSettings
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
+	UPROPERTY(EditAnywhere)
 	bool bDebugEnabled = true;
 
 	/** If true, smoke is rendered during editor preview. Disable to see only debug visualization without smoke. */
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled"))
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled"))
 	bool bRenderSmokeInPreview = true;
 
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled"))
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled"))
 	EIVSmokeDebugViewMode ViewMode = EIVSmokeDebugViewMode::SolidColor;
 
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled"))
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled"))
 	bool bShowVolumeBounds = true;
 
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled"))
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled"))
 	bool bShowVoxelMesh = false;
 
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled"))
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled"))
 	bool bShowVoxelWireframe = true;
 
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled"))
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled"))
 	bool bShowStatusText = true;
 
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled", UIMin = 0.0, UIMax = 1.0, ClampMin = 0.0))
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled", UIMin = 0.0, UIMax = 1.0, ClampMin = 0.0))
 	FColor DebugWireframeColor = FColor(20, 20, 20);
 
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled", UIMin=0.0, UIMax=1.0))
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled", UIMin=0.0, UIMax=1.0))
 	float SliceHeight = 1.0f;
 
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled", ClampMin=0, ClampMax=100))
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled", ClampMin=0, ClampMax=100))
 	int32 VisibleStepCountPercent = 100;
 };
 
@@ -151,11 +151,11 @@ struct FIVSmokeDebugSettings
  *
  * ## Simulation Lifecycle
  * The simulation state machine progresses based on the sum of duration and fade settings:
- * 1. **Idle**: Initial state.
- * 2. **Expansion**: Spawns voxels. Ends after `ExpansionDuration + FadeInDuration`.
- * 3. **Sustain**: Maintains the shape. Ends after `SustainDuration`.
- * 4. **Dissipation**: Removes voxels. Ends after `DissipationDuration + FadeOutDuration`.
- * 5. **Finished**: Simulation complete.
+ * 1. Idle: Initial state.
+ * 2. Expansion: Spawns voxels. Ends after `ExpansionDuration + FadeInDuration`.
+ * 3. Sustain: Maintains the shape. Ends after `SustainDuration`.
+ * 4. Dissipation: Removes voxels. Ends after `DissipationDuration + FadeOutDuration`.
+ * 5. Finished: Simulation complete.
  *
  * ## Network & Execution
  * The simulation logic executes deterministically on both the Server and Client.
@@ -332,47 +332,47 @@ public:
 	 * The duration (in seconds) of the active expansion phase where voxels are spawned.
 	 * The actual Expansion state lasts for `ExpansionDuration + FadeInDuration`.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation", meta = (ClampMin = "0.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Simulation", meta = (ClampMin = "0.0"))
 	float ExpansionDuration = 3.0f;
 
 	/**
 	 * The duration (in seconds) the smoke maintains its shape after expansion.
 	 * Ignored if `bIsInfinite` is true.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation", meta = (ClampMin = "0.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Simulation", meta = (ClampMin = "0.0"))
 	float SustainDuration = 5.0f;
 
 	/**
 	 * The duration (in seconds) of the voxel removal phase.
 	 * The actual Dissipation state lasts for `DissipationDuration + FadeOutDuration`.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation", meta = (ClampMin = "0.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Simulation", meta = (ClampMin = "0.0"))
 	float DissipationDuration = 2.0f;
 
 	/**
 	 * Additional time added to the Expansion phase to allow for opacity fade-in.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation", meta = (ClampMin = "0.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Simulation", meta = (ClampMin = "0.0"))
 	float FadeInDuration = 2.0f;
 
 	/**
 	 * Additional time added to the Dissipation phase to allow for opacity fade-out.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation", meta = (ClampMin = "0.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Simulation", meta = (ClampMin = "0.0"))
 	float FadeOutDuration = 2.0f;
 
 	/**
 	 * Randomness added to the flood-fill pathfinding cost.
 	 * Higher values create more irregular, jagged shapes instead of a perfect sphere.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation", meta = (ClampMin = "0.0", UIMin = "0.0", UIMax = "5000.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Simulation", meta = (ClampMin = "0.0", UIMin = "0.0", UIMax = "5000.0"))
 	float ExpansionNoise = 100.0f;
 
 	/**
 	 * Randomness added to the voxel removal order.
 	 * Higher values cause the smoke to break apart more randomly during dissipation.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation", meta = (ClampMin = "0.0", UIMin = "0.0", UIMax = "5000.0"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Simulation", meta = (ClampMin = "0.0", UIMin = "0.0", UIMax = "5000.0"))
 	float DissipationNoise = 100.0f;
 
 	/**
@@ -381,7 +381,7 @@ public:
 	 * - Y-axis (Value): 0.0 to 1.0 (Fraction of `MaxVoxelNum` to spawn)
 	 * @note The curve should be monotonically increasing.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Simulation")
 	TObjectPtr<UCurveFloat> ExpansionCurve;
 
 	/**
@@ -390,18 +390,18 @@ public:
 	 * - Y-axis (Value): 1.0 to 0.0 (Fraction of voxels remaining)
 	 * @note The curve should be monotonically decreasing (start at 1.0, end at 0.0).
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Simulation")
 	TObjectPtr<UCurveFloat> DissipationCurve;
 
 	/**
 	 * If true, voxels perform collision checks against the world before spawning.
 	 * Disable this to allow smoke to pass through walls, significantly reducing CPU cost.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Simulation")
 	bool bEnableSimulationCollision = true;
 
 	/** The collision channel used for obstacle detection during expansion. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Config | Simulation", meta = (EditCondition = "bEnableSimulationCollision", AdvancedDisplay))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Simulation", meta = (EditCondition = "bEnableSimulationCollision", AdvancedDisplay))
 	TEnumAsByte<ECollisionChannel> VoxelCollisionChannel = ECC_WorldStatic;
 
 private:
@@ -734,7 +734,7 @@ public:
 	void StopPreviewSimulation();
 
 	/** Configuration settings for visual debugging tools. */
-	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (ShowOnlyInnerProperties))
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
 	FIVSmokeDebugSettings DebugSettings;
 
 	/** Optional static mesh to use for voxel visualization when `bShowVoxelMesh` is enabled in settings. */
