@@ -5,6 +5,7 @@
 
 Texture2D SceneTex;
 Texture2D SmokeTex;
+Texture2D SmokeLocalPosAlphaTex;
 SamplerState LinearClamp_Sampler;
 float2 ViewportSize;
 float2 ViewRectMin;
@@ -26,7 +27,9 @@ void MainPS(
 	// Sample textures
 	float4 SceneCol = SceneTex.Sample(LinearClamp_Sampler, SceneUV);
 	float4 SmokeCol = SmokeTex.Sample(LinearClamp_Sampler, SmokeUV);
-
+	float SmokeMask = SmokeLocalPosAlphaTex.Sample(LinearClamp_Sampler, SmokeUV).a;
+	SmokeMask = SmokeMask == 0 ? 0 : 1;
+	
 	float SmokeAlpha = 0;
 	if(AlphaType == 0)
 	{
@@ -39,5 +42,5 @@ void MainPS(
 		SmokeAlpha = SmokeCol.a <= AlphaThreshold ? 0 : 1;
 	}
 
-	OutColor = SceneCol * saturate(1 - SmokeAlpha) + SmokeCol;
+	OutColor = SceneCol * saturate(1 - SmokeAlpha) + SmokeCol * SmokeMask;
 }

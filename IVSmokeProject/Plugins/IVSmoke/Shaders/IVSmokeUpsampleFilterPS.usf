@@ -98,3 +98,99 @@ void MainPS(
 	OutColor = float4(filteredSmoke.rgb, SmokeMask);
 	//OutColor = col * SmokeMask + filteredSmoke;
 }
+//Texture2D SceneTex;
+//Texture2D SmokeAlbedoTex;
+//Texture2D SmokeLocalPosAlphaTex;
+//SamplerState LinearClamp_Sampler;
+//float Sharpness;
+//float2 ViewportSize;
+//float2 ViewRectMin;
+//float LowOpacityRemapThreshold;
+
+//void MainPS(
+//	float4 SvPosition : SV_POSITION,
+//	out float4 OutColor : SV_Target0)
+//{
+//	// UV for our smoke textures (0~1 mapping to TexSize)
+//	float2 SmokeUV = (SvPosition.xy - ViewRectMin) / ViewportSize;
+	
+//	// Get SmokeAlbedoTex dimensions for filtering
+//	uint width, height;
+//	SmokeAlbedoTex.GetDimensions(width, height);
+//	float2 TexelSize = 2.0f / float2(width, height);
+	
+//	uint sceneWidth, sceneHeight;
+//	SceneTex.GetDimensions(sceneWidth, sceneHeight);
+//	float2 SceneUV = SvPosition.xy / float2(sceneWidth, sceneHeight);
+	
+//	// Sample scene color
+//	float4 col = SceneTex.Sample(LinearClamp_Sampler, SceneUV);
+	
+//	// 3x3 offsets for median filter
+//	float2 offs[9] =
+//	{
+//		float2(-1, -1), float2(0, -1), float2(1, -1),
+//		float2(-1,  0), float2(0,  0), float2(1,  0),
+//		float2(-1,  1), float2(0,  1), float2(1,  1)
+//	};
+	
+//	float4 sCol[9];
+//	float sMask[9];
+	
+//	// Sample 3x3 grid
+//	[unroll]
+//	for (int i = 0; i < 9; i++)
+//	{
+//		float2 uv = SmokeUV + offs[i] * TexelSize;
+//		sCol[i] = SmokeAlbedoTex.Sample(LinearClamp_Sampler, uv);
+//		sMask[i] = SmokeLocalPosAlphaTex.Sample(LinearClamp_Sampler, uv).a;
+//	}
+	
+//	// Sort by luminance (bubble sort for median filter)
+//	#define LUMA(c) dot(c.rgb, float3(0.299, 0.587, 0.114))
+	
+//	[unroll]
+//	for (int i = 0; i < 9; i++)
+//	{
+//		[unroll]
+//		for (int j = i + 1; j < 9; j++)
+//		{
+//			if (LUMA(sCol[j]) < LUMA(sCol[i]))
+//			{
+//				// Swap colors
+//				float4 tc = sCol[i];
+//				sCol[i] = sCol[j];
+//				sCol[j] = tc;
+				
+//				// Swap masks
+//				float tm = sMask[i];
+//				sMask[i] = sMask[j];
+//				sMask[j] = tm;
+//			}
+//		}
+//	}
+	
+//	// Get median values (index 4 in sorted array of 9)
+//	float4 filteredSmoke = sCol[4];
+//	float filteredMask = sMask[4];
+	
+//	// Convert alpha to opacity
+//	// Assuming filteredMask: 0 = fully transparent, 1 = fully opaque
+//	float SmokeMask = filteredMask;
+	
+//	// Low opacity remapping (enhance or suppress low opacity values)
+//	if (SmokeMask < LowOpacityRemapThreshold)
+//	{
+//		// Remap low values to even lower (reduce noise/grain)
+//		SmokeMask = max(0.0, (SmokeMask - LowOpacityRemapThreshold * 0.5) / (1.0 - LowOpacityRemapThreshold * 0.5));
+//	}
+	
+//	SmokeMask = saturate(SmokeMask);
+	
+//	// Blend scene color with smoke
+//	// Standard alpha blending: Result = Background * (1 - Alpha) + Foreground * Alpha
+//	OutColor = col * (1.0 - SmokeMask) + filteredSmoke * SmokeMask;
+	
+//	// Alternative: Use lerp (same result, cleaner)
+//	// OutColor = lerp(col, filteredSmoke, SmokeMask);
+//}
