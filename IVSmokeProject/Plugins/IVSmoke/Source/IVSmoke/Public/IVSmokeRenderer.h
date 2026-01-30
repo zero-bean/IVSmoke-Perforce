@@ -16,6 +16,28 @@ struct FPostProcessMaterialInputs;
 class FIVSmokeCSMRenderer;
 class FIVSmokeVSMProcessor;
 struct FIVSmokeOccupancyResources;
+
+//~==============================================================================
+// Internal Noise Generation Constants
+
+/**
+ * Internal noise generation configuration.
+ * These values are tuned for optimal smoke appearance and should not be exposed to users.
+ */
+struct FIVSmokeNoiseConfig
+{
+	static constexpr int32 Seed = 0;
+	static constexpr int32 TexSize = 128;
+	static constexpr int32 Octaves = 6;
+	static constexpr float Wrap = 0.76f;
+	static constexpr float Amplitude = 0.62f;
+	static constexpr int32 AxisCellCount = 4;
+	static constexpr int32 CellSize = 32;
+
+	/** UV multiplier for noise sampling. Fixed at 1.0; use SmokeSize to control detail frequency. */
+	static constexpr float NoiseUVMul = 1.0f;
+};
+
 //~==============================================================================
 // Render Data Structures (Thread-Safe Data Transfer)
 

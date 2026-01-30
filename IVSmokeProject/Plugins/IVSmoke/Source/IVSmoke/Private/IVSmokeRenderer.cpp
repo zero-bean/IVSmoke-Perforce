@@ -211,25 +211,19 @@ bool FIVSmokeRenderer::GetMainDirectionalLight(UWorld* World, FVector& OutDirect
 
 void FIVSmokeRenderer::CreateNoiseVolume()
 {
-	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
-	const FIVSmokeNoiseSettings& NoiseSettings = Settings->NoiseSettings;
+	constexpr int32 TexSize = FIVSmokeNoiseConfig::TexSize;
 
 	// Create volume texture
 	NoiseVolume = NewObject<UTextureRenderTargetVolume>();
 	NoiseVolume->AddToRoot(); // Prevent GC
-	NoiseVolume->Init(NoiseSettings.TexSize, NoiseSettings.TexSize, NoiseSettings.TexSize, EPixelFormat::PF_R16F);
+	NoiseVolume->Init(TexSize, TexSize, TexSize, EPixelFormat::PF_R16F);
 	NoiseVolume->bCanCreateUAV = true;
 	NoiseVolume->ClearColor = FLinearColor::Black;
 	NoiseVolume->SRGB = false;
 	NoiseVolume->UpdateResourceImmediate(true);
 
 	// Cache noise volume size for stats
-	CachedNoiseVolumeSize = CalculateImageBytes(
-		NoiseSettings.TexSize,
-		NoiseSettings.TexSize,
-		NoiseSettings.TexSize,
-		PF_R16F
-	);
+	CachedNoiseVolumeSize = CalculateImageBytes(TexSize, TexSize, TexSize, PF_R16F);
 
 	// Run compute shader to generate noise
 	FTextureRenderTargetResource* RenderTargetResource = NoiseVolume->GameThread_GetRenderTargetResource();
@@ -240,7 +234,7 @@ void FIVSmokeRenderer::CreateNoiseVolume()
 	}
 
 	ENQUEUE_RENDER_COMMAND(IVSmokeGenerateNoise)(
-		[RenderTargetResource, NoiseSettings](FRHICommandListImmediate& RHICmdList)
+		[RenderTargetResource](FRHICommandListImmediate& RHICmdList)
 		{
 			FRDGBuilder GraphBuilder(RHICmdList);
 			FRDGTextureRef NoiseTexture = GraphBuilder.RegisterExternalTexture(
@@ -251,20 +245,20 @@ void FIVSmokeRenderer::CreateNoiseVolume()
 
 			auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeNoiseGeneratorGlobalCS::FParameters>();
 			Parameters->RWNoiseTex = OutputUAV;
-			Parameters->TexSize = FUintVector3(NoiseSettings.TexSize, NoiseSettings.TexSize, NoiseSettings.TexSize);
-			Parameters->Octaves = NoiseSettings.Octaves;
-			Parameters->Wrap = NoiseSettings.Wrap;
-			Parameters->AxisCellCount = NoiseSettings.AxisCellCount;
-			Parameters->Amplitude = NoiseSettings.Amplitude;
-			Parameters->CellSize = NoiseSettings.CellSize;
-			Parameters->Seed = NoiseSettings.Seed;
+			Parameters->TexSize = FUintVector3(FIVSmokeNoiseConfig::TexSize, FIVSmokeNoiseConfig::TexSize, FIVSmokeNoiseConfig::TexSize);
+			Parameters->Octaves = FIVSmokeNoiseConfig::Octaves;
+			Parameters->Wrap = FIVSmokeNoiseConfig::Wrap;
+			Parameters->AxisCellCount = FIVSmokeNoiseConfig::AxisCellCount;
+			Parameters->Amplitude = FIVSmokeNoiseConfig::Amplitude;
+			Parameters->CellSize = FIVSmokeNoiseConfig::CellSize;
+			Parameters->Seed = FIVSmokeNoiseConfig::Seed;
 
 			TShaderMapRef<FIVSmokeNoiseGeneratorGlobalCS> ComputeShader(GetGlobalShaderMap(GMaxRHIFeatureLevel));
 
 			FIntVector GroupCount(
-				FMath::DivideAndRoundUp(NoiseSettings.TexSize, 8),
-				FMath::DivideAndRoundUp(NoiseSettings.TexSize, 8),
-				FMath::DivideAndRoundUp(NoiseSettings.TexSize, 8)
+				FMath::DivideAndRoundUp(FIVSmokeNoiseConfig::TexSize, 8),
+				FMath::DivideAndRoundUp(FIVSmokeNoiseConfig::TexSize, 8),
+				FMath::DivideAndRoundUp(FIVSmokeNoiseConfig::TexSize, 8)
 			);
 
 			GraphBuilder.AddPass(
@@ -278,7 +272,7 @@ void FIVSmokeRenderer::CreateNoiseVolume()
 			);
 			GraphBuilder.Execute();
 		}
-		);
+	);
 }
 
 const UIVSmokeSmokePreset* FIVSmokeRenderer::GetEffectivePreset(const AIVSmokeVoxelVolume* Volume) const
@@ -1347,7 +1341,7 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 		CreateRenderTarget(TextureRHI, TEXT("IVSmokeNoiseVolume"))
 	);
 	Parameters->NoiseVolume = NoiseVolumeRDG;
-	Parameters->NoiseUVMul = Settings->NoiseUVMul;
+	Parameters->NoiseUVMul = FIVSmokeNoiseConfig::NoiseUVMul;
 
 	// Sampler
 	Parameters->LinearBorder_Sampler = TStaticSamplerState<SF_Trilinear, AM_Border, AM_Border, AM_Border>::GetRHI();

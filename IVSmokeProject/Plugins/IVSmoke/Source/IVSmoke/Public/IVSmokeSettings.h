@@ -8,43 +8,6 @@
 #include "IVSmokeSettings.generated.h"
 
 /**
- * Noise generation settings for volumetric smoke.
- */
-USTRUCT(BlueprintType)
-struct IVSMOKE_API FIVSmokeNoiseSettings
-{
-	GENERATED_BODY()
-
-	/** Random seed for noise generation. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Noise")
-	int32 Seed = 0;
-
-	/** Texture resolution (TexSize x TexSize x TexSize). */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Noise", meta = (ClampMin = "16", ClampMax = "512"))
-	int32 TexSize = 128;
-
-	/** Number of noise octaves for detail. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Noise", meta = (ClampMin = "1", ClampMax = "8"))
-	int32 Octaves = 6;
-
-	/** Noise wrap factor. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Noise", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float Wrap = 0.76f;
-
-	/** Noise amplitude. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Noise", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float Amplitude = 0.62f;
-
-	/** Number of cells per axis for Worley noise. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Noise", meta = (ClampMin = "1", ClampMax = "16"))
-	int32 AxisCellCount = 4;
-
-	/** Size of each cell. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IVSmoke | Noise", meta = (ClampMin = "8", ClampMax = "128"))
-	int32 CellSize = 32;
-};
-
-/**
  * Post-processing pass where smoke is rendered.
  * Affects interaction with particles, DOF, Bloom, and other effects.
  */
@@ -302,21 +265,6 @@ public:
 	float GetEffectiveShadowMaxDistance() const;
 
 	//~==============================================================================
-	// Noise
-
-	/** Global noise settings for smoke texture generation. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Noise")
-	FIVSmokeNoiseSettings NoiseSettings;
-
-	/** Whether to regenerate noise texture on startup. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Noise")
-	bool bRegenerateNoiseOnStartup = true;
-
-	/** Noise UV multiplier for sampling. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Noise", meta = (ClampMin = "0.01", ClampMax = "10.0"))
-	float NoiseUVMul = 0.42f;
-
-	//~==============================================================================
 	// Appearance
 
 	/** Controls edge softness. Lower = softer edges. */
@@ -325,7 +273,7 @@ public:
 
 	/** Scale for noise sampling. Affects smoke detail size. */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Appearance", meta = (ClampMin = "1.0", ClampMax = "1000.0"))
-	float SmokeSize = 128.0f;
+	float SmokeSize = 256.0f;
 
 	/** Wind direction and speed for smoke animation. */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Appearance")
@@ -451,15 +399,15 @@ public:
 	// Post Processing (Voxel FXAA)
 
 	/** FXAA maximum edge search distance. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | PostProcessing", meta = (ClampMin = "0.0", ClampMax = "4.0"))
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | PostProcessing", meta = (ClampMin = "0.0", ClampMax = "4.0", EditCondition = "bShowAdvancedOptions", EditConditionHides))
 	float FXAASpanMax = 4.0f;
 
 	/** FXAA edge detection threshold range. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | PostProcessing", meta = (ClampMin = "0.0", ClampMax = "8.0"))
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | PostProcessing", meta = (ClampMin = "0.0", ClampMax = "8.0", EditCondition = "bShowAdvancedOptions", EditConditionHides))
 	float FXAARange = 1.2f;
 
 	/** FXAA sharpness factor. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | PostProcessing", meta = (ClampMin = "0.1", ClampMax = "8.0"))
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | PostProcessing", meta = (ClampMin = "0.1", ClampMax = "8.0", EditCondition = "bShowAdvancedOptions", EditConditionHides))
 	float FXAASharpness = 1.7f;
 
 	//~==============================================================================
