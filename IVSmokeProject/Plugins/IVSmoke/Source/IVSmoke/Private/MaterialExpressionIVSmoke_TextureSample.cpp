@@ -19,7 +19,7 @@ UMaterialExpressionIVSmoke_TextureSample::UMaterialExpressionIVSmoke_TextureSamp
 	Outputs.Reset();
 	Outputs.Add(FExpressionOutput(TEXT("Color")));
 }
-
+#if WITH_EDITOR
 int32 UMaterialExpressionIVSmoke_TextureSample::Compile(class FMaterialCompiler* Compiler, int32 OutputIndex)
 {
 	if (!Compiler)
@@ -107,7 +107,6 @@ void UMaterialExpressionIVSmoke_TextureSample::GetCaption(TArray<FString>& OutCa
 	OutCaptions.Add(FString::Printf(TEXT("IVSmoke Sample [%s]"), *TypeName));
 }
 
-#if WITH_EDITOR
 uint32 UMaterialExpressionIVSmoke_TextureSample::GetOutputType(int32 OutputIndex)
 {
 	int32 NumChannels = 0;

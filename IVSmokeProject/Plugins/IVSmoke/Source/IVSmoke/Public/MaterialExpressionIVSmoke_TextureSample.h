@@ -19,11 +19,12 @@ class IVSMOKE_API UMaterialExpressionIVSmoke_TextureSample : public UMaterialExp
 public:
 	UMaterialExpressionIVSmoke_TextureSample();
 
+#if WITH_EDITOR
 	// UE 5.7 API 변경사항 반영
 	virtual int32 Compile(class FMaterialCompiler* Compiler, int32 OutputIndex) override;
 	virtual void GetCaption(TArray<FString>& OutCaptions) const override;
 
-#if WITH_EDITOR
+
 	virtual uint32 GetOutputType(int32 OutputIndex) override;
 #endif
 
