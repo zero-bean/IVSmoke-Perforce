@@ -26,6 +26,8 @@
 #include "MaterialShader.h"
 #include "MaterialShaderType.h"
 #include "IVSmokeVisualMaterialPreset.h"
+#include "PixelShaderUtils.h"
+#include "FXRenderingUtils.h"  // For UE::FXRenderingUtils::GetRawViewRectUnsafe
 
 #if !UE_SERVER
 FIVSmokeRenderer& FIVSmokeRenderer::Get()
@@ -66,6 +68,9 @@ void FIVSmokeRenderer::Shutdown()
 	}
 	ServerTimeOffset = 0;
 	bServerTimeSynced = false;
+
+	// Clear View caches (RDG textures are only valid within frame, so just clear the map)
+	FrameViewCaches.Empty();
 
 	CleanupCSM();
 }
@@ -614,7 +619,7 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 						}
 					}
 
-					// Update CSM with current frame
+					// Update CSM with current frame (includes synchronous capture)
 					CSMRenderer->Update(
 						CSMCameraPosition,
 						CSMCameraForward,
@@ -627,6 +632,7 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 			}
 
 			// Populate CSM data for shader (even if not updated this frame)
+			// Synchronous capture: VP matrix and depth texture are from the SAME Update() call
 			if (CSMRenderer && CSMRenderer->IsInitialized() && CSMRenderer->HasValidShadowData())
 			{
 				Result.NumCascades = CSMRenderer->GetNumCascades();
@@ -644,7 +650,7 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 				for (int32 i = 0; i < Result.NumCascades; i++)
 				{
 					const FIVSmokeCascadeData& Cascade = CSMRenderer->GetCascade(i);
-					// Single-buffer: VP matrix and texture are from the SAME frame
+					// Synchronous capture: VP matrix and texture are from the SAME frame
 					Result.CSMViewProjectionMatrices[i] = Cascade.ViewProjectionMatrix;
 					Result.CSMDepthTextures[i] = CSMRenderer->GetDepthTexture(i);
 					Result.CSMVSMTextures[i] = CSMRenderer->GetVSMTexture(i);
@@ -696,25 +702,10 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 		return SceneColor;
 	}
 
-	// Helper lambda for TranslucencyAfterDOF passthrough
-	// In this mode, we must return SeparateTranslucency (not SceneColor) to preserve translucent objects
-	auto GetPassthroughTexture = [&]() -> FScreenPassTexture
-		{
-			if (Settings->RenderPass == EIVSmokeRenderPass::TranslucencyAfterDOF)
-			{
-				FScreenPassTextureSlice SeparateTranslucencySlice = Inputs.GetInput(EPostProcessMaterialInput::SeparateTranslucency);
-				if (SeparateTranslucencySlice.IsValid())
-				{
-					return FScreenPassTexture(SeparateTranslucencySlice);
-				}
-			}
-			return SceneColor;
-		};
-
 	// Check if rendering is enabled - passthrough if disabled
 	if (!Settings->bEnableSmokeRendering)
 	{
-		return GetPassthroughTexture();
+		return SceneColor;
 	}
 
 	// Get cached render data (prepared on Game Thread via BeginRenderViewFamily)
@@ -728,7 +719,7 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	// Early out if no valid render data - avoid unnecessary texture allocations
 	if (!RenderData.bIsValid)
 	{
-		return GetPassthroughTexture();
+		return SceneColor;
 	}
 
 	FScreenPassRenderTarget Output = Inputs.OverrideOutput;
@@ -746,100 +737,47 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	const FIntPoint ViewportSize = SceneColor.ViewRect.Size();
 	const FIntPoint ViewRectMin = SceneColor.ViewRect.Min;
 
-	//~==========================================================================
-	// Upscaling Pipeline (1/2 to Full)
-	//
-	// Ray March at 1/2 resolution for quality/performance balance.
-	// Single-step upscaling with bilinear filtering smooths IGN grain.
-	// Note: 1/4 resolution causes excessive grain when camera is inside smoke.
-	//
-	const FIntPoint HalfSize = FIntPoint(
-		FMath::Max(1, ViewportSize.X / 2),
-		FMath::Max(1, ViewportSize.Y / 2)
-	);
-
-	// Create Render Target textures at 1/2 resolution
-	FRDGTextureRef SmokeAlbedoTex = FIVSmokePostProcessPass::CreateOutputTexture(GraphBuilder, SceneColor.Texture, TEXT("IVSmokeAlbedoTex_Half"), PF_FloatRGBA, HalfSize);
-	FRDGTextureRef SmokeLocalPosAlphaTex = FIVSmokePostProcessPass::CreateOutputTexture(GraphBuilder, SceneColor.Texture, TEXT("IVSmokeLocalPosAlphaTex_Half"), PF_FloatRGBA, HalfSize);
-	FRDGTextureRef SmokeWorldPosDepthTex = FIVSmokePostProcessPass::CreateOutputTexture(GraphBuilder, SceneColor.Texture, TEXT("IVSmokeWorldPosDepthTex_Half"), PF_FloatRGBA, HalfSize);
-
 	// Update stats (1-second interval)
 	UpdateStatsIfNeeded(RenderData, ViewportSize);
 
 	//~==========================================================================
-	// Ray March Pass (1/2 Resolution)
-	// Multi-Volume Ray Marching with Occupancy Optimization (Three-Pass Pipeline).
-	// Uses tile-based occupancy grid for efficient empty space skipping.
-	AddMultiVolumeRayMarchPass(GraphBuilder, View, RenderData, SmokeAlbedoTex, SmokeLocalPosAlphaTex, SmokeWorldPosDepthTex, HalfSize, ViewportSize, ViewRectMin);
+	// Get smoke textures from View-based RDG cache
+	// Pre-pass (PostRenderBasePassDeferred) runs BEFORE Post-process, so cache should be valid
+	// Cache is keyed by ViewState to ensure correct View matching
 
-	//~==========================================================================
-	// Upscaling (1/2 to Full)
-	// Single-step bilinear upscaling smooths IGN grain patterns.
-	FRDGTextureRef SmokeAlbedoFull = AddCopyPass(GraphBuilder, View, SmokeAlbedoTex, ViewportSize, TEXT("IVSmokeAlbedoTex_Full"));
-	FRDGTextureRef SmokeLocalPosAlphaFull = AddCopyPass(GraphBuilder, View, SmokeLocalPosAlphaTex, ViewportSize, TEXT("IVSmokeLocalPosAlphaTex_Full"));
-	FRDGTextureRef SmokeWorldPosDepthFull = AddCopyPass(GraphBuilder, View, SmokeWorldPosDepthTex, ViewportSize, TEXT("IVSmokeWorldPosDepthTex_Full"));
+	if (!View.State)
+	{
+		// View.State is null - cannot use as cache key (would cause incorrect sharing)
+		UE_LOG(LogIVSmoke, Verbose, TEXT("[FIVSmokeRenderer::Render] View.State is null, skipping smoke rendering"));
+		return SceneColor;
+	}
 
-	//~==========================================================================
-	// Upsample Filter Pass
-	FRDGTextureRef SmokeTex = AddUpsampleFilterPass(GraphBuilder, RenderData, View, SceneColor.Texture, SmokeAlbedoFull, SmokeLocalPosAlphaFull, ViewportSize);
+	FViewRDGCache* Cache = FrameViewCaches.Find(View.State);
+	if (!Cache || !Cache->bIsValid)
+	{
+		// Cache not available for this View - passthrough without smoke rendering
+		// This can happen when: Scene Capture (filtered out), first frame, etc.
+		UE_LOG(LogIVSmoke, Verbose, TEXT("[FIVSmokeRenderer::Render] Cache miss for View, skipping smoke rendering"));
+		return SceneColor;
+	}
+
+	// Use cached RDG textures directly (same RDG builder, so they are still valid)
+	FRDGTextureRef SmokeTex = Cache->SmokeTex;
+	FRDGTextureRef SmokeLocalPosAlphaFull = Cache->LocalPosAlphaTex;
+	FRDGTextureRef SmokeWorldPosDepthFull = Cache->WorldPosDepthTex;
+	FIntPoint EffectiveViewportSize = Cache->ViewportSize;
+
+	RDG_EVENT_SCOPE(GraphBuilder, "IVSmoke_PostProcess_VisualComposite");
 
 	//~==========================================================================
 	// Visual Pass
-	FRDGTextureRef SmokeVisualTex = AddSmokeVisualPass(GraphBuilder, RenderData, View, SmokeTex, SmokeLocalPosAlphaFull, SmokeWorldPosDepthFull, SceneColor.Texture, ViewportSize);
+	// Note: Use EffectiveViewportSize to match smoke texture dimensions (may differ from SceneColor.ViewRect when using Pre-pass cache)
+	FRDGTextureRef SmokeVisualTex = AddSmokeVisualPass(GraphBuilder, RenderData, View, SmokeTex, SmokeLocalPosAlphaFull, SmokeWorldPosDepthFull, SceneColor.Texture, EffectiveViewportSize);
 
 	//~==========================================================================
 	// Composite Pass
-
-	const bool bUseCustomDepthBasedSorting = Settings->bUseCustomDepthBasedSorting;
-	const bool bTranslucencyMode = (Settings->RenderPass == EIVSmokeRenderPass::TranslucencyAfterDOF);
-	FScreenPassTextureSlice SeparateTranslucencySlice = Inputs.GetInput(EPostProcessMaterialInput::SeparateTranslucency);
-
-	if (bUseCustomDepthBasedSorting && bTranslucencyMode && SeparateTranslucencySlice.IsValid())
-	{
-		FScreenPassTexture ParticlesTex(SeparateTranslucencySlice);
-
-		// Create output texture based on ParticlesTex (same as TranslucencyComposite)
-		// TranslucencyAfterDOF mode expects output in SeparateTranslucency format
-		FRDGTextureRef OutputTexture = FIVSmokePostProcessPass::CreateOutputTexture(GraphBuilder, ParticlesTex.Texture, TEXT("IVSmokeDepthSortedOutput"), PF_FloatRGBA);
-
-		FScreenPassRenderTarget SortedOutput(OutputTexture, ParticlesTex.ViewRect, ERenderTargetLoadAction::ENoAction);
-
-		// Pass texture extents for UV calculation (UV = SvPosition / TexExtent)
-		const FIntPoint SmokeExtent = ViewportSize;
-
-		AddDepthSortedCompositePass(GraphBuilder, RenderData, View, SmokeVisualTex,
-			SmokeLocalPosAlphaFull, SmokeWorldPosDepthFull, ParticlesTex.Texture, SortedOutput, ViewportSize);
-
-		return FScreenPassTexture(SortedOutput);
-	}
-	else if (bTranslucencyMode && SeparateTranslucencySlice.IsValid())
-	{
-		// TranslucencyAfterDOF mode: Composite smoke OVER particles
-		FScreenPassTexture ParticlesTex(SeparateTranslucencySlice);
-
-		// Smoke textures are rendered at SceneColor.ViewRect
-		// Particles texture is at its own ViewRect (SeparateTranslucency)
-		// These can differ! Shader handles separate UV calculation for each.
-
-		// Create output texture with SAME SIZE as ParticlesTex
-		FRDGTextureRef OutputTexture = FIVSmokePostProcessPass::CreateOutputTexture(GraphBuilder, ParticlesTex.Texture, TEXT("IVSmokeTranslucencyOutput"), PF_FloatRGBA);
-
-		FScreenPassRenderTarget TranslucencyOutput(OutputTexture, ParticlesTex.ViewRect, ERenderTargetLoadAction::ENoAction);
-
-		// Pass texture extents for UV calculation (UV = SvPosition / TexExtent)
-		const FIntPoint ParticlesExtent(ParticlesTex.Texture->Desc.Extent.X, ParticlesTex.Texture->Desc.Extent.Y);
-
-
-		AddTranslucencyCompositePass(GraphBuilder, RenderData, View, SmokeVisualTex, SmokeLocalPosAlphaFull,
-			ParticlesTex.Texture, TranslucencyOutput, ParticlesExtent, ViewportSize);
-
-		return FScreenPassTexture(TranslucencyOutput);
-	}
-	else
-	{
-		AddCompositePass(GraphBuilder, RenderData, View, SceneColor.Texture, SmokeVisualTex, SmokeLocalPosAlphaFull, Output, ViewportSize);
-		return FScreenPassTexture(Output);
-	}
+	AddCompositePass(GraphBuilder, RenderData, View, SceneColor.Texture, SmokeVisualTex, SmokeLocalPosAlphaFull, Output, EffectiveViewportSize);
+	return FScreenPassTexture(Output);
 }
 
 //~==============================================================================
@@ -871,82 +809,6 @@ void FIVSmokeRenderer::AddCompositePass(
 
 	FIVSmokePostProcessPass::AddPixelShaderPass<FIVSmokeCompositePS>(GraphBuilder, ShaderMap, PixelShader, Parameters, Output);
 }
-
-
-void FIVSmokeRenderer::AddTranslucencyCompositePass(
-	FRDGBuilder& GraphBuilder,
-	const FIVSmokePackedRenderData& RenderData,
-	const FSceneView& View,
-	FRDGTextureRef SmokeVisualTex,
-	FRDGTextureRef SmokeLocalPosAlphaTex,
-	FRDGTextureRef ParticlesTex,
-	const FScreenPassRenderTarget& Output,
-	const FIntPoint& ParticlesTexExtent,
-	const FIntPoint& ViewportSize)
-{ 
-		FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
-		TShaderMapRef<FIVSmokeTranslucencyCompositePS> PixelShader(ShaderMap);
-		
-		auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeTranslucencyCompositePS::FParameters>();
-		Parameters->SmokeVisualTex = SmokeVisualTex;
-		Parameters->SmokeLocalPosAlphaTex = SmokeLocalPosAlphaTex;
-		Parameters->ParticleSceneTex = ParticlesTex;
-		Parameters->LinearClamp_Sampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
-		Parameters->ParticlesTexExtent = FVector2f(ParticlesTexExtent);
-		Parameters->ViewportSize = FVector2f(ViewportSize);
-		Parameters->ViewRectMin = FVector2f(Output.ViewRect.Min);
-		Parameters->AlphaType = (int)RenderData.VisualAlphaType;
-		Parameters->AlphaThreshold = RenderData.AlphaThreshold;
-		Parameters->RenderTargets[0] = Output.GetRenderTargetBinding();
-		
-		FIVSmokePostProcessPass::AddPixelShaderPass<FIVSmokeTranslucencyCompositePS>(GraphBuilder, ShaderMap, PixelShader, Parameters, Output);
-}
-
-void FIVSmokeRenderer::AddDepthSortedCompositePass(
-	FRDGBuilder& GraphBuilder,
-	const FIVSmokePackedRenderData& RenderData,
-	const FSceneView& View,
-	FRDGTextureRef SmokeVisualTex,
-	FRDGTextureRef SmokeLocalPosAlphaTex,
-	FRDGTextureRef SmokeWorldPosDepthTex,
-	FRDGTextureRef SeparateTranslucencyTex,
-	const FScreenPassRenderTarget& Output,
-	const FIntPoint& ViewportSize)
-{
-	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
-	TShaderMapRef<FIVSmokeDepthSortedCompositePS> PixelShader(ShaderMap);
-
-	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeDepthSortedCompositePS::FParameters>();
-
-	// Smoke layer (from ray marching CS)
-	Parameters->SmokeVisualTex = SmokeVisualTex;
-	Parameters->SmokeLocalPosAlphaTex = SmokeLocalPosAlphaTex;
-	Parameters->SmokeWorldPosDepthTex = SmokeWorldPosDepthTex;
-
-	// Particle layer (from Separate Translucency)
-	Parameters->SeparateTranslucencyTex = SeparateTranslucencyTex;
-
-	// Scene Textures (provides CustomDepth and SceneDepth via uniform buffer)
-	Parameters->SceneTexturesStruct = GetSceneTextureShaderParameters(View).SceneTextures;
-
-	// Samplers
-	Parameters->PointClamp_Sampler = TStaticSamplerState<SF_Point, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
-	Parameters->LinearClamp_Sampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
-
-	// Texture Extents for UV calculation (UV = SvPosition / TexExtent)
-	Parameters->ViewportSize = FVector2f(ViewportSize);
-	Parameters->ViewRectMin = Output.ViewRect.Min;
-	Parameters->InvDeviceZToWorldZTransform = FVector4f(View.InvDeviceZToWorldZTransform);
-	Parameters->AlphaType = (int)RenderData.VisualAlphaType;
-	Parameters->AlphaThreshold = RenderData.AlphaThreshold;
-
-	// Render target
-	Parameters->RenderTargets[0] = Output.GetRenderTargetBinding();
-
-	FIVSmokePostProcessPass::AddPixelShaderPass<FIVSmokeDepthSortedCompositePS>(GraphBuilder, ShaderMap, PixelShader, Parameters, Output);
-}
-
-
 
 
 
@@ -1004,8 +866,15 @@ void FIVSmokeRenderer::AddCopyPass(
 
 //~==============================================================================
 // Upsample Filtering Pass
-FRDGTextureRef FIVSmokeRenderer::AddUpsampleFilterPass(FRDGBuilder& GraphBuilder, const FIVSmokePackedRenderData& RenderData, const FSceneView& View,
-	FRDGTextureRef SceneTex, FRDGTextureRef SmokeAlbedo, FRDGTextureRef SmokeLocalPosAlpha, const FIntPoint& TexSize)
+FRDGTextureRef FIVSmokeRenderer::AddUpsampleFilterPass(
+	FRDGBuilder& GraphBuilder,
+	const FIVSmokePackedRenderData& RenderData,
+	const FSceneView& View,
+	FRDGTextureRef SceneTex,
+	FRDGTextureRef SmokeAlbedo,
+	FRDGTextureRef SmokeLocalPosAlpha,
+	const FIntPoint& TexSize,
+	const FIntPoint& ViewRectMin)
 {
 	FRDGTextureRef SmokeTex = FIVSmokePostProcessPass::CreateOutputTexture(
 		GraphBuilder,
@@ -1024,7 +893,7 @@ FRDGTextureRef FIVSmokeRenderer::AddUpsampleFilterPass(FRDGBuilder& GraphBuilder
 	Parameters->LinearClamp_Sampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
 	Parameters->Sharpness = RenderData.Sharpness;
 	Parameters->ViewportSize = TexSize;
-	Parameters->ViewRectMin = FVector2f(0, 0);
+	Parameters->ViewRectMin = FVector2f(ViewRectMin);
 	Parameters->LowOpacityRemapThreshold = RenderData.LowOpacityRemapThreshold;
 	Parameters->RenderTargets[0] = FRenderTargetBinding(SmokeTex, ERenderTargetLoadAction::ENoAction);
 	FScreenPassRenderTarget Output(
@@ -1095,7 +964,8 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	FRDGTextureRef SmokeWorldPosDepthTex,
 	const FIntPoint& TexSize,
 	const FIntPoint& ViewportSize,
-	const FIntPoint& ViewRectMin)
+	const FIntPoint& ViewRectMin,
+	FRDGTextureRef SceneDepthForDependency)
 {
 	const int32 VolumeCount = RenderData.VolumeCount;
 
@@ -1392,6 +1262,28 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 	// Scene Textures
 	Parameters->SceneTexturesStruct = GetSceneTextureShaderParameters(View).SceneTextures;
 	Parameters->InvDeviceZToWorldZTransform = FVector4f(View.InvDeviceZToWorldZTransform);
+
+	// Explicit SceneDepth dependency for RDG ordering
+	// When SceneDepthForDependency is provided (from Pre-pass), we use explicit texture binding
+	// to ensure RDG sees the dependency and orders Ray March BEFORE Depth Write
+	if (SceneDepthForDependency)
+	{
+		Parameters->SceneDepthTexture_RDGDependency = SceneDepthForDependency;
+		Parameters->bUseExplicitSceneDepth = 1;  // Pre-pass mode: use explicit texture
+	}
+	else
+	{
+		// Post-process mode: Create a dummy 1x1 texture to satisfy parameter validation
+		// The shader will use SceneTexturesStruct.SceneDepthTexture instead (bUseExplicitSceneDepth=0)
+		FRDGTextureDesc DummyDesc = FRDGTextureDesc::Create2D(
+			FIntPoint(1, 1),
+			PF_R32_FLOAT,
+			FClearValueBinding::Black,
+			TexCreate_ShaderResource
+		);
+		Parameters->SceneDepthTexture_RDGDependency = GraphBuilder.CreateTexture(DummyDesc, TEXT("IVSmoke_DummyDepth"));
+		Parameters->bUseExplicitSceneDepth = 0;  // Post-process mode: use uniform buffer (no RDG conflict)
+	}
 
 	// View (for BlueNoise access)
 	Parameters->View = View.ViewUniformBuffer;
@@ -1692,4 +1584,234 @@ void FIVSmokeRenderer::UpdateAllStats()
 	SET_MEMORY_STAT(STAT_IVSmoke_PerFrameTextures, CachedPerFrameSize);
 	SET_MEMORY_STAT(STAT_IVSmoke_TotalVRAM, CachedNoiseVolumeSize + CachedCSMSize + CachedPerFrameSize);
 }
+
+//~==============================================================================
+// Pre-Pass Pipeline (Ray March + Upscale + UpsampleFilter + Depth Write)
+
+bool FIVSmokeRenderer::IsPrimaryGameView(const FSceneView& View)
+{
+	// Filter out auxiliary views that should not render smoke
+	// This is a policy decision, not a heuristic
+	if (View.bIsSceneCapture || View.bIsPlanarReflection || View.bIsReflectionCapture)
+	{
+		return false;
+	}
+	return true;
+}
+
+void FIVSmokeRenderer::RunPrePassPipeline(
+	FRDGBuilder& GraphBuilder,
+	const FSceneView& View,
+	const FRenderTargetBindingSlots& RenderTargets,
+	TRDGUniformBufferRef<FSceneTextureUniformParameters> SceneTextures)
+{
+	// Get settings
+	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
+	if (!Settings || !Settings->bEnableSmokeRendering)
+	{
+		return;
+	}
+
+	// Filter out non-primary views (Scene Capture, Planar Reflection, etc.)
+	// This is a policy decision for performance - smoke only renders in main game view
+	if (!IsPrimaryGameView(View))
+	{
+		return;
+	}
+
+	// View.State null check - required for cache key
+	if (!View.State)
+	{
+		UE_LOG(LogIVSmoke, Verbose, TEXT("[FIVSmokeRenderer::RunPrePassPipeline] View.State is null, skipping Pre-pass"));
+		return;
+	}
+
+	// Get cached render data (prepared on Game Thread via BeginRenderViewFamily)
+	FIVSmokePackedRenderData RenderData;
+	{
+		FScopeLock Lock(&RenderDataMutex);
+		RenderData = CachedRenderData;
+	}
+
+	// Early out if no valid render data
+	if (!RenderData.bIsValid || RenderData.VolumeCount == 0)
+	{
+		return;
+	}
+
+	// Ensure renderer is initialized
+	if (!NoiseVolume)
+	{
+		return;
+	}
+
+	// Get the scaled ViewRect using public API
+	// This matches SceneColor.ViewRect in Post-process (scaled by Primary Screen Percentage)
+	const FIntRect ScaledViewRect = UE::FXRenderingUtils::GetRawViewRectUnsafe(View);
+
+	RDG_EVENT_SCOPE(GraphBuilder, "IVSmoke_PrePassPipeline");
+
+	// Use scaled ViewRect - matches Post-process SceneColor.ViewRect
+	const FIntRect PrePassViewRect = ScaledViewRect;
+	const FIntPoint ViewportSize = PrePassViewRect.Size();
+	const FIntPoint ViewRectMin = PrePassViewRect.Min;
+
+	//~==========================================================================
+	// Get or create View-based RDG cache
+	// RDG textures are valid within the same GraphBuilder (same frame)
+	FViewRDGCache& Cache = FrameViewCaches.FindOrAdd(View.State);
+
+	//~==========================================================================
+	// Resolution Setup
+	const FIntPoint HalfSize = FIntPoint(
+		FMath::Max(1, ViewportSize.X / 2),
+		FMath::Max(1, ViewportSize.Y / 2)
+	);
+
+	//~==========================================================================
+	// Create textures at full resolution for cache
+	FRDGTextureDesc FullResDesc = FRDGTextureDesc::Create2D(
+		ViewportSize, PF_FloatRGBA, FClearValueBinding::Black,
+		TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV
+	);
+
+	Cache.SmokeTex = GraphBuilder.CreateTexture(FullResDesc, TEXT("IVSmoke_SmokeTex"));
+	Cache.LocalPosAlphaTex = GraphBuilder.CreateTexture(FullResDesc, TEXT("IVSmoke_LocalPosAlphaTex"));
+	Cache.WorldPosDepthTex = GraphBuilder.CreateTexture(FullResDesc, TEXT("IVSmoke_WorldPosDepthTex"));
+
+	//~==========================================================================
+	// Create temporary textures at 1/2 resolution
+	FRDGTextureDesc HalfResDesc = FRDGTextureDesc::Create2D(
+		HalfSize, PF_FloatRGBA, FClearValueBinding::Black,
+		TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV
+	);
+
+	FRDGTextureRef SmokeAlbedoHalf = GraphBuilder.CreateTexture(HalfResDesc, TEXT("IVSmokeAlbedoTex_Half_PrePass"));
+	FRDGTextureRef SmokeLocalPosAlphaHalf = GraphBuilder.CreateTexture(HalfResDesc, TEXT("IVSmokeLocalPosAlphaTex_Half_PrePass"));
+	FRDGTextureRef SmokeWorldPosDepthHalf = GraphBuilder.CreateTexture(HalfResDesc, TEXT("IVSmokeWorldPosDepthTex_Half_PrePass"));
+
+	//~==========================================================================
+	// Ray March Pass (1/2 Resolution)
+	// Pass SceneDepth explicitly to create RDG dependency
+	FRDGTextureRef SceneDepthTexture = RenderTargets.DepthStencil.GetTexture();
+	AddMultiVolumeRayMarchPass(
+		GraphBuilder, View, RenderData,
+		SmokeAlbedoHalf, SmokeLocalPosAlphaHalf, SmokeWorldPosDepthHalf,
+		HalfSize, ViewportSize, ViewRectMin,
+		SceneDepthTexture  // Explicit RDG dependency
+	);
+
+	//~==========================================================================
+	// Upscaling (1/2 to Full) - Copy to cache textures
+	FRDGTextureRef SmokeAlbedoFull = AddCopyPass(
+		GraphBuilder, View, SmokeAlbedoHalf, ViewportSize, TEXT("IVSmokeAlbedoTex_Full_PrePass")
+	);
+	AddCopyPass(GraphBuilder, View, SmokeLocalPosAlphaHalf, Cache.LocalPosAlphaTex);
+	AddCopyPass(GraphBuilder, View, SmokeWorldPosDepthHalf, Cache.WorldPosDepthTex);
+
+	//~==========================================================================
+	// Upsample Filter Pass
+	FRDGTextureRef FilteredSmokeTex = AddUpsampleFilterPass(
+		GraphBuilder, RenderData, View,
+		SmokeAlbedoFull,  // Dummy for SceneTex (not used in output)
+		SmokeAlbedoFull, Cache.LocalPosAlphaTex,
+		ViewportSize, ViewRectMin
+	);
+
+	// Copy filtered result to cached SmokeTex
+	AddCopyPass(GraphBuilder, View, FilteredSmokeTex, Cache.SmokeTex);
+
+	//~==========================================================================
+	// Depth Write Pass (optional)
+	if (Settings->bEnableDepthWrite)
+	{
+		ExecuteDepthWrite(
+			GraphBuilder, View, RenderTargets,
+			Cache.WorldPosDepthTex, Cache.LocalPosAlphaTex,
+			ViewportSize, ViewRectMin
+		);
+	}
+
+	//~==========================================================================
+	// Mark Cache as Valid
+	Cache.ViewportSize = ViewportSize;
+	Cache.ViewRectMin = ViewRectMin;
+	Cache.bIsValid = true;
+}
+
+void FIVSmokeRenderer::ExecuteDepthWrite(
+	FRDGBuilder& GraphBuilder,
+	const FSceneView& View,
+	const FRenderTargetBindingSlots& RenderTargets,
+	FRDGTextureRef SmokeWorldPosDepthTex,
+	FRDGTextureRef SmokeLocalPosAlphaTex,
+	const FIntPoint& ViewportSize,
+	const FIntPoint& ViewRectMin)
+{
+	RDG_EVENT_SCOPE(GraphBuilder, "IVSmoke_DepthWrite");
+
+	// Get the depth stencil target
+	FRDGTextureRef DepthTexture = RenderTargets.DepthStencil.GetTexture();
+	if (!DepthTexture)
+	{
+		return;
+	}
+
+	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
+
+	// Get shader
+	FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.FeatureLevel);
+	TShaderMapRef<FIVSmokeDepthWritePS> PixelShader(ShaderMap);
+
+	// Setup parameters
+	FIVSmokeDepthWritePS::FParameters* Parameters = GraphBuilder.AllocParameters<FIVSmokeDepthWritePS::FParameters>();
+
+	Parameters->SmokeWorldPosDepthTex = SmokeWorldPosDepthTex;
+	Parameters->SmokeLocalPosAlphaTex = SmokeLocalPosAlphaTex;
+	Parameters->LinearClampSampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
+
+	// Camera parameters
+	Parameters->CameraForward = FVector3f(View.GetViewDirection());
+	Parameters->CameraOrigin = FVector3f(View.ViewMatrices.GetViewOrigin());
+
+	// ViewRect parameters for UV calculation
+	Parameters->ViewportSize = FVector2f(ViewportSize);
+	Parameters->ViewRectMin = FVector2f(ViewRectMin);
+
+	// Depth bias from settings
+	Parameters->DepthBias = Settings ? Settings->DepthWriteBias : 0.0f;
+
+	// Projection matrix parameters for manual depth conversion
+	// ConvertToDeviceZ formula: DeviceZ = ViewToClip[2][2] + ViewToClip[3][2] / LinearZ
+	const FMatrix& ViewToClip = View.ViewMatrices.GetProjectionMatrix();
+	Parameters->ViewToClip_22 = ViewToClip.M[2][2];
+	Parameters->ViewToClip_32 = ViewToClip.M[3][2];
+
+	// Bind depth for writing
+	Parameters->RenderTargets.DepthStencil = FDepthStencilBinding(
+		DepthTexture,
+		ERenderTargetLoadAction::ELoad,
+		ERenderTargetLoadAction::ELoad,
+		FExclusiveDepthStencil::DepthWrite_StencilNop
+	);
+
+	// Get ViewRect for fullscreen pass
+	FIntRect ViewRect = View.UnscaledViewRect;
+
+	// Add fullscreen pass with depth write
+	// BlendState = nullptr (no color output), RasterizerState = nullptr (default)
+	// DepthStencilState: Enable depth write, always pass
+	FPixelShaderUtils::AddFullscreenPass(
+		GraphBuilder,
+		ShaderMap,
+		RDG_EVENT_NAME("IVSmoke_DepthWritePS"),
+		PixelShader,
+		Parameters,
+		ViewRect,
+		nullptr,
+		nullptr,
+		TStaticDepthStencilState<true, CF_Always>::GetRHI()
+	);
+}
+
 #endif

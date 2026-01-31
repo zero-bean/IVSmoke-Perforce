@@ -219,17 +219,6 @@ void FIVSmokeCSMRenderer::UpdateCascadeCapture(
 		return;
 	}
 
-	//~==========================================================================
-	// SINGLE-BUFFER TIMING MODEL
-	//
-	// SceneCaptureComponent2D with bCaptureEveryFrame=true captures during the
-	// SAME frame's render pass. Therefore:
-	// 1. We calculate VP matrix and set CaptureComponent transform here
-	// 2. The capture executes during this frame's render pass
-	// 3. The ray march shader samples the captured texture with our VP matrix
-	//
-	// All operations use the SAME values in the SAME frame - no buffering needed.
-
 	// Normalize light direction
 	FVector NormalizedLightDir = LightDirection.GetSafeNormal();
 	if (NormalizedLightDir.IsNearlyZero())
@@ -297,6 +286,10 @@ void FIVSmokeCSMRenderer::UpdateCascadeCapture(
 
 	// Calculate view-projection matrix
 	CalculateViewProjectionMatrix(Cascade);
+
+	//~==========================================================================
+	// Synchronous Capture - ensures VP matrix and depth texture match
+	Cascade.CaptureComponent->CaptureScene();
 
 	UE_LOG(LogIVSmokeCSM, Verbose, TEXT("[FIVSmokeCSMRenderer::UpdateCascadeCapture] Cascade %d: Near=%.0f, Far=%.0f, OrthoWidth=%.0f"),
 		CascadeIndex, Cascade.NearPlane, Cascade.FarPlane, NewOrthoWidth);
@@ -481,8 +474,9 @@ void FIVSmokeCSMRenderer::ConfigureCaptureComponent(USceneCaptureComponent2D* Ca
 	// Capture scene depth
 	CaptureComponent->CaptureSource = ESceneCaptureSource::SCS_SceneDepth;
 
-	// Enable every frame capture
-	CaptureComponent->bCaptureEveryFrame = true;
+	// Disable auto-capture - we call CaptureScene() manually in UpdateCascadeCapture()
+	// for synchronous VP matrix and depth texture synchronization
+	CaptureComponent->bCaptureEveryFrame = false;
 	CaptureComponent->bCaptureOnMovement = false;
 
 	// Disable auto-calculate for consistency
@@ -600,3 +594,4 @@ FVector FIVSmokeCSMRenderer::GetLightCameraPosition(int32 CascadeIndex) const
 
 	return Cascades[CascadeIndex].LightCameraPosition;
 }
+

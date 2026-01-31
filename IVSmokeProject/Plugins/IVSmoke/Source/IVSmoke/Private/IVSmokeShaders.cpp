@@ -10,9 +10,10 @@ IMPLEMENT_GLOBAL_SHADER(FIVSmokeVoxelFXAACS, "/Plugin/IVSmoke/IVSmokeVoxelFXAACS
 IMPLEMENT_GLOBAL_SHADER(FIVSmokeCompositePS, "/Plugin/IVSmoke/IVSmokeCompositePS.usf", "MainPS", SF_Pixel);
 IMPLEMENT_GLOBAL_SHADER(FIVSmokeCopyPS, "/Plugin/IVSmoke/IVSmokeCopy.usf", "MainPS", SF_Pixel);
 IMPLEMENT_GLOBAL_SHADER(FIVSmokeUpsampleFilterPS, "/Plugin/IVSmoke/IVSmokeUpsampleFilterPS.usf", "MainPS", SF_Pixel);
-IMPLEMENT_GLOBAL_SHADER(FIVSmokeTranslucencyCompositePS, "/Plugin/IVSmoke/IVSmokeTranslucencyCompositePS.usf", "MainPS", SF_Pixel);
-IMPLEMENT_GLOBAL_SHADER(FIVSmokeDepthSortedCompositePS, "/Plugin/IVSmoke/IVSmokeDepthSortedCompositePS.usf", "MainPS", SF_Pixel);
 
 // VSM (Variance Shadow Map) Shaders
 IMPLEMENT_GLOBAL_SHADER(FIVSmokeDepthToVarianceCS, "/Plugin/IVSmoke/IVSmokeVSM.usf", "DepthToVarianceCS", SF_Compute);
 IMPLEMENT_GLOBAL_SHADER(FIVSmokeVSMBlurCS, "/Plugin/IVSmoke/IVSmokeVSM.usf", "BlurCS", SF_Compute);
+
+// Depth Write Shader (for correct translucent sorting)
+IMPLEMENT_GLOBAL_SHADER(FIVSmokeDepthWritePS, "/Plugin/IVSmoke/IVSmokeDepthWritePS.usf", "MainPS", SF_Pixel);

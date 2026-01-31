@@ -17,21 +17,15 @@ class UWorld;
  * Data for a single shadow cascade.
  * Contains render targets, matrices, and update state.
  *
- * TIMING MODEL (Single-Buffer):
+ * TIMING MODEL (Synchronous Capture):
  * ============================================================================
- * This uses a SINGLE-BUFFER approach because SceneCaptureComponent2D with
- * bCaptureEveryFrame=true executes capture in the SAME frame's render pass.
+ * We use manual CaptureScene() calls instead of bCaptureEveryFrame to ensure
+ * VP matrix and depth texture are always synchronized within the same frame.
  *
  * Frame N timeline:
- *   1. Game Thread: Update() calculates VP matrix and sets CaptureComponent transform
- *   2. Render Thread: SceneCaptureComponent2D captures depth using current transform
- *   3. Render Thread: Ray march shader samples the captured texture with VP matrix
- *
- * Since capture and sampling happen in the SAME frame, no double-buffering is needed.
- * The VP matrix calculated in Update() matches the texture captured in the same frame.
- *
- * NOTE: Double-buffering would be needed if capture happened at END of frame and
- * sampling happened at START of next frame, but that's not the case here.
+ *   1. Game Thread: Update() calculates VP_N and calls CaptureScene()
+ *   2. Render Thread: Pre-pass ray march uses VP_N with Depth_N ✓
+ *   3. Render Thread: Post-process composite
  * ============================================================================
  */
 struct IVSMOKE_API FIVSmokeCascadeData

@@ -325,6 +325,12 @@ public:
 		SHADER_PARAMETER_RDG_UNIFORM_BUFFER(FSceneTextureUniformParameters, SceneTexturesStruct)
 		SHADER_PARAMETER(FVector4f, InvDeviceZToWorldZTransform)
 
+		// Explicit SceneDepth dependency for RDG ordering (Pre-pass mode only)
+		// When bUseExplicitSceneDepth=1, shader uses this texture instead of SceneTexturesStruct.SceneDepthTexture
+		// This ensures RDG sees the dependency and orders Ray March BEFORE Depth Write
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SceneDepthTexture_RDGDependency)
+		SHADER_PARAMETER(int32, bUseExplicitSceneDepth)
+
 		// View (for BlueNoise access)
 		SHADER_PARAMETER_STRUCT_REF(FViewUniformShaderParameters, View)
 

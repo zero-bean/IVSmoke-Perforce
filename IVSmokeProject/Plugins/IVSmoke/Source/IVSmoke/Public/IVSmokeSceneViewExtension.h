@@ -4,9 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "SceneViewExtension.h"
+#include "RenderGraphDefinitions.h"
+#include "SceneTexturesConfig.h"
 
 struct FPostProcessMaterialInputs;
 struct FScreenPassTexture;
+struct FRenderTargetBindingSlots;
 
 /**
  * Scene view extension for IVSmoke post-process hook.
@@ -33,6 +36,14 @@ public:
 		FPostProcessingPassDelegateArray& InOutPassCallbacks,
 		bool bIsPassEnabled) override;
 	virtual bool IsActiveThisFrame_Internal(const FSceneViewExtensionContext& Context) const override;
+	virtual void PostRenderBasePassDeferred_RenderThread(
+		FRDGBuilder& GraphBuilder,
+		FSceneView& InView,
+		const FRenderTargetBindingSlots& RenderTargets,
+		TRDGUniformBufferRef<FSceneTextureUniformParameters> SceneTextures) override;
+	virtual void PostRenderViewFamily_RenderThread(
+		FRDGBuilder& GraphBuilder,
+		FSceneViewFamily& InViewFamily) override;
 	//~ End FSceneViewExtensionBase Interface
 
 private:

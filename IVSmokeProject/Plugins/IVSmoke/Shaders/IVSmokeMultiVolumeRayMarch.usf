@@ -97,6 +97,11 @@ int3 PackedHoleTexSize;
 int3 HoleAtlasCount;
 
 // Scene Depth
+// Explicit SceneDepth texture for RDG dependency tracking
+// When bUseExplicitSceneDepth is true, uses this texture to ensure RDG sees the dependency
+// This guarantees Ray March reads SceneDepth BEFORE Depth Write modifies it (Pre-pass mode)
+Texture2D SceneDepthTexture_RDGDependency;
+int bUseExplicitSceneDepth;  // 1 = Pre-pass mode (use explicit texture), 0 = Post-process mode (use uniform buffer)
 float4 InvDeviceZToWorldZTransform;
 
 // Global Smoke Parameters
@@ -398,10 +403,20 @@ void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
 	// Scene Depth
 
 	// Use same depth sampling as original ray march (without +0.5 offset)
+	// In Pre-pass mode (bUseExplicitSceneDepth=1): Use explicit texture for RDG dependency tracking
+	// In Post-process mode (bUseExplicitSceneDepth=0): Use uniform buffer (no RDG conflict)
 	int3 ScenePixelCoord = int3(0, 0, 0);
 	ScenePixelCoord.x = ceil((float)PixelCoord.x / TexSize.x * ViewportSize.x + ViewRectMin.x);
 	ScenePixelCoord.y = ceil((float)PixelCoord.y / TexSize.y * ViewportSize.y + ViewRectMin.y);
-	float DeviceZ = SceneTexturesStruct.SceneDepthTexture.Load(ScenePixelCoord).r;
+	float DeviceZ;
+	if (bUseExplicitSceneDepth)
+	{
+		DeviceZ = SceneDepthTexture_RDGDependency.Load(ScenePixelCoord).r;
+	}
+	else
+	{
+		DeviceZ = SceneTexturesStruct.SceneDepthTexture.Load(ScenePixelCoord).r;
+	}
 	float SceneDepthWorld = DeviceZToLinearDepth(DeviceZ, InvDeviceZToWorldZTransform);
 
 	float ViewDirDot = dot(RayDir, CameraForward);

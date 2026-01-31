@@ -3,12 +3,16 @@
 #include "IVSmokeSceneViewExtension.h"
 #include "IVSmokeRenderer.h"
 #include "IVSmokeSettings.h"
+#include "IVSmokeShaders.h"
 #include "IVSmokeVoxelVolume.h"
 #include "PostProcess/PostProcessMaterialInputs.h"
 #include "ScreenPass.h"
 #include "RenderingThread.h"
 #include "EngineUtils.h"
 #include "GameFramework/GameStateBase.h"
+#include "PixelShaderUtils.h"
+#include "SceneTexturesConfig.h"
+#include "SceneRenderTargetParameters.h"
 
 TSharedPtr<FIVSmokeSceneViewExtension, ESPMode::ThreadSafe> FIVSmokeSceneViewExtension::Instance;
 
@@ -113,34 +117,8 @@ void FIVSmokeSceneViewExtension::SubscribeToPostProcessingPass(
 	FPostProcessingPassDelegateArray& InOutPassCallbacks,
 	bool bIsPassEnabled)
 {
-	// Map IVSmoke render pass setting to engine post-processing pass
-	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
-	EIVSmokeRenderPass RenderPassSetting = Settings ? Settings->RenderPass : EIVSmokeRenderPass::TranslucencyAfterDOF;
-
-	EPostProcessingPass TargetPass;
-	switch (RenderPassSetting)
-	{
-	case EIVSmokeRenderPass::BeforeDOF:
-		TargetPass = EPostProcessingPass::BeforeDOF;
-		break;
-	case EIVSmokeRenderPass::AfterDOF:
-		TargetPass = EPostProcessingPass::AfterDOF;
-		break;
-	case EIVSmokeRenderPass::TranslucencyAfterDOF:
-		TargetPass = EPostProcessingPass::TranslucencyAfterDOF;
-		break;
-	case EIVSmokeRenderPass::MotionBlur:
-		TargetPass = EPostProcessingPass::MotionBlur;
-		break;
-	case EIVSmokeRenderPass::Tonemap:
-		TargetPass = EPostProcessingPass::Tonemap;
-		break;
-	default:
-		TargetPass = EPostProcessingPass::TranslucencyAfterDOF;
-		break;
-	}
-
-	if (Pass == TargetPass)
+	// Always use AfterDOF pass - DOF applied to smoke, best balance of quality and compatibility
+	if (Pass == EPostProcessingPass::AfterDOF)
 	{
 		InOutPassCallbacks.Add(
 			FPostProcessingPassDelegate::CreateRaw(
@@ -157,4 +135,34 @@ FScreenPassTexture FIVSmokeSceneViewExtension::Render_RenderThread(
 	const FPostProcessMaterialInputs& Inputs)
 {
 	return FIVSmokeRenderer::Get().Render(GraphBuilder, View, Inputs);
+}
+
+void FIVSmokeSceneViewExtension::PostRenderBasePassDeferred_RenderThread(
+	FRDGBuilder& GraphBuilder,
+	FSceneView& InView,
+	const FRenderTargetBindingSlots& RenderTargets,
+	TRDGUniformBufferRef<FSceneTextureUniformParameters> SceneTextures)
+{
+	const UIVSmokeSettings* Settings = UIVSmokeSettings::Get();
+	if (!Settings)
+	{
+		return;
+	}
+
+	// Pre-pass Pipeline: Ray March → Upscale → UpsampleFilter (→ Depth Write if enabled)
+	// Always runs when smoke rendering is enabled.
+	// Results are cached in View-based RDG cache for Post-process Visual/Composite passes.
+	if (Settings->bEnableSmokeRendering)
+	{
+		FIVSmokeRenderer::Get().RunPrePassPipeline(GraphBuilder, InView, RenderTargets, SceneTextures);
+	}
+}
+
+void FIVSmokeSceneViewExtension::PostRenderViewFamily_RenderThread(
+	FRDGBuilder& GraphBuilder,
+	FSceneViewFamily& InViewFamily)
+{
+	// Clear View-based RDG caches at end of frame
+	// RDG textures are only valid within the same GraphBuilder, so clear the map for next frame
+	FIVSmokeRenderer::Get().ClearFrameViewCaches();
 }

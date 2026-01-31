@@ -8,31 +8,6 @@
 #include "IVSmokeSettings.generated.h"
 
 /**
- * Post-processing pass where smoke is rendered.
- * Affects interaction with particles, DOF, Bloom, and other effects.
- */
-UENUM(BlueprintType)
-enum class EIVSmokeRenderPass : uint8
-{
-	/** Before Depth of Field. Best quality but particles may render on top. */
-	BeforeDOF UMETA(DisplayName = "Before DOF (Best Quality)"),
-
-	/** After Depth of Field. DOF applied to smoke. Recommended for most cases. */
-	AfterDOF UMETA(DisplayName = "After DOF (Recommended)"),
-
-	/** Translucency After DOF. Smoke renders over AfterDOF particles. Experimental. */
-	TranslucencyAfterDOF UMETA(DisplayName = "Translucency After DOF (Experimental)"),
-
-	/** After Motion Blur. Most effects applied but may cause edge artifacts.
-	 *  @deprecated Not recommended due to visual artifacts. */
-	MotionBlur UMETA(DisplayName = "After Motion Blur", Hidden),
-
-	/** After Tonemapping. All particles rendered below, but no Bloom/DOF/TAA on smoke.
-	 *  @deprecated Not recommended due to missing post-processing effects. */
-	Tonemap UMETA(DisplayName = "After Tonemap (No Post Effects)", Hidden)
-};
-
-/**
  * Global quality preset that sets all section quality levels at once.
  */
 UENUM(BlueprintType)
@@ -399,19 +374,20 @@ public:
 	//~==============================================================================
 	// Rendering
 
-	/** Post-processing pass where smoke is rendered. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering")
-	EIVSmokeRenderPass RenderPass = EIVSmokeRenderPass::AfterDOF;
-
 	/** Smoke visual material data asset. */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering")
 	FSoftObjectPath SmokeVisualMaterialPreset;
 
+	/** Write smoke depth to scene depth buffer for correct translucent sorting.
+	 *  When enabled, particles behind opaque smoke regions are correctly occluded. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering",
+		meta = (EditCondition = "bShowAdvancedOptions", EditConditionHides))
+	bool bEnableDepthWrite = true;
 
-	/** Use CustomDepth for depth-based sorting with particles.
-	 *  Only available when RenderPass = TranslucencyAfterDOF. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering", meta = (DisplayName = "Use CustomDepth Sorting", EditCondition = "RenderPass==EIVSmokeRenderPass::TranslucencyAfterDOF", EditConditionHides))
-	bool bUseCustomDepthBasedSorting = false;
+	/** Depth bias in centimeters. Positive values push depth further from camera. */
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering",
+		meta = (ClampMin = "0.0", ClampMax = "100.0", EditCondition = "bShowAdvancedOptions && bEnableDepthWrite", EditConditionHides))
+	float DepthWriteBias = 50.0f;
 
 	//~==============================================================================
 	// Debug

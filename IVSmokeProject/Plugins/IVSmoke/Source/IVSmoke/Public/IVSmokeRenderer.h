@@ -4,7 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "ScreenPass.h"
+#include "SceneTexturesConfig.h"
 #include "IVSmokeShaders.h"
+#include "SceneView.h"
 #include "IVSmokeSettings.h"
 #include "IVSmokeVisualMaterialPreset.h"
 
@@ -222,6 +224,28 @@ public:
 		const FPostProcessMaterialInputs& Inputs
 	);
 
+	//~==============================================================================
+	// Pre-Pass Pipeline (Public API for SceneViewExtension)
+
+	/**
+	 * Execute Pre-pass pipeline: Ray March → Upscale → UpsampleFilter → Depth Write.
+	 * Called from PostRenderBasePassDeferred_RenderThread BEFORE Translucent Pass.
+	 * Results are cached for Post-process Visual/Composite passes.
+	 *
+	 * Pipeline order ensures Ray March reads only opaque depth (before smoke depth write).
+	 *
+	 * @param GraphBuilder       RDG builder
+	 * @param View               Current scene view
+	 * @param RenderTargets      Render target slots (for depth write)
+	 * @param SceneTextures      Scene texture uniform buffer (for depth sampling in ray march)
+	 */
+	void RunPrePassPipeline(
+		FRDGBuilder& GraphBuilder,
+		const FSceneView& View,
+		const struct FRenderTargetBindingSlots& RenderTargets,
+		TRDGUniformBufferRef<FSceneTextureUniformParameters> SceneTextures
+	);
+
 private:
 	FIVSmokeRenderer();   // Defined in cpp for TUniquePtr with forward-declared types
 	~FIVSmokeRenderer();
@@ -259,6 +283,11 @@ private:
 	 * @param ViewportSize       Size of the full viewport for depth sampling
 	 * @param ViewRectMin        Offset into full scene texture for depth sampling
 	 */
+	/**
+	 * @param SceneDepthForDependency  Optional: Pass SceneDepth texture to create explicit RDG dependency.
+	 *                                 In Pre-pass, this ensures Ray March reads SceneDepth BEFORE Depth Write modifies it.
+	 *                                 Use RenderTargets.DepthStencil.GetTexture() when calling from Pre-pass.
+	 */
 	void AddMultiVolumeRayMarchPass(
 		FRDGBuilder& GraphBuilder,
 		const FSceneView& View,
@@ -268,7 +297,8 @@ private:
 		FRDGTextureRef SmokeWorldPosDepth,
 		const FIntPoint& TexSize,
 		const FIntPoint& ViewportSize,
-		const FIntPoint& ViewRectMin
+		const FIntPoint& ViewRectMin,
+		FRDGTextureRef SceneDepthForDependency = nullptr
 	);
 
 	/**
@@ -316,9 +346,18 @@ private:
 	 * @param SmokeAlbedo			SmokeAlbedo texture from ray marching
 	 * @param SmokeLocalPosAlpha	Smoke (local position, alpha) texture from ray marching
 	 * @param TexSize				Output texture size
+	 * @param ViewRectMin			ViewRect offset for UV calculation
 	 */
-	FRDGTextureRef AddUpsampleFilterPass(FRDGBuilder& GraphBuilder, const FIVSmokePackedRenderData& RenderData, const FSceneView& View,
-		FRDGTextureRef SceneTex, FRDGTextureRef SmokeAlbedo, FRDGTextureRef SmokeLocalPosAlpha, const FIntPoint& TexSize);
+	FRDGTextureRef AddUpsampleFilterPass(
+		FRDGBuilder& GraphBuilder,
+		const FIVSmokePackedRenderData& RenderData,
+		const FSceneView& View,
+		FRDGTextureRef SceneTex,
+		FRDGTextureRef SmokeAlbedo,
+		FRDGTextureRef SmokeLocalPosAlpha,
+		const FIntPoint& TexSize,
+		const FIntPoint& ViewRectMin
+	);
 
 	/**
 	 * Visual pass after Upsample Filtering.
@@ -357,57 +396,65 @@ private:
 		const FScreenPassRenderTarget& Output,
 		const FIntPoint& ViewportSize);
 
-	/**
-	 * Translucency Composite PS Pass.
-	 * Composites smoke OVER particles for TranslucencyAfterDOF mode.
-	 * Engine will composite result with SceneColor using alpha as transmittance.
-	 *
-	 * @param GraphBuilder				RDG builder
-	 * @param RenderData				RenderData ref
-	 * @param View						Current scene view
-	 * @param SmokeVisualTex			Smoke texture after smoke visual pass
-	 * @param SmokeLocalPosAlphaTex		Smoke (local position, alpha) texture from ray marching
-	 * @param ParticlesTex				SeparateTranslucency texture (particles)
-	 * @param Output					Final render target
-	 * @param ParticlesTexExtent		Particles texture extent
-	 * @param ViewportSize				Size of the viewport for UV calculation
-	 */
-	void AddTranslucencyCompositePass(
-		FRDGBuilder& GraphBuilder,
-		const FIVSmokePackedRenderData& RenderData,
-		const FSceneView& View,
-		FRDGTextureRef SmokeVisualTex,
-		FRDGTextureRef SmokeLocalPosAlphaTex,
-		FRDGTextureRef ParticlesTex,
-		const FScreenPassRenderTarget& Output,
-		const FIntPoint& ParticlesTexExtent,
-		const FIntPoint& ViewportSize);
+	//~==============================================================================
+	// Pre-Pass Pipeline (Internal Helpers)
 
 	/**
-	 * Depth-Sorted Composite PS Pass.
-	 * Compares Z values to determine front/back ordering, then applies standard over blending.
-	 * Accesses CustomDepth and SceneDepth via SceneTexturesStruct uniform buffer.
+	 * Check if the view is a primary game view (not a capture or reflection).
+	 * Used to filter out Scene Capture, Planar Reflection, etc. for performance.
 	 *
-	 * @param GraphBuilder				RDG builder
-	 * @param RenderData				RenderData ref
-	 * @param View						Current scene view
-	 * @param SmokeVisualTex			Smoke texture after smoke visual pass
-	 * @param SmokeLocalPosAlphaTex		Smoke (local position, alpha) texture from ray marching
-	 * @param SmokeWorldPosDepthTex		Smoke (world position, linear depth) texture from ray marching
-	 * @param SeparateTranslucencyTex	Particle layer from SeparateTranslucency
-	 * @param Output					Final render target
-	 * @param ViewportSize				Size of the viewport for UV calculation
+	 * @param View  Scene view to check
+	 * @return true if this is a primary game view that should render smoke
 	 */
-	void AddDepthSortedCompositePass(
+	static bool IsPrimaryGameView(const FSceneView& View);
+
+	/**
+	 * Execute depth write pass using current frame's ray march results.
+	 * Called after ray march in Pre-pass pipeline.
+	 *
+	 * @param GraphBuilder           RDG builder
+	 * @param View                   Current scene view
+	 * @param RenderTargets          Render target slots (for depth write)
+	 * @param SmokeWorldPosDepthTex  World position + depth texture
+	 * @param SmokeLocalPosAlphaTex  Local position + alpha texture
+	 * @param ViewportSize           ViewRect.Size() for UV calculation
+	 * @param ViewRectMin            ViewRect.Min for UV calculation
+	 */
+	void ExecuteDepthWrite(
 		FRDGBuilder& GraphBuilder,
-		const FIVSmokePackedRenderData& RenderData,
 		const FSceneView& View,
-		FRDGTextureRef SmokeVisualTex,
-		FRDGTextureRef SmokeLocalPosAlphaTex,
+		const struct FRenderTargetBindingSlots& RenderTargets,
 		FRDGTextureRef SmokeWorldPosDepthTex,
-		FRDGTextureRef SeparateTranslucencyTex,
-		const FScreenPassRenderTarget& Output,
-		const FIntPoint& ViewportSize);
+		FRDGTextureRef SmokeLocalPosAlphaTex,
+		const FIntPoint& ViewportSize,
+		const FIntPoint& ViewRectMin
+	);
+
+	//~==============================================================================
+	// View-based RDG Cache (Pre-pass → Post-process data transfer)
+
+	/**
+	 * RDG-based per-view cache for Pre-pass → Post-process data transfer.
+	 * Valid only within the same RDG builder (same frame).
+	 */
+	struct FViewRDGCache
+	{
+		FRDGTextureRef SmokeTex = nullptr;           // After UpsampleFilter
+		FRDGTextureRef LocalPosAlphaTex = nullptr;   // Full resolution
+		FRDGTextureRef WorldPosDepthTex = nullptr;   // Full resolution
+		FIntPoint ViewportSize = FIntPoint::ZeroValue;
+		FIntPoint ViewRectMin = FIntPoint::ZeroValue;
+		bool bIsValid = false;
+	};
+
+	/** View → Cache map (valid only within same frame's RDG builder). */
+	TMap<const FSceneViewStateInterface*, FViewRDGCache> FrameViewCaches;
+
+public:
+	/** Clear frame view caches. Called at end of frame from SceneViewExtension. */
+	void ClearFrameViewCaches() { FrameViewCaches.Empty(); }
+
+private:
 
 	//~==============================================================================
 	// State

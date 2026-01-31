@@ -269,108 +269,6 @@ public:
 	}
 };
 
-/**
- * Translucency Composite pixel shader.
- * Composites smoke OVER SeparateTranslucency (smoke on top of particles).
- * Used for TranslucencyAfterDOF render pass.
- */
-class IVSMOKE_API FIVSmokeTranslucencyCompositePS : public FGlobalShader
-{
-public:
-	static constexpr const TCHAR* EventName = TEXT("IVSmokeTranslucencyCompositePS");
-	static FRHIBlendState* GetBlendState()
-	{
-		return TStaticBlendState<>::GetRHI();
-	}
-
-	DECLARE_GLOBAL_SHADER(FIVSmokeTranslucencyCompositePS);
-	SHADER_USE_PARAMETER_STRUCT(FIVSmokeTranslucencyCompositePS, FGlobalShader);
-
-	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-		/** Smoke visual texture from SmokeVisualPass. */
-		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeVisualTex)
-		/** Smoke (LocalPos, Alpha) from ray marching. */
-		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeLocalPosAlphaTex)
-		/** SeparateTranslucency texture (particles). */
-		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, ParticleSceneTex)
-		/** Linear sampler for texture filtering. */
-		SHADER_PARAMETER_SAMPLER(SamplerState, LinearClamp_Sampler)
-		/** Particles texture extent for UV calculation. */
-		SHADER_PARAMETER(FVector2f, ParticlesTexExtent)
-		/** Viewport size for UV calculation. */
-		SHADER_PARAMETER(FVector2f, ViewportSize)
-		/** View rect offset for multi-view support. */
-		SHADER_PARAMETER(FVector2f, ViewRectMin)
-		/** Alpha processing type in composite pass. */
-		SHADER_PARAMETER(int, AlphaType)
-		/** Minimum alpha threshold for rendering. Pixels with alpha below this value will be discarded. Only used when VisualAlphaType is CutOff. */
-		SHADER_PARAMETER(float, AlphaThreshold)
-		RENDER_TARGET_BINDING_SLOTS()
-	END_SHADER_PARAMETER_STRUCT()
-
-public:
-	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
-	{
-		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
-	}
-};
-
-/**
- * Depth-Sorted Composite pixel shader.
- * Compares Z values to determine front/back ordering, then applies standard over blending.
- * Properly composites smoke and particles based on their depth relationship.
- */
-class IVSMOKE_API FIVSmokeDepthSortedCompositePS : public FGlobalShader
-{
-public:
-	static constexpr const TCHAR* EventName = TEXT("IVSmokeDepthSortedCompositePS");
-	static FRHIBlendState* GetBlendState()
-	{
-		return TStaticBlendState<>::GetRHI();
-	}
-
-	DECLARE_GLOBAL_SHADER(FIVSmokeDepthSortedCompositePS);
-	SHADER_USE_PARAMETER_STRUCT(FIVSmokeDepthSortedCompositePS, FGlobalShader);
-
-	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-		/** Smoke visual texture from SmokeVisualPass. */
-		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeVisualTex)
-		/** Smoke (LocalPos, Alpha) from ray marching. */
-		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeLocalPosAlphaTex)
-		/** Smoke (WorldPos, Depth) from ray marching. */
-		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeWorldPosDepthTex)
-
-		/** SeparateTranslucency texture (particles). */
-		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SeparateTranslucencyTex)
-
-		/** Scene textures uniform buffer (CustomDepth, SceneDepth). */
-		SHADER_PARAMETER_RDG_UNIFORM_BUFFER(FSceneTextureUniformParameters, SceneTexturesStruct)
-
-		/** Point sampler with clamp addressing. */
-		SHADER_PARAMETER_SAMPLER(SamplerState, PointClamp_Sampler)
-		/** Linear sampler with clamp addressing. */
-		SHADER_PARAMETER_SAMPLER(SamplerState, LinearClamp_Sampler)
-
-		/** Viewport size for UV calculation. */
-		SHADER_PARAMETER(FVector2f, ViewportSize)
-		/** View rect offset for multi-view support. */
-		SHADER_PARAMETER(FVector2f, ViewRectMin)
-		/** Transform for converting device Z to world Z. */
-		SHADER_PARAMETER(FVector4f, InvDeviceZToWorldZTransform)
-		/** Alpha processing type in composite pass. */
-		SHADER_PARAMETER(int, AlphaType)
-		/** Minimum alpha threshold for rendering. Pixels with alpha below this value will be discarded. Only used when VisualAlphaType is CutOff. */
-		SHADER_PARAMETER(float, AlphaThreshold)
-		RENDER_TARGET_BINDING_SLOTS()
-	END_SHADER_PARAMETER_STRUCT()
-
-public:
-	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
-	{
-		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
-	}
-};
-
 //~==============================================================================
 // VSM (Variance Shadow Map) Shaders
 
@@ -453,5 +351,52 @@ public:
 		FGlobalShader::ModifyCompilationEnvironment(Parameters, OutEnvironment);
 		OutEnvironment.SetDefine(TEXT("THREADGROUP_SIZE_X"), ThreadGroupSizeX);
 		OutEnvironment.SetDefine(TEXT("THREADGROUP_SIZE_Y"), ThreadGroupSizeY);
+	}
+};
+
+//~==============================================================================
+// Depth Write Shaders
+
+/**
+ * Pre-Pass Depth Write pixel shader.
+ * Writes smoke depth for correct translucent sorting.
+ * Only writes depth for nearly opaque pixels (Alpha >= 0.99).
+ */
+class IVSMOKE_API FIVSmokeDepthWritePS : public FGlobalShader
+{
+public:
+	static constexpr const TCHAR* EventName = TEXT("IVSmokeDepthWritePS");
+
+	DECLARE_GLOBAL_SHADER(FIVSmokeDepthWritePS);
+	SHADER_USE_PARAMETER_STRUCT(FIVSmokeDepthWritePS, FGlobalShader);
+
+	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		/** Smoke world position + depth from ray march. */
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeWorldPosDepthTex)
+		/** Smoke local position + alpha from ray march. */
+		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeLocalPosAlphaTex)
+		/** Linear sampler with clamp addressing. */
+		SHADER_PARAMETER_SAMPLER(SamplerState, LinearClampSampler)
+		/** Camera forward direction. */
+		SHADER_PARAMETER(FVector3f, CameraForward)
+		/** Camera world position. */
+		SHADER_PARAMETER(FVector3f, CameraOrigin)
+		/** Viewport size for UV calculation. */
+		SHADER_PARAMETER(FVector2f, ViewportSize)
+		/** ViewRect minimum offset. */
+		SHADER_PARAMETER(FVector2f, ViewRectMin)
+		/** Depth bias in centimeters. */
+		SHADER_PARAMETER(float, DepthBias)
+		/** Projection matrix element [2][2] for depth conversion. */
+		SHADER_PARAMETER(float, ViewToClip_22)
+		/** Projection matrix element [3][2] for depth conversion. */
+		SHADER_PARAMETER(float, ViewToClip_32)
+		RENDER_TARGET_BINDING_SLOTS()
+	END_SHADER_PARAMETER_STRUCT()
+
+public:
+	static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
+	{
+		return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5);
 	}
 };
