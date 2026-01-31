@@ -4,6 +4,7 @@
 
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "GameFramework/GameStateBase.h"
 #include "IVSmoke.h"
 #include "IVSmokeCollisionComponent.h"
@@ -26,6 +27,105 @@ DECLARE_DWORD_COUNTER_STAT(TEXT("Active Voxel Count"),					STAT_IVSmoke_ActiveVo
 DECLARE_DWORD_COUNTER_STAT(TEXT("Created Voxel Count (Per Frame)"),		STAT_IVSmoke_CreatedVoxel,		STATGROUP_IVSmoke);
 DECLARE_DWORD_COUNTER_STAT(TEXT("Destroyed Voxel Count (Per Frame)"),	STAT_IVSmoke_DestroyedVoxel,	STATGROUP_IVSmoke);
 
+namespace IVSmokeVoxelVolumeCVars
+{
+	static void ForEachVoxelVolume(UWorld* World, TFunctionRef<void(AIVSmokeVoxelVolume*)> Func)
+	{
+		if (!World)
+		{
+			return;
+		}
+
+		for (TActorIterator<AIVSmokeVoxelVolume> Iter(World); Iter; ++Iter)
+		{
+			if (AIVSmokeVoxelVolume* Volume = *Iter)
+			{
+				Func(Volume);
+			}
+		}
+	}
+
+	static void SetVoxelVolumeDebug(const TArray<FString>& Args, UWorld* World, bool FIVSmokeDebugSettings::* MemberProp, const TCHAR* PropName)
+	{
+		int32 UpdatedCount = 0;
+		bool bLastState = false;
+
+		ForEachVoxelVolume(World, [&](AIVSmokeVoxelVolume* Volume)
+		{
+			bool& bValue = Volume->DebugSettings.*MemberProp;
+
+			bool bNewValue = (Args.Num() > 0 ? Args[0].ToBool() : !bValue);
+			bValue = bNewValue;
+			bLastState = bNewValue;
+
+			UpdatedCount++;
+		});
+
+#if WITH_EDITOR
+		if (UpdatedCount > 0 && Args.Num() == 0)
+		{
+			UE_LOG(LogIVSmoke, Log, TEXT("[IVSmoke.Volume] %s toggled to: %s (%d Actors updated)"),
+				PropName, bLastState ? TEXT("ON") : TEXT("OFF"), UpdatedCount);
+		}
+#endif
+	}
+
+	static FAutoConsoleCommandWithWorldAndArgs Cmd_Volume_Debug(
+		TEXT("IVSmoke.Volume.Debug"),
+		TEXT("Master toggle for Voxel Volume debug visualization.\nUsage: IVSmoke.Volume.Debug [0/1]"),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+		{
+			SetVoxelVolumeDebug(Args, World, &FIVSmokeDebugSettings::bDebugEnabled, TEXT("DebugEnabled"));
+		})
+	);
+
+	static FAutoConsoleCommandWithWorldAndArgs Cmd_Volume_ShowWireframe(
+		TEXT("IVSmoke.Volume.ShowWireframe"),
+		TEXT("Toggle wireframe cubes for active voxels.\nUsage: IVSmoke.Volume.ShowWireframe [0/1]"),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+		{
+			SetVoxelVolumeDebug(Args, World, &FIVSmokeDebugSettings::bShowVoxelWireframe, TEXT("ShowVoxelWireframe"));
+		})
+	);
+
+	static FAutoConsoleCommandWithWorldAndArgs Cmd_Volume_ShowMesh(
+		TEXT("IVSmoke.Volume.ShowMesh"),
+		TEXT("Toggle instanced static meshes for voxels (Expensive).\nUsage: IVSmoke.Volume.ShowMesh [0/1]"),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+		{
+			SetVoxelVolumeDebug(Args, World, &FIVSmokeDebugSettings::bShowVoxelMesh, TEXT("ShowVoxelMesh"));
+		})
+	);
+
+	static FAutoConsoleCommandWithWorldAndArgs Cmd_Volume_ShowStatus(
+		TEXT("IVSmoke.Volume.ShowStatus"),
+		TEXT("Toggle floating status text above the volume.\nUsage: IVSmoke.Volume.ShowStatus [0/1]"),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+		{
+			SetVoxelVolumeDebug(Args, World, &FIVSmokeDebugSettings::bShowStatusText, TEXT("ShowStatusText"));
+		})
+	);
+
+	static FAutoConsoleCommandWithWorldAndArgs Cmd_Volume_SetViewMode(
+		TEXT("IVSmoke.Volume.SetViewMode"),
+		TEXT("Set visualization mode.\n0: SolidColor, 1: Heatmap\nUsage: IVSmoke.Volume.SetViewMode <ModeID>"),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+		{
+			if (Args.Num() == 0) return;
+
+			int32 ModeIndex = FCString::Atoi(*Args[0]);
+			EIVSmokeDebugViewMode NewMode = (ModeIndex == 1) ? EIVSmokeDebugViewMode::Heatmap : EIVSmokeDebugViewMode::SolidColor;
+
+			ForEachVoxelVolume(World, [NewMode](AIVSmokeVoxelVolume* Volume)
+			{
+				Volume->DebugSettings.ViewMode = NewMode;
+			});
+
+			UE_LOG(LogIVSmoke, Log, TEXT("[IVSmoke.Volume] ViewMode changed to: %s"),
+				(NewMode == EIVSmokeDebugViewMode::Heatmap) ? TEXT("Heatmap") : TEXT("SolidColor"));
+		})
+	);
+}
 
 static const FIntVector FloodFillDirections[] = {
 	FIntVector(1, 0, 0), FIntVector(-1, 0, 0),
@@ -147,6 +247,10 @@ void AIVSmokeVoxelVolume::Tick(float DeltaTime)
 	if (DebugSettings.bDebugEnabled)
 	{
 		DrawDebugVisualization();
+	}
+	else if (DebugMeshComponent && DebugMeshComponent->GetInstanceCount() > 0)
+	{
+		DebugMeshComponent->ClearInstances();
 	}
 #endif
 }
