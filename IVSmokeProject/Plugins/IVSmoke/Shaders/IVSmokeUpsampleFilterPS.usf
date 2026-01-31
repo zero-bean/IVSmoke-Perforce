@@ -10,7 +10,6 @@ SamplerState LinearClamp_Sampler;
 float Sharpness;
 float2 ViewportSize;
 float2 ViewRectMin;
-float LowOpacityRemapThreshold;
 
 void MainPS(
 	float4 SvPosition : SV_POSITION,
@@ -87,15 +86,15 @@ void MainPS(
 		filteredMask = lerp(smokeMaskCenter, blurredMask, blurAmount);
 	}
 	
-	float SmokeMask = 1 - saturate(filteredMask);
+	//float SmokeMask = 1 - saturate(filteredMask);
 	
-	if (SmokeMask < LowOpacityRemapThreshold)
-	{
-		SmokeMask = max(0.0, (SmokeMask - LowOpacityRemapThreshold * 0.5f) * 2.0);
-	}
+	//if (SmokeMask < LowOpacityRemapThreshold)
+	//{
+	//	SmokeMask = max(0.0, (SmokeMask - LowOpacityRemapThreshold * 0.5f) * 2.0);
+	//}
 
-	SmokeMask = saturate(1 - SmokeMask);
-	OutColor = float4(filteredSmoke.rgb, SmokeMask);
+	//SmokeMask = saturate(1 - SmokeMask);
+	OutColor = float4(filteredSmoke.rgb, saturate(filteredMask));
 	//OutColor = col * SmokeMask + filteredSmoke;
 }
 //Texture2D SceneTex;

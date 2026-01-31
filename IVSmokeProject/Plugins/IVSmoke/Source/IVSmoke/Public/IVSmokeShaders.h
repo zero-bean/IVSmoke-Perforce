@@ -180,18 +180,12 @@ public:
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SceneTex)
 		/** Smoke albedo (color) from ray marching. */
 		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeTex)
-		/** Smoke (LocalPos, Alpha) from ray marching. */
-		SHADER_PARAMETER_RDG_TEXTURE(Texture2D, SmokeLocalPosAlphaTex)
 		/** Linear sampler with repeat addressing. */
 		SHADER_PARAMETER_SAMPLER(SamplerState, LinearClamp_Sampler)
 		/** Viewport size for UV calculation. */
 		SHADER_PARAMETER(FVector2f, ViewportSize)
 		/** View rect offset for multi-view support. */
 		SHADER_PARAMETER(FVector2f, ViewRectMin)
-		/** Alpha processing type in composite pass. */
-		SHADER_PARAMETER(int, AlphaType)
-		/** Minimum alpha threshold for rendering. Pixels with alpha below this value will be discarded. Only used when VisualAlphaType is CutOff. */
-		SHADER_PARAMETER(float, AlphaThreshold)
 		RENDER_TARGET_BINDING_SLOTS()
 	END_SHADER_PARAMETER_STRUCT()
 
@@ -257,8 +251,6 @@ public:
 		SHADER_PARAMETER(FVector2f, ViewportSize)
 		/** View rect offset for multi-view support. */
 		SHADER_PARAMETER(FVector2f, ViewRectMin)
-		/** Upper bound threshold for low-opacity remapping to suppress HDR burn-through and low-density artifacts. */
-		SHADER_PARAMETER(float, LowOpacityRemapThreshold)
 		RENDER_TARGET_BINDING_SLOTS()
 	END_SHADER_PARAMETER_STRUCT()
 

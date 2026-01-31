@@ -36,6 +36,9 @@ int32 UMaterialExpressionIVSmoke_TextureSample::Compile(class FMaterialCompiler*
 	case EIVSmokeTextureType::SmokeLocalPos:
 		SceneTextureId = PPI_PostProcessInput1;
 		break;
+	case EIVSmokeTextureType::SceneColor:
+		SceneTextureId = PPI_PostProcessInput3; // PPI_PostProcessInput3
+		break;
 	case EIVSmokeTextureType::SmokeWorldPosLinearDepth:
 		SceneTextureId = PPI_PostProcessInput4;
 		break;
@@ -96,6 +99,9 @@ void UMaterialExpressionIVSmoke_TextureSample::GetCaption(TArray<FString>& OutCa
 		break;
 	case EIVSmokeTextureType::SmokeLocalPos:
 		TypeName = TEXT("SmokeLocalPos");
+		break;
+	case EIVSmokeTextureType::SceneColor:
+		TypeName = TEXT("SceneColor");
 		break;
 	case EIVSmokeTextureType::SmokeWorldPosLinearDepth:
 		TypeName = TEXT("SmokeWorldPosLinearDepth");

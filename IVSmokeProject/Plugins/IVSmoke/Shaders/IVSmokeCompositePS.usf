@@ -5,12 +5,10 @@
 
 Texture2D SceneTex;
 Texture2D SmokeTex;
-Texture2D SmokeLocalPosAlphaTex;
 SamplerState LinearClamp_Sampler;
 float2 ViewportSize;
 float2 ViewRectMin;
-int AlphaType; // 0 = Use Alpha as it is, 1 = Alpha <= CutOffValue ? 0 : 1
-float AlphaThreshold;
+
 
 void MainPS(
 	float4 SvPosition : SV_POSITION,
@@ -27,20 +25,12 @@ void MainPS(
 	// Sample textures
 	float4 SceneCol = SceneTex.Sample(LinearClamp_Sampler, SceneUV);
 	float4 SmokeCol = SmokeTex.Sample(LinearClamp_Sampler, SmokeUV);
-	float SmokeMask = SmokeLocalPosAlphaTex.Sample(LinearClamp_Sampler, SmokeUV).a;
-	SmokeMask = SmokeMask == 0 ? 0 : 1;
-	
-	float SmokeAlpha = 0;
-	if(AlphaType == 0)
-	{
-		//0 = Use Alpha as it is,
-		SmokeAlpha = SmokeCol.a;
-	}
-	else
-	{
-		// 1 = Alpha <= CutOffValue ? 0 : 1
-		SmokeAlpha = SmokeCol.a <= AlphaThreshold ? 0 : 1;
-	}
 
-	OutColor = SceneCol * saturate(1 - SmokeAlpha) + SmokeCol * SmokeMask;
+	float SmokeAlpha = SmokeCol.a;
+	SmokeAlpha = 1 - SmokeAlpha;
+	if(SmokeAlpha < 0.02f)
+	{
+		SmokeAlpha = max(0.0f, (SmokeAlpha - 0.01f) * 2);
+	}
+	OutColor = float4(SceneCol.rgb * SmokeAlpha + SmokeCol.rgb, 1);
 }

@@ -521,9 +521,6 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		if (Settings->GetVisualMaterialPreset())
 		{
 			Result.SmokeVisualMaterial = Settings->GetVisualMaterialPreset()->SmokeVisualMaterial.Get();
-			Result.VisualAlphaType = Settings->GetVisualMaterialPreset()->VisualAlphaType;
-			Result.AlphaThreshold = Settings->GetVisualMaterialPreset()->AlphaThreshold;
-			Result.LowOpacityRemapThreshold = Settings->GetVisualMaterialPreset()->LowOpacityRemapThreshold;
 		}
 
 		// Get world from first volume (single lookup, reused for light detection and shadow capture)
@@ -772,12 +769,16 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	//~==========================================================================
 	// Visual Pass
 	// Note: Use EffectiveViewportSize to match smoke texture dimensions (may differ from SceneColor.ViewRect when using Pre-pass cache)
-	FRDGTextureRef SmokeVisualTex = AddSmokeVisualPass(GraphBuilder, RenderData, View, SmokeTex, SmokeLocalPosAlphaFull, SmokeWorldPosDepthFull, SceneColor.Texture, EffectiveViewportSize);
-
-	//~==========================================================================
-	// Composite Pass
-	AddCompositePass(GraphBuilder, RenderData, View, SceneColor.Texture, SmokeVisualTex, SmokeLocalPosAlphaFull, Output, EffectiveViewportSize);
-	return FScreenPassTexture(Output);
+	if (RenderData.SmokeVisualMaterial)
+	{
+		FRDGTextureRef SmokeVisualTex = AddSmokeVisualPass(GraphBuilder, RenderData, View, SmokeTex, SmokeLocalPosAlphaFull, SmokeWorldPosDepthFull, SceneColor.Texture, EffectiveViewportSize);
+		return FScreenPassTexture(SmokeVisualTex);
+	}
+	else
+	{
+		AddCompositePass(GraphBuilder, RenderData, View, SceneColor.Texture, SmokeTex,  Output, EffectiveViewportSize);
+		return FScreenPassTexture(Output);
+	}
 }
 
 //~==============================================================================
@@ -788,8 +789,7 @@ void FIVSmokeRenderer::AddCompositePass(
 	const FIVSmokePackedRenderData& RenderData,
 	const FSceneView& View,
 	FRDGTextureRef SceneTex,
-	FRDGTextureRef SmokeVisualTex,
-	FRDGTextureRef SmokeLocalPosAlphaTex,
+	FRDGTextureRef SmokeTex,
 	const FScreenPassRenderTarget& Output,
 	const FIntPoint& ViewportSize)
 {
@@ -798,13 +798,10 @@ void FIVSmokeRenderer::AddCompositePass(
 
 	auto* Parameters = GraphBuilder.AllocParameters<FIVSmokeCompositePS::FParameters>();
 	Parameters->SceneTex = SceneTex;
-	Parameters->SmokeTex = SmokeVisualTex;
-	Parameters->SmokeLocalPosAlphaTex = SmokeLocalPosAlphaTex;
+	Parameters->SmokeTex = SmokeTex;
 	Parameters->LinearClamp_Sampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
 	Parameters->ViewportSize = FVector2f(ViewportSize);
 	Parameters->ViewRectMin = FVector2f(Output.ViewRect.Min);
-	Parameters->AlphaType = (int)RenderData.VisualAlphaType;
-	Parameters->AlphaThreshold = RenderData.AlphaThreshold;
 	Parameters->RenderTargets[0] = Output.GetRenderTargetBinding();
 
 	FIVSmokePostProcessPass::AddPixelShaderPass<FIVSmokeCompositePS>(GraphBuilder, ShaderMap, PixelShader, Parameters, Output);
@@ -894,7 +891,6 @@ FRDGTextureRef FIVSmokeRenderer::AddUpsampleFilterPass(
 	Parameters->Sharpness = RenderData.Sharpness;
 	Parameters->ViewportSize = TexSize;
 	Parameters->ViewRectMin = FVector2f(ViewRectMin);
-	Parameters->LowOpacityRemapThreshold = RenderData.LowOpacityRemapThreshold;
 	Parameters->RenderTargets[0] = FRenderTargetBinding(SmokeTex, ERenderTargetLoadAction::ENoAction);
 	FScreenPassRenderTarget Output(
 		SmokeTex,
@@ -925,6 +921,9 @@ FRDGTextureRef FIVSmokeRenderer::AddSmokeVisualPass(FRDGBuilder& GraphBuilder, c
 
 	// SmokeLocalPosAlphaTex → PostProcessInput1
 	PostProcessInputs.SetInput(GraphBuilder, EPostProcessMaterialInput::SeparateTranslucency, FScreenPassTexture(SmokeLocalPosAlphaTex));
+
+	// SceneTexture -> PostProcessInput 3
+	PostProcessInputs.SetInput(GraphBuilder, EPostProcessMaterialInput::PostTonemapHDRColor, FScreenPassTexture(SceneTex));
 
 	// SmokeWorldPosDepthTex → PostProcessInput4
 	PostProcessInputs.SetInput(GraphBuilder, EPostProcessMaterialInput::Velocity, FScreenPassTexture(SmokeWorldPosDepthTex));

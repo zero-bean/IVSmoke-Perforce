@@ -124,9 +124,6 @@ struct IVSMOKE_API FIVSmokePackedRenderData
 
 	/** Rendering Info */
 	UMaterialInterface* SmokeVisualMaterial = nullptr;
-	EIVSmokeVisualAlphaType VisualAlphaType = EIVSmokeVisualAlphaType::Alpha;
-	float AlphaThreshold = 0.0f;
-	float LowOpacityRemapThreshold = 0.02f;
 
 	/** Reset to invalid state */
 	void Reset()
@@ -365,7 +362,7 @@ private:
 	 * @param GraphBuilder				RDG builder
 	 * @param RenderData				RenderData ref
 	 * @param View						Current scene view
-	 * @param SmokeTex					Smoke texture after SmokeVisual pass
+	 * @param SmokeTex					Smoke texture after Upsample filter pass
 	 * @param SmokeLocalPosAlphaTex		Smoke (local position, alpha) texture from ray marching
 	 * @param SmokeWorldPosDepthTex		Smoke (world position, linear depth) texture from ray marching
 	 * @param SceneTex,					Scene texture
@@ -381,8 +378,7 @@ private:
 	 * @param RenderData				RenderData ref
 	 * @param View						Current scene view
 	 * @param SceneTex					Scene color texture
-	 * @param SmokeVisualTex			Smoke texture after smoke visual pass
-	 * @param SmokeLocalPosAlphaTex		Smoke (local position, alpha) texture from ray marching
+	 * @param SmokeTex					Smoke texture after Upsample filter pass
 	 * @param Output					Final render target
 	 * @param ViewportSize				Size of the viewport for UV calculation
 	 */
@@ -392,7 +388,6 @@ private:
 		const FSceneView& View,
 		FRDGTextureRef SceneTex,
 		FRDGTextureRef SmokeVisualTex,
-		FRDGTextureRef SmokeLocalPosAlphaTex,
 		const FScreenPassRenderTarget& Output,
 		const FIntPoint& ViewportSize);
 

@@ -7,8 +7,13 @@
 UENUM(BlueprintType)
 enum class EIVSmokeTextureType : uint8
 {
+	//PostProcessInput0
 	SmokeColor,
+	//PostProcessInput1
 	SmokeLocalPos,
+	//PostProcessInput3
+	SceneColor,
+	//PostProcessInput4
 	SmokeWorldPosLinearDepth
 };
 
