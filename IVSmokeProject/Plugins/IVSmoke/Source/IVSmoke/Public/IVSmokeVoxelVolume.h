@@ -146,7 +146,7 @@ struct FIVSmokeDebugSettings
  *
  * ## Overview
  * This actor generates a 3D grid of voxels that expand outward from the center, navigating around obstacles
- * defined by the collision settings. The simulation is*deterministic, ensuring the same shape and timing
+ * defined by the collision settings. The simulation is deterministic, ensuring the same shape and timing
  * across both Server and Clients without replicating individual voxel data.
  *
  * ## Simulation Lifecycle
