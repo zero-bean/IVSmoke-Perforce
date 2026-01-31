@@ -764,6 +764,8 @@ FScreenPassTexture FIVSmokeRenderer::Render(
 	FRDGTextureRef SmokeWorldPosDepthFull = Cache->WorldPosDepthTex;
 	FIntPoint EffectiveViewportSize = Cache->ViewportSize;
 
+	FIntVector SceneSize = SceneColor.Texture->Desc.GetSize();
+	FInt32Point SceneViewRectSize = SceneColor.ViewRect.Size();
 	RDG_EVENT_SCOPE(GraphBuilder, "IVSmoke_PostProcess_VisualComposite");
 
 	//~==========================================================================
