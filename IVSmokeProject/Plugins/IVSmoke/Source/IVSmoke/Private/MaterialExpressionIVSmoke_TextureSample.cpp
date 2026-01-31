@@ -48,7 +48,6 @@ int32 UMaterialExpressionIVSmoke_TextureSample::Compile(class FMaterialCompiler*
 
 	int32 UVsInput = INDEX_NONE;
 
-	// UE 5.7에서 변경된 API 사용
 	if (UVs.Expression)
 	{
 		UVsInput = UVs.Compile(Compiler);
