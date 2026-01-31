@@ -109,35 +109,35 @@ struct FIVSmokeDebugSettings
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug")
 	bool bDebugEnabled = true;
 
 	/** If true, smoke is rendered during editor preview. Disable to see only debug visualization without smoke. */
-	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled"))
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled"))
 	bool bRenderSmokeInPreview = true;
 
-	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled"))
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled"))
 	EIVSmokeDebugViewMode ViewMode = EIVSmokeDebugViewMode::SolidColor;
 
-	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled"))
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled"))
 	bool bShowVolumeBounds = true;
 
-	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled"))
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled"))
 	bool bShowVoxelMesh = false;
 
-	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled"))
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled"))
 	bool bShowVoxelWireframe = true;
 
-	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled"))
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled"))
 	bool bShowStatusText = true;
 
-	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled", UIMin = 0.0, UIMax = 1.0, ClampMin = 0.0))
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled", UIMin = 0.0, UIMax = 1.0, ClampMin = 0.0))
 	FColor DebugWireframeColor = FColor(20, 20, 20);
 
-	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled", UIMin=0.0, UIMax=1.0))
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled", UIMin=0.0, UIMax=1.0))
 	float SliceHeight = 1.0f;
 
-	UPROPERTY(EditAnywhere, meta = (EditCondition = "bDebugEnabled", ClampMin=0, ClampMax=100))
+	UPROPERTY(EditAnywhere, Category = "IVSmoke | Debug", meta = (EditCondition = "bDebugEnabled", ClampMin=0, ClampMax=100))
 	int32 VisibleStepCountPercent = 100;
 };
 

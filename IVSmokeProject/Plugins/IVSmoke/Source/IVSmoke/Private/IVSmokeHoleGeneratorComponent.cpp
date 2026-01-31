@@ -3,6 +3,7 @@
 #include "IVSmokeHoleGeneratorComponent.h"
 
 #include "Engine/TextureRenderTargetVolume.h"
+#include "Engine/Texture2D.h"
 #include "Engine/World.h"
 #include "GameFramework/GameStateBase.h"
 #include "GlobalShader.h"

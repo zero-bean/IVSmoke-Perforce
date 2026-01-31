@@ -2,6 +2,8 @@
 
 #include "IVSmokeVisualMaterialPreset.h"
 #include "IVSmoke.h"
+#include "Materials/MaterialInterface.h"
+#include "Materials/Material.h"
 
 #if WITH_EDITOR
 void UIVSmokeVisualMaterialPreset::PostEditChangeProperty(FPropertyChangedEvent& E)

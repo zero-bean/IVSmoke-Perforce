@@ -6,7 +6,7 @@ public class IVSmoke : ModuleRules
 {
 	public IVSmoke(ReadOnlyTargetRules Target) : base(Target)
 	{
-		// bUseUnity = false;
+		bUseUnity = false;
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		// Public API only - no Internal/Private engine headers required

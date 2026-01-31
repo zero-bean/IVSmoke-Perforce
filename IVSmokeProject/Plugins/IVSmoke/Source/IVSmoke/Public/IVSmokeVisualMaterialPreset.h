@@ -6,6 +6,8 @@
 #include "Engine/DataAsset.h"
 #include "IVSmokeVisualMaterialPreset.generated.h"
 
+class UMaterialInterface;
+
 /**
  * Alpha processing type in composite pass.
  */

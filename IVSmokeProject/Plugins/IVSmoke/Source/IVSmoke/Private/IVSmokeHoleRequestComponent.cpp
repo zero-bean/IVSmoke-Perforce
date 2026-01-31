@@ -5,6 +5,7 @@
 #include "IVSmoke.h"
 #include "IVSmokeHoleGeneratorComponent.h"
 #include "IVSmokeHolePreset.h"
+#include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 
 UIVSmokeHoleRequestComponent::UIVSmokeHoleRequestComponent()
