@@ -61,7 +61,7 @@ void FIVSmokeRenderer::Initialize()
 
 void FIVSmokeRenderer::Shutdown()
 {
-	if (NoiseVolume)
+	if (IsValid(NoiseVolume))
 	{
 		NoiseVolume->RemoveFromRoot();
 		NoiseVolume = nullptr;
