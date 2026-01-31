@@ -13,15 +13,15 @@ float FXAASharpness;
 float GetFXAA(float3 uvw)
 {
 	float3 VoxelTexRCP = float3(1.0f / TexSize.x, 1.0f / TexSize.y, 1.0f / TexSize.z);
-	float M = Source.Sample(LinearBorder_Sampler, uvw);
-	float v000 = Source.Sample(LinearBorder_Sampler, uvw + int3(-1, -1, -1) * VoxelTexRCP);
-	float v001 = Source.Sample(LinearBorder_Sampler, uvw + int3(-1, -1, 1) * VoxelTexRCP);
-	float v010 = Source.Sample(LinearBorder_Sampler, uvw + int3(-1, 1, -1) * VoxelTexRCP);
-	float v011 = Source.Sample(LinearBorder_Sampler, uvw + int3(-1, 1, 1) * VoxelTexRCP);
-	float v100 = Source.Sample(LinearBorder_Sampler, uvw + int3(1, -1, -1) * VoxelTexRCP);
-	float v101 = Source.Sample(LinearBorder_Sampler, uvw + int3(1, -1, 1) * VoxelTexRCP);
-	float v110 = Source.Sample(LinearBorder_Sampler, uvw + int3(1, 1, -1) * VoxelTexRCP);
-	float v111 = Source.Sample(LinearBorder_Sampler, uvw + int3(1, 1, 1) * VoxelTexRCP);
+	float M = Source.SampleLevel(LinearBorder_Sampler, uvw, 0);
+	float v000 = Source.SampleLevel(LinearBorder_Sampler, uvw + int3(-1, -1, -1) * VoxelTexRCP, 0);
+	float v001 = Source.SampleLevel(LinearBorder_Sampler, uvw + int3(-1, -1, 1) * VoxelTexRCP, 0);
+	float v010 = Source.SampleLevel(LinearBorder_Sampler, uvw + int3(-1, 1, -1) * VoxelTexRCP, 0);
+	float v011 = Source.SampleLevel(LinearBorder_Sampler, uvw + int3(-1, 1, 1) * VoxelTexRCP, 0);
+	float v100 = Source.SampleLevel(LinearBorder_Sampler, uvw + int3(1, -1, -1) * VoxelTexRCP, 0);
+	float v101 = Source.SampleLevel(LinearBorder_Sampler, uvw + int3(1, -1, 1) * VoxelTexRCP, 0);
+	float v110 = Source.SampleLevel(LinearBorder_Sampler, uvw + int3(1, 1, -1) * VoxelTexRCP, 0);
+	float v111 = Source.SampleLevel(LinearBorder_Sampler, uvw + int3(1, 1, 1) * VoxelTexRCP, 0);
 
 	// abs(dir) == spanmax => offset = 0
 	// abs(dir) == 0 => offset = FXAARange
@@ -44,14 +44,14 @@ float GetFXAA(float3 uvw)
 	// diff small = dir small
 	Dir = FXAARange * Dir * VoxelTexRCP;
 
-	float v0 = Source.Sample(LinearBorder_Sampler, uvw + int3(-1, -1, -1) * Dir);
-	float v1 = Source.Sample(LinearBorder_Sampler, uvw + int3(-1, -1, 1) * Dir);
-	float v2 = Source.Sample(LinearBorder_Sampler, uvw + int3(-1, 1, -1) * Dir);
-	float v3 = Source.Sample(LinearBorder_Sampler, uvw + int3(-1, 1, 1) * Dir);
-	float v4 = Source.Sample(LinearBorder_Sampler, uvw + int3(1, -1, -1) * Dir);
-	float v5 = Source.Sample(LinearBorder_Sampler, uvw + int3(1, -1, 1) * Dir);
-	float v6 = Source.Sample(LinearBorder_Sampler, uvw + int3(1, 1, -1) * Dir);
-	float v7 = Source.Sample(LinearBorder_Sampler, uvw + int3(1, 1, 1) * Dir);
+	float v0 = Source.SampleLevel(LinearBorder_Sampler, uvw + int3(-1, -1, -1) * Dir, 0);
+	float v1 = Source.SampleLevel(LinearBorder_Sampler, uvw + int3(-1, -1, 1) * Dir, 0);
+	float v2 = Source.SampleLevel(LinearBorder_Sampler, uvw + int3(-1, 1, -1) * Dir, 0);
+	float v3 = Source.SampleLevel(LinearBorder_Sampler, uvw + int3(-1, 1, 1) * Dir, 0);
+	float v4 = Source.SampleLevel(LinearBorder_Sampler, uvw + int3(1, -1, -1) * Dir, 0);
+	float v5 = Source.SampleLevel(LinearBorder_Sampler, uvw + int3(1, -1, 1) * Dir, 0);
+	float v6 = Source.SampleLevel(LinearBorder_Sampler, uvw + int3(1, 1, -1) * Dir, 0);
+	float v7 = Source.SampleLevel(LinearBorder_Sampler, uvw + int3(1, 1, 1) * Dir, 0);
 
 	return (v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7) * 0.25f;
 }

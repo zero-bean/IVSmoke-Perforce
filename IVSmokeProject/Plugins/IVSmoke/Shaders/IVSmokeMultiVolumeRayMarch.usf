@@ -226,13 +226,13 @@ float3 GetHoleUVW(float3 WorldPos, uint VolumeIdx)
 float4 GetHoleSampling(float3 WorldPos, uint VolumeIdx)
 {
 	float3 uvw = GetHoleUVW(WorldPos, VolumeIdx);
-	return PackedHoleAtlas.Sample(LinearBorder_Sampler, uvw);
+	return PackedHoleAtlas.SampleLevel(LinearBorder_Sampler, uvw, 0);
 }
 
 float GetVoxelDensity(float3 WorldPos, uint VolumeIdx)
 {
 	float3 uvw = GetVoxelUVW(WorldPos, VolumeIdx);
-	return PackedVoxelAtlas.Sample(LinearBorder_Sampler, uvw);
+	return PackedVoxelAtlas.SampleLevel(LinearBorder_Sampler, uvw, 0);
 }
 
 float GetDensityForVolume(float3 Position, uint VolumeIdx)

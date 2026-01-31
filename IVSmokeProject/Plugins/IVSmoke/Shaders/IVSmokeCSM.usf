@@ -135,13 +135,13 @@ float IVSmoke_SampleCascade(float3 WorldPos, int CascadeIndex, out float2 OutDeb
 	float FragmentLinearDepth = dot(WorldPos - LightCameraPos, LightCameraFwd);
 
 	// SCS_SceneDepth outputs linear depth in cm from light camera
-	float ShadowLinearDepth = CSMDepthTextureArray.Sample(CSMSampler, float3(ShadowUV, CascadeIndex)).r;
+	float ShadowLinearDepth = CSMDepthTextureArray.SampleLevel(CSMSampler, float3(ShadowUV, CascadeIndex), 0).r;
 
 	OutDebugDepths = float2(ShadowLinearDepth, FragmentLinearDepth);
 
 	if (bEnableVSM)
 	{
-		float2 Moments = CSMVSMTextureArray.Sample(CSMSampler, float3(ShadowUV, CascadeIndex)).rg;
+		float2 Moments = CSMVSMTextureArray.SampleLevel(CSMSampler, float3(ShadowUV, CascadeIndex), 0).rg;
 		return IVSmoke_CalculateVSMShadow(Moments, FragmentLinearDepth);
 	}
 	else
