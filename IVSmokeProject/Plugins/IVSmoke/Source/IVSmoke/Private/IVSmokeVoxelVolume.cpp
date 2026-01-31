@@ -588,8 +588,6 @@ void AIVSmokeVoxelVolume::ResetSimulationInternal()
 	ServerState.SustainStartTime = 0.0f;
 	ServerState.DissipationStartTime = 0.0f;
 
-	// HandleStateTransition(Idle)은 LocalState가 이미 Idle이면 스킵됨
-	// Reset은 항상 확실히 초기화해야 하므로 직접 호출
 	ClearSimulationData();
 	LocalState = EIVSmokeVoxelVolumeState::Idle;
 }
@@ -706,7 +704,15 @@ void AIVSmokeVoxelVolume::UpdateDissipation()
 
 	if (CurrentSimTime < DissipationDuration)
 	{
-		float CurveValue = GetCurveValue(CurrentSimTime, DissipationDuration, DissipationCurve);
+		float CurveValue = 1.0f;
+		if (DissipationCurve)
+		{
+			CurveValue = GetCurveValue(CurrentSimTime, DissipationDuration, DissipationCurve);
+		}
+		else
+		{
+			CurveValue = FMath::Max(0.0f, 1.0f - GetCurveValue(CurrentSimTime, DissipationDuration, DissipationCurve));
+		}
 		TargetAliveNum = FMath::FloorToInt(GeneratedVoxelIndices.Num() * CurveValue);
 	}
 	else
