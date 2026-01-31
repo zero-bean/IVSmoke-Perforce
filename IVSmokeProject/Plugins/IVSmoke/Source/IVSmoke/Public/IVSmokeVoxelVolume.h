@@ -205,9 +205,9 @@ public:
 	 */
 	TObjectPtr<UIVSmokeCollisionComponent> GetCollisionComponent();
 
-	/** Defines the overall bounding volume of the smoke actor and is used as the root component. */
+	/** Editor visualization sprite. Used as the RootComponent. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "IVSmoke")
-	TObjectPtr<UBoxComponent> VolumeBoundComponent;
+	TObjectPtr<UBillboardComponent> BillboardComponent;
 
 private:
 	/**
@@ -748,6 +748,9 @@ public:
 private:
 	/** Main entry point for drawing all enabled debug visualizations per frame. */
 	void DrawDebugVisualization() const;
+
+	/** Draws voxel volume bounds. */
+	void DrawDebugVolumeBounds() const;
 
 	/** Draws lightweight wireframe cubes for active voxels. */
 	void DrawDebugVoxelWireframes() const;

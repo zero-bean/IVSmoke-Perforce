@@ -10,6 +10,7 @@
 #include "IVSmokeCollisionComponent.h"
 #include "IVSmokeGridLibrary.h"
 #include "IVSmokeHoleGeneratorComponent.h"
+#include "Components/BillboardComponent.h"
 #include "Net/UnrealNetwork.h"
 
 #if WITH_EDITOR
@@ -143,15 +144,17 @@ AIVSmokeVoxelVolume::AIVSmokeVoxelVolume()
 
 	Tags.Add(IVSmokeVoxelVolumeTag);
 
-	VolumeBoundComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Volume Bound Component"));
-	RootComponent = VolumeBoundComponent;
+	BillboardComponent = CreateDefaultSubobject<UBillboardComponent>(TEXT("BillboardComponent"));
 
-	VolumeBoundComponent->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
-	VolumeBoundComponent->SetGenerateOverlapEvents(false);
-	VolumeBoundComponent->SetHiddenInGame(true);
+#if WITH_EDITORONLY_DATA
+	BillboardComponent->SetEditorScale(1.0f);
 
-	VolumeBoundComponent->ShapeColor = FColor(100, 255, 100, 255);
-	VolumeBoundComponent->SetLineThickness(2.0f);
+	ConstructorHelpers::FObjectFinder<UTexture2D> IconTexture(TEXT("/IVSmoke/Icons/T_IVSmoke_VoxelVolumeIcon.T_IVSmoke_VoxelVolumeICon"));
+	if (IconTexture.Succeeded())
+	{
+		BillboardComponent->SetSprite(IconTexture.Object);
+	}
+#endif
 
 #if WITH_EDITORONLY_DATA
 	DebugMeshComponent = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("DebugMeshComponent"));
@@ -267,23 +270,6 @@ bool AIVSmokeVoxelVolume::ShouldTickIfViewportsOnly() const
 void AIVSmokeVoxelVolume::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-
-	if (VolumeBoundComponent)
-	{
-		FIntVector GridResolution = GetGridResolution();
-
-		FVector NewExtent;
-		NewExtent.X = (GridResolution.X * VoxelSize) * 0.5f;
-		NewExtent.Y = (GridResolution.Y * VoxelSize) * 0.5f;
-		NewExtent.Z = (GridResolution.Z * VoxelSize) * 0.5f;
-
-		VolumeBoundComponent->SetBoxExtent(NewExtent);
-
-#if WITH_EDITORONLY_DATA
-		bool bShouldBeVisible = DebugSettings.bDebugEnabled && DebugSettings.bShowVolumeBounds;
-		VolumeBoundComponent->SetVisibility(bShouldBeVisible);
-#endif
-	}
 }
 
 #if WITH_EDITOR
@@ -1149,6 +1135,7 @@ void AIVSmokeVoxelVolume::DrawDebugVisualization() const
 		return;
 	}
 
+	DrawDebugVolumeBounds();
 	DrawDebugVoxelWireframes();
 	DrawDebugVoxelMeshes();
 	DrawDebugStatusText();
@@ -1157,6 +1144,46 @@ void AIVSmokeVoxelVolume::DrawDebugVisualization() const
 	{
 		CollisionComponent->DrawDebugVisualization();
 	}
+#endif
+}
+
+void AIVSmokeVoxelVolume::DrawDebugVolumeBounds() const
+{
+#if WITH_EDITOR
+	if (!DebugSettings.bShowVolumeBounds)
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	FIntVector GridResolution = GetGridResolution();
+
+	FVector TotalSize;
+	TotalSize.X = GridResolution.X * VoxelSize;
+	TotalSize.Y = GridResolution.Y * VoxelSize;
+	TotalSize.Z = GridResolution.Z * VoxelSize;
+
+	FVector HalfExtent = TotalSize * 0.5f;
+
+	FVector CenterPos = GetActorLocation();
+	FQuat Rotation = GetActorRotation().Quaternion();
+
+	DrawDebugBox(
+		World,
+		CenterPos,
+		HalfExtent,
+		Rotation,
+		FColor(100, 255, 100),
+		false,
+		-1.0f,
+		0,
+		2.0f
+	);
 #endif
 }
 
