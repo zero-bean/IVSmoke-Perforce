@@ -70,7 +70,6 @@ struct IVSMOKE_API FIVSmokePackedRenderData
 	int32 VolumeCount = 0;
 
 	/** Preset parameters (copied from default preset) */
-	float Sharpness = 0.0f;
 	int32 MaxSteps = 128;
 	float GlobalAbsorption = 0.1f;
 	float SmokeSize = 128.0f;
@@ -124,6 +123,9 @@ struct IVSMOKE_API FIVSmokePackedRenderData
 
 	/** Rendering Info */
 	UMaterialInterface* SmokeVisualMaterial = nullptr;
+	int UpSampleFilterType = 2;
+	float SharpenStrength = 0.0f;
+	float BlurStrength = 0.4f;
 
 	/** Reset to invalid state */
 	void Reset()

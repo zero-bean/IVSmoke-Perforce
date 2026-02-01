@@ -240,11 +240,6 @@ public:
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Appearance")
 	FVector WindDirection = FVector(0.00f, 0.00f, 0.1f);
 
-	/** Sharpening/blurring of the smoke composite.
-	 *  Positive = sharpen, Zero = no filter, Negative = blur. */
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Appearance", meta = (ClampMin = "-1.0", ClampMax = "1.0"))
-	float Sharpness = 0.4f;
-
 	/** Volume edge range offset for density falloff. */
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Appearance", meta = (ClampMin = "0.0", ClampMax = "1.0", EditCondition = "bShowAdvancedOptions", EditConditionHides))
 	float VolumeRangeOffset = 0.1;

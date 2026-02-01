@@ -497,9 +497,6 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 
 	if (Settings)
 	{
-		// Post processing
-		Result.Sharpness = Settings->Sharpness;
-
 		// Ray marching
 		Result.MaxSteps = Settings->GetEffectiveMaxSteps();
 
@@ -518,9 +515,13 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		Result.ScatteringAnisotropy = Settings->ScatteringAnisotropy;
 
 		//Rendering
-		if (Settings->GetVisualMaterialPreset())
+		UIVSmokeVisualMaterialPreset* VisualMaterialPreset = Settings->GetVisualMaterialPreset();
+		if (VisualMaterialPreset)
 		{
-			Result.SmokeVisualMaterial = Settings->GetVisualMaterialPreset()->SmokeVisualMaterial.Get();
+			Result.SmokeVisualMaterial = VisualMaterialPreset->SmokeVisualMaterial.Get();
+			Result.UpSampleFilterType = (int)VisualMaterialPreset->UpSampleFilterType;
+			Result.SharpenStrength = VisualMaterialPreset->SharpenStrength;
+			Result.BlurStrength = VisualMaterialPreset->BlurStrength;
 		}
 
 		// Get world from first volume (single lookup, reused for light detection and shadow capture)
@@ -890,7 +891,9 @@ FRDGTextureRef FIVSmokeRenderer::AddUpsampleFilterPass(
 	Parameters->SmokeAlbedoTex = SmokeAlbedo;
 	Parameters->SmokeLocalPosAlphaTex = SmokeLocalPosAlpha;
 	Parameters->LinearClamp_Sampler = TStaticSamplerState<SF_Bilinear, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
-	Parameters->Sharpness = RenderData.Sharpness;
+	Parameters->UpSampleFilterType = RenderData.UpSampleFilterType;
+	Parameters->SharpenStrength = RenderData.SharpenStrength;
+	Parameters->BlurStrength = RenderData.BlurStrength;
 	Parameters->ViewportSize = TexSize;
 	Parameters->ViewRectMin = FVector2f(ViewRectMin);
 	Parameters->RenderTargets[0] = FRenderTargetBinding(SmokeTex, ERenderTargetLoadAction::ENoAction);
