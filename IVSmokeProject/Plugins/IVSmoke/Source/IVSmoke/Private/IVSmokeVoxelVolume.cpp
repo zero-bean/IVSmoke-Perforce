@@ -146,6 +146,8 @@ AIVSmokeVoxelVolume::AIVSmokeVoxelVolume()
 
 	BillboardComponent = CreateDefaultSubobject<UBillboardComponent>(TEXT("BillboardComponent"));
 
+	RootComponent = BillboardComponent;
+
 #if WITH_EDITORONLY_DATA
 	BillboardComponent->SetEditorScale(1.0f);
 
