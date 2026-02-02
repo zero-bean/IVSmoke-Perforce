@@ -4,6 +4,7 @@
 #include "IVSmokeRenderer.h"
 #include "IVSmoke.h"
 #include "IVSmokeVisualMaterialPreset.h"
+#include "Materials/MaterialInterface.h"
 
 
 UIVSmokeSettings::UIVSmokeSettings()
@@ -157,13 +158,22 @@ UIVSmokeVisualMaterialPreset* UIVSmokeSettings::GetVisualMaterialPreset() const
 	return nullptr;
 }
 
-#if WITH_EDITOR
 void UIVSmokeSettings::PostInitProperties()
 {
 	Super::PostInitProperties();
 
+	// Load preset and ensure shader compilation is complete before first render
 	CachedVisualMaterialPreset = Cast<UIVSmokeVisualMaterialPreset>(SmokeVisualMaterialPreset.TryLoad());
+	if (CachedVisualMaterialPreset)
+	{
+		if (UMaterialInterface* Mat = CachedVisualMaterialPreset->SmokeVisualMaterial.Get())
+		{
+			Mat->EnsureIsComplete();
+		}
+	}
 }
+
+#if WITH_EDITOR
 void UIVSmokeSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -171,6 +181,14 @@ void UIVSmokeSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyCha
 	// Global settings are read directly from UIVSmokeSettings::Get() each frame,
 	// so no manual refresh is needed when properties change.
 
+	// Load preset and ensure shader compilation when preset changes
 	CachedVisualMaterialPreset = Cast<UIVSmokeVisualMaterialPreset>(SmokeVisualMaterialPreset.TryLoad());
+	if (CachedVisualMaterialPreset)
+	{
+		if (UMaterialInterface* Mat = CachedVisualMaterialPreset->SmokeVisualMaterial.Get())
+		{
+			Mat->EnsureIsComplete();
+		}
+	}
 }
 #endif

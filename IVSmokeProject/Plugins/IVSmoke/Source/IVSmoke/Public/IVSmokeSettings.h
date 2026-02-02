@@ -119,10 +119,11 @@ public:
 
 	UIVSmokeVisualMaterialPreset* GetVisualMaterialPreset() const;
 
+	virtual void PostInitProperties() override;
+
 #if WITH_EDITOR
 	virtual FText GetSectionText() const override { return NSLOCTEXT("IVSmoke", "SettingsSection", "IVSmoke"); }
 	virtual FText GetSectionDescription() const override { return NSLOCTEXT("IVSmoke", "SettingsDescription", "Configure IVSmoke volumetric smoke settings"); }
-	virtual void PostInitProperties() override;
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 

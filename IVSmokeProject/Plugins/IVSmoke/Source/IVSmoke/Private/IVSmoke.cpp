@@ -2,7 +2,10 @@
 
 #include "IVSmoke.h"
 #include "IVSmokeSceneViewExtension.h"
+#include "IVSmokeSettings.h"
+#include "IVSmokeVisualMaterialPreset.h"
 #include "Interfaces/IPluginManager.h"
+#include "Materials/MaterialInterface.h"
 #include "Misc/CoreDelegates.h"
 #include "Misc/Paths.h"
 #include "Stats/Stats.h"
@@ -25,6 +28,20 @@ void FIVSmokeModule::StartupModule()
 	FCoreDelegates::OnPostEngineInit.AddLambda([]()
 	{
 		UE_LOG(LogIVSmoke, Log, TEXT("[FIVSmokeModule::StartupModule] OnPostEngineInit fired"));
+
+		// Preload Visual Material Preset and ensure shader compilation
+		if (const UIVSmokeSettings* Settings = UIVSmokeSettings::Get())
+		{
+			if (UIVSmokeVisualMaterialPreset* Preset = Settings->GetVisualMaterialPreset())
+			{
+				if (UMaterialInterface* Mat = Preset->SmokeVisualMaterial.Get())
+				{
+					Mat->EnsureIsComplete();
+					UE_LOG(LogIVSmoke, Log, TEXT("[FIVSmokeModule::StartupModule] Visual Material preloaded"));
+				}
+			}
+		}
+
 		FIVSmokeSceneViewExtension::Initialize();
 	});
 #endif
