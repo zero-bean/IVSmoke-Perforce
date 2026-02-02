@@ -8,12 +8,19 @@
 
 class UMaterialInterface;
 
+/**
+ * It is filter type that's applied after raymarching
+ */
 UENUM(BlueprintType)
 enum class EIVSmokeUpSampleFilterType : uint8
 {
+	/** Not used filter */
 	None,
+	/** Sharpen filter */
 	Sharpen,
+	/** Gaussian blur filter */
 	Blur,
+	/** Median filter */
 	Median
 };
 
@@ -33,13 +40,16 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering")
 	TObjectPtr<UMaterialInterface> SmokeVisualMaterial;
 
+	/** It is filter type that's applied after raymarching */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering")
 	EIVSmokeUpSampleFilterType UpSampleFilterType = EIVSmokeUpSampleFilterType::Blur;
 
+	/** The strength of the Sharpen filter.  */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering", meta = (ClampMin = "0.0", ClampMax = "1.0",
 		EditCondition = "UpSampleFilterType == EIVSmokeUpSampleFilterType::Sharpen", EditConditionHides))
 	float SharpenStrength = 0.4f;
 
+	/** The strength of the Gaussian blur filter. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IVSmoke | Rendering", meta = (ClampMin = "0.0", ClampMax = "1.0",
 		EditCondition = "UpSampleFilterType == EIVSmokeUpSampleFilterType::Blur", EditConditionHides))
 	float BlurStrength = 0.4f;

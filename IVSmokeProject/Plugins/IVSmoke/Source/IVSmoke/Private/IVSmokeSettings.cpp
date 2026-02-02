@@ -163,6 +163,14 @@ void UIVSmokeSettings::SetVisualMaterialPreset(FSoftObjectPath VisualMaterialPre
 
 	Settings->SmokeVisualMaterialPreset = VisualMaterialPresetPath;
 	Settings->CachedVisualMaterialPreset = Cast<UIVSmokeVisualMaterialPreset>(Settings->SmokeVisualMaterialPreset.TryLoad());
+
+	if (CachedVisualMaterialPreset)
+	{
+		if (UMaterialInterface* Mat = CachedVisualMaterialPreset->SmokeVisualMaterial.Get())
+		{
+			Mat->EnsureIsComplete();
+		}
+	}
 }
 
 void UIVSmokeSettings::PostInitProperties()
