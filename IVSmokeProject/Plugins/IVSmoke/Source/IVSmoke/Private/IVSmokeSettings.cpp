@@ -157,6 +157,13 @@ UIVSmokeVisualMaterialPreset* UIVSmokeSettings::GetVisualMaterialPreset() const
 	}
 	return nullptr;
 }
+void UIVSmokeSettings::SetVisualMaterialPreset(FSoftObjectPath VisualMaterialPresetPath)
+{
+	UIVSmokeSettings* Settings = GetMutableDefault<UIVSmokeSettings>();
+
+	Settings->SmokeVisualMaterialPreset = VisualMaterialPresetPath;
+	Settings->CachedVisualMaterialPreset = Cast<UIVSmokeVisualMaterialPreset>(Settings->SmokeVisualMaterialPreset.TryLoad());
+}
 
 void UIVSmokeSettings::PostInitProperties()
 {

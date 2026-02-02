@@ -118,9 +118,9 @@ public:
 	virtual FName GetSectionName() const override { return TEXT("IVSmoke"); }
 
 	UIVSmokeVisualMaterialPreset* GetVisualMaterialPreset() const;
-
 	virtual void PostInitProperties() override;
-
+	UFUNCTION(BlueprintCallable, Category = "IVSmoke | VisualMaterial")
+	void SetVisualMaterialPreset(FSoftObjectPath VisualMaterialPresetPath);
 #if WITH_EDITOR
 	virtual FText GetSectionText() const override { return NSLOCTEXT("IVSmoke", "SettingsSection", "IVSmoke"); }
 	virtual FText GetSectionDescription() const override { return NSLOCTEXT("IVSmoke", "SettingsDescription", "Configure IVSmoke volumetric smoke settings"); }
