@@ -856,8 +856,32 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 SpawnNum, float StartSimTime, f
 
 			float DeltaDist = NextDist - CurrentDist;
 
+			float DeltaCost = 0.0f;
+
+			if (DeltaDist >= 0.0f)
+			{
+				DeltaCost = DeltaDist;
+			}
+			else
+			{
+				float AxisInvRadius = 1.0f;
+				if (Direction.X != 0)
+				{
+					AxisInvRadius = Radii.X;
+				}
+				else if (Direction.Y != 0)
+				{
+					AxisInvRadius = Radii.Y;
+				}
+				else if (Direction.Z != 0)
+				{
+					AxisInvRadius = Radii.Z;
+				}
+				DeltaCost = VoxelSize * AxisInvRadius;
+			}
+
 			float NoiseCost = RandomStream.FRandRange(0.0f, ExpansionNoise);
-			float ExpansionCost = CurrentNode.Cost + DeltaDist + NoiseCost;
+			float ExpansionCost = CurrentNode.Cost + DeltaCost + NoiseCost;
 
 			if (ExpansionCost < VoxelCosts[NextIndex])
 			{
