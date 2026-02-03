@@ -13,6 +13,7 @@
 #include "IVSmokeVoxelVolume.generated.h"
 
 class UBoxComponent;
+class UBillboardComponent;
 class UIVSmokeCollisionComponent;
 class UIVSmokeSmokePreset;
 class UIVSmokeHoleGeneratorComponent;
@@ -632,9 +633,6 @@ private:
 	// Data Access
 #pragma region DataAccess
 public:
-	/** Sets the bLockLocation flag to prevent Transform changes in editor. */
-	FORCEINLINE void SetLockLocation(bool bLock) { bLockLocation = bLock; }
-
 	/** Returns the current phase of the simulation state machine. */
 	FORCEINLINE EIVSmokeVoxelVolumeState GetCurrentState() const { return ServerState.State; }
 

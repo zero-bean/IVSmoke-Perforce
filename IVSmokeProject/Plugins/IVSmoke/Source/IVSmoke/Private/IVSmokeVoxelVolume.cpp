@@ -950,6 +950,14 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 SpawnNum, float StartSimTime, f
 		for (const FIntVector& Direction : FloodFillDirections)
 		{
 			const FIntVector NextGrid = CurrentGrid + Direction;
+
+			if (NextGrid.X < 0 || NextGrid.X >= GridResolution.X ||
+				NextGrid.Y < 0 || NextGrid.Y >= GridResolution.Y ||
+				NextGrid.Z < 0 || NextGrid.Z >= GridResolution.Z)
+			{
+				continue;
+			}
+			
 			const int32 NextIndex = UIVSmokeGridLibrary::GridToIndex(NextGrid, GridResolution);
 
 			if (!VoxelCosts.IsValidIndex(NextIndex))
