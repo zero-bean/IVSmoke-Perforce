@@ -410,6 +410,11 @@ void AIVSmokeVoxelVolume::Initialize()
 		VoxelBits.SetNumUninitialized(TotalGridSizeYZ);
 	}
 
+	if (VoxelPenetrationFlags.Num() != TotalGridSize)
+	{
+		VoxelPenetrationFlags.Init(false, TotalGridSize);
+	}
+
 	GeneratedVoxelIndices.Reserve(MaxVoxelNum);
 
 	ExpansionHeap.Reserve(MaxVoxelNum);
@@ -546,6 +551,9 @@ void AIVSmokeVoxelVolume::ClearSimulationData()
 	FMemory::Memzero(VoxelDeathTimes.GetData(), VoxelDeathTimes.Num() * sizeof(float));
 
 	FMemory::Memzero(VoxelBits.GetData(), VoxelBits.Num() * sizeof(uint64));
+
+	VoxelPenetrationFlags.Reset();
+	VoxelPenetrationFlags.Init(false, VoxelCosts.Num());
 
 	VoxelCosts.Init(FLT_MAX, VoxelCosts.Num());
 
@@ -886,6 +894,11 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 SpawnNum, float StartSimTime, f
 
 						if (IsVoxelActive(NeighborIndex))
 						{
+							if (VoxelPenetrationFlags[NeighborIndex])
+							{
+								continue;
+							}
+
 							const float Dist = CalculateWeightedDistance(NeighborIndex, CurrentNode.Index, InvRadii);
 							const float NewCost = VoxelCosts[NeighborIndex] + Dist;
 
@@ -944,6 +957,8 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 SpawnNum, float StartSimTime, f
 
 		if (bIsPenetrating)
 		{
+			VoxelPenetrationFlags[CurrentNode.Index] = true;
+
 			continue;
 		}
 
@@ -957,7 +972,7 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 SpawnNum, float StartSimTime, f
 			{
 				continue;
 			}
-			
+
 			const int32 NextIndex = UIVSmokeGridLibrary::GridToIndex(NextGrid, GridResolution);
 
 			if (!VoxelCosts.IsValidIndex(NextIndex))
