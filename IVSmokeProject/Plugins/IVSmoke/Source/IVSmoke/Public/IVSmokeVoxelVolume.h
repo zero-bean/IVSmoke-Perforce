@@ -539,6 +539,17 @@ private:
 	 */
 	void SetVoxelDeathTime(int32 Index, float DeathTime);
 
+	/**
+	 * Calculates the weighted Euclidean distance between two voxels based on Radii.
+	 * Used for Theta* cost estimation to approximate the actual distance.
+	 *
+	 * @param IndexA	Index of the first voxel.
+	 * @param IndexB	Index of the second voxel.
+	 * @param InvRadii	Inverse of the radii vector for weighting the distance per axis.
+	 * @return			The weighted distance between the two voxels.
+	 */
+	float CalculateWeightedDistance(int32 IndexA, int32 IndexB, const FVector& InvRadii) const;
+
 	/** Replicated state synchronized from the server. */
 	UPROPERTY(ReplicatedUsing = OnRep_ServerState)
 	FIVSmokeServerState ServerState;

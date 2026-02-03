@@ -761,12 +761,9 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 SpawnNum, float StartSimTime, f
 		return;
 	}
 
-	FTransform ActorTrans = GetActorTransform();
-
-	FIntVector GridResolution = GetGridResolution();
-	FIntVector CenterOffset = GetCenterOffset();
-
-	int32 SpawnCount = 0;
+	const FTransform ActorTrans = GetActorTransform();
+	const FIntVector GridResolution = GetGridResolution();
+	const FIntVector CenterOffset = GetCenterOffset();
 
 	FVector InvRadii;
 	InvRadii.X = 1.0f / FMath::Max(UE_KINDA_SMALL_NUMBER, Radii.X);
@@ -774,11 +771,17 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 SpawnNum, float StartSimTime, f
 	InvRadii.Z = 1.0f / FMath::Max(UE_KINDA_SMALL_NUMBER, Radii.Z);
 
 	const float InvSpawnNum = 1.0f / SpawnNum;
+	int32 SpawnCount = 0;
 
 	while (SpawnCount < SpawnNum && !ExpansionHeap.IsEmpty())
 	{
 		FIVSmokeVoxelNode CurrentNode;
 		ExpansionHeap.HeapPop(CurrentNode);
+
+		if (!VoxelCosts.IsValidIndex(CurrentNode.Index))
+		{
+			continue;
+		}
 
 		if (CurrentNode.Cost > VoxelCosts[CurrentNode.Index])
 		{
@@ -790,104 +793,138 @@ void AIVSmokeVoxelVolume::ProcessExpansion(int32 SpawnNum, float StartSimTime, f
 			continue;
 		}
 
-		float Alpha = SpawnCount * InvSpawnNum;
-		float BirthTime = ServerState.ExpansionStartTime + FMath::Lerp(StartSimTime, EndSimTime, Alpha);
+		int32 ResolvedParentIndex = CurrentNode.ParentIndex;
+		float ResolvedCost = CurrentNode.Cost;
+
+		const FIntVector CurrentGrid = UIVSmokeGridLibrary::IndexToGrid(CurrentNode.Index, GridResolution);
+		const FIntVector ParentGrid = UIVSmokeGridLibrary::IndexToGrid(CurrentNode.ParentIndex, GridResolution);
+		const FVector CurrentLocal = UIVSmokeGridLibrary::GridToLocal(CurrentGrid, VoxelSize, CenterOffset);
+		const FVector ParentLocal = UIVSmokeGridLibrary::GridToLocal(ParentGrid, VoxelSize, CenterOffset);
+		const FVector CurrentWorld = ActorTrans.TransformPositionNoScale(CurrentLocal);
+		const FVector ParentWorld = ActorTrans.TransformPositionNoScale(ParentLocal);
+
+		bool bIsPenetrating = false;
+
+		if (CurrentNode.ParentIndex != INDEX_NONE && VoxelCosts.IsValidIndex(CurrentNode.ParentIndex))
+		{
+			const int32 ManhattanDist = FMath::Abs(CurrentGrid.X - ParentGrid.X) +
+										FMath::Abs(CurrentGrid.Y - ParentGrid.Y) +
+										FMath::Abs(CurrentGrid.Z - ParentGrid.Z);
+			if (ManhattanDist > 1)
+			{
+				if (IsConnectionBlocked(World, ParentWorld, CurrentWorld))
+				{
+					float BestRewireCost = FLT_MAX;
+					int32 BestRewireParent = INDEX_NONE;
+
+					for (const FIntVector& Direction : FloodFillDirections)
+					{
+						const FIntVector NeighborGrid = CurrentGrid + Direction;
+						const int32 NeighborIndex = UIVSmokeGridLibrary::GridToIndex(NeighborGrid, GridResolution);
+
+						if (!VoxelCosts.IsValidIndex(NeighborIndex))
+						{
+							continue;
+						}
+
+						if (IsVoxelActive(NeighborIndex))
+						{
+							const float Dist = CalculateWeightedDistance(NeighborIndex, CurrentNode.Index, InvRadii);
+							const float NewCost = VoxelCosts[NeighborIndex] + Dist;
+
+							if (NewCost < BestRewireCost)
+							{
+								BestRewireCost = NewCost;
+								BestRewireParent = NeighborIndex;
+							}
+						}
+					}
+
+					if (BestRewireParent != INDEX_NONE)
+					{
+						ResolvedParentIndex = BestRewireParent;
+						ResolvedCost = BestRewireCost;
+						VoxelCosts[CurrentNode.Index] = ResolvedCost;
+
+						const FIntVector NeighborGrid = UIVSmokeGridLibrary::IndexToGrid(BestRewireParent, GridResolution);
+						const FVector NeighborLocal = UIVSmokeGridLibrary::GridToLocal(NeighborGrid, VoxelSize, CenterOffset);
+						const FVector NeighborWorld = ActorTrans.TransformPosition(NeighborLocal);
+
+						if (IsConnectionBlocked(World, CurrentWorld, NeighborWorld))
+						{
+							bIsPenetrating = true;
+						}
+					}
+					else
+					{
+						continue;
+					}
+				}
+			}
+			else
+			{
+				if (IsConnectionBlocked(World, CurrentWorld, ParentWorld))
+				{
+					bIsPenetrating = true;
+				}
+			}
+		}
+
+		const float Alpha = SpawnCount * InvSpawnNum;
+		const float BirthTime = ServerState.ExpansionStartTime + FMath::Lerp(StartSimTime, EndSimTime, Alpha);
 		SetVoxelBirthTime(CurrentNode.Index, BirthTime);
 
 		GeneratedVoxelIndices.Add(CurrentNode.Index);
 		++SpawnCount;
 
-		float DissipationCost = VoxelCosts[CurrentNode.Index] + RandomStream.FRandRange(0.0f, DissipationNoise);
-		DissipationHeap.HeapPush({CurrentNode.Index, INDEX_NONE, DissipationCost});
+		const float DissipationCost = ResolvedCost + RandomStream.FRandRange(0.0f, DissipationNoise);
+		DissipationHeap.HeapPush({ CurrentNode.Index, INDEX_NONE, DissipationCost });
 
 		if (GetActiveVoxelNum() >= MaxVoxelNum)
 		{
 			return;
 		}
 
-		if (CurrentNode.ParentIndex != INDEX_NONE)
+		if (bIsPenetrating)
 		{
-			FIntVector CurrentGrid = UIVSmokeGridLibrary::IndexToGrid(CurrentNode.Index, GridResolution);
-			FIntVector ParentGrid = UIVSmokeGridLibrary::IndexToGrid(CurrentNode.ParentIndex, GridResolution);
-
-			FVector CurrentLocalPos = UIVSmokeGridLibrary::GridToLocal(CurrentGrid, VoxelSize, CenterOffset);
-			FVector ParentLocalPos = UIVSmokeGridLibrary::GridToLocal(ParentGrid, VoxelSize, CenterOffset);
-
-			FVector CurrentWorldPos = ActorTrans.TransformPosition(CurrentLocalPos);
-			FVector ParentWorldPos = ActorTrans.TransformPosition(ParentLocalPos);
-
-			if (IsConnectionBlocked(World, CurrentWorldPos, ParentWorldPos))
-			{
-				continue;
-			}
+			continue;
 		}
-
-		FIntVector CurrentGrid = UIVSmokeGridLibrary::IndexToGrid(CurrentNode.Index, GridResolution);
-
-		FVector CurrentLocalPos = UIVSmokeGridLibrary::GridToLocal(CurrentGrid, VoxelSize, CenterOffset);
-		float CurNormX = CurrentLocalPos.X * InvRadii.X;
-		float CurNormY = CurrentLocalPos.Y * InvRadii.Y;
-		float CurNormZ = CurrentLocalPos.Z * InvRadii.Z;
-		float CurrentDist = FMath::Sqrt(CurNormX * CurNormX + CurNormY * CurNormY + CurNormZ * CurNormZ);
 
 		for (const FIntVector& Direction : FloodFillDirections)
 		{
-			FIntVector NextGrid = CurrentGrid + Direction;
+			const FIntVector NextGrid = CurrentGrid + Direction;
+			const int32 NextIndex = UIVSmokeGridLibrary::GridToIndex(NextGrid, GridResolution);
 
-			if (NextGrid.X < 0 || NextGrid.X >= GridResolution.X ||
-				NextGrid.Y < 0 || NextGrid.Y >= GridResolution.Y ||
-				NextGrid.Z < 0 || NextGrid.Z >= GridResolution.Z)
+			if (!VoxelCosts.IsValidIndex(NextIndex))
 			{
 				continue;
 			}
 
-			int32 NextIndex = UIVSmokeGridLibrary::GridToIndex(NextGrid, GridResolution);
-
-			if (VoxelCosts[NextIndex] != FLT_MAX)
+			if (ResolvedParentIndex != INDEX_NONE)
 			{
-				continue;
-			}
+				const float GrandparentDist = CalculateWeightedDistance(ResolvedParentIndex, NextIndex, InvRadii);
+				const float Noise = RandomStream.FRandRange(0.0f, ExpansionNoise);
+				const float NewCost = VoxelCosts[ResolvedParentIndex] + GrandparentDist + Noise;
 
-			FVector NextLocalPos = UIVSmokeGridLibrary::GridToLocal(NextGrid, VoxelSize, CenterOffset);
-			float NextNormX = NextLocalPos.X * InvRadii.X;
-			float NextNormY = NextLocalPos.Y * InvRadii.Y;
-			float NextNormZ = NextLocalPos.Z * InvRadii.Z;
-			float NextDist = FMath::Sqrt(NextNormX * NextNormX + NextNormY * NextNormY + NextNormZ * NextNormZ);
-
-			float DeltaDist = NextDist - CurrentDist;
-
-			float DeltaCost = 0.0f;
-
-			if (DeltaDist >= 0.0f)
-			{
-				DeltaCost = DeltaDist;
+				if (NewCost < VoxelCosts[NextIndex])
+				{
+					VoxelCosts[NextIndex] = NewCost;
+					ExpansionHeap.HeapPush({NextIndex, ResolvedParentIndex, NewCost});
+				}
 			}
 			else
 			{
-				float AxisInvRadius = 1.0f;
-				if (Direction.X != 0)
+				const float CurrentDist = CalculateWeightedDistance(CurrentNode.Index, NextIndex, InvRadii);
+				const float Noise = RandomStream.FRandRange(0.0f, ExpansionNoise);
+				const float NewCost = ResolvedCost + CurrentDist + Noise;
+
+				if (NewCost < VoxelCosts[NextIndex])
 				{
-					AxisInvRadius = Radii.X;
+					VoxelCosts[NextIndex] = NewCost;
+					ExpansionHeap.HeapPush({NextIndex, CurrentNode.Index, NewCost});
 				}
-				else if (Direction.Y != 0)
-				{
-					AxisInvRadius = Radii.Y;
-				}
-				else if (Direction.Z != 0)
-				{
-					AxisInvRadius = Radii.Z;
-				}
-				DeltaCost = VoxelSize * AxisInvRadius;
 			}
 
-			float NoiseCost = RandomStream.FRandRange(0.0f, ExpansionNoise);
-			float ExpansionCost = CurrentNode.Cost + DeltaCost + NoiseCost;
-
-			if (ExpansionCost < VoxelCosts[NextIndex])
-			{
-				VoxelCosts[NextIndex] = ExpansionCost;
-				ExpansionHeap.HeapPush({ NextIndex, CurrentNode.Index, ExpansionCost });
-			}
 		}
 	}
 }
@@ -979,6 +1016,29 @@ void AIVSmokeVoxelVolume::SetVoxelDeathTime(int32 Index, float DeathTime)
 	INC_DWORD_STAT(STAT_IVSmoke_DestroyedVoxel)
 
 	DirtyLevel = EIVSmokeDirtyLevel::Dirty;
+}
+
+float AIVSmokeVoxelVolume::CalculateWeightedDistance(int32 IndexA, int32 IndexB, const FVector& InvRadii) const
+{
+	if (!VoxelCosts.IsValidIndex(IndexA) || !VoxelCosts.IsValidIndex(IndexB))
+	{
+		return FLT_MAX;
+	}
+
+	const FIntVector GridResolution = GetGridResolution();
+	const FIntVector CenterOffset = GetCenterOffset();
+
+	const FIntVector GridA = UIVSmokeGridLibrary::IndexToGrid(IndexA, GridResolution);
+	const FIntVector GridB = UIVSmokeGridLibrary::IndexToGrid(IndexB, GridResolution);
+
+	const FVector DeltaGrid(GridB - GridA);
+	const FVector DeltaLocal = DeltaGrid * VoxelSize;
+
+	const float NormX = DeltaLocal.X * InvRadii.X;
+	const float NormY = DeltaLocal.Y * InvRadii.Y;
+	const float NormZ = DeltaLocal.Z * InvRadii.Z;
+
+	return FMath::Sqrt(NormX * NormX + NormY * NormY + NormZ * NormZ);
 }
 
 #pragma endregion
