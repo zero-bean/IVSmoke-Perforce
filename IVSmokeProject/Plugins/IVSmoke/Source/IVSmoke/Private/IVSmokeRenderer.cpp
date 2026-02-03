@@ -1140,20 +1140,30 @@ void FIVSmokeRenderer::AddMultiVolumeRayMarchPass(
 		StepSliceCount
 	);
 
-	// Calculate max ray distance and GlobalAABB based on volumes
-	float MaxRayDistance = 0.0f;
+	// Calculate GlobalAABB from all volumes
 	FVector3f GlobalAABBMin(1e10f, 1e10f, 1e10f);
 	FVector3f GlobalAABBMax(-1e10f, -1e10f, -1e10f);
 	for (const FIVSmokeVolumeGPUData& VolData : RenderData.VolumeDataArray)
 	{
-		FVector3f Extent = VolData.VolumeWorldAABBMax - VolData.VolumeWorldAABBMin;
-		MaxRayDistance = FMath::Max(MaxRayDistance, Extent.Size());
-
-		// Accumulate GlobalAABB
 		GlobalAABBMin = FVector3f::Min(GlobalAABBMin, VolData.VolumeWorldAABBMin);
 		GlobalAABBMax = FVector3f::Max(GlobalAABBMax, VolData.VolumeWorldAABBMax);
 	}
-	MaxRayDistance = FMath::Max(MaxRayDistance, 10000.0f); // Minimum reasonable distance
+
+	// MaxRayDistance: Maximum distance from camera to farthest GlobalAABB corner.
+	// This ensures all volumes are rendered regardless of camera distance.
+	// TODO: Consider adding configurable max render distance with distance-based fade.
+	const FVector3f CameraPos(View.ViewLocation);
+	float MaxRayDistance = 0.0f;
+	for (int32 i = 0; i < 8; i++)
+	{
+		FVector3f Corner(
+			(i & 1) ? GlobalAABBMax.X : GlobalAABBMin.X,
+			(i & 2) ? GlobalAABBMax.Y : GlobalAABBMin.Y,
+			(i & 4) ? GlobalAABBMax.Z : GlobalAABBMin.Z
+		);
+		MaxRayDistance = FMath::Max(MaxRayDistance, FVector3f::Dist(CameraPos, Corner));
+	}
+	MaxRayDistance = FMath::Clamp(MaxRayDistance, 10000.0f, 1000000.0f);
 
 	// MinStepSize from settings (minimum world units per step, TotalVolumeLength computed per-tile in shader)
 	const float MinStepSize = Settings->GetEffectiveMinStepSize();
