@@ -67,7 +67,7 @@ void FIVSmokeSceneViewExtension::BeginRenderViewFamily(FSceneViewFamily& InViewF
 	TArray<AIVSmokeVoxelVolume*> ValidVolumes;
 	for (TActorIterator<AIVSmokeVoxelVolume> It(World); It; ++It)
 	{
-		if (It->ShouldRender())
+		if (IsValid(*It) && It->ShouldRender())
 		{
 			ValidVolumes.Add(*It);
 		}

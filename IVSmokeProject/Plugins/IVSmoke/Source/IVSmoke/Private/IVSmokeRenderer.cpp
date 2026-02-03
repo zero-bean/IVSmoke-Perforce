@@ -320,7 +320,7 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 
 	// Detect world change (Editor ↔ PIE transition)
 	// CSM captures are bound to a specific world, so we must cleanup when world changes
-	UWorld* CurrentWorld = InVolumes[0] ? InVolumes[0]->GetWorld() : nullptr;
+	UWorld* CurrentWorld = IsValid(InVolumes[0]) ? InVolumes[0]->GetWorld() : nullptr;
 	if (CurrentWorld && LastRenderedWorld.Get() != CurrentWorld)
 	{
 		UE_LOG(LogIVSmoke, Log, TEXT("[FIVSmokeRenderer::PrepareRenderData] World changed. Cleaning up CSM and cached data."));
@@ -363,7 +363,7 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 	// Get resolution info from first valid volume
 	for (AIVSmokeVoxelVolume* Volume : VolumesToProcess)
 	{
-		if (Volume)
+		if (IsValid(Volume))
 		{
 			Result.VoxelResolution = Volume->GetGridResolution();
 			if (UIVSmokeHoleGeneratorComponent* HoleComp = Volume->GetHoleGeneratorComponent())
@@ -401,7 +401,7 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 	for (int32 i = 0; i < VolumesToProcess.Num(); ++i)
 	{
 		AIVSmokeVoxelVolume* Volume = VolumesToProcess[i];
-		if (!Volume)
+		if (!IsValid(Volume))
 		{
 			continue;
 		}
@@ -422,7 +422,8 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 
 		//~==========================================================================
 		// Hole Texture reference (RHI resources are thread-safe)
-		if (UIVSmokeHoleGeneratorComponent* HoleComp = Volume->GetHoleGeneratorComponent())
+		UIVSmokeHoleGeneratorComponent* HoleComp = Volume->GetHoleGeneratorComponent();
+		if (IsValid(HoleComp))
 		{
 			FTextureRHIRef HoleTex = HoleComp->GetHoleTextureRHI();
 			Result.HoleTextures.Add(HoleTex);
@@ -525,7 +526,7 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 		}
 
 		// Get world from first volume (single lookup, reused for light detection and shadow capture)
-		UWorld* World = (VolumesToProcess.Num() > 0 && VolumesToProcess[0]) ? VolumesToProcess[0]->GetWorld() : nullptr;
+		UWorld* World = (VolumesToProcess.Num() > 0 && IsValid(VolumesToProcess[0])) ? VolumesToProcess[0]->GetWorld() : nullptr;
 
 		// Light Direction and Color
 		// Priority: Settings Override > World DirectionalLight > Default
@@ -664,7 +665,7 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 
 	Result.bIsValid = Result.VolumeDataArray.Num() && Result.PackedVoxelBirthTimes.Num() > 0 && Result.PackedVoxelDeathTimes.Num() > 0;
 
-	if (VolumesToProcess.Num() > 0 && VolumesToProcess[0])
+	if (VolumesToProcess.Num() > 0 && IsValid(VolumesToProcess[0]))
 	{
 		Result.GameTime = VolumesToProcess[0]->GetSyncWorldTimeSeconds();
 	}
