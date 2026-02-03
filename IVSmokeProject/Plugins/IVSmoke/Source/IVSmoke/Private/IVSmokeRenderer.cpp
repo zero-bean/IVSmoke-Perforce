@@ -325,7 +325,10 @@ FIVSmokePackedRenderData FIVSmokeRenderer::PrepareRenderData(const TArray<AIVSmo
 	{
 		UE_LOG(LogIVSmoke, Log, TEXT("[FIVSmokeRenderer::PrepareRenderData] World changed. Cleaning up CSM and cached data."));
 		CleanupCSM();
-		CachedRenderData.Reset();
+		{
+			FScopeLock Lock(&RenderDataMutex);
+			CachedRenderData.Reset();
+		}
 		bServerTimeSynced = false;
 		LastRenderedWorld = CurrentWorld;
 	}

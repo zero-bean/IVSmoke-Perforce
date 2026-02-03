@@ -11,6 +11,10 @@
 #include "EngineUtils.h"
 #include "GameFramework/GameStateBase.h"
 #include "PixelShaderUtils.h"
+
+#if WITH_EDITOR
+#include "Editor.h"
+#endif
 #include "SceneTexturesConfig.h"
 #include "SceneRenderTargetParameters.h"
 
@@ -51,6 +55,15 @@ void FIVSmokeSceneViewExtension::BeginRenderViewFamily(FSceneViewFamily& InViewF
 	{
 		return;
 	}
+
+	// Skip Editor world when PIE is active (prevents world change spam between Editor/PIE viewports)
+	// IsGameWorld() returns true for PIE and Standalone, false for Editor
+#if WITH_EDITOR
+	if (!World->IsGameWorld() && GEditor && GEditor->IsPlaySessionInProgress())
+	{
+		return;
+	}
+#endif
 
 	// Sync server time if needed
 	if (!Renderer.bIsServerTimeSynced())
