@@ -181,6 +181,11 @@ public:
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual void PostEditMove(bool bFinished) override;
+	virtual bool CanEditChange(const FProperty* InProperty) const override;
+	virtual void EditorApplyRotation(const FRotator& DeltaRotation, bool bAltDown, bool bShiftDown, bool bCtrlDown) override;
+	virtual void EditorApplyScale(const FVector& DeltaScale, const FVector* PivotLocation, bool bAltDown, bool bShiftDown, bool bCtrlDown) override;
+	virtual void EditorApplyTranslation(const FVector& DeltaTranslation, bool bAltDown, bool bShiftDown, bool bCtrlDown) override;
+	virtual bool IsSelectable() const override;
 #endif
 
 protected:
@@ -627,6 +632,9 @@ private:
 	// Data Access
 #pragma region DataAccess
 public:
+	/** Sets the bLockLocation flag to prevent Transform changes in editor. */
+	FORCEINLINE void SetLockLocation(bool bLock) { bLockLocation = bLock; }
+
 	/** Returns the current phase of the simulation state machine. */
 	FORCEINLINE EIVSmokeVoxelVolumeState GetCurrentState() const { return ServerState.State; }
 

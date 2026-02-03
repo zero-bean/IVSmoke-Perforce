@@ -170,6 +170,12 @@ AIVSmokeVoxelVolume::AIVSmokeVoxelVolume()
 
 void AIVSmokeVoxelVolume::BeginPlay()
 {
+#if WITH_EDITOR
+	// Lock all Transform changes during PIE to prevent World Partition errors
+	// caused by CollisionComponent's dynamic BodySetup
+	bLockLocation = true;
+#endif
+
 	if (HasAuthority())
 	{
 		ServerState = FIVSmokeServerState();
@@ -317,6 +323,57 @@ void AIVSmokeVoxelVolume::PostEditMove(bool bFinished)
 	{
 		StartPreviewSimulation();
 	}
+}
+
+bool AIVSmokeVoxelVolume::CanEditChange(const FProperty* InProperty) const
+{
+	if (!Super::CanEditChange(InProperty))
+	{
+		return false;
+	}
+
+	if (!InProperty)
+	{
+		return true;
+	}
+
+	// Block Rotation and Scale editing in Details panel
+	const FName PropertyName = InProperty->GetFName();
+	if (PropertyName == TEXT("RelativeRotation") ||
+		PropertyName == TEXT("RelativeScale3D"))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void AIVSmokeVoxelVolume::EditorApplyRotation(const FRotator& DeltaRotation, bool bAltDown, bool bShiftDown, bool bCtrlDown)
+{
+	// Block rotation via gizmo - do nothing
+	UE_LOG(LogIVSmoke, Warning, TEXT("[AIVSmokeVoxelVolume] Rotation is not supported."));
+}
+
+void AIVSmokeVoxelVolume::EditorApplyScale(const FVector& DeltaScale, const FVector* PivotLocation, bool bAltDown, bool bShiftDown, bool bCtrlDown)
+{
+	// Block scale via gizmo - do nothing
+	UE_LOG(LogIVSmoke, Warning, TEXT("[AIVSmokeVoxelVolume] Scale is not supported."));
+}
+
+void AIVSmokeVoxelVolume::EditorApplyTranslation(const FVector& DeltaTranslation, bool bAltDown, bool bShiftDown, bool bCtrlDown)
+{
+	// Block translation during PIE (editor world actor doesn't have bLockLocation set)
+	if (GEditor && GEditor->IsPlaySessionInProgress())
+	{
+		return;
+	}
+
+	Super::EditorApplyTranslation(DeltaTranslation, bAltDown, bShiftDown, bCtrlDown);
+}
+
+bool AIVSmokeVoxelVolume::IsSelectable() const
+{
+	return Super::IsSelectable();
 }
 #endif
 
