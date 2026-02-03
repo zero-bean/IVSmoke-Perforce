@@ -614,6 +614,9 @@ private:
 
 	/** List of indices of all currently active voxels. */
 	TArray<int32> GeneratedVoxelIndices;
+
+	TBitArray<> VoxelPenetrationFlags;
+
 #pragma endregion
 
 	//~==============================================================================
