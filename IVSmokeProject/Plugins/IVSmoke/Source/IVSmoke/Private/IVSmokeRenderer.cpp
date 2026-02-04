@@ -2146,6 +2146,9 @@ void FIVSmokeRenderer::ExecuteDepthWrite(
 	// Depth bias from settings
 	Parameters->DepthBias = Settings ? Settings->DepthWriteBias : 0.0f;
 
+	// Alpha threshold from settings (default 0.99 for nearly opaque pixels)
+	Parameters->AlphaThreshold = Settings ? Settings->DepthWriteAlphaThreshold : 0.99f;
+
 	// Projection matrix parameters for manual depth conversion
 	// ConvertToDeviceZ formula: DeviceZ = ViewToClip[2][2] + ViewToClip[3][2] / LinearZ
 	const FMatrix& ViewToClip = View.ViewMatrices.GetProjectionMatrix();

@@ -428,8 +428,8 @@ void UIVSmokeHoleGeneratorComponent::Local_InitializeHoleTexture()
 
 	// Create UTextureRenderTargetVolume
 	HoleTexture = NewObject<UTextureRenderTargetVolume>(this, TEXT("HoleTexture"));
-	HoleTexture->Init(VoxelResolution.X, VoxelResolution.Y, VoxelResolution.Z, PF_FloatRGBA);
 	HoleTexture->bCanCreateUAV = true;
+	HoleTexture->Init(VoxelResolution.X, VoxelResolution.Y, VoxelResolution.Z, PF_FloatRGBA);
 	HoleTexture->ClearColor = FLinearColor::White;
 	HoleTexture->SRGB = false;
 	HoleTexture->UpdateResourceImmediate(true);
