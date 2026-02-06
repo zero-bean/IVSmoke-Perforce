@@ -473,6 +473,11 @@ void UIVSmokeHoleGeneratorComponent::Local_ClearHoleTexture()
 
 void UIVSmokeHoleGeneratorComponent::Local_RebuildHoleTexture()
 {
+	if (IsRunningCommandlet())
+	{
+		return;
+	}
+
 	if (!HoleTexture)
 	{
 		return;

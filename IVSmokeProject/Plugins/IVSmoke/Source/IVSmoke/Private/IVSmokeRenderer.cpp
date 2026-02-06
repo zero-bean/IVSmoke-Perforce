@@ -49,6 +49,11 @@ FIVSmokeRenderer::~FIVSmokeRenderer()
 
 void FIVSmokeRenderer::Initialize()
 {
+	if (IsRunningCommandlet())
+	{
+		return;
+	}
+
 	if (NoiseVolume)
 	{
 		return; // Already initialized
